@@ -1,0 +1,21 @@
+.text-button {
+    background: none;
+    border: thick double var(--fg-color); 
+    color: var(--fg-color);
+    padding: 8px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .button-icon {
+        width: 24px;
+        height: 24px;
+        background-color: var(--fg-color);
+    }
+}

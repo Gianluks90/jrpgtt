@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit, WritableSignal } from "@angular/core";
+import { Component, computed, inject, OnInit, WritableSignal } from "@angular/core";
 import { TextButton } from "../../components/ui/text-button/text-button";
 import { AuthService } from "../../services/auth-service";
 import { GameService } from "../../services/game-service";
@@ -12,6 +12,7 @@ import { GameJoinDialog, GameJoinDialogData } from "../../components/dialogs/gam
 import { GenericConfirmDialog } from "../../components/dialogs/generic-confirm-dialog/generic-confirm-dialog";
 import { DialogResponse } from "../../models/DialogResponse";
 import { take } from "rxjs";
+import { Router } from "@angular/router";
 
 @Component({
   selector: "app-home-page",
@@ -19,9 +20,10 @@ import { take } from "rxjs";
   templateUrl: "./home-page.html",
   styleUrl: "./home-page.scss",
 })
-export class HomePage implements OnInit, OnDestroy {
+export class HomePage implements OnInit {
   public authService = inject(AuthService);
   public gameService = inject(GameService);
+  public router = inject(Router);
   public dialog = inject(Dialog);
 
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
@@ -38,10 +40,6 @@ export class HomePage implements OnInit, OnDestroy {
     if (!currentUserId) return;
 
     this.gameService.startMyGameSnapshot(currentUserId);
-  }
-
-  public ngOnDestroy(): void {
-    this.gameService.stopMyGameSnapshot();
   }
 
   private isConfirmResponse(response: unknown): response is DialogResponse {
@@ -148,6 +146,9 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   public onLobby(): void {
-    // Placeholder button requested by UX flow.
+    const game = this.myGame();
+    if (!game) return;
+
+    this.router.navigate([`/game/${game.id}/lobby`]);
   }
 }

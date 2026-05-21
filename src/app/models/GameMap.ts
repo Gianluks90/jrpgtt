@@ -1,4 +1,4 @@
-import { MapCell } from "./_index";
+import { MapCell } from "./MapCell";
 
 export interface GameMap {
     size: number;

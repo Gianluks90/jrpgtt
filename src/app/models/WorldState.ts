@@ -1,4 +1,4 @@
-import { BiomeType } from "./_index";
+import { BiomeType } from "./MapCell";
 
 export interface WorldState {
     currentTurn: number;

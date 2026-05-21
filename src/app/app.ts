@@ -12,6 +12,6 @@ import { APP_VERSION } from './consts/app-version';
 export class App {
   protected readonly title = signal('jrpgtt');
   public readonly appVersion = APP_VERSION;
-  constructor(private firebaseService: FirebaseService) {
-  }
+  
+  constructor(private firebaseService: FirebaseService) { }
 }

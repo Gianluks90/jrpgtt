@@ -4,13 +4,15 @@ import { deleteUser, getAuth, GoogleAuthProvider, signInWithPopup, User } from "
 import { deleteDoc, doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { FirebaseService } from "./_index";
 import { UserData } from "../models/UserData";
+import { GameService } from "./game-service";
+import { PlayerService } from "./player-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class AuthService {
 
-  constructor(private router: Router, private firebaseService: FirebaseService) { }
+  constructor(private router: Router, private firebaseService: FirebaseService, private gameService: GameService, private playerService: PlayerService) { }
 
   public async login(): Promise<void> {
     const provider = new GoogleAuthProvider();
@@ -28,9 +30,11 @@ export class AuthService {
     }
   }
 
-  public logout() {
-    getAuth().signOut();
-    this.router.navigate(['/']);
+  public async logout(): Promise<void> {
+    await getAuth().signOut();
+    this.gameService.clearGameSession();
+    this.playerService.clearPlayerSession();
+    await this.router.navigate(['/']);
   };
 
   private async createUserDocument(user: User): Promise<void> {
@@ -60,6 +64,8 @@ export class AuthService {
 
     if (!user) return;
     deleteUser(user).then(() => {
+      this.gameService.clearGameSession();
+      this.playerService.clearPlayerSession();
       this.deleteUserDocument(user.uid).then(() => {
         this.router.navigate(['/']);
       })

@@ -1,0 +1,63 @@
+<div class="lobby-page-main-container">
+    <p class="game-name">{{myGame()?.name}}</p>
+    <p class="info-text"> - Lobby -</p>
+
+    @if (myGame()) {
+        <div class="info-box">
+            <p class="info-text">Players joined</p>
+            <p>{{ myGame()?.playerIds?.length }} / {{ myGame()?.maxPlayers }}</p>
+        </div>
+        <div class="info-box">
+            <p class="info-text">Your player</p>
+            <p class="content-text">{{ myPlayer()?.name }} | ready:  <span [class.flashing-text]="!myPlayer()?.isReady">{{ myPlayer()?.isReady ? 'yes' : 'no' }}</span> 
+            @if (!myPlayer()?.isReady) {
+                <span> | exp: {{ myPlayer()?.experience }}</span>   
+            }</p>
+        </div>
+        <div class="info-box">
+            <p class="info-text">Game status</p>
+            <p><span class="flashing-text">{{ myGame()?.status }}</span></p>
+        </div>
+
+        <div class="top-actions-container">
+            <text-button
+                text="Home"
+                iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                (clicked)="onHome()"
+            ></text-button>
+        </div>
+
+        <div class="actions-container">
+            <text-button
+                text="Player setup"
+                iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                [disabled]="!canOpenPlayerSetup()"
+                (clicked)="openPlayerSetupDialog()"
+            ></text-button>
+            @if (isOwner()) {
+                <text-button
+                    text="Delete game"
+                    iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openDeleteDialog()"
+                ></text-button>
+                <text-button
+                    text="Settings"
+                    iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openSettings()"
+                ></text-button>
+                <text-button
+                    text="Start game"
+                    iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    [disabled]="!canStartGame()"
+                    (clicked)="onStartGame()"
+                ></text-button>
+            } @else {
+                <text-button
+                    text="Leave game"
+                    iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openConfirmDialog()"
+                ></text-button>
+            }
+        </div>
+    }
+</div>

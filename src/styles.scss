@@ -7,6 +7,9 @@
     --overlay-bg-color: black;
     --overlay-fg-color: white;
     --overlay-border: thick double white;
+
+    --ok-color: #8ac926;
+    --error-color: crimson;
 }
 
 * {
@@ -44,6 +47,7 @@ form {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding: 16px 0;
 
     &>.form-field {
         display: flex;
@@ -64,5 +68,21 @@ form {
         &>input:focus {
             outline: none;
         }
+    }
+}
+
+span.flashing-text {
+    animation: flashing 1s infinite;
+}
+
+@keyframes flashing {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
     }
 }

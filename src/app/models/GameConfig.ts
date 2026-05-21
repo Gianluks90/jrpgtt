@@ -1,4 +1,5 @@
-import { GameplayConfig, MapConfig } from "./_index";
+import { GameplayConfig } from "./GameplayConfig";
+import { MapConfig } from "./MapConfig";
 
 export interface GameConfig {
     map: MapConfig;

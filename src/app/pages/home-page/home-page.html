@@ -1,5 +1,11 @@
 <div class="home-page-main-container">
-    <p>Welcome to the Home Page!</p>
+    <h1>Home Page</h1>
+    @if(myGame()) {
+        <p class="info-text">You are currently in the game: {{ myGame()?.name }}.</p>
+        <p class="info-text">Go to the lobby to see game details and start playing!</p>
+    } @else {
+        <p class="info-text">You are not currently in a game. Join or create a new game to get started!</p>
+    }
     <div class="actions-container">
         @if (!myGame()) {
             <text-button

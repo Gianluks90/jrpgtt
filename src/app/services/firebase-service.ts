@@ -1,9 +1,10 @@
 import { Injectable, signal } from "@angular/core";
 import { initializeApp } from "firebase/app";
-import { doc, Firestore, getFirestore, onSnapshot } from "firebase/firestore";
+import { CollectionReference, doc, DocumentData, Firestore, getFirestore, onSnapshot } from "firebase/firestore";
 import { FIREBASE_CONFIG } from "../environment/firebase.config";
 import { getAuth } from "firebase/auth";
 import { UserData } from "../models/UserData";
+import { Game } from "../models/Game";
 
 @Injectable({
   providedIn: "root",

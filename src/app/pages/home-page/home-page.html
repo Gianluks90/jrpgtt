@@ -1,1 +1,37 @@
-<p>home-page works!</p>
+<div class="home-page-main-container">
+    <p>Welcome to the Home Page!</p>
+    <div class="actions-container">
+        @if (!myGame()) {
+            <text-button
+                text="New game"
+                iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                (clicked)="openNewGameDialog()"
+            ></text-button>
+            <text-button
+                text="Join game"
+                iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                (clicked)="openJoinGameDialog()"
+            ></text-button>
+        } @else {
+            @if (isOwner()) {
+                <text-button
+                    text="Delete game"
+                    iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openDeleteDialog()"
+                ></text-button>
+            } @else {
+                <text-button
+                    text="Leave game"
+                    iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openConfirmDialog()"
+                ></text-button>
+            }
+            <text-button
+                text="Lobby"
+                iconUrl="./icons/group_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                (clicked)="onLobby()"
+            ></text-button>
+        }
+        <text-button text="Logout" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
+    </div>
+</div>

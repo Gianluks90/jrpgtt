@@ -1,0 +1,36 @@
+.dialog-wrapper-container {
+    width: 100%;
+    height: 100%;
+    background-color: var(--overlay-bg-color);
+    color: var(--overlay-fg-color);
+    border: var(--overlay-border);
+
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
+
+.dialog-wrapper-header {
+    position: relative;
+    
+    &>h1 {
+        position: absolute;
+        margin: 0;
+        top: -25px;
+        left: 16px;
+        font-size: 1rem;
+        text-transform: uppercase;
+        color: var(--fg-color);
+        background-color: var(--bg-color);
+        padding: 4px 12px;
+    }
+
+    height: 0;
+}
+
+.dialog-wrapper-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}

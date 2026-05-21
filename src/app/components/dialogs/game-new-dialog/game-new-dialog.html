@@ -1,0 +1,20 @@
+<dialog-wrapper title="New Game">
+    <p class="info-text">
+        Create a new game by entering a name and the maximum number of players allowed. You can always change these
+        settings later in the lobby.
+    </p>
+    <form [formGroup]="form">
+        <div class="form-field">
+            <label for="name">Name</label>
+            <input id="name" formControlName="name" type="text" placeholder="Enter text" />
+        </div>
+        <div class="form-field">
+            <label for="maxPlayers">Max Players</label>
+            <input id="maxPlayers" formControlName="maxPlayers" type="number" inputMode="numeric"
+                placeholder="Enter number" min="1" [max]="maxPlayers" />
+            <p class="info-text">Maximum players allowed: {{ maxPlayers }}</p>
+        </div>
+    </form>
+    <text-button dialog-action text="Create" (clicked)="confirm()" [disabled]="form.invalid"></text-button>
+    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+</dialog-wrapper>

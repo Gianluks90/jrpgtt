@@ -3,6 +3,10 @@
 :root {
     --fg-color: white;
     --bg-color: black;
+
+    --overlay-bg-color: black;
+    --overlay-fg-color: white;
+    --overlay-border: thick double white;
 }
 
 * {
@@ -20,11 +24,45 @@ body {
 
 body {
     background-color: var(--bg-color);
+    // background: linear-gradient(90deg, #060042 0%, #0000ca 100%);
     color: var(--fg-color);
     font-size: 16px;
 }
 
 p.info-text {
-    font-size: .5rem;
+    font-size: .7rem;
     color: #E3E3E3;
+    line-height: 1.5;
+}
+
+.dialog-backdrop {
+    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &>.form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        &>label {
+            font-size: .75rem;
+        }
+
+        &>input {
+            background-color: transparent;
+            border: 1px solid var(--fg-color);
+            color: var(--fg-color);
+            padding: 8px 12px;
+        }
+
+        &>input:focus {
+            outline: none;
+        }
+    }
 }

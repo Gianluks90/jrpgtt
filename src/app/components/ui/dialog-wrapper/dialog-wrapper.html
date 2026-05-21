@@ -1,0 +1,13 @@
+<div class="dialog-wrapper-container">
+    <div class="dialog-wrapper-header">
+        <h1>{{title()}}</h1>
+    </div>
+    <div class="dialog-wrapper-content">
+        <ng-content></ng-content>
+    </div>
+    @if (!hideActions()) {
+    <div class="dialog-wrapper-actions">
+        <ng-content select="[dialog-action]"></ng-content>
+    </div>
+    }
+</div>

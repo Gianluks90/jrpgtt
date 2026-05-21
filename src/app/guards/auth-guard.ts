@@ -1,6 +1,9 @@
 import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
 import { getAuth } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { FirebaseService } from "../services/firebase-service";
+import { Game } from "../models/Game";
 
 export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
@@ -26,6 +29,54 @@ export const landingGuard: CanActivateFn = (route, state) => {
     console.error("Error checking auth state:", error);
     return true;
   });
+};
+
+export const lobbyStatusGuard: CanActivateFn = async (route, state) => {
+  const router = inject(Router);
+  const firebaseService = inject(FirebaseService);
+  const gameId = route.paramMap.get("gameId");
+
+  if (!gameId) {
+    return router.createUrlTree(["/home"]);
+  }
+
+  const gameRef = doc(firebaseService.database, "games", gameId);
+  const gameSnap = await getDoc(gameRef);
+
+  if (!gameSnap.exists()) {
+    return router.createUrlTree(["/home"]);
+  }
+
+  const game = gameSnap.data() as Game;
+  if (game.status === "waiting") {
+    return true;
+  }
+
+  return router.createUrlTree(["/game", gameId, "map"]);
+};
+
+export const mapStatusGuard: CanActivateFn = async (route, state) => {
+  const router = inject(Router);
+  const firebaseService = inject(FirebaseService);
+  const gameId = route.paramMap.get("gameId");
+
+  if (!gameId) {
+    return router.createUrlTree(["/home"]);
+  }
+
+  const gameRef = doc(firebaseService.database, "games", gameId);
+  const gameSnap = await getDoc(gameRef);
+
+  if (!gameSnap.exists()) {
+    return router.createUrlTree(["/home"]);
+  }
+
+  const game = gameSnap.data() as Game;
+  if (game.status === "waiting") {
+    return router.createUrlTree(["/game", gameId, "lobby"]);
+  }
+
+  return true;
 };
 
 function getCurrentUser(auth: any): Promise<any> {

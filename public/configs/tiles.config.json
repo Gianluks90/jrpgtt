@@ -1,3 +1,28 @@
 {
-    
+	"biomes": {
+		"plains": {
+			"label": "Pianure",
+			"walkable": true
+		},
+		"forest": {
+			"label": "Foresta",
+			"walkable": true
+		},
+		"mountain": {
+			"label": "Montagne",
+			"walkable": true
+		},
+		"water": {
+			"label": "Acqua",
+			"walkable": true
+		},
+		"desert": {
+			"label": "Deserto",
+			"walkable": true
+		},
+		"ruins": {
+			"label": "Rovine",
+			"walkable": true
+		}
+	}
 }

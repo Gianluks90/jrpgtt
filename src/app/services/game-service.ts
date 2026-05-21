@@ -4,6 +4,23 @@ import { getAuth, Unsubscribe } from "firebase/auth";
 import { arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, limit, onSnapshot, query, setDoc, Timestamp, where, writeBatch } from "firebase/firestore";
 import { Game } from "../models/Game";
 import { Player } from "../models/Player";
+import { BiomeType, MapCell } from "../models/MapCell";
+import { GameConfig } from "../models/GameConfig";
+import { BiomePlacementCount, WorldState } from "../models/WorldState";
+
+interface StartGameSetupContext {
+  game: Game;
+  players: Player[];
+  config: GameConfig;
+  turnOrder: string[];
+  worldState: WorldState;
+  gameMap: {
+    size: number;
+    specialTilesPlaced: number;
+    cells: Record<string, MapCell>;
+  };
+  spawns: Array<{ playerId: string; x: number; y: number }>;
+}
 
 @Injectable({
   providedIn: "root",
@@ -13,6 +30,7 @@ export class GameService {
   public myGame = signal<Game | null>(null);
   private gameUnsubscribe: Unsubscribe | null = null;
   private snapshotPlayerId: string | null = null;
+  private readonly gameConfigUrl = "/configs/game-init.config.json";
 
   constructor(private firebaseService: FirebaseService) { }
 
@@ -225,11 +243,67 @@ export class GameService {
       throw new Error("Cannot start game until lobby is full");
     }
 
+    const playersSnapshot = await getDocs(collection(docRef, "players"));
+    const players = playersSnapshot.docs.map((playerDoc) => {
+      return {
+        id: playerDoc.id,
+        ...playerDoc.data(),
+      } as Player;
+    });
+
+    if (players.length !== game.maxPlayers) {
+      throw new Error("Cannot start game: players setup is incomplete");
+    }
+
+    const allReady = players.every((player) => player.isReady);
+    if (!allReady) {
+      throw new Error("Cannot start game until all players are ready");
+    }
+
     if (game.status !== "waiting") {
       throw new Error("Game is not in waiting status");
     }
 
-    await this.updateGame(gameId, { status: "running" });
+    const config = await this.getGameConfig();
+    const setupContext = this.runStartGameSetups(game, players, config);
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const mapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
+    const mapCellsCollectionRef = collection(this.firebaseService.database, "games", gameId, "mapCells");
+
+    const batch = writeBatch(this.firebaseService.database);
+    batch.set(docRef, {
+      status: "running",
+      updatedAt: Timestamp.now(),
+      lastActivityAt: Timestamp.now(),
+    }, { merge: true });
+    batch.set(mapRef, setupContext.gameMap);
+
+    setupContext.spawns.forEach((spawn) => {
+      const playerRef = doc(collection(docRef, "players"), spawn.playerId);
+      const spawnCellRef = doc(mapCellsCollectionRef, this.cellId(spawn.x, spawn.y));
+
+      batch.set(playerRef, {
+        location: {
+          x: spawn.x,
+          y: spawn.y,
+        },
+      }, { merge: true });
+
+      const spawnBiome = this.drawBiome(setupContext.worldState);
+      const spawnCell: MapCell = {
+        x: spawn.x,
+        y: spawn.y,
+        biome: spawnBiome,
+        revealedAtTurn: 0,
+        discoveredBy: spawn.playerId,
+      };
+      batch.set(spawnCellRef, spawnCell, { merge: true });
+    });
+
+    batch.set(worldStateRef, setupContext.worldState);
+
+    await batch.commit();
   }
 
   private buildDefaultPlayer(playerId: string): Player {
@@ -276,5 +350,169 @@ export class GameService {
       hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
     }
     return hash;
+  }
+
+  private async getGameConfig(): Promise<GameConfig> {
+    const response = await fetch(this.gameConfigUrl, {
+      headers: {
+        "content-type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to load game configuration");
+    }
+
+    return await response.json() as GameConfig;
+  }
+
+  private buildBiomeDeck(config: GameConfig): BiomeType[] {
+    const deckConfig = config.map.biomeDeckConfig;
+    const biomes = Object.entries(deckConfig) as Array<[BiomeType, number]>;
+
+    const deck: BiomeType[] = [];
+    for (const [biome, count] of biomes) {
+      for (let i = 0; i < count; i++) {
+        deck.push(biome);
+      }
+    }
+
+    return deck;
+  }
+
+  private buildSpawnPoints(config: GameConfig, count: number): Array<{ x: number; y: number }> {
+    const size = config.map.size;
+    const allowedColumns = this.getSpawnColumns(config, size);
+    const candidates: Array<{ x: number; y: number }> = [];
+
+    for (const x of allowedColumns) {
+      for (let y = 0; y < size; y++) {
+        candidates.push({ x, y });
+      }
+    }
+
+    const shuffled = this.shuffleArray(candidates);
+    return shuffled.slice(0, count);
+  }
+
+  private getSpawnColumns(config: GameConfig, size: number): number[] {
+    if (config.map.spawnColumns?.length) {
+      return config.map.spawnColumns.filter((column) => column >= 0 && column < size);
+    }
+
+    const rule = config.map.spawnRule.allowedQuadrant;
+    if (rule === "first") return [0, 1, 2, 3, 4];
+    if (rule === "second") return [5, 6, 7];
+    if (rule === "third") return [8, 9];
+
+    const columns = Array.from({ length: size }, (_, index) => index);
+    return columns;
+  }
+
+  private cellId(x: number, y: number): string {
+    return `${x}_${y}`;
+  }
+
+  private drawBiome(worldState: WorldState): BiomeType {
+    if (worldState.remainingDeck.length === 0 && worldState.discardedDeck.length > 0) {
+      worldState.remainingDeck = this.shuffleArray([...worldState.discardedDeck]);
+      worldState.discardedDeck = [];
+    }
+
+    const drawn = worldState.remainingDeck.shift();
+    if (!drawn) {
+      throw new Error("Biome deck is empty");
+    }
+
+    const placed = worldState.placedBiomeCount ?? this.emptyBiomePlacementCount();
+    worldState.placedBiomeCount = {
+      ...placed,
+      [drawn]: (placed[drawn] ?? 0) + 1,
+    };
+
+    return drawn;
+  }
+
+  private emptyBiomePlacementCount(): BiomePlacementCount {
+    return {
+      plains: 0,
+      forest: 0,
+      mountain: 0,
+      water: 0,
+      desert: 0,
+      ruins: 0,
+    };
+  }
+
+  private runStartGameSetups(game: Game, players: Player[], config: GameConfig): StartGameSetupContext {
+    const context: StartGameSetupContext = {
+      game,
+      players,
+      config,
+      turnOrder: [],
+      worldState: {
+        currentTurn: 1,
+        phase: "turn",
+        remainingDeck: [],
+        discardedDeck: [],
+        placedBiomeCount: this.emptyBiomePlacementCount(),
+      },
+      gameMap: {
+        size: config.map.size,
+        specialTilesPlaced: 0,
+        cells: {},
+      },
+      spawns: [],
+    };
+
+    const setupPipeline: Array<(setup: StartGameSetupContext) => void> = [
+      this.setupBiomeDeck,
+      this.setupTurnOrder,
+      this.setupPlayerSpawns,
+    ];
+
+    setupPipeline.forEach((setupStep) => {
+      setupStep.call(this, context);
+    });
+
+    context.worldState.activePlayerId = context.turnOrder[0];
+
+    return context;
+  }
+
+  private setupBiomeDeck(context: StartGameSetupContext): void {
+    context.worldState.remainingDeck = this.shuffleArray(this.buildBiomeDeck(context.config));
+  }
+
+  private setupTurnOrder(context: StartGameSetupContext): void {
+    context.turnOrder = this.shuffleArray(context.players.map((player) => player.id));
+    context.worldState.turnOrder = context.turnOrder;
+  }
+
+  private setupPlayerSpawns(context: StartGameSetupContext): void {
+    const spawnPoints = this.buildSpawnPoints(context.config, context.players.length);
+    if (spawnPoints.length < context.players.length) {
+      throw new Error("Not enough spawn points for all players");
+    }
+
+    context.spawns = context.players.map((player, index) => {
+      const point = spawnPoints[index];
+      return {
+        playerId: player.id,
+        x: point.x,
+        y: point.y,
+      };
+    });
+  }
+
+  private shuffleArray<T>(items: T[]): T[] {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const randomIndex = Math.floor(Math.random() * (i + 1));
+      const current = shuffled[i];
+      shuffled[i] = shuffled[randomIndex];
+      shuffled[randomIndex] = current;
+    }
+    return shuffled;
   }
 }

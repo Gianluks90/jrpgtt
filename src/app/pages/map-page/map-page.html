@@ -1,0 +1,95 @@
+<div class="map-page-main-container">
+    <div class="page-shell">
+        <div class="top-hud-row">
+            <div class="hud hud-world">
+                <p class="hud-title">World State | Turn {{ worldState()?.currentTurn ?? 0 }}</p>
+                <div class="world-biome-list">
+                    @for (biome of biomeOrder; track biome) {
+                        <div class="world-biome-item" [class]="'biome-' + biome">
+                            <span class="biome-name">{{ biome }}</span>
+                            <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                        </div>
+                    }
+                </div>
+                <p class="world-turn-info">
+                    Active: <span class="flashing-text">{{ activePlayerName() }}</span>
+                    @if (!isMyTurn()) {
+                        <span class="turn-wait"> | attendi il tuo turno</span>
+                    }
+                </p>
+            </div>
+
+            <div class="hud hud-players">
+                <p class="hud-title">Players</p>
+                <div class="player-list">
+                    @for (player of players(); track trackPlayer($index, player)) {
+                        <div class="player-card" [class.active-player]="worldState()?.activePlayerId === player.id">
+                            <div class="player-row top-row">
+                                <span class="player-name-wrap">
+                                    <span class="player-icon" [style.backgroundColor]="player.color"></span>
+                                    <span class="player-name">{{ player.name }}</span>
+                                </span>
+                                <span class="player-exp">EXP {{ player.experience }}</span>
+                            </div>
+                            <div class="player-row hp-label-row">
+                                <span>HP</span>
+                                <span>{{ player.parameters.hp.current }}/{{ player.parameters.hp.max ?? player.parameters.hp.base }}</span>
+                            </div>
+                            <div class="hp-bar" [class.hp-full]="hpPercent(player) === 100">
+                                <div class="hp-fill" [style.width.%]="hpPercent(player) === 100 ? 100 : 0"></div>
+                            </div>
+                            <div class="player-row stats-labels-row">
+                                <span>STR</span>
+                                <span>MAG</span>
+                                <span>LCK</span>
+                            </div>
+                            <div class="player-row stats-values-row">
+                                <span>{{ player.parameters.strength.current }}</span>
+                                <span>{{ player.parameters.magic.current }}</span>
+                                <span>{{ player.parameters.luck.current }}</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="map-wrapper">
+            <div
+                class="map-grid"
+                [style.gridTemplateColumns]="'repeat(' + mapSize() + ', 1fr)'"
+                [style.gridTemplateRows]="'repeat(' + mapSize() + ', 1fr)'"
+            >
+                @for (cell of gridCells(); track trackGridCell($index, cell)) {
+                    <div
+                        class="map-cell"
+                        [class.special-cell]="cell.isSpecial"
+                        [class.revealed-cell]="!!cell.mapCell"
+                        [class.unrevealed-cell]="!cell.mapCell"
+                        [class.movable-cell]="isMovableCell(cell)"
+                        [class]="cell.mapCell ? 'biome-' + cell.mapCell.biome : ''"
+                        (click)="onCellClick(cell)"
+                    >
+                        @if (cell.players.length > 0) {
+                            @for (player of cell.players; track trackPlayer($index, player)) {
+                                <div class="player-marker flashing-text" [style.borderTopColor]="player.color"></div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <text-button
+                text="Home"
+                iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                (clicked)="onBackHome()"
+            ></text-button>
+            <text-button text="Inventory" [disabled]="true"></text-button>
+            <text-button text="Log" [disabled]="true"></text-button>
+            <text-button text="Skills" [disabled]="true"></text-button>
+            <text-button text="Options" [disabled]="true"></text-button>
+        </div>
+    </div>
+</div>

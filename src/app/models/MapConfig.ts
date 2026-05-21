@@ -1,6 +1,7 @@
 export interface MapConfig {
-    size: 10;
+    size: number;
     specialTilesCount: 4;
+    spawnColumns?: number[];
     spawnRule: {
         allowedQuadrant: 'first' | 'second' | 'third' | 'random';
     };

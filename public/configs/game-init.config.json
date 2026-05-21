@@ -1,0 +1,24 @@
+{
+  "map": {
+    "size": 10,
+    "specialTilesCount": 4,
+    "spawnColumns": [0, 1],
+    "spawnRule": {
+      "allowedQuadrant": "first"
+    },
+    "biomeDeckConfig": {
+      "plains": 20,
+      "forest": 20,
+      "mountain": 16,
+      "water": 14,
+      "desert": 16,
+      "ruins": 14
+    }
+  },
+  "gameplay": {
+    "movementPerTurn": 1,
+    "fogOfWar": true,
+    "revealRadius": 0,
+    "adjacencyReveal": false
+  }
+}

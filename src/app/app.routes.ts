@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, landingGuard } from './guards/auth-guard';
+import { authGuard, landingGuard, lobbyStatusGuard, mapStatusGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
     {
@@ -17,8 +17,14 @@ export const routes: Routes = [
     {
         title: 'Game Page - Lobby',
         path: 'game/:gameId/lobby',
-        canActivate: [authGuard],
+        canActivate: [authGuard, lobbyStatusGuard],
         loadComponent: () => import('./pages/lobby-page/lobby-page').then(m => m.LobbyPage)
+    },
+    {
+        title: 'Game Page - Map',
+        path: 'game/:gameId/map',
+        canActivate: [authGuard, mapStatusGuard],
+        loadComponent: () => import('./pages/map-page/map-page').then(m => m.MapPage)
     },
     {
         path: '**',

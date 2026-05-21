@@ -60,6 +60,15 @@ export class LobbyPage implements OnInit, OnDestroy {
 
       this.playerService.startMyPlayerSnapshot(game.id, currentUserId);
     }, { injector: this.injector });
+
+    effect(() => {
+      const game = this.myGame();
+      if (!game) return;
+
+      if (game.status !== "waiting") {
+        void this.router.navigate(["/game", game.id, "map"]);
+      }
+    }, { injector: this.injector });
   }
 
   public ngOnDestroy(): void {

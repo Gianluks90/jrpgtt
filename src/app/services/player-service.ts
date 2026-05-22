@@ -66,15 +66,29 @@ export class PlayerService {
     this.myPlayer.set(null);
   }
 
-  public async updatePlayerSetup(gameId: string, playerId: string, setup: PlayerSetupData): Promise<void> {
+  public async updatePlayerSetup(
+    gameId: string,
+    playerId: string,
+    setup: PlayerSetupData,
+    currentPlayer?: Player,
+  ): Promise<void> {
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
-    const playerSnap = await getDoc(playerRef);
+    let player = currentPlayer;
 
-    if (!playerSnap.exists()) {
-      throw new Error("Player not found");
+    if (!player || player.id !== playerId) {
+      const myPlayer = this.myPlayer();
+      if (myPlayer?.id === playerId) {
+        player = myPlayer;
+      }
     }
 
-    const player = playerSnap.data() as Player;
+    if (!player) {
+      const playerSnap = await getDoc(playerRef);
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+      player = playerSnap.data() as Player;
+    }
 
     const strength = Math.max(0, Math.floor(Number(setup.parameters.strength)));
     const magic = Math.max(0, Math.floor(Number(setup.parameters.magic)));

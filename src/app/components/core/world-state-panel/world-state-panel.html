@@ -1,0 +1,24 @@
+<div class="world-state-panel-root">
+    @if (showTitle()) {
+        <p class="hud-title" [class.mobile-sidebar-title]="mobileSidebarTitle()">{{ title() }}</p>
+    }
+
+    <div class="world-summary">
+        <p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
+        <p class="summary-item"><span>Location</span><strong>{{ myLocationLabel() }}</strong></p>
+        <p class="summary-item"><span>Environment</span><strong>{{ myLocationIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+        <p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerName() }}</strong></p>
+        @if (!isMyTurn()) {
+            <p class="summary-item wait-item">attendi il tuo turno</p>
+        }
+    </div>
+
+    <div class="world-biome-list">
+        @for (biome of biomeOrder; track biome) {
+            <div class="world-biome-item" [class]="'biome-' + biome">
+                <span class="biome-name">{{ biome }}</span>
+                <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+            </div>
+        }
+    </div>
+</div>

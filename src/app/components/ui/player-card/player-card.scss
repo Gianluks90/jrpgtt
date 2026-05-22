@@ -1,0 +1,99 @@
+.player-card {
+    width: 100%;
+    min-width: 0;
+    border: 1px dotted rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.55rem;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.active-player {
+    border: 1px dotted rgba(255, 255, 255, 0.95);
+}
+
+.player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.player-name-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.player-exp {
+    font-size: 0.48rem;
+    opacity: 0.9;
+    white-space: nowrap;
+}
+
+.player-icon {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 8px solid currentColor;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.95));
+}
+
+.player-name {
+    font-size: 0.6rem;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hp-label-row {
+    font-size: 0.7rem;
+}
+
+.hp-bar {
+    width: 100%;
+    height: 8px;
+    border: 1px solid var(--fg-color);
+    background: transparent;
+}
+
+.hp-bar.hp-full {
+    .hp-fill {
+        background: rgba(255, 255, 255, 0.92);
+    }
+}
+
+.hp-fill {
+    height: 100%;
+    background: transparent;
+}
+
+.stats-labels-row,
+.stats-values-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    font-size: 0.48rem;
+    opacity: 0.92;
+}
+
+.stats-labels-row {
+    opacity: 0.75;
+}
+
+.stats-values-row {
+    font-size: 0.8rem;
+}
+
+@media (max-width: 520px) {
+    .player-name {
+        max-width: 120px;
+    }
+}

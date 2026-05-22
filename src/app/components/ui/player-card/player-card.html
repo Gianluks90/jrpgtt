@@ -1,0 +1,26 @@
+<div class="player-card" [class.active-player]="highlighted()">
+    <div class="player-row top-row">
+        <span class="player-name-wrap">
+            <span class="player-icon" [style.color]="player().color"></span>
+            <span class="player-name">{{ player().name }}</span>
+        </span>
+        <span class="player-exp">EXP {{ player().experience }}</span>
+    </div>
+    <div class="player-row hp-label-row">
+        <span>HP</span>
+        <span>{{ player().parameters.hp.current }}/{{ player().parameters.hp.max ?? player().parameters.hp.base }}</span>
+    </div>
+    <div class="hp-bar" [class.hp-full]="hpPercent() === 100">
+        <div class="hp-fill" [style.width.%]="hpPercent() === 100 ? 100 : 0"></div>
+    </div>
+    <div class="player-row stats-labels-row">
+        <span>STR</span>
+        <span>MAG</span>
+        <span>LCK</span>
+    </div>
+    <div class="player-row stats-values-row">
+        <span>{{ player().parameters.strength.current }}</span>
+        <span>{{ player().parameters.magic.current }}</span>
+        <span>{{ player().parameters.luck.current }}</span>
+    </div>
+</div>

@@ -1,32 +1,29 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from "@angular/core";
-import { NgTemplateOutlet } from "@angular/common";
 import { ActivatedRoute, Router } from "@angular/router";
 import { FirebaseService } from "../../services/firebase-service";
-import { collection, doc, onSnapshot, query, type Unsubscribe } from "firebase/firestore";
-import { CdkMenu, CdkMenuTrigger } from "@angular/cdk/menu";
+import { collection, doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
 import { Player } from "../../models/Player";
 import { WorldState } from "../../models/WorldState";
-import { BiomeType, MapCell } from "../../models/MapCell";
+import { MapCell } from "../../models/MapCell";
 import { MapService } from "../../services/map-service";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { MapCellComponent } from "../../components/ui/map-cell/map-cell";
-import { BiomeEnvironment, EdgeDirection, EnvironmentService } from "../../services/environment-service";
+import { BiomeEnvironment, EnvironmentService } from "../../services/environment-service";
 import { IconButton } from "../../components/ui/icon-button/icon-button";
 import { BreakpointService } from "../../services/breakpoint-service";
-import { TextButton } from "../../components/ui/text-button/text-button";
-
-interface GridCellViewModel {
-  x: number;
-  y: number;
-  id: string;
-  mapCell: MapCell | null;
-  players: Player[];
-  isSpecial: boolean;
-}
+import { PlayerCard } from "../../components/ui/player-card/player-card";
+import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
+import { MapGridPanel, type MapGridPanelCell } from "../../components/core/map-grid-panel/map-grid-panel";
+import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-mobile-controls";
 
 @Component({
   selector: "app-map-page",
-  imports: [MapCellComponent, IconButton, TextButton, CdkMenu, CdkMenuTrigger, NgTemplateOutlet],
+  imports: [
+    IconButton,
+    PlayerCard,
+    WorldStatePanel,
+    MapGridPanel,
+    MapMobileControls,
+  ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
 })
@@ -44,55 +41,9 @@ export class MapPage implements OnInit, OnDestroy {
   public currentUserId = signal(getAuth().currentUser?.uid ?? "");
   public isMoving = signal(false);
   public isMobile = this.breakpointService.isMobile;
-  public hoveredCellId = signal<string | null>(null);
   public players = signal<Player[]>([]);
   public worldState = signal<WorldState | null>(null);
   public mapCellsById = signal<Record<string, MapCell>>({});
-  public isWorldSidebarOpen = signal(false);
-  public isRightSidebarOpen = signal(false);
-
-  public biomeOrder: Array<keyof WorldState["placedBiomeCount"]> = [
-    "plains",
-    "forest",
-    "mountain",
-    "water",
-    "desert",
-    "ruins",
-  ];
-
-  public playersByCellId = computed<Record<string, Player[]>>(() => {
-    const grouped: Record<string, Player[]> = {};
-    for (const player of this.players()) {
-      const id = this.cellId(player.location.x, player.location.y);
-      const bucket = grouped[id] ?? [];
-      bucket.push(player);
-      grouped[id] = bucket;
-    }
-    return grouped;
-  });
-
-  public gridCells = computed<GridCellViewModel[]>(() => {
-    const size = this.mapSize();
-    const mapCells = this.mapCellsById();
-    const playersByCell = this.playersByCellId();
-    const cells: GridCellViewModel[] = [];
-
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const id = this.cellId(x, y);
-        cells.push({
-          x,
-          y,
-          id,
-          mapCell: mapCells[id] ?? null,
-          players: playersByCell[id] ?? [],
-          isSpecial: this.isSpecialCell(x, y),
-        });
-      }
-    }
-
-    return cells;
-  });
 
   public biomeEnvironments = computed<BiomeEnvironment[]>(() => {
     return this.environmentService.getBiomeEnvironments(this.mapCellsById());
@@ -100,16 +51,6 @@ export class MapPage implements OnInit, OnDestroy {
 
   public environmentByCellId = computed<Record<string, string[]>>(() => {
     return this.environmentService.getEnvironmentByCellId(this.biomeEnvironments());
-  });
-
-  public hoveredEnvironmentCellIds = computed<Set<string>>(() => {
-    const hoveredCellId = this.hoveredCellId();
-    if (!hoveredCellId) return new Set<string>();
-
-    const environment = this.environmentByCellId()[hoveredCellId];
-    if (environment) return new Set<string>(environment);
-
-    return new Set<string>([hoveredCellId]);
   });
 
   public myPlayer = computed<Player | null>(() => {
@@ -123,14 +64,6 @@ export class MapPage implements OnInit, OnDestroy {
     const activePlayerId = this.worldState()?.activePlayerId;
     if (!uid || !activePlayerId) return false;
     return uid === activePlayerId;
-  });
-
-  public activePlayerName = computed<string>(() => {
-    const activePlayerId = this.worldState()?.activePlayerId;
-    if (!activePlayerId) return "-";
-
-    const player = this.players().find((candidate) => candidate.id === activePlayerId);
-    return player?.name?.trim() || activePlayerId.slice(0, 6);
   });
 
   public activePlayer = computed<Player | null>(() => {
@@ -149,29 +82,6 @@ export class MapPage implements OnInit, OnDestroy {
       this.mapSize(),
       this.environmentByCellId(),
     );
-  });
-
-  public myLocationBiome = computed<BiomeType | null>(() => {
-    const player = this.myPlayer();
-    if (!player) return null;
-
-    const cellId = this.cellId(player.location.x, player.location.y);
-    return this.mapCellsById()[cellId]?.biome ?? null;
-  });
-
-  public myLocationLabel = computed<string>(() => {
-    const biome = this.myLocationBiome();
-    if (!biome) return "Unknown";
-
-    return this.biomeToLabel(biome);
-  });
-
-  public myLocationIsEnvironment = computed<boolean>(() => {
-    const player = this.myPlayer();
-    if (!player) return false;
-
-    const cellId = this.cellId(player.location.x, player.location.y);
-    return (this.environmentByCellId()[cellId]?.length ?? 0) >= 2;
   });
 
   public ngOnInit(): void {
@@ -206,24 +116,50 @@ export class MapPage implements OnInit, OnDestroy {
       this.worldState.set(snapshot.data() as WorldState);
     }));
 
-    this.unsubscribers.push(onSnapshot(query(playersRef), (snapshot) => {
-      const data = snapshot.docs.map((playerDoc) => {
-        return {
-          id: playerDoc.id,
-          ...playerDoc.data(),
-        } as Player;
-      });
+    this.unsubscribers.push(onSnapshot(playersRef, (snapshot) => {
+      const changes = snapshot.docChanges();
+      if (changes.length === 0) return;
 
-      data.sort((a, b) => Number(b.isReady) - Number(a.isReady));
-      this.players.set(data);
+      this.players.update((previousPlayers) => {
+        const playersById = new Map(previousPlayers.map((player) => [player.id, player]));
+
+        changes.forEach((change) => {
+          if (change.type === "removed") {
+            playersById.delete(change.doc.id);
+            return;
+          }
+
+          const nextPlayer = {
+            id: change.doc.id,
+            ...change.doc.data(),
+          } as Player;
+          playersById.set(change.doc.id, nextPlayer);
+        });
+
+        const nextPlayers = Array.from(playersById.values());
+        nextPlayers.sort((a, b) => Number(b.isReady) - Number(a.isReady));
+        return nextPlayers;
+      });
     }));
 
-    this.unsubscribers.push(onSnapshot(query(mapCellsRef), (snapshot) => {
-      const mapCells: Record<string, MapCell> = {};
-      snapshot.docs.forEach((cellDoc) => {
-        mapCells[cellDoc.id] = cellDoc.data() as MapCell;
+    this.unsubscribers.push(onSnapshot(mapCellsRef, (snapshot) => {
+      const changes = snapshot.docChanges();
+      if (changes.length === 0) return;
+
+      this.mapCellsById.update((previousCells) => {
+        const nextCells: Record<string, MapCell> = { ...previousCells };
+
+        changes.forEach((change) => {
+          if (change.type === "removed") {
+            delete nextCells[change.doc.id];
+            return;
+          }
+
+          nextCells[change.doc.id] = change.doc.data() as MapCell;
+        });
+
+        return nextCells;
       });
-      this.mapCellsById.set(mapCells);
     }));
   }
 
@@ -236,74 +172,14 @@ export class MapPage implements OnInit, OnDestroy {
     void this.router.navigate(["/home"]);
   }
 
-  public onBackHomeFromMenu(trigger: CdkMenuTrigger): void {
-    trigger.close();
-    this.closeWorldSidebar();
-    this.closeRightSidebar();
-    this.onBackHome();
-  }
-
-  public openWorldSidebar(trigger?: CdkMenuTrigger): void {
-    trigger?.close();
-    this.isRightSidebarOpen.set(false);
-    this.isWorldSidebarOpen.set(true);
-  }
-
-  public closeWorldSidebar(): void {
-    this.isWorldSidebarOpen.set(false);
-  }
-
-  public openRightSidebar(trigger?: CdkMenuTrigger): void {
-    trigger?.close();
-    this.isWorldSidebarOpen.set(false);
-    this.isRightSidebarOpen.set(true);
-  }
-
-  public closeRightSidebar(): void {
-    this.isRightSidebarOpen.set(false);
-  }
-
-  public trackGridCell(_index: number, cell: GridCellViewModel): string {
-    return cell.id;
-  }
-
   public trackPlayer(_index: number, player: Player): string {
     return player.id;
   }
 
-  public hpPercent(player: Player): number {
-    const current = player.parameters.hp.current;
-    const max = player.parameters.hp.max ?? player.parameters.hp.base;
-    if (max <= 0) return 0;
-
-    const raw = (current / max) * 100;
-    return Math.max(0, Math.min(100, raw));
-  }
-
-  public isMovableCell(cell: GridCellViewModel): boolean {
-    return this.movableCellIds().has(cell.id);
-  }
-
-  public onCellEnter(cell: GridCellViewModel): void {
-    this.hoveredCellId.set(cell.id);
-  }
-
-  public onCellLeave(): void {
-    this.hoveredCellId.set(null);
-  }
-
-  public isHoveredEnvironmentCell(cell: GridCellViewModel): boolean {
-    return this.hoveredEnvironmentCellIds().has(cell.id);
-  }
-
-  public environmentBorderWidth(cell: GridCellViewModel, direction: EdgeDirection): string {
-    return this.environmentService.getEnvironmentBorderWidth(cell.id, direction, this.hoveredEnvironmentCellIds());
-  }
-
-  public async onCellClick(cell: GridCellViewModel): Promise<void> {
+  public async onCellClick(cell: MapGridPanelCell): Promise<void> {
     const myPlayer = this.myPlayer();
     if (!myPlayer || !this.isMyTurn() || this.isMoving()) return;
-    if (!this.isMovableCell(cell)) return;
+    if (!this.movableCellIds().has(cell.id)) return;
 
     this.isMoving.set(true);
     try {
@@ -316,25 +192,4 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
-  private cellId(x: number, y: number): string {
-    return `${x}_${y}`;
-  }
-
-  private biomeToLabel(biome: BiomeType): string {
-    if (biome === "plains") return "Plains";
-    if (biome === "forest") return "Forest";
-    if (biome === "mountain") return "Mountain";
-    if (biome === "water") return "Water";
-    if (biome === "desert") return "Desert";
-    return "Ruins";
-  }
-
-  private isSpecialCell(x: number, y: number): boolean {
-    return (
-      (x === 3 && y === 3) ||
-      (x === 6 && y === 3) ||
-      (x === 3 && y === 6) ||
-      (x === 6 && y === 6)
-    );
-  }
 }

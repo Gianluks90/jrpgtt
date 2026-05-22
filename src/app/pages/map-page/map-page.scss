@@ -61,13 +61,6 @@
         flex: 1;
     }
 
-    .world-summary {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-top: 4px;
-    }
-
     .summary-item {
         margin: 0;
         border: 1px dotted rgba(255, 255, 255, 0.25);
@@ -88,34 +81,6 @@
         }
     }
 
-    .wait-item {
-        justify-content: center;
-        font-size: 0.55rem;
-        text-transform: uppercase;
-        opacity: 0.85;
-    }
-
-    .world-biome-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        margin-top: 2px;
-    }
-
-    .world-biome-item {
-        border: 1px solid var(--fg-color);
-        border-left-width: 12px;
-        padding: 5px 6px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.5rem;
-
-        .biome-name {
-            text-transform: capitalize;
-        }
-    }
-
     .map-wrapper,
     .mobile-map-wrapper {
         min-height: 0;
@@ -123,15 +88,6 @@
         align-items: center;
         justify-content: center;
         padding: 2px 0;
-    }
-
-    .map-grid {
-        width: min(680px, calc(100vw - 520px), calc(100dvh - 310px));
-        height: min(680px, calc(100vw - 520px), calc(100dvh - 310px));
-        border: var(--overlay-border);
-        display: grid;
-        image-rendering: pixelated;
-        background: #020202;
     }
 
     .stage-right-reserved {
@@ -144,97 +100,6 @@
         grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 6px;
         height: 100%;
-    }
-
-    .player-card {
-        width: 100%;
-        min-width: 0;
-        border: 1px dotted rgba(255, 255, 255, 0.1);
-        padding: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        font-size: 0.55rem;
-        background: rgba(255, 255, 255, 0.03);
-    }
-
-    .active-player {
-        border: 1px dotted rgba(255, 255, 255, 0.95);
-    }
-
-    .player-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 6px;
-    }
-
-    .player-name-wrap {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 0;
-    }
-
-    .player-exp {
-        font-size: 0.48rem;
-        opacity: 0.9;
-        white-space: nowrap;
-    }
-
-    .player-icon {
-        width: 9px;
-        height: 9px;
-        border: 1px solid rgba(255, 255, 255, 0.9);
-        flex-shrink: 0;
-    }
-
-    .player-name {
-        font-size: 0.6rem;
-        max-width: 140px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .hp-label-row {
-        font-size: 0.7rem;
-    }
-
-    .hp-bar {
-        width: 100%;
-        height: 8px;
-        border: 1px solid var(--fg-color);
-        background: transparent;
-    }
-
-    .hp-bar.hp-full {
-        .hp-fill {
-            background: rgba(255, 255, 255, 0.92);
-        }
-    }
-
-    .hp-fill {
-        height: 100%;
-        background: transparent;
-    }
-
-    .stats-labels-row,
-    .stats-values-row {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        align-items: center;
-        justify-items: center;
-        font-size: 0.48rem;
-        opacity: 0.92;
-    }
-
-    .stats-labels-row {
-        opacity: 0.75;
-    }
-
-    .stats-values-row {
-        font-size: 0.8rem;
     }
 
     .footer-actions {
@@ -252,43 +117,13 @@
         min-height: 1px;
     }
 
-    .mobile-active-header,
-    .mobile-footer-menu {
+    .mobile-active-header {
         display: none;
-    }
-
-    .world-biome-item.biome-plains {
-        border-left-color: #9db58a;
-    }
-
-    .world-biome-item.biome-forest {
-        border-left-color: #6f946f;
-    }
-
-    .world-biome-item.biome-mountain {
-        border-left-color: #9b9a97;
-    }
-
-    .world-biome-item.biome-water {
-        border-left-color: #7d95b9;
-    }
-
-    .world-biome-item.biome-desert {
-        border-left-color: #b9a37a;
-    }
-
-    .world-biome-item.biome-ruins {
-        border-left-color: #8a7d77;
     }
 
     @media (max-width: 1220px) {
         .map-stage {
             grid-template-columns: 240px minmax(0, 1fr) 240px;
-        }
-
-        .map-grid {
-            width: min(640px, calc(100vw - 420px), calc(100dvh - 320px));
-            height: min(640px, calc(100vw - 420px), calc(100dvh - 320px));
         }
 
         .player-list {
@@ -303,11 +138,6 @@
 
         .stage-right-reserved {
             display: none;
-        }
-
-        .map-grid {
-            width: min(620px, calc(100vw - 240px), calc(100dvh - 330px));
-            height: min(620px, calc(100vw - 240px), calc(100dvh - 330px));
         }
 
         .player-list {
@@ -342,85 +172,6 @@
             flex: 1;
         }
 
-        .map-grid {
-            width: min(560px, calc(100vw - 28px), calc(100dvh - 260px));
-            height: min(560px, calc(100vw - 28px), calc(100dvh - 260px));
-        }
-
-        .mobile-footer-menu {
-            display: block;
-            position: fixed;
-            left: 8px;
-            right: 8px;
-            bottom: 8px;
-            border: var(--overlay-border);
-            background: rgba(0, 0, 0, 0.88);
-            padding: 8px;
-            z-index: 35;
-        }
-
-        .mobile-menu-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            align-items: stretch;
-            padding: 8px;
-            border: var(--overlay-border);
-            background: rgba(15, 18, 30, 0.95);
-        }
-
-        .mobile-sidebar-content {
-            position: relative;
-            padding-top: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-height: 100%;
-        }
-
-        .mobile-side-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1200;
-            display: flex;
-            width: 100%;
-            height: 100dvh;
-
-            &.side-left {
-                justify-content: flex-start;
-            }
-
-            &.side-right {
-                justify-content: flex-end;
-            }
-        }
-
-        .mobile-side-panel {
-            width: 90%;
-            max-width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            border: var(--overlay-border);
-            background: rgba(0, 0, 0, 0.95);
-            padding: 14px;
-        }
-
-        .mobile-side-close-strip {
-            flex: 1;
-            border: 0;
-            cursor: pointer;
-            background: transparent;
-        }
     }
 
-    @media (max-width: 520px) {
-        .map-grid {
-            width: min(500px, calc(100vw - 20px), calc(100dvh - 250px));
-            height: min(500px, calc(100vw - 20px), calc(100dvh - 250px));
-        }
-
-        .mobile-active-header .player-name {
-            max-width: 120px;
-        }
-    }
 }

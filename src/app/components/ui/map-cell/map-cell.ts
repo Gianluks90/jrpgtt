@@ -15,6 +15,7 @@ export class MapCellComponent {
   public hoveredEnvironment = input(false);
   public biome = input<BiomeType | null>(null);
   public players = input<Player[]>([]);
+  public activePlayerId = input<string | null>(null);
 
   public envTopWidth = input("0px");
   public envRightWidth = input("0px");
@@ -35,5 +36,22 @@ export class MapCellComponent {
 
   public onMouseLeave(): void {
     this.cellLeft.emit();
+  }
+
+  public markerColor(): string {
+    const players = this.players();
+    if (players.length === 0) return "#ffffff";
+
+    const activePlayerId = this.activePlayerId();
+    if (activePlayerId) {
+      const activeInCell = players.find((player) => player.id === activePlayerId);
+      if (activeInCell) return activeInCell.color;
+    }
+
+    return players[0].color;
+  }
+
+  public extraPlayersCount(): number {
+    return Math.max(0, this.players().length - 1);
   }
 }

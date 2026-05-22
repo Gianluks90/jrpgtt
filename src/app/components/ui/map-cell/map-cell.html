@@ -15,8 +15,9 @@
     (mouseleave)="onMouseLeave()"
 >
     @if (players().length > 0) {
-        @for (player of players(); track player.id) {
-            <div class="player-marker flashing-text" [style.borderTopColor]="player.color"></div>
+        <div class="player-marker flashing-text" [style.borderTopColor]="markerColor()"></div>
+        @if (extraPlayersCount() > 0) {
+            <div class="player-count-badge">+{{ extraPlayersCount() }}</div>
         }
     }
 </div>

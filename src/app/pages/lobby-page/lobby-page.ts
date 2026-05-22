@@ -229,7 +229,7 @@ export class LobbyPage implements OnInit, OnDestroy {
       if (!data) return;
 
       try {
-        await this.playerService.updatePlayerSetup(game.id, player.id, data as PlayerSetupData);
+        await this.playerService.updatePlayerSetup(game.id, player.id, data as PlayerSetupData, player);
       } catch (error) {
         console.error(error);
         window.alert(error instanceof Error ? error.message : "Error updating player setup");

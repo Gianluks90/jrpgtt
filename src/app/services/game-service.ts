@@ -69,6 +69,11 @@ export class GameService {
   }
 
   private async getExistingGameForPlayer(playerId: string): Promise<Game | null> {
+    const cachedGame = this.myGame();
+    if (cachedGame && cachedGame.playerIds.includes(playerId)) {
+      return cachedGame;
+    }
+
     const collectionRef = collection(this.firebaseService.database, "games");
     const q = query(collectionRef, where("playerIds", "array-contains", playerId), limit(1));
     const snapshot = await getDocs(q);
@@ -122,20 +127,19 @@ export class GameService {
     return joinCode;
   }
 
-  public async joinGame(gameId: string, playerId: string, joinCode: string): Promise<void> {
+  public async joinGame(
+    gameId: string,
+    playerId: string,
+    joinCode: string,
+    preloadedGame?: Game,
+  ): Promise<void> {
     const existingGame = await this.getExistingGameForPlayer(playerId);
     if (existingGame) {
       throw new Error("You are already in a game");
     }
 
     const docRef = doc(this.firebaseService.database, "games", gameId);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      throw new Error("Game not found");
-    }
-
-    const game = docSnap.data() as Game;
+    const game = preloadedGame ?? await this.getGameById(gameId);
     if (game.joinCode !== joinCode.toUpperCase()) {
       throw new Error("Invalid join code");
     }
@@ -177,8 +181,28 @@ export class GameService {
       throw new Error("Game not found");
     }
 
-    const gameId = snapshot.docs[0].id;
-    await this.joinGame(gameId, playerId, normalizedJoinCode);
+    const gameDoc = snapshot.docs[0];
+    const gameId = gameDoc.id;
+    const game = {
+      id: gameDoc.id,
+      ...gameDoc.data(),
+    } as Game;
+
+    await this.joinGame(gameId, playerId, normalizedJoinCode, game);
+  }
+
+  private async getGameById(gameId: string): Promise<Game> {
+    const docRef = doc(this.firebaseService.database, "games", gameId);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      throw new Error("Game not found");
+    }
+
+    return {
+      id: docSnap.id,
+      ...docSnap.data(),
+    } as Game;
   }
 
   public async leaveGame(gameId: string, playerId: string): Promise<void> {

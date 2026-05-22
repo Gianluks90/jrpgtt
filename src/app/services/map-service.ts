@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { FirebaseService } from "./firebase-service";
 import { collection, doc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
-import { Game } from "../models/Game";
 import { Player } from "../models/Player";
 import { BiomeType, MapCell } from "../models/MapCell";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
@@ -25,17 +24,12 @@ export class MapService {
     const mapCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(targetX, targetY));
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
-      const [gameSnap, playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
-        transaction.get(gameRef),
+      const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
         transaction.get(worldStateRef),
         transaction.get(gameMapRef),
         transaction.get(mapCellRef),
       ]);
-
-      if (!gameSnap.exists()) {
-        throw new Error("Game not found");
-      }
 
       if (!playerSnap.exists()) {
         throw new Error("Player not found");
@@ -45,15 +39,10 @@ export class MapService {
         throw new Error("World state not found");
       }
 
-      const game = gameSnap.data() as Game;
       const player = playerSnap.data() as Player;
       const worldState = worldStateSnap.data() as WorldState;
       const gameMap = gameMapSnap.exists() ? gameMapSnap.data() as GameMap : null;
       const mapSize = gameMap?.size ?? 10;
-
-      if (game.status !== "running") {
-        throw new Error("Game is not running");
-      }
 
       if (worldState.activePlayerId && worldState.activePlayerId !== playerId) {
         throw new Error("It is not your turn");

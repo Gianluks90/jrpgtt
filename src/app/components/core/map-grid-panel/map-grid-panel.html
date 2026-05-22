@@ -1,0 +1,24 @@
+<div
+    class="map-grid"
+    [style.gridTemplateColumns]="'repeat(' + mapSize() + ', 1fr)'"
+    [style.gridTemplateRows]="'repeat(' + mapSize() + ', 1fr)'"
+>
+    @for (cell of cells(); track cell.id) {
+        <map-cell
+            [special]="cell.isSpecial"
+            [revealed]="!!cell.mapCell"
+            [movable]="isMovableCell(cell)"
+            [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
+            [biome]="cell.mapCell?.biome ?? null"
+            [players]="cell.players"
+            [activePlayerId]="activePlayerId()"
+            [envTopWidth]="environmentBorderWidth(cell, 'top')"
+            [envRightWidth]="environmentBorderWidth(cell, 'right')"
+            [envBottomWidth]="environmentBorderWidth(cell, 'bottom')"
+            [envLeftWidth]="environmentBorderWidth(cell, 'left')"
+            (cellClicked)="cellClicked.emit(cell)"
+            (cellEntered)="onCellEnter(cell)"
+            (cellLeft)="onCellLeave()"
+        ></map-cell>
+    }
+</div>

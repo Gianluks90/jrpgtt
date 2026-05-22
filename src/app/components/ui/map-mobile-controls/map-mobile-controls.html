@@ -1,0 +1,69 @@
+<div class="mobile-footer-menu">
+    <text-button
+        text="Menu"
+        iconUrl="./icons/menu_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+        [fullWidth]="true"
+        [cdkMenuTriggerFor]="mobileMapMenu"
+        #mobileMenuTrigger="cdkMenuTriggerFor"
+    ></text-button>
+
+    <ng-template #mobileMapMenu>
+        <div class="mobile-menu-panel" cdkMenu>
+            <text-button
+                text="Home"
+                iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                (clicked)="onHomeClicked(mobileMenuTrigger)"
+            ></text-button>
+            <text-button
+                text="World State"
+                iconUrl="./icons/equalizer_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                (clicked)="openWorldSidebar(mobileMenuTrigger)"
+            ></text-button>
+            <text-button
+                text="Right Panel"
+                iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                (clicked)="openRightSidebar(mobileMenuTrigger)"
+            ></text-button>
+        </div>
+    </ng-template>
+
+    <ng-template #worldStateSidebarTemplate>
+        <div class="mobile-sidebar-content">
+            <app-world-state-panel
+                [worldState]="worldState()"
+                [players]="players()"
+                [currentUserId]="currentUserId()"
+                [mapCellsById]="mapCellsById()"
+                [environmentByCellId]="environmentByCellId()"
+                [showTitle]="true"
+                [mobileSidebarTitle]="true"
+                title="World"
+            ></app-world-state-panel>
+        </div>
+    </ng-template>
+
+    <ng-template #rightSidebarTemplate>
+        <div class="mobile-sidebar-content">
+            <p class="mobile-sidebar-title">Right Panel</p>
+            <p class="summary-item">Reserved for future actions</p>
+        </div>
+    </ng-template>
+
+    @if (isWorldSidebarOpen()) {
+        <div class="mobile-side-overlay side-left">
+            <div class="mobile-side-panel" (click)="$event.stopPropagation()">
+                <ng-container *ngTemplateOutlet="worldStateSidebarTemplate"></ng-container>
+            </div>
+            <button class="mobile-side-close-strip dialog-backdrop" type="button" aria-label="Close world sidebar" (click)="closeWorldSidebar()"></button>
+        </div>
+    }
+
+    @if (isRightSidebarOpen()) {
+        <div class="mobile-side-overlay side-right">
+            <button class="mobile-side-close-strip dialog-backdrop" type="button" aria-label="Close right sidebar" (click)="closeRightSidebar()"></button>
+            <div class="mobile-side-panel" (click)="$event.stopPropagation()">
+                <ng-container *ngTemplateOutlet="rightSidebarTemplate"></ng-container>
+            </div>
+        </div>
+    }
+</div>

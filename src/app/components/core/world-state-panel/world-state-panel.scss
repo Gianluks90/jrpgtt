@@ -1,0 +1,112 @@
+:host {
+    display: block;
+    width: 100%;
+    min-height: 0;
+}
+
+.world-state-panel-root {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    min-height: 0;
+}
+
+.hud-title {
+    margin: 0;
+    font-size: 0.65rem;
+    position: absolute;
+    left: 12px;
+    top: -10px;
+    background: var(--bg-color);
+    padding: 4px 12px;
+}
+
+.hud-title.mobile-sidebar-title {
+    position: static;
+    display: block;
+    text-align: center;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 4px;
+}
+
+.world-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.summary-item {
+    margin: 0;
+    border: 1px dotted rgba(255, 255, 255, 0.25);
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.58rem;
+
+    span {
+        opacity: 0.7;
+    }
+
+    strong {
+        font-size: 0.62rem;
+        text-transform: capitalize;
+    }
+}
+
+.wait-item {
+    justify-content: center;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.world-biome-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.world-biome-item {
+    border: 1px solid var(--fg-color);
+    border-left-width: 12px;
+    padding: 5px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.5rem;
+
+    .biome-name {
+        text-transform: capitalize;
+    }
+}
+
+.world-biome-item.biome-plains {
+    border-left-color: #9db58a;
+}
+
+.world-biome-item.biome-forest {
+    border-left-color: #6f946f;
+}
+
+.world-biome-item.biome-mountain {
+    border-left-color: #9b9a97;
+}
+
+.world-biome-item.biome-water {
+    border-left-color: #7d95b9;
+}
+
+.world-biome-item.biome-desert {
+    border-left-color: #b9a37a;
+}
+
+.world-biome-item.biome-ruins {
+    border-left-color: #8a7d77;
+}

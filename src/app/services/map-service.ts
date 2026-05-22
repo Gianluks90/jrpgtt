@@ -151,46 +151,61 @@ export class MapService {
     mapSize: number,
   ): Promise<boolean> {
     const source = player.location;
+    if (this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId)) {
+      return true;
+    }
+
     const sourceCellId = this.cellId(source.x, source.y);
     const sourceCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", sourceCellId);
     const sourceCellSnap = await transaction.get(sourceCellRef);
     const sourceCell = sourceCellSnap.exists() ? sourceCellSnap.data() as MapCell : null;
 
     if (!sourceCell) {
-      return this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId);
+      return false;
     }
 
-    const environment = await this.collectEnvironment(transaction, gameId, sourceCell, mapSize);
-    if (environment.length < 2) {
-      return this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId);
-    }
-
-    const allowedTargets = this.environmentService.buildMovementTargetIdsFromEnvironmentCells(environment, mapSize);
-
-    return allowedTargets.has(targetCellId);
+    return this.isTargetReachableFromEnvironment(
+      transaction,
+      gameId,
+      sourceCell,
+      targetCellId,
+      mapSize,
+    );
   }
 
-  private async collectEnvironment(
+  private async isTargetReachableFromEnvironment(
     transaction: Transaction,
     gameId: string,
     sourceCell: MapCell,
+    targetCellId: string,
     mapSize: number,
-  ): Promise<MapCell[]> {
+  ): Promise<boolean> {
     const startId = this.cellId(sourceCell.x, sourceCell.y);
     const visited = new Set<string>([startId]);
     const queue: MapCell[] = [sourceCell];
-    const environment: MapCell[] = [];
+    let environmentSize = 0;
+    let canReachTarget = false;
 
     while (queue.length > 0) {
       const current = queue.shift();
       if (!current) continue;
-      environment.push(current);
+      environmentSize += 1;
+
+      const currentId = this.cellId(current.x, current.y);
+      if (currentId === targetCellId || this.environmentService.isAdjacentCellId(current.x, current.y, targetCellId)) {
+        canReachTarget = true;
+      }
+
+      if (canReachTarget && environmentSize >= 2) {
+        return true;
+      }
 
       for (const neighbor of this.environmentService.getNeighborCoords(current.x, current.y)) {
         if (!this.isInsideBounds(neighbor.x, neighbor.y, mapSize)) continue;
 
         const neighborId = this.cellId(neighbor.x, neighbor.y);
         if (visited.has(neighborId)) continue;
+        visited.add(neighborId);
 
         const neighborRef = doc(this.firebaseService.database, "games", gameId, "mapCells", neighborId);
         const neighborSnap = await transaction.get(neighborRef);
@@ -199,12 +214,11 @@ export class MapService {
         const neighborCell = neighborSnap.data() as MapCell;
         if (neighborCell.biome !== sourceCell.biome) continue;
 
-        visited.add(neighborId);
         queue.push(neighborCell);
       }
     }
 
-    return environment;
+    return canReachTarget && environmentSize >= 2;
   }
 
   private isInsideBounds(x: number, y: number, size: number): boolean {

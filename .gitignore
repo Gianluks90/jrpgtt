@@ -136,3 +136,5 @@ dist
 .pnp.*
 .angular/*
 
+/.angular
+/.angular/cache/21.2.11

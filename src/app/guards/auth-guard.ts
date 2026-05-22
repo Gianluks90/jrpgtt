@@ -40,19 +40,24 @@ export const lobbyStatusGuard: CanActivateFn = async (route, state) => {
     return router.createUrlTree(["/home"]);
   }
 
-  const gameRef = doc(firebaseService.database, "games", gameId);
-  const gameSnap = await getDoc(gameRef);
+  try {
+    const gameRef = doc(firebaseService.database, "games", gameId);
+    const gameSnap = await getDoc(gameRef);
 
-  if (!gameSnap.exists()) {
+    if (!gameSnap.exists()) {
+      return router.createUrlTree(["/home"]);
+    }
+
+    const game = gameSnap.data() as Game;
+    if (game.status === "waiting") {
+      return true;
+    }
+
+    return router.createUrlTree(["/game", gameId, "map"]);
+  } catch (error) {
+    console.error("Error loading game status for lobby guard", error);
     return router.createUrlTree(["/home"]);
   }
-
-  const game = gameSnap.data() as Game;
-  if (game.status === "waiting") {
-    return true;
-  }
-
-  return router.createUrlTree(["/game", gameId, "map"]);
 };
 
 export const mapStatusGuard: CanActivateFn = async (route, state) => {
@@ -64,19 +69,24 @@ export const mapStatusGuard: CanActivateFn = async (route, state) => {
     return router.createUrlTree(["/home"]);
   }
 
-  const gameRef = doc(firebaseService.database, "games", gameId);
-  const gameSnap = await getDoc(gameRef);
+  try {
+    const gameRef = doc(firebaseService.database, "games", gameId);
+    const gameSnap = await getDoc(gameRef);
 
-  if (!gameSnap.exists()) {
+    if (!gameSnap.exists()) {
+      return router.createUrlTree(["/home"]);
+    }
+
+    const game = gameSnap.data() as Game;
+    if (game.status === "waiting") {
+      return router.createUrlTree(["/game", gameId, "lobby"]);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error loading game status for map guard", error);
     return router.createUrlTree(["/home"]);
   }
-
-  const game = gameSnap.data() as Game;
-  if (game.status === "waiting") {
-    return router.createUrlTree(["/game", gameId, "lobby"]);
-  }
-
-  return true;
 };
 
 function getCurrentUser(auth: ReturnType<typeof getAuth>): Promise<User | null> {

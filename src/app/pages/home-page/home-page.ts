@@ -174,8 +174,10 @@ export class HomePage implements OnInit {
     const game = this.myGame();
     if (!game) return;
 
-    const shouldGoToMap = this.isOwner() && game.status !== "waiting";
-    const target = shouldGoToMap ? "map" : "lobby";
-    void this.router.navigate([`/game/${game.id}/${target}`]);
+    const target = game.status === "waiting" ? "lobby" : "map";
+    void this.router.navigate(["/game", game.id, target]).then((navigated) => {
+      if (navigated) return;
+      console.warn("Navigation cancelled", { gameId: game.id, target, status: game.status });
+    });
   }
 }

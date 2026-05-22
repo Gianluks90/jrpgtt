@@ -361,7 +361,13 @@ export class GameService {
           current: 1,
         },
       },
+      level: 1,
       experience: 2,
+      inventory: {
+        items: [],
+        resources: [],
+        money: 0,
+      },
       isReady: false,
       color: palette[colorIndex],
       joinedAt: Timestamp.now(),

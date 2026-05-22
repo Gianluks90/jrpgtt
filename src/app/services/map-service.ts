@@ -1,11 +1,18 @@
 import { Injectable } from "@angular/core";
 import { FirebaseService } from "./firebase-service";
-import { collection, doc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
+import { doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { Player } from "../models/Player";
+import { ResourceLabel } from "../models/Resource";
+import { setDoc } from "firebase/firestore";
+import { RESOURCE_CATALOG } from "../consts/resources-catalog";
 import { BiomeType, MapCell } from "../models/MapCell";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
 import { GameMap } from "../models/GameMap";
 import { EnvironmentService } from "./environment-service";
+import { TilesConfigService } from "./tiles-config-service";
+import { LuckService } from "./luck-service";
+import { EXPLORATION_LUCK_EXTRA_RESOURCE_ROLLS } from "../consts/luck-config";
+import { LuckCheckResult } from "../models/LuckCheckResult";
 
 @Injectable({
   providedIn: "root",
@@ -14,6 +21,8 @@ export class MapService {
   constructor(
     private firebaseService: FirebaseService,
     private environmentService: EnvironmentService,
+    private tilesConfigService: TilesConfigService,
+    private luckService: LuckService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
@@ -23,6 +32,8 @@ export class MapService {
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
     const mapCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(targetX, targetY));
 
+    let movedBiome: BiomeType | null = null;
+    let movedPlayerLuck = 0;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
@@ -40,6 +51,7 @@ export class MapService {
       }
 
       const player = playerSnap.data() as Player;
+      movedPlayerLuck = Math.max(0, Math.floor(player.parameters.luck.current));
       const worldState = worldStateSnap.data() as WorldState;
       const gameMap = gameMapSnap.exists() ? gameMapSnap.data() as GameMap : null;
       const mapSize = gameMap?.size ?? 10;
@@ -72,6 +84,10 @@ export class MapService {
           discoveredBy: playerId,
         };
         transaction.set(mapCellRef, newCell);
+        movedBiome = drawnBiome;
+      } else {
+        const cell = targetCellSnap.data() as MapCell;
+        movedBiome = cell.biome;
       }
 
       transaction.set(playerRef, {
@@ -89,6 +105,72 @@ export class MapService {
         lastActivityAt: Timestamp.now(),
       }, { merge: true });
     });
+
+    // RACCOLTA RISORSA CASUALE
+    const landedBiome = movedBiome as BiomeType | null;
+    if (landedBiome) {
+      const luckResult = this.luckService.checkLuck(movedPlayerLuck);
+      const tilesConfig = await this.tilesConfigService.loadConfig();
+      const biomeEntry = tilesConfig.biomes[landedBiome];
+      const possibleResources = biomeEntry?.resources ?? [];
+      const gainedResources: ResourceLabel[] = [];
+      if (possibleResources.length > 0) {
+        gainedResources.push(this.pickRandomResource(possibleResources));
+
+        if (luckResult.success) {
+          for (let i = 0; i < EXPLORATION_LUCK_EXTRA_RESOURCE_ROLLS; i++) {
+            gainedResources.push(this.pickRandomResource(possibleResources));
+          }
+        }
+      }
+
+      await this.applyExplorationOutcome(gameId, playerId, gainedResources, luckResult);
+    }
+  }
+
+  private pickRandomResource(resources: ResourceLabel[]): ResourceLabel {
+    const randomIdx = Math.floor(Math.random() * resources.length);
+    return resources[randomIdx];
+  }
+
+  private async applyExplorationOutcome(
+    gameId: string,
+    playerId: string,
+    resourceLabels: ResourceLabel[],
+    luckResult: LuckCheckResult,
+  ): Promise<void> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
+    const playerSnap = await getDoc(playerRef);
+    if (!playerSnap.exists()) return;
+    const player = playerSnap.data() as Player;
+    const inventory = player.inventory ?? { items: [], resources: [], money: 0 };
+    const resources = Array.isArray(inventory.resources) ? [...inventory.resources] : [];
+
+    resourceLabels.forEach((resourceLabel) => {
+      const idx = resources.findIndex((r) => r.label === resourceLabel);
+      if (idx >= 0) {
+        resources[idx] = {
+          ...resources[idx],
+          quantity: (resources[idx].quantity ?? 0) + 1,
+        };
+        return;
+      }
+
+      resources.push({
+        label: resourceLabel,
+        quantity: 1,
+        iconUrl: RESOURCE_CATALOG[resourceLabel]?.iconUrl,
+      });
+    });
+
+    await setDoc(playerRef, {
+      inventory: {
+        ...inventory,
+        resources,
+        money: typeof inventory.money === "number" ? inventory.money : 0,
+      },
+      lastLuckCheck: luckResult,
+    }, { merge: true });
   }
 
   private drawBiome(worldState: WorldState): BiomeType {

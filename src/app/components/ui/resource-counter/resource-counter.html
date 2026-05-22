@@ -1,0 +1,17 @@
+<div class="resource-counter-panel">
+  <p class="resource-counter-title">Resources</p>
+  <div class="resource-counter-root">
+    @for (resource of counterItems(); track resource.label) {
+      <span class="resource-icon-wrap">
+        <img
+          class="resource-icon"
+          [src]="resourceCatalog[resource.label]?.iconUrl"
+          [alt]="resource.label"
+          width="16"
+          height="16"
+        />
+        <span class="resource-qty">{{ resource.quantity }}</span>
+      </span>
+    }
+  </div>
+</div>

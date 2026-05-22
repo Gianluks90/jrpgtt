@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { FirebaseService } from "../../services/firebase-service";
-import { collection, doc, onSnapshot, type Unsubscribe } from "firebase/firestore";
+import { collection, doc, onSnapshot, setDoc, type Unsubscribe } from "firebase/firestore";
 import { Player } from "../../models/Player";
 import { WorldState } from "../../models/WorldState";
 import { MapCell } from "../../models/MapCell";
@@ -13,6 +13,9 @@ import { BreakpointService } from "../../services/breakpoint-service";
 import { PlayerCard } from "../../components/ui/player-card/player-card";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
 import { MapGridPanel, type MapGridPanelCell } from "../../components/core/map-grid-panel/map-grid-panel";
+import { ResourceCounter } from "../../components/ui/resource-counter/resource-counter";
+import { MoneyCounter } from "../../components/ui/money-counter/money-counter";
+import { LuckIndicator } from "../../components/ui/luck-indicator/luck-indicator";
 import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-mobile-controls";
 
 @Component({
@@ -23,6 +26,9 @@ import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-m
     WorldStatePanel,
     MapGridPanel,
     MapMobileControls,
+    ResourceCounter,
+    MoneyCounter,
+    LuckIndicator,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
@@ -35,6 +41,7 @@ export class MapPage implements OnInit, OnDestroy {
   private environmentService = inject(EnvironmentService);
   private breakpointService = inject(BreakpointService);
   private unsubscribers: Unsubscribe[] = [];
+  private inventoryBackfillRequested = new Set<string>();
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = signal(10);
@@ -122,6 +129,7 @@ export class MapPage implements OnInit, OnDestroy {
 
       this.players.update((previousPlayers) => {
         const playersById = new Map(previousPlayers.map((player) => [player.id, player]));
+        const currentUserId = this.currentUserId();
 
         changes.forEach((change) => {
           if (change.type === "removed") {
@@ -129,10 +137,45 @@ export class MapPage implements OnInit, OnDestroy {
             return;
           }
 
-          const nextPlayer = {
+          const rawPlayer = {
             id: change.doc.id,
             ...change.doc.data(),
+          } as Partial<Player> & { id: string };
+
+          const nextPlayer = {
+            ...rawPlayer,
+            level: typeof rawPlayer.level === "number" ? rawPlayer.level : 1,
+            inventory: rawPlayer.inventory ?? {
+              items: [],
+              resources: [],
+              money: 0,
+            },
           } as Player;
+
+          if (
+            rawPlayer.id === currentUserId &&
+            (
+              typeof rawPlayer.level !== "number" ||
+              !rawPlayer.inventory ||
+              typeof rawPlayer.inventory.money !== "number"
+            ) &&
+            !this.inventoryBackfillRequested.has(rawPlayer.id)
+          ) {
+            this.inventoryBackfillRequested.add(rawPlayer.id);
+            const legacyPlayerRef = doc(this.firebaseService.database, "games", this.gameId, "players", rawPlayer.id);
+            void setDoc(legacyPlayerRef, {
+              level: typeof rawPlayer.level === "number" ? rawPlayer.level : 1,
+              inventory: {
+                items: rawPlayer.inventory?.items ?? [],
+                resources: rawPlayer.inventory?.resources ?? [],
+                money: typeof rawPlayer.inventory?.money === "number" ? rawPlayer.inventory.money : 0,
+              },
+            }, { merge: true }).catch((error) => {
+              console.error(error);
+              this.inventoryBackfillRequested.delete(rawPlayer.id);
+            });
+          }
+
           playersById.set(change.doc.id, nextPlayer);
         });
 

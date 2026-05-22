@@ -16,6 +16,7 @@ import { Router } from "@angular/router";
 import { BreakpointService } from "../../services/breakpoint-service";
 import { ActionMenu } from "../../components/ui/action-menu/action-menu";
 import { APP_VERSION } from "../../consts/app-version";
+import { TilesConfigService } from "../../services/tiles-config-service";
 
 @Component({
   selector: "app-home-page",
@@ -27,6 +28,7 @@ export class HomePage implements OnInit {
   public authService = inject(AuthService);
   public gameService = inject(GameService);
   public breakpointService = inject(BreakpointService);
+  public tilesConfigService = inject(TilesConfigService);
   public router = inject(Router);
   public dialog = inject(Dialog);
   public readonly appVersion = APP_VERSION;
@@ -42,6 +44,14 @@ export class HomePage implements OnInit {
   });
 
   public async ngOnInit(): Promise<void> {
+    try {
+      await this.tilesConfigService.loadConfig();
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Error loading tiles configuration");
+      return;
+    }
+
     const currentUserId = await this.resolveCurrentUserId();
     if (!currentUserId) return;
 

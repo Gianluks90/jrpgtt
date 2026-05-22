@@ -1,0 +1,14 @@
+<div class="luck-indicator-panel">
+  <p class="luck-indicator-title">Luck-meterÍ</p>
+  <div class="luck-indicator-root">
+    <span class="luck-indicator-value-wrap">
+      @if (result(); as value) {
+        <span class="luck-indicator-status" [class]="'luck-indicator-status ' + statusClass()">{{ statusLabel() }}</span>
+        <span class="luck-indicator-total">{{ value.total }}/{{ value.threshold }}</span>
+      } @else {
+        <span class="luck-indicator-status luck-indicator-status neutral">-</span>
+        <span class="luck-indicator-total">0/0</span>
+      }
+    </span>
+  </div>
+</div>

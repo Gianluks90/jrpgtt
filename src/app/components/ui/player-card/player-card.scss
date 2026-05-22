@@ -34,6 +34,19 @@
     white-space: nowrap;
 }
 
+.player-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.player-level {
+    font-size: 0.48rem;
+    opacity: 0.92;
+    letter-spacing: 0.01em;
+}
+
 .player-icon {
     width: 12px;
     height: 12px;

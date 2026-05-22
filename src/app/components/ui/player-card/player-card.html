@@ -4,7 +4,10 @@
             <span class="player-icon" [style.color]="player().color"></span>
             <span class="player-name">{{ player().name }}</span>
         </span>
-        <span class="player-exp">EXP {{ player().experience }}</span>
+        <span class="player-meta">
+            <span class="player-level">Lv. {{ player().level }}</span>
+            <span class="player-exp">EXP {{ player().experience }}</span>
+        </span>
     </div>
     <div class="player-row hp-label-row">
         <span>HP</span>

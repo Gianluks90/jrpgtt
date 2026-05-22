@@ -2,27 +2,33 @@
 	"biomes": {
 		"plains": {
 			"label": "Pianure",
-			"walkable": true
+			"walkable": true,
+			"resources": ["food"]
 		},
 		"forest": {
 			"label": "Foresta",
-			"walkable": true
+			"walkable": true,
+			"resources": ["timber"]
 		},
 		"mountain": {
 			"label": "Montagne",
-			"walkable": true
+			"walkable": true,
+			"resources": ["minerals"]
 		},
 		"water": {
 			"label": "Acqua",
-			"walkable": true
+			"walkable": true,
+			"resources": ["food"]
 		},
 		"desert": {
 			"label": "Deserto",
-			"walkable": true
+			"walkable": true,
+			"resources": []
 		},
 		"ruins": {
 			"label": "Rovine",
-			"walkable": true
+			"walkable": true,
+			"resources": ["timber", "minerals"]
 		}
 	}
 }

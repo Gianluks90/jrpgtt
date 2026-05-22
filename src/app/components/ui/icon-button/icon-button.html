@@ -1,0 +1,9 @@
+<button
+    class="icon-button"
+    type="button"
+    [attr.aria-label]="ariaLabel()"
+    [disabled]="disabled()"
+    (click)="handleClick()"
+>
+    <span class="button-icon" [style.mask]="'url(' + iconUrl() + ') no-repeat center / contain'"></span>
+</button>

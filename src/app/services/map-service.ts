@@ -1,17 +1,21 @@
 import { Injectable } from "@angular/core";
 import { FirebaseService } from "./firebase-service";
-import { collection, doc, runTransaction, Timestamp } from "firebase/firestore";
+import { collection, doc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { Game } from "../models/Game";
 import { Player } from "../models/Player";
 import { BiomeType, MapCell } from "../models/MapCell";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
 import { GameMap } from "../models/GameMap";
+import { EnvironmentService } from "./environment-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class MapService {
-  constructor(private firebaseService: FirebaseService) { }
+  constructor(
+    private firebaseService: FirebaseService,
+    private environmentService: EnvironmentService,
+  ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
     const gameRef = doc(this.firebaseService.database, "games", gameId);
@@ -59,9 +63,10 @@ export class MapService {
         throw new Error("Target cell is out of map bounds");
       }
 
-      const distance = Math.abs(player.location.x - targetX) + Math.abs(player.location.y - targetY);
-      if (distance !== 1) {
-        throw new Error("You can move only 1 cell per turn");
+      const targetCellId = this.cellId(targetX, targetY);
+      const isAllowed = await this.canMoveToTarget(transaction, gameId, player, targetCellId, mapSize);
+      if (!isAllowed) {
+        throw new Error("Invalid movement for current environment");
       }
 
       const nextWorldState: WorldState = {
@@ -147,6 +152,70 @@ export class MapService {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
+  }
+
+  private async canMoveToTarget(
+    transaction: Transaction,
+    gameId: string,
+    player: Player,
+    targetCellId: string,
+    mapSize: number,
+  ): Promise<boolean> {
+    const source = player.location;
+    const sourceCellId = this.cellId(source.x, source.y);
+    const sourceCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", sourceCellId);
+    const sourceCellSnap = await transaction.get(sourceCellRef);
+    const sourceCell = sourceCellSnap.exists() ? sourceCellSnap.data() as MapCell : null;
+
+    if (!sourceCell) {
+      return this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId);
+    }
+
+    const environment = await this.collectEnvironment(transaction, gameId, sourceCell, mapSize);
+    if (environment.length < 2) {
+      return this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId);
+    }
+
+    const allowedTargets = this.environmentService.buildMovementTargetIdsFromEnvironmentCells(environment, mapSize);
+
+    return allowedTargets.has(targetCellId);
+  }
+
+  private async collectEnvironment(
+    transaction: Transaction,
+    gameId: string,
+    sourceCell: MapCell,
+    mapSize: number,
+  ): Promise<MapCell[]> {
+    const startId = this.cellId(sourceCell.x, sourceCell.y);
+    const visited = new Set<string>([startId]);
+    const queue: MapCell[] = [sourceCell];
+    const environment: MapCell[] = [];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (!current) continue;
+      environment.push(current);
+
+      for (const neighbor of this.environmentService.getNeighborCoords(current.x, current.y)) {
+        if (!this.isInsideBounds(neighbor.x, neighbor.y, mapSize)) continue;
+
+        const neighborId = this.cellId(neighbor.x, neighbor.y);
+        if (visited.has(neighborId)) continue;
+
+        const neighborRef = doc(this.firebaseService.database, "games", gameId, "mapCells", neighborId);
+        const neighborSnap = await transaction.get(neighborRef);
+        if (!neighborSnap.exists()) continue;
+
+        const neighborCell = neighborSnap.data() as MapCell;
+        if (neighborCell.biome !== sourceCell.biome) continue;
+
+        visited.add(neighborId);
+        queue.push(neighborCell);
+      }
+    }
+
+    return environment;
   }
 
   private isInsideBounds(x: number, y: number, size: number): boolean {

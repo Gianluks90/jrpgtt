@@ -13,20 +13,26 @@ import { GenericConfirmDialog } from "../../components/dialogs/generic-confirm-d
 import { DialogResponse } from "../../models/DialogResponse";
 import { take } from "rxjs";
 import { Router } from "@angular/router";
+import { BreakpointService } from "../../services/breakpoint-service";
+import { ActionMenu } from "../../components/ui/action-menu/action-menu";
+import { APP_VERSION } from "../../consts/app-version";
 
 @Component({
   selector: "app-home-page",
-  imports: [TextButton],
+  imports: [TextButton, ActionMenu],
   templateUrl: "./home-page.html",
   styleUrl: "./home-page.scss",
 })
 export class HomePage implements OnInit {
   public authService = inject(AuthService);
   public gameService = inject(GameService);
+  public breakpointService = inject(BreakpointService);
   public router = inject(Router);
   public dialog = inject(Dialog);
+  public readonly appVersion = APP_VERSION;
 
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
+  public isMobile = this.breakpointService.isMobile;
   
   public isOwner = computed(() => {
     const currentUserId = getAuth().currentUser?.uid;
@@ -35,11 +41,30 @@ export class HomePage implements OnInit {
     return game.ownerId === currentUserId;
   });
 
-  public ngOnInit(): void {
-    const currentUserId = getAuth().currentUser?.uid;
+  public async ngOnInit(): Promise<void> {
+    const currentUserId = await this.resolveCurrentUserId();
     if (!currentUserId) return;
 
     this.gameService.startMyGameSnapshot(currentUserId);
+  }
+
+  private async resolveCurrentUserId(): Promise<string | null> {
+    const auth = getAuth();
+    if (auth.currentUser?.uid) {
+      return auth.currentUser.uid;
+    }
+
+    if (typeof auth.authStateReady === "function") {
+      await auth.authStateReady();
+      return auth.currentUser?.uid ?? null;
+    }
+
+    return new Promise((resolve) => {
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        unsubscribe();
+        resolve(user?.uid ?? null);
+      });
+    });
   }
 
   private isConfirmResponse(response: unknown): response is DialogResponse {
@@ -145,10 +170,12 @@ export class HomePage implements OnInit {
     }
   }
 
-  public onLobby(): void {
+  public onPlay(): void {
     const game = this.myGame();
     if (!game) return;
 
-    this.router.navigate([`/game/${game.id}/lobby`]);
+    const shouldGoToMap = this.isOwner() && game.status !== "waiting";
+    const target = shouldGoToMap ? "map" : "lobby";
+    void this.router.navigate([`/game/${game.id}/${target}`]);
   }
 }

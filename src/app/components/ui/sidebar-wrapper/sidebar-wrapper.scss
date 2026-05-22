@@ -1,0 +1,38 @@
+.sidebar-wrapper-root {
+    display: block;
+    width: 100%;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    width: 100%;
+    height: 100dvh;
+}
+
+.sidebar-panel {
+    width: var(--panel-width, 90%);
+    max-width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    border: var(--overlay-border);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 14px;
+}
+
+.sidebar-close-strip {
+    flex: 1;
+    border: 0;
+    cursor: pointer;
+    background: transparent;
+}
+
+.sidebar-overlay.side-left {
+    justify-content: flex-start;
+}
+
+.sidebar-overlay.side-right {
+    justify-content: flex-end;
+}

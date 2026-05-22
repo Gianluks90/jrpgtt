@@ -1,6 +1,6 @@
 import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
-import { getAuth } from "firebase/auth";
+import { getAuth, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { FirebaseService } from "../services/firebase-service";
 import { Game } from "../models/Game";
@@ -9,7 +9,7 @@ export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const auth = getAuth();
 
-  return getCurrentUser(auth).then(user => {
+  return resolveCurrentUser(auth).then(user => {
     if (user) return true;
     return router.createUrlTree(["/"]);
   }).catch(error => {
@@ -22,7 +22,7 @@ export const landingGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
   const auth = getAuth();
 
-  return getCurrentUser(auth).then(user => {
+  return resolveCurrentUser(auth).then(user => {
     if (user) return router.createUrlTree(["/home"]);
     return true;
   }).catch(error => {
@@ -79,11 +79,24 @@ export const mapStatusGuard: CanActivateFn = async (route, state) => {
   return true;
 };
 
-function getCurrentUser(auth: any): Promise<any> {
+function getCurrentUser(auth: ReturnType<typeof getAuth>): Promise<User | null> {
   return new Promise((resolve, reject) => {
-    const unsubscribe = auth.onAuthStateChanged((user: any) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       unsubscribe(); // Unsubscribe immediately to avoid memory leaks
       resolve(user);
     }, reject);
   });
+}
+
+async function resolveCurrentUser(auth: ReturnType<typeof getAuth>): Promise<User | null> {
+  if (auth.currentUser) {
+    return auth.currentUser;
+  }
+
+  if (typeof auth.authStateReady === "function") {
+    await auth.authStateReady();
+    return auth.currentUser;
+  }
+
+  return getCurrentUser(auth);
 }

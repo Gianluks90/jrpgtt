@@ -1,0 +1,22 @@
+<div
+    class="map-cell"
+    [class.special-cell]="special()"
+    [class.revealed-cell]="revealed()"
+    [class.unrevealed-cell]="!revealed()"
+    [class.movable-cell]="movable()"
+    [class.environment-hover-cell]="hoveredEnvironment()"
+    [class]="biome() ? 'biome-' + biome() : ''"
+    [style.--env-top-width]="envTopWidth()"
+    [style.--env-right-width]="envRightWidth()"
+    [style.--env-bottom-width]="envBottomWidth()"
+    [style.--env-left-width]="envLeftWidth()"
+    (click)="onClick()"
+    (mouseenter)="onMouseEnter()"
+    (mouseleave)="onMouseLeave()"
+>
+    @if (players().length > 0) {
+        @for (player of players(); track player.id) {
+            <div class="player-marker flashing-text" [style.borderTopColor]="player.color"></div>
+        }
+    }
+</div>

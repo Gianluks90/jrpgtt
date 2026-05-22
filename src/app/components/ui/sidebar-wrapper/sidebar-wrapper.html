@@ -1,0 +1,41 @@
+<div class="sidebar-wrapper-root">
+    @if (!hideTrigger()) {
+        @if (text()) {
+            <text-button
+                [text]="text()"
+                [iconUrl]="iconUrl()"
+                [fullWidth]="fullWidthTrigger()"
+                [disabled]="disabled()"
+                (clicked)="toggle()"
+            ></text-button>
+        } @else {
+            <icon-button
+                [iconUrl]="iconUrl()"
+                [ariaLabel]="ariaLabel()"
+                [disabled]="disabled()"
+                (clicked)="toggle()"
+            ></icon-button>
+        }
+    }
+
+    @if (isOpen()) {
+        <div
+            class="sidebar-overlay"
+            [class.side-left]="side() === 'left'"
+            [class.side-right]="side() === 'right'"
+            [style.--panel-width]="panelCoveragePercent() + '%'"
+        >
+            @if (side() === 'left') {
+                <div class="sidebar-panel" (click)="onPanelClick($event)">
+                    <ng-content></ng-content>
+                </div>
+                <button class="sidebar-close-strip dialog-backdrop" type="button" aria-label="Close sidebar" (click)="close()"></button>
+            } @else {
+                <button class="sidebar-close-strip dialog-backdrop" type="button" aria-label="Close sidebar" (click)="close()"></button>
+                <div class="sidebar-panel" (click)="onPanelClick($event)">
+                    <ng-content></ng-content>
+                </div>
+            }
+        </div>
+    }
+</div>

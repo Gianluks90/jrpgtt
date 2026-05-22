@@ -34,3 +34,10 @@
     justify-content: flex-end;
     gap: 12px;
 }
+
+@media screen and (max-width: 768px) {
+    .dialog-wrapper-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

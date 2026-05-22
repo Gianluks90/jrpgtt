@@ -7,17 +7,47 @@
     flex-direction: column;
     gap: 12px;
 
-    &>.actions-container {
+    & > .actions-container {
         position: absolute;
         bottom: 24px;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
-        // flex-direction: column;
         justify-content: center;
         align-items: center;
         gap: 12px;
-        width: 200px;
+        width: max-content;
+    }
 
+    & > .mobile-actions-container {
+        display: flex;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 20;
+    }
+}
+
+@media (max-width: 768px) {
+    .home-page-main-container {
+        padding: 20px;
+        justify-content: flex-start;
+        text-align: center;
+
+        h1 {
+            margin-top: 24px;
+            margin-bottom: 8px;
+            font-size: 1.7rem;
+        }
+
+        .info-text {
+            max-width: 320px;
+            line-height: 1.45;
+        }
+
+        & > .mobile-actions-container {
+            right: 14px;
+            bottom: 14px;
+        }
     }
 }

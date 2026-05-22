@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, Injector, OnDestroy, OnInit, WritableSignal } from "@angular/core";
+import { Component, computed, effect, inject, Injector, OnDestroy, OnInit, signal, WritableSignal } from "@angular/core";
 import { Dialog } from "@angular/cdk/dialog";
 import { getAuth } from "firebase/auth";
 import { GameService } from "../../services/game-service";
@@ -14,10 +14,12 @@ import { GameSettingsDialog, GameSettingsDialogData } from "../../components/dia
 import { PlayerService, PlayerSetupData } from "../../services/player-service";
 import { Player } from "../../models/Player";
 import { GamePlayerSetupDialog, GamePlayerSetupDialogData } from "../../components/dialogs/game-player-setup-dialog/game-player-setup-dialog";
+import { BreakpointService } from "../../services/breakpoint-service";
+import { ActionMenu } from "../../components/ui/action-menu/action-menu";
 
 @Component({
   selector: "app-lobby-page",
-  imports: [TextButton],
+  imports: [TextButton, ActionMenu],
   templateUrl: "./lobby-page.html",
   styleUrl: "./lobby-page.scss",
 })
@@ -26,9 +28,11 @@ export class LobbyPage implements OnInit, OnDestroy {
   public playerService = inject(PlayerService);
   public dialog = inject(Dialog);
   public router = inject(Router);
+  public breakpointService = inject(BreakpointService);
   private injector = inject(Injector);
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
   public myPlayer: WritableSignal<Player | null> = this.playerService.myPlayer;
+  public isMobile = this.breakpointService.isMobile;
   public isOwner = computed(() => {
     const currentUserId = getAuth().currentUser?.uid;
     const game = this.myGame();
@@ -44,9 +48,11 @@ export class LobbyPage implements OnInit, OnDestroy {
     const player = this.myPlayer();
     return !!player && !player.isReady;
   });
+  public copyFeedback = signal<"idle" | "copied">("idle");
+  private copyFeedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  public ngOnInit(): void {
-    const currentUserId = getAuth().currentUser?.uid;
+  public async ngOnInit(): Promise<void> {
+    const currentUserId = await this.resolveCurrentUserId();
     if (!currentUserId) return;
 
     this.gameService.startMyGameSnapshot(currentUserId);
@@ -71,8 +77,43 @@ export class LobbyPage implements OnInit, OnDestroy {
     }, { injector: this.injector });
   }
 
+  private async resolveCurrentUserId(): Promise<string | null> {
+    const auth = getAuth();
+    if (auth.currentUser?.uid) {
+      return auth.currentUser.uid;
+    }
+
+    if (typeof auth.authStateReady === "function") {
+      await auth.authStateReady();
+      return auth.currentUser?.uid ?? null;
+    }
+
+    return new Promise((resolve) => {
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        unsubscribe();
+        resolve(user?.uid ?? null);
+      });
+    });
+  }
+
   public ngOnDestroy(): void {
     this.playerService.stopMyPlayerSnapshot();
+    this.clearCopyFeedbackTimeout();
+  }
+
+  public async onCopyJoinCode(): Promise<void> {
+    const joinCode = this.myGame()?.joinCode?.trim();
+    if (!joinCode) return;
+
+    try {
+      await navigator.clipboard.writeText(joinCode);
+      this.copyFeedback.set("copied");
+      this.clearCopyFeedbackTimeout();
+      this.copyFeedbackTimeoutId = setTimeout(() => this.copyFeedback.set("idle"), 1800);
+    } catch (error) {
+      console.error(error);
+      window.alert("Could not copy join code");
+    }
   }
 
   private isConfirmResponse(response: unknown): response is DialogResponse {
@@ -203,6 +244,12 @@ export class LobbyPage implements OnInit, OnDestroy {
 
   public onHome(): void {
     void this.router.navigate(["/home"]);
+  }
+
+  private clearCopyFeedbackTimeout(): void {
+    if (this.copyFeedbackTimeoutId === null) return;
+    clearTimeout(this.copyFeedbackTimeoutId);
+    this.copyFeedbackTimeoutId = null;
   }
 
 }

@@ -10,6 +10,7 @@ export class TextButton {
   public text = input.required<string>();
   public iconUrl = input<string>();
   public disabled = input(false);
+  public fullWidth = input(false);
   public clicked = output<void>();
 
   public handleClick() {

@@ -7,6 +7,15 @@
             <p class="info-text">Players joined</p>
             <p>{{ myGame()?.playerIds?.length }} / {{ myGame()?.maxPlayers }}</p>
         </div>
+        <div class="info-box join-code-box">
+            <p class="info-text">Join code</p>
+            <div class="join-code-content">
+                <p class="join-code-value">{{ myGame()?.joinCode }}</p>
+                <button class="copy-code-button" type="button" (click)="onCopyJoinCode()">
+                    {{ copyFeedback() === 'copied' ? 'Copied' : 'Copy' }}
+                </button>
+            </div>
+        </div>
         <div class="info-box">
             <p class="info-text">Your player</p>
             <p class="content-text">{{ myPlayer()?.name }} | ready:  <span [class.flashing-text]="!myPlayer()?.isReady">{{ myPlayer()?.isReady ? 'yes' : 'no' }}</span> 
@@ -19,45 +28,91 @@
             <p><span class="flashing-text">{{ myGame()?.status }}</span></p>
         </div>
 
-        <div class="top-actions-container">
-            <text-button
-                text="Home"
-                iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                (clicked)="onHome()"
-            ></text-button>
-        </div>
+        @if (!isMobile()) {
+            <div class="top-actions-container">
+                <text-button
+                    text="Home"
+                    iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                    (clicked)="onHome()"
+                ></text-button>
+            </div>
 
-        <div class="actions-container">
-            <text-button
-                text="Player"
-                iconUrl="./icons/person_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                [disabled]="!canOpenPlayerSetup()"
-                (clicked)="openPlayerSetupDialog()"
-            ></text-button>
-            @if (isOwner()) {
+            <div class="actions-container">
                 <text-button
-                    text="Delete game"
-                    iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                    (clicked)="openDeleteDialog()"
+                    text="Player"
+                    iconUrl="./icons/person_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                    [disabled]="!canOpenPlayerSetup()"
+                    (clicked)="openPlayerSetupDialog()"
                 ></text-button>
-                <text-button
-                    text="Settings"
-                    iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                    (clicked)="openSettings()"
-                ></text-button>
-                <text-button
-                    text="Start game"
-                    iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                    [disabled]="!canStartGame()"
-                    (clicked)="onStartGame()"
-                ></text-button>
-            } @else {
-                <text-button
-                    text="Leave game"
-                    iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                    (clicked)="openConfirmDialog()"
-                ></text-button>
-            }
-        </div>
+                @if (isOwner()) {
+                    <text-button
+                        text="Delete game"
+                        iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openDeleteDialog()"
+                    ></text-button>
+                    <text-button
+                        text="Settings"
+                        iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openSettings()"
+                    ></text-button>
+                    <text-button
+                        text="Start game"
+                        iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        [disabled]="!canStartGame()"
+                        (clicked)="onStartGame()"
+                    ></text-button>
+                } @else {
+                    <text-button
+                        text="Leave game"
+                        iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openConfirmDialog()"
+                    ></text-button>
+                }
+            </div>
+        } @else {
+            <div class="mobile-actions-container">
+                <action-menu
+                    text="Menu"
+                    iconUrl="./icons/menu_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                >
+                    <text-button
+                        text="Home"
+                        iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                        (clicked)="onHome()"
+                    ></text-button>
+                    <text-button
+                        text="Player"
+                        iconUrl="./icons/person_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                        [disabled]="!canOpenPlayerSetup()"
+                        (clicked)="openPlayerSetupDialog()"
+                    ></text-button>
+
+                    @if (isOwner()) {
+                        <text-button
+                            text="Settings"
+                            iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openSettings()"
+                        ></text-button>
+                        <text-button
+                            text="Delete game"
+                            iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openDeleteDialog()"
+                        ></text-button>
+                        <text-button
+                            text="Start game"
+                            iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            [disabled]="!canStartGame()"
+                            (clicked)="onStartGame()"
+                        ></text-button>
+                    } @else {
+                        <text-button
+                            text="Leave game"
+                            iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openConfirmDialog()"
+                        ></text-button>
+                    }
+                </action-menu>
+            </div>
+        }
     }
 </div>

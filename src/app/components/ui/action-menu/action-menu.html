@@ -1,0 +1,17 @@
+<div class="action-menu-root">
+    <!-- <text-button
+        [text]="text()"
+        [iconUrl]="iconUrl()"
+        [cdkMenuTriggerFor]="menuPanel"
+    ></text-button> -->
+    <icon-button 
+        [iconUrl]="iconUrl()"
+        [cdkMenuTriggerFor]="menuPanel"
+    ></icon-button>
+
+    <ng-template #menuPanel>
+        <div class="action-menu-panel" cdkMenu>
+            <ng-content></ng-content>
+        </div>
+    </ng-template>
+</div>

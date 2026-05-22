@@ -1,0 +1,12 @@
+.action-menu-root {
+    display: block;
+}
+
+.action-menu-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(15, 18, 30, 0.95);
+}

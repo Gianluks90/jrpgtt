@@ -1,25 +1,7 @@
 <div class="map-page-main-container">
     <div class="page-shell">
-        <div class="top-hud-row">
-            <div class="hud hud-world">
-                <p class="hud-title">World State | Turn {{ worldState()?.currentTurn ?? 0 }}</p>
-                <div class="world-biome-list">
-                    @for (biome of biomeOrder; track biome) {
-                        <div class="world-biome-item" [class]="'biome-' + biome">
-                            <span class="biome-name">{{ biome }}</span>
-                            <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
-                        </div>
-                    }
-                </div>
-                <p class="world-turn-info">
-                    Active: <span class="flashing-text">{{ activePlayerName() }}</span>
-                    @if (!isMyTurn()) {
-                        <span class="turn-wait"> | attendi il tuo turno</span>
-                    }
-                </p>
-            </div>
-
-            <div class="hud hud-players">
+        @if (!isMobile()) {
+            <div class="hud hud-players players-header">
                 <p class="hud-title">Players</p>
                 <div class="player-list">
                     @for (player of players(); track trackPlayer($index, player)) {
@@ -52,44 +34,209 @@
                     }
                 </div>
             </div>
-        </div>
 
-        <div class="map-wrapper">
-            <div
-                class="map-grid"
-                [style.gridTemplateColumns]="'repeat(' + mapSize() + ', 1fr)'"
-                [style.gridTemplateRows]="'repeat(' + mapSize() + ', 1fr)'"
-            >
-                @for (cell of gridCells(); track trackGridCell($index, cell)) {
-                    <div
-                        class="map-cell"
-                        [class.special-cell]="cell.isSpecial"
-                        [class.revealed-cell]="!!cell.mapCell"
-                        [class.unrevealed-cell]="!cell.mapCell"
-                        [class.movable-cell]="isMovableCell(cell)"
-                        [class]="cell.mapCell ? 'biome-' + cell.mapCell.biome : ''"
-                        (click)="onCellClick(cell)"
-                    >
-                        @if (cell.players.length > 0) {
-                            @for (player of cell.players; track trackPlayer($index, player)) {
-                                <div class="player-marker flashing-text" [style.borderTopColor]="player.color"></div>
+            <div class="map-stage">
+                <aside class="hud hud-world stage-sidebar">
+                    <p class="hud-title">World</p>
+                    <div class="panel-scroll-body">
+                        <div class="world-summary">
+                            <p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
+                            <p class="summary-item"><span>Location</span><strong>{{ myLocationLabel() }}</strong></p>
+                            <p class="summary-item"><span>Environment</span><strong>{{ myLocationIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+                            <p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerName() }}</strong></p>
+                            @if (!isMyTurn()) {
+                                <p class="summary-item wait-item">attendi il tuo turno</p>
                             }
+                        </div>
+                        <div class="world-biome-list">
+                            @for (biome of biomeOrder; track biome) {
+                                <div class="world-biome-item" [class]="'biome-' + biome">
+                                    <span class="biome-name">{{ biome }}</span>
+                                    <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="map-wrapper">
+                    <div
+                        class="map-grid"
+                        [style.gridTemplateColumns]="'repeat(' + mapSize() + ', 1fr)'"
+                        [style.gridTemplateRows]="'repeat(' + mapSize() + ', 1fr)'"
+                    >
+                        @for (cell of gridCells(); track trackGridCell($index, cell)) {
+                            <map-cell
+                                [special]="cell.isSpecial"
+                                [revealed]="!!cell.mapCell"
+                                [movable]="isMovableCell(cell)"
+                                [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
+                                [biome]="cell.mapCell?.biome ?? null"
+                                [players]="cell.players"
+                                [envTopWidth]="environmentBorderWidth(cell, 'top')"
+                                [envRightWidth]="environmentBorderWidth(cell, 'right')"
+                                [envBottomWidth]="environmentBorderWidth(cell, 'bottom')"
+                                [envLeftWidth]="environmentBorderWidth(cell, 'left')"
+                                (cellClicked)="onCellClick(cell)"
+                                (cellEntered)="onCellEnter(cell)"
+                                (cellLeft)="onCellLeave()"
+                            ></map-cell>
                         }
+                    </div>
+                </div>
+
+                <aside class="hud stage-right-reserved">
+                    <p class="hud-title">Right Panel</p>
+                    <div class="panel-scroll-body"></div>
+                </aside>
+            </div>
+
+            <div class="footer-actions">
+                <icon-button
+                    iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                    ariaLabel="Back home"
+                    (clicked)="onBackHome()"
+                ></icon-button>
+                <div class="footer-empty-space"></div>
+            </div>
+        } @else {
+            <div class="hud mobile-active-header">
+                <p class="hud-title">Active Player</p>
+                @if (activePlayer(); as active) {
+                    <div class="player-card active-player">
+                        <div class="player-row top-row">
+                            <span class="player-name-wrap">
+                                <span class="player-icon" [style.backgroundColor]="active.color"></span>
+                                <span class="player-name">{{ active.name }}</span>
+                            </span>
+                            <span class="player-exp">EXP {{ active.experience }}</span>
+                        </div>
+                        <div class="player-row hp-label-row">
+                            <span>HP</span>
+                            <span>{{ active.parameters.hp.current }}/{{ active.parameters.hp.max ?? active.parameters.hp.base }}</span>
+                        </div>
+                        <div class="hp-bar" [class.hp-full]="hpPercent(active) === 100">
+                            <div class="hp-fill" [style.width.%]="hpPercent(active) === 100 ? 100 : 0"></div>
+                        </div>
+                        <div class="player-row stats-labels-row">
+                            <span>STR</span>
+                            <span>MAG</span>
+                            <span>LCK</span>
+                        </div>
+                        <div class="player-row stats-values-row">
+                            <span>{{ active.parameters.strength.current }}</span>
+                            <span>{{ active.parameters.magic.current }}</span>
+                            <span>{{ active.parameters.luck.current }}</span>
+                        </div>
+                    </div>
+                } @else {
+                    <p class="summary-item">No active player</p>
+                }
+            </div>
+
+            <div class="mobile-map-wrapper">
+                <div
+                    class="map-grid"
+                    [style.gridTemplateColumns]="'repeat(' + mapSize() + ', 1fr)'"
+                    [style.gridTemplateRows]="'repeat(' + mapSize() + ', 1fr)'"
+                >
+                    @for (cell of gridCells(); track trackGridCell($index, cell)) {
+                        <map-cell
+                            [special]="cell.isSpecial"
+                            [revealed]="!!cell.mapCell"
+                            [movable]="isMovableCell(cell)"
+                            [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
+                            [biome]="cell.mapCell?.biome ?? null"
+                            [players]="cell.players"
+                            [envTopWidth]="environmentBorderWidth(cell, 'top')"
+                            [envRightWidth]="environmentBorderWidth(cell, 'right')"
+                            [envBottomWidth]="environmentBorderWidth(cell, 'bottom')"
+                            [envLeftWidth]="environmentBorderWidth(cell, 'left')"
+                            (cellClicked)="onCellClick(cell)"
+                            (cellEntered)="onCellEnter(cell)"
+                            (cellLeft)="onCellLeave()"
+                        ></map-cell>
+                    }
+                </div>
+            </div>
+
+            <div class="mobile-footer-menu">
+                <text-button
+                    text="Menu"
+                    iconUrl="./icons/menu_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                    [fullWidth]="true"
+                    [cdkMenuTriggerFor]="mobileMapMenu"
+                    #mobileMenuTrigger="cdkMenuTriggerFor"
+                ></text-button>
+
+                <ng-template #mobileMapMenu>
+                    <div class="mobile-menu-panel" cdkMenu>
+                        <text-button
+                            text="Home"
+                            iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                            (clicked)="onBackHomeFromMenu(mobileMenuTrigger)"
+                        ></text-button>
+                        <text-button
+                            text="World State"
+                            iconUrl="./icons/equalizer_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openWorldSidebar(mobileMenuTrigger)"
+                        ></text-button>
+                        <text-button
+                            text="Right Panel"
+                            iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openRightSidebar(mobileMenuTrigger)"
+                        ></text-button>
+                    </div>
+                </ng-template>
+
+                <ng-template #worldStateSidebarTemplate>
+                    <div class="mobile-sidebar-content">
+                        <p class="hud-title">World</p>
+                        <div class="world-summary">
+                            <p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
+                            <p class="summary-item"><span>Location</span><strong>{{ myLocationLabel() }}</strong></p>
+                            <p class="summary-item"><span>Environment</span><strong>{{ myLocationIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+                            <p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerName() }}</strong></p>
+                            @if (!isMyTurn()) {
+                                <p class="summary-item wait-item">attendi il tuo turno</p>
+                            }
+                        </div>
+                        <div class="world-biome-list">
+                            @for (biome of biomeOrder; track biome) {
+                                <div class="world-biome-item" [class]="'biome-' + biome">
+                                    <span class="biome-name">{{ biome }}</span>
+                                    <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </ng-template>
+
+                <ng-template #rightSidebarTemplate>
+                    <div class="mobile-sidebar-content">
+                        <p class="hud-title">Right Panel</p>
+                        <p class="summary-item">Reserved for future actions</p>
+                    </div>
+                </ng-template>
+
+                @if (isWorldSidebarOpen()) {
+                    <div class="mobile-side-overlay side-left">
+                        <div class="mobile-side-panel" (click)="$event.stopPropagation()">
+                            <ng-container *ngTemplateOutlet="worldStateSidebarTemplate"></ng-container>
+                        </div>
+                        <button class="mobile-side-close-strip dialog-backdrop" type="button" aria-label="Close world sidebar" (click)="closeWorldSidebar()"></button>
+                    </div>
+                }
+
+                @if (isRightSidebarOpen()) {
+                    <div class="mobile-side-overlay side-right">
+                        <button class="mobile-side-close-strip dialog-backdrop" type="button" aria-label="Close right sidebar" (click)="closeRightSidebar()"></button>
+                        <div class="mobile-side-panel" (click)="$event.stopPropagation()">
+                            <ng-container *ngTemplateOutlet="rightSidebarTemplate"></ng-container>
+                        </div>
                     </div>
                 }
             </div>
-        </div>
-
-        <div class="footer-actions">
-            <text-button
-                text="Home"
-                iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                (clicked)="onBackHome()"
-            ></text-button>
-            <text-button text="Inventory" [disabled]="true"></text-button>
-            <text-button text="Log" [disabled]="true"></text-button>
-            <text-button text="Skills" [disabled]="true"></text-button>
-            <text-button text="Options" [disabled]="true"></text-button>
-        </div>
+        }
     </div>
 </div>

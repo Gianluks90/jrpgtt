@@ -1,18 +1,14 @@
-.text-button {
-    background: var(--bg-color);
-    border: thick double var(--fg-color); 
+.icon-button {
+    background: none;
+    border: thick double var(--fg-color);
     color: var(--fg-color);
-    padding: 8px 16px;
+    width: 44px;
+    height: 44px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    width: 200px;
-
-    &.full-width {
-        width: 100%;
-    }
+    padding: 0;
 
     &:disabled {
         opacity: 0.5;

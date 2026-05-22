@@ -1,5 +1,5 @@
 import { Injectable, signal } from "@angular/core";
-import { initializeApp } from "firebase/app";
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { doc, Firestore, getFirestore, onSnapshot } from "firebase/firestore";
 import { FIREBASE_CONFIG } from "../environment/firebase.config";
 import { getAuth } from "firebase/auth";
@@ -11,9 +11,10 @@ import { UserData } from "../models/UserData";
 export class FirebaseService {
   public user = signal<UserData | null>(null);
   public database: Firestore;
+  private userUnsubscribe: (() => void) | null = null;
 
   constructor() {
-    const app = initializeApp(FIREBASE_CONFIG);
+    const app = getApps().length ? getApp() : initializeApp(FIREBASE_CONFIG);
     this.database = getFirestore(app);
 
     getAuth(app).onAuthStateChanged(async user => {
@@ -26,8 +27,11 @@ export class FirebaseService {
   }
 
   private async getUserSnapshotByUid(uid: string): Promise<void> {
+    this.userUnsubscribe?.();
+    this.userUnsubscribe = null;
+
     const docRef = doc(this.database, "users", uid);
-    onSnapshot(docRef, (docSnap) => {
+    this.userUnsubscribe = onSnapshot(docRef, (docSnap) => {
       if (!docSnap.exists()) {
         this.user.set(null);
         return;

@@ -6,4 +6,28 @@
     align-items: center;
     flex-direction: column;
     gap: 20px;
+    padding: 24px;
+    text-align: center;
+
+    p {
+        margin: 0;
+        line-height: 1.4;
+    }
+}
+
+@media (max-width: 768px) {
+    .landing-page-main-container {
+        justify-content: flex-start;
+        padding-top: 96px;
+        gap: 16px;
+
+        p:first-child {
+            font-size: 1.35rem;
+        }
+
+        .info-text {
+            max-width: 240px;
+            font-size: 0.8rem;
+        }
+    }
 }

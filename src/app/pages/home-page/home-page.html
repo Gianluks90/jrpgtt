@@ -1,43 +1,90 @@
 <div class="home-page-main-container">
     <h1>Home Page</h1>
+    <p class="info-text">{{ appVersion }}</p>
     @if(myGame()) {
         <p class="info-text">You are currently in the game: {{ myGame()?.name }}.</p>
         <p class="info-text">Go to the lobby to see game details and start playing!</p>
     } @else {
         <p class="info-text">You are not currently in a game. Join or create a new game to get started!</p>
     }
-    <div class="actions-container">
-        @if (!myGame()) {
-            <text-button
-                text="New game"
-                iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                (clicked)="openNewGameDialog()"
-            ></text-button>
-            <text-button
-                text="Join game"
-                iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                (clicked)="openJoinGameDialog()"
-            ></text-button>
-        } @else {
-            @if (isOwner()) {
+    @if (!isMobile()) {
+        <div class="actions-container">
+            @if (!myGame()) {
                 <text-button
-                    text="Delete game"
-                    iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                    (clicked)="openDeleteDialog()"
+                    text="New game"
+                    iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openNewGameDialog()"
+                ></text-button>
+                <text-button
+                    text="Join game"
+                    iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="openJoinGameDialog()"
                 ></text-button>
             } @else {
+                @if (isOwner()) {
+                    <text-button
+                        text="Delete game"
+                        iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openDeleteDialog()"
+                    ></text-button>
+                } @else {
+                    <text-button
+                        text="Leave game"
+                        iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openConfirmDialog()"
+                    ></text-button>
+                }
                 <text-button
-                    text="Leave game"
-                    iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                    (clicked)="openConfirmDialog()"
+                    [text]="isOwner() && myGame()?.status !== 'waiting' ? 'Play' : 'Lobby'"
+                    [iconUrl]="isOwner() && myGame()?.status !== 'waiting' ? './icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/group_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
+                    (clicked)="onPlay()"
                 ></text-button>
             }
-            <text-button
-                text="Lobby"
-                iconUrl="./icons/group_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                (clicked)="onLobby()"
-            ></text-button>
-        }
-        <text-button text="Logout" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
-    </div>
+            <text-button text="Logout" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
+        </div>
+    } @else {
+        <div class="mobile-actions-container">
+            <action-menu
+                text="Menu"
+                iconUrl="./icons/menu_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+            >
+                @if (!myGame()) {
+                    <text-button
+                        text="New game"
+                        iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openNewGameDialog()"
+                    ></text-button>
+                    <text-button
+                        text="Join game"
+                        iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="openJoinGameDialog()"
+                    ></text-button>
+                } @else {
+                    @if (isOwner()) {
+                        <text-button
+                            text="Delete game"
+                            iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openDeleteDialog()"
+                        ></text-button>
+                    } @else {
+                        <text-button
+                            text="Leave game"
+                            iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            (clicked)="openConfirmDialog()"
+                        ></text-button>
+                    }
+                    <text-button
+                        [text]="isOwner() && myGame()?.status !== 'waiting' ? 'Play' : 'Lobby'"
+                        [iconUrl]="isOwner() && myGame()?.status !== 'waiting' ? './icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/group_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
+                        (clicked)="onPlay()"
+                    ></text-button>
+                }
+                <text-button
+                    text="Logout"
+                    iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                    (clicked)="authService.logout()"
+                ></text-button>
+            </action-menu>
+        </div>
+    }
 </div>

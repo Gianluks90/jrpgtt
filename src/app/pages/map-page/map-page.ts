@@ -4,15 +4,18 @@ import { FirebaseService } from "../../services/firebase-service";
 import { collection, doc, onSnapshot, setDoc, type Unsubscribe } from "firebase/firestore";
 import { Player } from "../../models/Player";
 import { WorldState } from "../../models/WorldState";
-import { MapCell } from "../../models/MapCell";
+import { BiomeType, MapCell } from "../../models/MapCell";
+import { ResourceLabel } from "../../models/Resource";
 import { MapService } from "../../services/map-service";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BiomeEnvironment, EnvironmentService } from "../../services/environment-service";
+import { TilesConfigService } from "../../services/tiles-config-service";
+import { getBiomeResourcesMap } from "../../consts/biome-resources";
 import { IconButton } from "../../components/ui/icon-button/icon-button";
 import { BreakpointService } from "../../services/breakpoint-service";
 import { PlayerCard } from "../../components/ui/player-card/player-card";
-import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
 import { MapGridPanel, type MapGridPanelCell } from "../../components/core/map-grid-panel/map-grid-panel";
+import { MapCellComponent } from "../../components/ui/map-cell/map-cell";
 import { ResourceCounter } from "../../components/ui/resource-counter/resource-counter";
 import { MoneyCounter } from "../../components/ui/money-counter/money-counter";
 import { LuckIndicator } from "../../components/ui/luck-indicator/luck-indicator";
@@ -23,8 +26,8 @@ import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-m
   imports: [
     IconButton,
     PlayerCard,
-    WorldStatePanel,
     MapGridPanel,
+    MapCellComponent,
     MapMobileControls,
     ResourceCounter,
     MoneyCounter,
@@ -34,11 +37,22 @@ import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-m
   styleUrl: "./map-page.scss",
 })
 export class MapPage implements OnInit, OnDestroy {
+  private readonly totalSpecialCells = 4;
+  private readonly emptyBiomeResourcesMap: Record<BiomeType, ResourceLabel[]> = {
+    plains: [],
+    forest: [],
+    mountain: [],
+    water: [],
+    desert: [],
+    ruins: [],
+  };
+
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private firebaseService = inject(FirebaseService);
   private mapService = inject(MapService);
   private environmentService = inject(EnvironmentService);
+  private tilesConfigService = inject(TilesConfigService);
   private breakpointService = inject(BreakpointService);
   private unsubscribers: Unsubscribe[] = [];
   private inventoryBackfillRequested = new Set<string>();
@@ -51,6 +65,9 @@ export class MapPage implements OnInit, OnDestroy {
   public players = signal<Player[]>([]);
   public worldState = signal<WorldState | null>(null);
   public mapCellsById = signal<Record<string, MapCell>>({});
+  public biomeResourcesByBiome = signal<Record<BiomeType, ResourceLabel[]>>(this.emptyBiomeResourcesMap);
+  public biomeOrderLeft: BiomeType[] = ["plains", "forest", "mountain"];
+  public biomeOrderRight: BiomeType[] = ["water", "desert", "ruins"];
 
   public biomeEnvironments = computed<BiomeEnvironment[]>(() => {
     return this.environmentService.getBiomeEnvironments(this.mapCellsById());
@@ -66,6 +83,26 @@ export class MapPage implements OnInit, OnDestroy {
     return this.players().find((player) => player.id === uid) ?? null;
   });
 
+  public discoveredTiles = computed<number>(() => {
+    return Object.keys(this.mapCellsById()).length;
+  });
+
+  public totalTiles = computed<number>(() => {
+    const size = this.mapSize();
+    if (size <= 0) return 0;
+    return size * size;
+  });
+
+  public discoveredTilesLabel = computed<string>(() => {
+    const discovered = this.discoveredTiles();
+    const total = this.totalTiles();
+    if (total <= 0) return `${discovered}/0 (0%)`;
+
+    const clampedDiscovered = Math.min(discovered, total);
+    const percentage = Math.round((clampedDiscovered / total) * 100);
+    return `${clampedDiscovered}/${total} (${percentage}%)`;
+  });
+
   public isMyTurn = computed<boolean>(() => {
     const uid = this.currentUserId();
     const activePlayerId = this.worldState()?.activePlayerId;
@@ -77,6 +114,92 @@ export class MapPage implements OnInit, OnDestroy {
     const activePlayerId = this.worldState()?.activePlayerId;
     if (!activePlayerId) return null;
     return this.players().find((player) => player.id === activePlayerId) ?? null;
+  });
+
+  public activePlayerLabel = computed<string>(() => {
+    const active = this.activePlayer();
+    if (active?.name?.trim()) return active.name.trim();
+
+    const activePlayerId = this.worldState()?.activePlayerId;
+    if (!activePlayerId) return "-";
+    return activePlayerId.slice(0, 6);
+  });
+
+  public currentRound = computed<number>(() => {
+    const turn = this.worldState()?.currentTurn ?? 0;
+    const playersCount = this.players().length;
+
+    if (turn <= 0 || playersCount <= 0) return 0;
+    return Math.ceil(turn / playersCount);
+  });
+
+  public revealedSpecialCells = computed<number>(() => {
+    const count = Object.values(this.mapCellsById()).filter((cell) => cell.isSpecial === true).length;
+    return Math.min(count, this.totalSpecialCells);
+  });
+
+  public revealedSpecialCellsLabel = computed<string>(() => {
+    return `${this.revealedSpecialCells()}/${this.totalSpecialCells}`;
+  });
+
+  public currentCellCoordinatesLabel = computed<string>(() => {
+    const player = this.myPlayer();
+    if (!player) return "-";
+
+    const displayX = player.location.x + 1;
+    const displayY = player.location.y + 1;
+    return `${displayX}, ${displayY}`;
+  });
+
+  public currentCellId = computed<string | null>(() => {
+    const player = this.myPlayer();
+    if (!player) return null;
+    return this.cellId(player.location.x, player.location.y);
+  });
+
+  public currentCell = computed<MapCell | null>(() => {
+    const cellId = this.currentCellId();
+    if (!cellId) return null;
+    return this.mapCellsById()[cellId] ?? null;
+  });
+
+  public currentCellBiome = computed<BiomeType | null>(() => {
+    return this.currentCell()?.biome ?? null;
+  });
+
+  public currentCellBiomeLabel = computed<string>(() => {
+    const biome = this.currentCellBiome();
+    if (!biome) return "Unknown";
+    return this.biomeToLabel(biome);
+  });
+
+  public currentCellResourcesLabel = computed<string>(() => {
+    const biome = this.currentCellBiome();
+    if (!biome) return "-";
+    const resources = this.biomeResourcesByBiome()[biome] ?? [];
+    if (resources.length === 0) return "None";
+    return resources.map((resource) => this.resourceToLabel(resource)).join(", ");
+  });
+
+  public currentCellIsEnvironment = computed<boolean>(() => {
+    const cellId = this.currentCellId();
+    if (!cellId) return false;
+    return (this.environmentByCellId()[cellId]?.length ?? 0) >= 2;
+  });
+
+  public currentCellSectorLabel = computed<string>(() => {
+    const player = this.myPlayer();
+    if (!player) return "-";
+
+    const size = this.mapSize();
+    if (size <= 0) return "-";
+
+    const firstBoundary = Math.max(1, Math.floor(size * 0.5));
+    const secondBoundary = Math.max(firstBoundary + 1, Math.floor(size * 0.8));
+
+    if (player.location.x < firstBoundary) return "I";
+    if (player.location.x < secondBoundary) return "II";
+    return "III";
   });
 
   public movableCellIds = computed<Set<string>>(() => {
@@ -93,6 +216,8 @@ export class MapPage implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     if (!this.gameId) return;
+
+    void this.loadBiomeResourcesConfig();
 
     const auth = getAuth();
     if (typeof auth.authStateReady === "function") {
@@ -217,6 +342,35 @@ export class MapPage implements OnInit, OnDestroy {
 
   public trackPlayer(_index: number, player: Player): string {
     return player.id;
+  }
+
+  private async loadBiomeResourcesConfig(): Promise<void> {
+    try {
+      const config = await this.tilesConfigService.loadConfig();
+      this.biomeResourcesByBiome.set(getBiomeResourcesMap(config));
+    } catch (error) {
+      console.error(error);
+      this.biomeResourcesByBiome.set(this.emptyBiomeResourcesMap);
+    }
+  }
+
+  private resourceToLabel(resource: ResourceLabel): string {
+    if (resource === "timber") return "Timber";
+    if (resource === "food") return "Food";
+    return "Minerals";
+  }
+
+  public biomeToLabel(biome: BiomeType): string {
+    if (biome === "plains") return "Plains";
+    if (biome === "forest") return "Forest";
+    if (biome === "mountain") return "Mountain";
+    if (biome === "water") return "Water";
+    if (biome === "desert") return "Desert";
+    return "Ruins";
+  }
+
+  private cellId(x: number, y: number): string {
+    return `${x}_${y}`;
   }
 
   public async onCellClick(cell: MapGridPanelCell): Promise<void> {

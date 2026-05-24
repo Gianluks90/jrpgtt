@@ -1,7 +1,7 @@
 .player-card {
     width: 100%;
     min-width: 0;
-    border: 1px dotted rgba(255, 255, 255, 0.1);
+    border: 1px dotted rgba(255, 255, 255, 0.06);
     padding: 8px;
     display: flex;
     flex-direction: column;
@@ -12,7 +12,16 @@
 }
 
 .active-player {
-    border: 1px dotted rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.92);
+}
+
+.player-header {
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.player-content {
+    padding-top: 2px;
 }
 
 .player-row {
@@ -67,7 +76,8 @@
 }
 
 .hp-label-row {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
+    opacity: 0.9;
 }
 
 .hp-bar {
@@ -86,25 +96,42 @@
 
 .hp-fill {
     height: 100%;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.82);
 }
 
-.stats-labels-row,
-.stats-values-row {
+.stats-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.stat-box {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 4px 6px;
+    min-height: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    justify-items: center;
+    gap: 6px;
+}
+
+.stat-label {
     font-size: 0.48rem;
-    opacity: 0.92;
+    opacity: 0.72;
 }
 
-.stats-labels-row {
-    opacity: 0.75;
-}
-
-.stats-values-row {
+.stat-value {
     font-size: 0.8rem;
+    line-height: 1;
+}
+
+.hp-section {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 @media (max-width: 520px) {

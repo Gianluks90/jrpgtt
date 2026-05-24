@@ -1,29 +1,60 @@
 <div class="map-page-main-container">
     <div class="page-shell">
         @if (!isMobile()) {
-            <div class="hud hud-players players-header">
-                <p class="hud-title">Players</p>
-                <div class="player-list">
-                    @for (player of players(); track trackPlayer($index, player)) {
-                        <app-player-card
-                            [player]="player"
-                            [highlighted]="worldState()?.activePlayerId === player.id"
-                        ></app-player-card>
-                    }
+            <div class="hud hud-world world-header">
+                <p class="hud-title">World</p>
+                <div class="world-header-content">
+                    <div class="world-header-col world-header-col-summary">
+                        <p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
+                        <p class="summary-item"><span>Round</span><strong>{{ currentRound() }}</strong></p>
+                        <p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerLabel() }}</strong></p>
+                    </div>
+
+                    <div class="world-header-col world-header-col-discovered">
+                        <p class="summary-item"><span>Discovered</span><strong>{{ discoveredTilesLabel() }}</strong></p>
+                        <p class="summary-item"><span>Active shrine</span><strong>{{ revealedSpecialCellsLabel() }}</strong></p>
+                    </div>
+
+                    <div class="world-header-col">
+                        <div class="world-biome-list">
+                            @for (biome of biomeOrderLeft; track biome) {
+                                <div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
+                                    <span class="biome-swatch" aria-hidden="true"></span>
+                                    <div class="biome-content">
+                                        <span class="biome-name">{{ biomeToLabel(biome) }}</span>
+                                        <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="world-header-col">
+                        <div class="world-biome-list">
+                            @for (biome of biomeOrderRight; track biome) {
+                            <div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
+                                <span class="biome-swatch" aria-hidden="true"></span>
+                                <div class="biome-content">
+                                    <span class="biome-name">{{ biomeToLabel(biome) }}</span>
+                                    <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="map-stage">
-                <aside class="hud hud-world stage-sidebar">
-                    <p class="hud-title">World</p>
-                    <div class="panel-scroll-body">
-                        <app-world-state-panel
-                            [worldState]="worldState()"
-                            [players]="players()"
-                            [currentUserId]="currentUserId()"
-                            [mapCellsById]="mapCellsById()"
-                            [environmentByCellId]="environmentByCellId()"
-                        ></app-world-state-panel>
+                <aside class="hud stage-sidebar">
+                    <p class="hud-title">Players</p>
+                    <div class="panel-scroll-body player-list-column">
+                        @for (player of players(); track trackPlayer($index, player)) {
+                            <app-player-card
+                                [player]="player"
+                                [highlighted]="worldState()?.activePlayerId === player.id"
+                            ></app-player-card>
+                        }
                     </div>
                 </aside>
 
@@ -39,22 +70,46 @@
                     ></app-map-grid-panel>
                 </div>
 
-                <aside class="hud stage-right-reserved">
-                    <p class="hud-title">Right Panel</p>
-                    <div class="panel-scroll-body"></div>
+                <aside class="stage-right-utilities">
+                    <app-resource-counter [resources]="myPlayer()?.inventory?.resources || []"></app-resource-counter>
+                    <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
+                    <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
+
+                    <div class="cell-inspector-panel">
+                        <p class="hud-title">Location info</p>
+
+                        <div class="cell-inspector-body">
+                            <div class="inspector-biome-row">
+                                <span class="inspector-biome-value">
+                                    <map-cell
+                                        class="inspector-cell-preview"
+                                        [revealed]="currentCellBiome() !== null"
+                                        [special]="currentCell()?.isSpecial === true"
+                                        [biome]="currentCellBiome()"
+                                        [players]="[]"
+                                    ></map-cell>
+                                    <strong class="inspector-biome-name">{{ currentCellBiomeLabel() }}</strong>
+                                </span>
+                            </div>
+                            <p class="summary-item"><span>Resources</span><strong>{{ currentCellResourcesLabel() }}</strong></p>
+                            <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+                            <p class="summary-item"><span>Cell XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
+                            <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
+                        </div>
+                    </div>
                 </aside>
             </div>
 
             <div class="footer-actions">
+                <div class="footer-placeholder">
+                    <p class="hud-title">Footer</p>
+                </div>
                 <icon-button
-                    iconUrl="./icons/arrow_back_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                    ariaLabel="Back home"
+                    class="footer-home-button"
+                    iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                    ariaLabel="Home"
                     (clicked)="onBackHome()"
                 ></icon-button>
-                <div class="footer-empty-space"></div>
-                <app-resource-counter [resources]="myPlayer()?.inventory?.resources || []"></app-resource-counter>
-                <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
-                <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
             </div>
         } @else {
             <div class="hud mobile-active-header">

@@ -16,8 +16,11 @@
     <div class="world-biome-list">
         @for (biome of biomeOrder; track biome) {
             <div class="world-biome-item" [class]="'biome-' + biome">
-                <span class="biome-name">{{ biome }}</span>
-                <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                <span class="biome-swatch" aria-hidden="true"></span>
+                <div class="biome-content">
+                    <span class="biome-name">{{ biome }}</span>
+                    <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+                </div>
             </div>
         }
     </div>

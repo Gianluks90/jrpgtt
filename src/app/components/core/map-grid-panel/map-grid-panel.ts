@@ -85,6 +85,18 @@ export class MapGridPanel {
     return this.hoveredEnvironmentCellIds().has(cell.id);
   }
 
+  public isRevealedCell(cell: MapGridPanelCell): boolean {
+    const mapCell = cell.mapCell;
+    return !!mapCell?.biome && !!mapCell?.discoveredBy;
+  }
+
+  public dangerOverlayLevel(cell: MapGridPanelCell): 0 | 1 | 2 {
+    if (!this.isRevealedCell(cell)) return 0;
+    if (cell.x >= 8) return 2;
+    if (cell.x >= 5) return 1;
+    return 0;
+  }
+
   public onCellEnter(cell: MapGridPanelCell): void {
     this.hoveredCellId.set(cell.id);
   }

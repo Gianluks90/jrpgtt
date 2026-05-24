@@ -16,7 +16,7 @@
     .hud {
         border: var(--overlay-border);
         background: rgba(0, 0, 0, 0.78);
-        padding: 12px;
+        padding: 8px;
         position: relative;
         min-height: 0;
     }
@@ -97,7 +97,7 @@
 
     .player-list {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 6px;
         height: 100%;
     }

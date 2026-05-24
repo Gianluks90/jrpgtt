@@ -13,6 +13,7 @@ export class MapCellComponent {
   public special = input(false);
   public movable = input(false);
   public hoveredEnvironment = input(false);
+  public dangerOverlayLevel = input<0 | 1 | 2>(0, { alias: "dangerOverlayLevel" });
   public biome = input<BiomeType | null>(null);
   public players = input<Player[]>([]);
   public activePlayerId = input<string | null>(null);

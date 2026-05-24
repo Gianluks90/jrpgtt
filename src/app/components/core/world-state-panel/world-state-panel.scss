@@ -74,39 +74,61 @@
 }
 
 .world-biome-item {
+    --biome-accent: #9db58a;
+    display: flex;
+    align-items: stretch;
+    font-size: 0.6rem;
+    height: 24px;
+}
+
+.biome-swatch {
+    width: 11px;
+    flex: 0 0 24px;
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    border-right: 0;
+    background: var(--biome-accent);
+    border-right: 1px solid rgba(255, 255, 255, 0.95);
+}
+
+.biome-content {
     border: 1px solid var(--fg-color);
-    border-left-width: 12px;
+    border-left: 0;
     padding: 5px 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.5rem;
+    gap: 8px;
+    flex: 1;
+}
 
-    .biome-name {
-        text-transform: capitalize;
-    }
+.biome-name {
+    text-transform: capitalize;
+}
+
+.biome-count {
+    line-height: 1;
 }
 
 .world-biome-item.biome-plains {
-    border-left-color: #9db58a;
+    --biome-accent: #9db58a;
 }
 
 .world-biome-item.biome-forest {
-    border-left-color: #6f946f;
+    --biome-accent: #6f946f;
 }
 
 .world-biome-item.biome-mountain {
-    border-left-color: #9b9a97;
+    --biome-accent: #9b9a97;
 }
 
 .world-biome-item.biome-water {
-    border-left-color: #7d95b9;
+    --biome-accent: #7d95b9;
 }
 
 .world-biome-item.biome-desert {
-    border-left-color: #b9a37a;
+    --biome-accent: #b9a37a;
 }
 
 .world-biome-item.biome-ruins {
-    border-left-color: #8a7d77;
+    --biome-accent: #8a7d77;
 }

@@ -2,13 +2,26 @@
     class="map-grid"
     [style.gridTemplateColumns]="'repeat(' + mapSize() + ', 1fr)'"
     [style.gridTemplateRows]="'repeat(' + mapSize() + ', 1fr)'"
+    [style.--map-size]="mapSize()"
 >
+    <div class="sector-guides" aria-hidden="true">
+        <span class="sector-line sector-line-top sector-line-first"></span>
+        <span class="sector-line sector-line-top sector-line-second"></span>
+        <span class="sector-line sector-line-bottom sector-line-first"></span>
+        <span class="sector-line sector-line-bottom sector-line-second"></span>
+
+        <span class="sector-label sector-label-first">I</span>
+        <span class="sector-label sector-label-second">II</span>
+        <span class="sector-label sector-label-third">III</span>
+    </div>
+
     @for (cell of cells(); track cell.id) {
         <map-cell
             [special]="cell.isSpecial"
-            [revealed]="!!cell.mapCell"
+            [revealed]="isRevealedCell(cell)"
             [movable]="isMovableCell(cell)"
             [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
+            [dangerOverlayLevel]="dangerOverlayLevel(cell)"
             [biome]="cell.mapCell?.biome ?? null"
             [players]="cell.players"
             [activePlayerId]="activePlayerId()"

@@ -94,6 +94,7 @@ export class TilesConfigService {
 
       const typedEntry = entry as {
         label?: unknown;
+        description?: unknown;
         iconUrl?: unknown;
         backgroundColor?: unknown;
         iconColor?: unknown;
@@ -101,6 +102,23 @@ export class TilesConfigService {
 
       if (typeof typedEntry.label !== "string" || !typedEntry.label.trim()) {
         throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid label`);
+      }
+
+      if (!typedEntry.description || typeof typedEntry.description !== "object") {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid description object`);
+      }
+
+      const description = typedEntry.description as {
+        active?: unknown;
+        inactive?: unknown;
+      };
+
+      if (typeof description.active !== "string" || !description.active.trim()) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid active description`);
+      }
+
+      if (typeof description.inactive !== "string" || !description.inactive.trim()) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid inactive description`);
       }
 
       if (typeof typedEntry.iconUrl !== "string" || !typedEntry.iconUrl.trim()) {

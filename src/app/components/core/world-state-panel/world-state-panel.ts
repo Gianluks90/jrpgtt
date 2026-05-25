@@ -47,8 +47,8 @@ export class WorldStatePanel {
     return `${clampedDiscovered}/${total}`;
   });
 
-  public revealedSpecialCellsLabel = computed<string>(() => {
-    const specialCells = Object.values(this.mapCellsById()).filter((cell) => cell.isSpecial === true).length;
+  public activeSpecialCellsLabel = computed<string>(() => {
+    const specialCells = Object.values(this.mapCellsById()).filter((cell) => cell.isSpecial === true && cell.active === true).length;
     const totalSpecial = Math.max(0, this.totalSpecialCells());
     const clampedSpecial = Math.min(specialCells, totalSpecial);
     return `${clampedSpecial}/${totalSpecial}`;
@@ -58,7 +58,7 @@ export class WorldStatePanel {
     const turn = this.worldState()?.currentTurn ?? 0;
     const round = this.currentRound();
     const discovered = this.discoveredTilesLabel();
-    const activeShrines = this.revealedSpecialCellsLabel();
+    const activeShrines = this.activeSpecialCellsLabel();
     const activePlayer = this.activePlayerLabel();
 
     return [

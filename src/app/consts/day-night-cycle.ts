@@ -1,0 +1,1 @@
+export const DAY_NIGHT_ROUNDS_PER_TOGGLE = 1;

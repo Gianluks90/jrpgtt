@@ -35,24 +35,40 @@
 		"sanctuaries": {
 			"water": {
 				"label": "Santuario dell'Acqua",
+				"description": {
+					"active": "A great crystal slowly spins at the center of the sanctuary, radiating a refreshing blue light. The sanctuary is active.",
+					"inactive": "Suspended above a crystal-clear pool, a large white crystal hovers at the center of the sanctuary."
+				},
 				"iconUrl": "/map-icons/shrine-water-tile-icon.svg",
 				"backgroundColor": "#2e4c66",
 				"iconColor": "#1a3348"
 			},
 			"fire": {
 				"label": "Santuario del Fuoco",
+				"description": {
+					"active": "A great crystal slowly spins at the center of the sanctuary, radiating an intense red light. The sanctuary is active.",
+					"inactive": "Suspended above a pool of blazing lava, a large white crystal hovers at the center of the sanctuary."
+				},
 				"iconUrl": "/map-icons/shrine-fire-tile-icon.svg",
 				"backgroundColor": "#7a4736",
 				"iconColor": "#4c281f"
 			},
 			"wind": {
 				"label": "Santuario del Vento",
+				"description": {
+					"active": "A great crystal slowly spins at the center of the sanctuary, radiating a soothing violet light. The sanctuary is active.",
+					"inactive": "The sound of chimes hanging all around the sanctuary accompanies the sight of a large white crystal hovering at its center."
+				},
 				"iconUrl": "/map-icons/shrine-wind-tile-icon.svg",
 				"backgroundColor": "#556e78",
 				"iconColor": "#34434a"
 			},
 			"earth": {
 				"label": "Santuario della Terra",
+				"description": {
+					"active": "A great crystal slowly spins at the center of the sanctuary, radiating a reassuring yellow light. The sanctuary is active.",
+					"inactive": "Framed by lush, thriving nature, a large white crystal hovers at the center of the sanctuary."
+				},
 				"iconUrl": "/map-icons/shrine-earth-tile-icon.svg",
 				"backgroundColor": "#6b6651",
 				"iconColor": "#474230"

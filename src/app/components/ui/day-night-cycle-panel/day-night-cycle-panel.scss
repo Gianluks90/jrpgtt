@@ -1,0 +1,61 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.day-night-panel {
+  position: relative;
+  border: var(--overlay-border);
+  background: rgba(0, 0, 0, 0.78);
+  padding: 10px 10px 8px;
+  min-height: 52px;
+}
+
+.day-night-title {
+  margin: 0;
+  font-size: 0.65rem;
+  position: absolute;
+  left: 12px;
+  top: -10px;
+  background: var(--bg-color);
+  padding: 4px 12px;
+}
+
+.day-night-body {
+  min-height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.day-night-icon {
+  width: 18px;
+  height: 18px;
+  background-color: #ffd64f;
+  mask-image: url("/day-night-icons/day-icon.svg");
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center;
+}
+
+.day-night-icon.is-night {
+  background-color: #79caff;
+  mask-image: url("/day-night-icons/night-icon.svg");
+}
+
+.day-night-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffd64f;
+}
+
+.day-night-label.is-night {
+  color: #79caff;
+}

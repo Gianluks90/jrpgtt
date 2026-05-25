@@ -9,6 +9,10 @@ export interface BiomeTilesConfigEntry {
 
 export interface SanctuaryTilesConfigEntry {
     label: string;
+    description: {
+        active: string;
+        inactive: string;
+    };
     iconUrl: string;
     backgroundColor: string;
     iconColor: string;

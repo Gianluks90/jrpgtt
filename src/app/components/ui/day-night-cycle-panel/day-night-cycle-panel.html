@@ -1,0 +1,8 @@
+<div class="day-night-panel">
+  <p class="day-night-title">{{ title() }}</p>
+
+  <div class="day-night-body">
+    <span class="day-night-icon" [class.is-night]="timeOfDay() === 'night'"></span>
+    <strong class="day-night-label" [class.is-night]="timeOfDay() === 'night'">{{ label() }}</strong>
+  </div>
+</div>

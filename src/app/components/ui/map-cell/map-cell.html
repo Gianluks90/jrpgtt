@@ -17,6 +17,10 @@
     (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()"
 >
+    @if (hoverIntentProgress() > 0 && hoverIntentProgress() < 100) {
+        <div class="hover-intent-progress" [style.width.%]="hoverIntentProgress()"></div>
+    }
+
     @if (revealed() && dangerOverlayLevel() > 0) {
         <div
             class="danger-overlay"

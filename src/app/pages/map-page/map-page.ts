@@ -9,21 +9,20 @@ import { ResourceLabel } from "../../models/Resource";
 import { MapService } from "../../services/map-service";
 import { BiomeEnvironment, EnvironmentService } from "../../services/environment-service";
 import { IconButton } from "../../components/ui/icon-button/icon-button";
-import { BreakpointService } from "../../services/breakpoint-service";
 import { PlayerCard } from "../../components/ui/player-card/player-card";
 import { MapGridPanel, type MapGridPanelCell } from "../../components/core/map-grid-panel/map-grid-panel";
-import { MapCellComponent } from "../../components/ui/map-cell/map-cell";
 import { ResourceCounter } from "../../components/ui/resource-counter/resource-counter";
 import { MoneyCounter } from "../../components/ui/money-counter/money-counter";
 import { LuckIndicator } from "../../components/ui/luck-indicator/luck-indicator";
 import { BiomesCounter } from "../../components/ui/biomes-counter/biomes-counter";
 import { CommandsPanel } from "../../components/ui/commands-panel/commands-panel";
-import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-mobile-controls";
 import { SanctuaryTilesConfigEntry } from "../../models/TilesConfig";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
 import { MapPageStateService } from "../../services/map-page-state-service";
 import { DIALOGS_CONFIG } from "../../consts/dialog-configs";
 import { GameEventsLogDialog } from "../../components/dialogs/game-events-log-dialog/game-events-log-dialog";
+import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
+import { isSpecialCellCoordinate } from "../../consts/special-cells";
 
 @Component({
   selector: "app-map-page",
@@ -31,12 +30,11 @@ import { GameEventsLogDialog } from "../../components/dialogs/game-events-log-di
     IconButton,
     PlayerCard,
     MapGridPanel,
-    MapCellComponent,
-    MapMobileControls,
     WorldStatePanel,
     ResourceCounter,
     MoneyCounter,
     LuckIndicator,
+    DayNightCyclePanel,
     BiomesCounter,
     CommandsPanel,
   ],
@@ -49,14 +47,12 @@ export class MapPage implements OnInit, OnDestroy {
   private dialog = inject(Dialog);
   private mapService = inject(MapService);
   private environmentService = inject(EnvironmentService);
-  private breakpointService = inject(BreakpointService);
   private mapPageState = inject(MapPageStateService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
   public currentUserId = this.mapPageState.currentUserId;
   public isMoving = signal(false);
-  public isMobile = this.breakpointService.isMobile;
   public players = this.mapPageState.players;
   public worldState = this.mapPageState.worldState;
   public mapCellsById = this.mapPageState.mapCellsById;
@@ -64,6 +60,7 @@ export class MapPage implements OnInit, OnDestroy {
   public biomeResourcesByBiome = this.mapPageState.biomeResourcesByBiome;
   public sanctuaryStylesByElement = this.mapPageState.sanctuaryStylesByElement;
   public mockPlayers = signal<Player[]>([]);
+  public inspectedCell = signal<MapGridPanelCell | null>(null);
   public latestLogMessage = computed<string>(() => {
     return this.mapPageState.latestEventLogSummary();
   });
@@ -115,25 +112,50 @@ export class MapPage implements OnInit, OnDestroy {
     return all.filter((player) => player.id !== main.id);
   });
 
-  public currentCellCoordinatesLabel = computed<string>(() => {
-    const player = this.myPlayer();
-    if (!player) return "-";
+  public locationInfoCell = computed<MapGridPanelCell | null>(() => {
+    const inspected = this.inspectedCell();
+    if (inspected) {
+      const liveMapCell = this.mapCellsById()[inspected.id] ?? null;
+      return {
+        ...inspected,
+        mapCell: liveMapCell,
+      };
+    }
 
-    const displayX = player.location.x + 1;
-    const displayY = player.location.y + 1;
+    const active = this.activePlayer();
+    if (!active) return null;
+
+    const x = active.location.x;
+    const y = active.location.y;
+    const id = this.cellId(x, y);
+    const mapCell = this.mapCellsById()[id] ?? null;
+    const playersOnCell = this.players().filter((player) => player.location.x === x && player.location.y === y);
+
+    return {
+      x,
+      y,
+      id,
+      mapCell,
+      players: playersOnCell,
+      isSpecial: isSpecialCellCoordinate(x, y),
+    };
+  });
+
+  public currentCellCoordinatesLabel = computed<string>(() => {
+    const cell = this.locationInfoCell();
+    if (!cell) return "-";
+
+    const displayX = cell.x + 1;
+    const displayY = cell.y + 1;
     return `${displayX}, ${displayY}`;
   });
 
   public currentCellId = computed<string | null>(() => {
-    const player = this.myPlayer();
-    if (!player) return null;
-    return this.cellId(player.location.x, player.location.y);
+    return this.locationInfoCell()?.id ?? null;
   });
 
   public currentCell = computed<MapCell | null>(() => {
-    const cellId = this.currentCellId();
-    if (!cellId) return null;
-    return this.mapCellsById()[cellId] ?? null;
+    return this.locationInfoCell()?.mapCell ?? null;
   });
 
   public currentCellBiome = computed<BiomeType | null>(() => {
@@ -149,7 +171,7 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     const biome = this.currentCellBiome();
-    if (!biome) return "Unknown";
+    if (!biome) return "? ? ?";
     return this.biomeToLabel(biome);
   });
 
@@ -173,8 +195,8 @@ export class MapPage implements OnInit, OnDestroy {
   });
 
   public currentCellSectorLabel = computed<string>(() => {
-    const player = this.myPlayer();
-    if (!player) return "-";
+    const cell = this.locationInfoCell();
+    if (!cell) return "-";
 
     const size = this.mapSize();
     if (size <= 0) return "-";
@@ -182,9 +204,97 @@ export class MapPage implements OnInit, OnDestroy {
     const firstBoundary = Math.max(1, Math.floor(size * 0.5));
     const secondBoundary = Math.max(firstBoundary + 1, Math.floor(size * 0.8));
 
-    if (player.location.x < firstBoundary) return "I";
-    if (player.location.x < secondBoundary) return "II";
+    if (cell.x < firstBoundary) return "I";
+    if (cell.x < secondBoundary) return "II";
     return "III";
+  });
+
+  public currentCellEnemiesLevelLabel = computed<string>(() => {
+    const cell = this.locationInfoCell();
+    if (!cell) return "-";
+
+    const centerLevel = cell.x + 1;
+    const minLevel = Math.max(1, centerLevel - 1);
+    const maxLevel = Math.min(10, centerLevel + 1);
+    return `${minLevel}-${maxLevel}`;
+  });
+
+  public currentCellIsSpecial = computed<boolean>(() => {
+    const infoCell = this.locationInfoCell();
+    if (!infoCell) return false;
+    if (infoCell.isSpecial) return true;
+    return this.currentCell()?.isSpecial === true;
+  });
+
+  public currentCellSpecialStatusLabel = computed<string>(() => {
+    if (!this.currentCellIsSpecial()) return "-";
+    const sanctuaryIsActive = this.currentCell()?.active === true;
+    return sanctuaryIsActive ? "Sanctuary active" : "Sanctuary inactive";
+  });
+
+  public currentCellSpecialDescription = computed<string>(() => {
+    if (!this.currentCellIsSpecial()) return "-";
+
+    const currentCell = this.currentCell();
+    const sanctuaryElement = currentCell?.sanctuaryElement;
+    if (!sanctuaryElement) {
+      return "The sanctuary is still dormant and hidden.";
+    }
+
+    const config = this.sanctuaryStylesByElement()[sanctuaryElement];
+    if (!config) return "-";
+
+    const sanctuaryIsActive = currentCell?.active === true;
+    return sanctuaryIsActive ? config.description.active : config.description.inactive;
+  });
+
+  public currentCellPreviewBackground = computed<string>(() => {
+    const cell = this.currentCell();
+    if (cell?.isSpecial === true) {
+      const style = cell.sanctuaryElement ? this.sanctuaryStylesByElement()[cell.sanctuaryElement] : null;
+      return style?.backgroundColor ?? "#5f5a47";
+    }
+
+    const biome = this.currentCellBiome();
+    if (biome === "plains") return "#788b69";
+    if (biome === "forest") return "#496149";
+    if (biome === "mountain") return "#7a7977";
+    if (biome === "water") return "#4b658d";
+    if (biome === "desert") return "#9f8a64";
+    if (biome === "ruins") return "#665953";
+    return "#050505";
+  });
+
+  public currentCellPreviewIconUrl = computed<string | null>(() => {
+    const cell = this.currentCell();
+    if (cell?.isSpecial === true) {
+      const style = cell.sanctuaryElement ? this.sanctuaryStylesByElement()[cell.sanctuaryElement] : null;
+      return style?.iconUrl ?? null;
+    }
+
+    const biome = this.currentCellBiome();
+    if (biome === "plains") return "/map-icons/plains-tile-icon.svg";
+    if (biome === "forest") return "/map-icons/forest-tile-icon.svg";
+    if (biome === "mountain") return "/map-icons/mountain-tile-icon.svg";
+    if (biome === "water") return "/map-icons/water-tile-icon.svg";
+    if (biome === "ruins") return "/map-icons/ruins-tile-icon.svg";
+    return null;
+  });
+
+  public currentCellPreviewIconColor = computed<string>(() => {
+    const cell = this.currentCell();
+    if (cell?.isSpecial === true) {
+      const style = cell.sanctuaryElement ? this.sanctuaryStylesByElement()[cell.sanctuaryElement] : null;
+      return style?.iconColor ?? "rgba(0, 0, 0, 0.35)";
+    }
+
+    const biome = this.currentCellBiome();
+    if (biome === "plains") return "#5f7250";
+    if (biome === "forest") return "#314131";
+    if (biome === "mountain") return "#5f5e5c";
+    if (biome === "water") return "#374b69";
+    if (biome === "ruins") return "#52463f";
+    return "transparent";
   });
 
   public movableCellIds = computed<Set<string>>(() => {
@@ -224,6 +334,10 @@ export class MapPage implements OnInit, OnDestroy {
 
   public trackPlayer(_index: number, player: Player): string {
     return player.id;
+  }
+
+  public onInspectionCellChanged(cell: MapGridPanelCell | null): void {
+    this.inspectedCell.set(cell);
   }
 
   private resourceToLabel(resource: ResourceLabel): string {

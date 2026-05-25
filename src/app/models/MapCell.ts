@@ -5,6 +5,7 @@ export interface MapCell {
     revealedAtTurn: number;
     discoveredBy: string;
     isSpecial?: boolean;
+    active?: boolean;
     specialType?: SpecialTileType;
     sanctuaryElement?: SanctuaryElement;
 }

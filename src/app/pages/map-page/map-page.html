@@ -1,149 +1,132 @@
 <div class="map-page-main-container">
     <div class="page-shell">
-        @if (!isMobile()) {
-            <div class="hud hud-world world-header">
-                <app-world-state-panel
-                    [worldState]="worldState()"
-                    [players]="players()"
-                    [mapCellsById]="mapCellsById()"
-                    [mapSize]="mapSize()"
-                    [totalSpecialCells]="4"
-                    [showTitle]="true"
-                    title="World"
-                ></app-world-state-panel>
-            </div>
-
-            <div class="map-stage">
-                <aside class="stage-sidebar">
-                    <section class="hud sidebar-block players-block">
-                        <p class="hud-title">Players</p>
-                        <div class="panel-scroll-body player-list-column">
-                            @if (sidebarMainPlayer(); as player) {
-                                <app-player-card
-                                    [player]="player"
-                                    [highlighted]="worldState()?.activePlayerId === player.id"
-                                ></app-player-card>
-                            }
-
-                            <div class="mini-player-list">
-                                @for (player of sidebarOtherPlayers(); track trackPlayer($index, player)) {
-                                    <div class="mini-player-row">
-                                        <span class="mini-player-color" [style.background]="player.color"></span>
-                                        <span class="mini-player-name">{{ player.name }}</span>
-                                        <span class="mini-player-level">Lv. {{ player.level }}</span>
-                                        <span class="mini-player-spacer"></span>
-                                        <span class="mini-player-hp-label">HP</span>
-                                        <strong class="mini-player-hp-value">{{ player.parameters.hp.current }}</strong>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="hud sidebar-block commands-block">
-                        <p class="hud-title">Commands</p>
-                        <app-commands-panel></app-commands-panel>
-                    </section>
-                </aside>
-
-                <div class="map-wrapper">
-                    <div class="map-center-shell">
-                        <app-map-grid-panel
-                            [mapSize]="mapSize()"
-                            [mapCellsById]="mapCellsById()"
-                            [players]="players()"
-                            [activePlayerId]="worldState()?.activePlayerId ?? null"
-                            [movableCellIds]="movableCellIds()"
-                            [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
-                            [environmentByCellId]="environmentByCellId()"
-                            (cellClicked)="onCellClick($event)"
-                        ></app-map-grid-panel>
-                        <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
-                    </div>
-                </div>
-
-                <aside class="stage-right-utilities">
-                    <app-resource-counter [resources]="myPlayer()?.inventory?.resources || []"></app-resource-counter>
-                    <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
-                    <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
-
-                    <div class="cell-inspector-panel">
-                        <p class="hud-title">Location info</p>
-
-                        <div class="cell-inspector-body">
-                            <div class="inspector-biome-row">
-                                <span class="inspector-biome-value">
-                                    <map-cell
-                                        class="inspector-cell-preview"
-                                        [revealed]="currentCellBiome() !== null"
-                                        [special]="currentCell()?.isSpecial === true"
-                                        [biome]="currentCellBiome()"
-                                        [players]="[]"
-                                    ></map-cell>
-                                    <strong class="inspector-biome-name">{{ currentCellBiomeLabel() }}</strong>
-                                </span>
-                            </div>
-                            <p class="summary-item"><span>Resources</span><strong>{{ currentCellResourcesLabel() }}</strong></p>
-                            <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
-                            <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
-                            <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
-                        </div>
-                    </div>
-                </aside>
-            </div>
-
-            <div class="footer-actions">
-                <div class="footer-placeholder">
-                    <p class="hud-title">Log</p>
-                    <div class="footer-log-body">
-                        <p class="footer-log-text">{{ latestLogMessage() }}</p>
-                        <icon-button
-                            class="footer-log-expand-button"
-                            iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                            ariaLabel="Open logs"
-                            (clicked)="openLogsDialog()"
-                        ></icon-button>
-                    </div>
-                </div>
-                <icon-button
-                    class="footer-home-button"
-                    iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                    ariaLabel="Home"
-                    (clicked)="onBackHome()"
-                ></icon-button>
-            </div>
-        } @else {
-            <div class="hud mobile-active-header">
-                <p class="hud-title">Active Player</p>
-                @if (activePlayer(); as active) {
-                    <app-player-card [player]="active" [highlighted]="true"></app-player-card>
-                } @else {
-                    <p class="summary-item">No active player</p>
-                }
-            </div>
-
-            <div class="mobile-map-wrapper">
-                <app-map-grid-panel
-                    [mapSize]="mapSize()"
-                    [mapCellsById]="mapCellsById()"
-                    [players]="players()"
-                    [activePlayerId]="worldState()?.activePlayerId ?? null"
-                    [movableCellIds]="movableCellIds()"
-                    [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
-                    [environmentByCellId]="environmentByCellId()"
-                    (cellClicked)="onCellClick($event)"
-                ></app-map-grid-panel>
-            </div>
-
-            <app-map-mobile-controls
+        <div class="hud hud-world world-header">
+            <app-world-state-panel
                 [worldState]="worldState()"
                 [players]="players()"
-                [currentUserId]="currentUserId()"
                 [mapCellsById]="mapCellsById()"
                 [mapSize]="mapSize()"
-                [environmentByCellId]="environmentByCellId()"
-                (backHome)="onBackHome()"
-            ></app-map-mobile-controls>
-        }
+                [totalSpecialCells]="4"
+                [showTitle]="true"
+                title="World"
+            ></app-world-state-panel>
+        </div>
+
+        <div class="map-stage">
+            <aside class="stage-sidebar">
+                <section class="hud sidebar-block players-block">
+                    <p class="hud-title">Players</p>
+                    <div class="panel-scroll-body player-list-column">
+                        @if (sidebarMainPlayer(); as player) {
+                            <app-player-card
+                                [player]="player"
+                                [highlighted]="worldState()?.activePlayerId === player.id"
+                            ></app-player-card>
+                        }
+
+                        <div class="mini-player-list">
+                            @for (player of sidebarOtherPlayers(); track trackPlayer($index, player)) {
+                                <div class="mini-player-row">
+                                    <span class="mini-player-color" [style.background]="player.color"></span>
+                                    <span class="mini-player-name">{{ player.name }}</span>
+                                    <span class="mini-player-level">Lv. {{ player.level }}</span>
+                                    <span class="mini-player-spacer"></span>
+                                    <span class="mini-player-hp-label">HP</span>
+                                    <strong class="mini-player-hp-value">{{ player.parameters.hp.current }}</strong>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+
+                <section class="hud sidebar-block commands-block">
+                    <p class="hud-title">Commands</p>
+                    <app-commands-panel></app-commands-panel>
+                </section>
+            </aside>
+
+            <div class="map-wrapper">
+                <div class="map-center-shell">
+                    <app-map-grid-panel
+                        [mapSize]="mapSize()"
+                        [mapCellsById]="mapCellsById()"
+                        [players]="players()"
+                        [activePlayerId]="worldState()?.activePlayerId ?? null"
+                        [movableCellIds]="movableCellIds()"
+                        [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
+                        [environmentByCellId]="environmentByCellId()"
+                        (cellClicked)="onCellClick($event)"
+                        (inspectedCellChanged)="onInspectionCellChanged($event)"
+                    ></app-map-grid-panel>
+                    <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
+                </div>
+            </div>
+
+            <aside class="stage-right-utilities">
+                <app-resource-counter [resources]="myPlayer()?.inventory?.resources || []"></app-resource-counter>
+                <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
+                <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
+
+                <div class="cell-inspector-panel">
+                    <p class="hud-title">Cell inspector</p>
+
+                    <div class="cell-inspector-body">
+                        <p class="inspector-section-title">Info</p>
+
+                        <div class="inspector-biome-row">
+                            <span class="inspector-biome-value">
+                                <span
+                                    class="inspector-cell-preview"
+                                    [class.is-special]="currentCellIsSpecial()"
+                                    [style.--preview-bg-color]="currentCellPreviewBackground()"
+                                    [style.--preview-icon-url]="currentCellPreviewIconUrl() ? 'url(' + currentCellPreviewIconUrl() + ')' : null"
+                                    [style.--preview-icon-color]="currentCellPreviewIconColor()"
+                                ></span>
+                                <strong class="inspector-biome-name">{{ currentCellBiomeLabel() }}</strong>
+                            </span>
+                        </div>
+
+                        <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
+                        <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
+                        <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+                        <p class="summary-item"><span>Enemies level</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
+
+                        @if (currentCellIsSpecial()) {
+                            <p class="inspector-section-title">Special</p>
+                            <p class="inspector-special-value">{{ currentCellSpecialStatusLabel() }}</p>
+
+                            <p class="inspector-section-title">Description</p>
+                            <p class="inspector-description-value">{{ currentCellSpecialDescription() }}</p>
+                        }
+
+                        <p class="inspector-section-title">Resources</p>
+                        <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
+                    </div>
+                </div>
+
+                <app-day-night-cycle-panel [worldState]="worldState()"></app-day-night-cycle-panel>
+            </aside>
+        </div>
+
+        <div class="footer-actions">
+            <div class="footer-placeholder">
+                <p class="hud-title">Log</p>
+                <div class="footer-log-body">
+                    <p class="footer-log-text">{{ latestLogMessage() }}</p>
+                    <icon-button
+                        class="footer-log-expand-button"
+                        iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                        ariaLabel="Open logs"
+                        (clicked)="openLogsDialog()"
+                    ></icon-button>
+                </div>
+            </div>
+            <icon-button
+                class="footer-home-button"
+                iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                ariaLabel="Home"
+                (clicked)="onBackHome()"
+            ></icon-button>
+        </div>
     </div>
 </div>

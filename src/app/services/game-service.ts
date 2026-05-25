@@ -524,6 +524,7 @@ export class GameService {
       worldState: {
         currentTurn: 1,
         phase: "turn",
+        timeOfDay: "day",
         remainingDeck: [],
         discardedDeck: [],
         placedBiomeCount: this.emptyBiomePlacementCount(),

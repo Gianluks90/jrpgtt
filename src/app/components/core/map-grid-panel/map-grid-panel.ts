@@ -1,10 +1,11 @@
-import { Component, computed, inject, input, output, signal } from "@angular/core";
+import { Component, computed, inject, input, OnDestroy, output, signal } from "@angular/core";
 import { Player } from "../../../models/Player";
 import { MapCell, SanctuaryElement } from "../../../models/MapCell";
 import { MapCellComponent } from "../../ui/map-cell/map-cell";
 import { EnvironmentService, type EdgeDirection } from "../../../services/environment-service";
 import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 import { isSpecialCellCoordinate } from "../../../consts/special-cells";
+import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspector";
 
 export interface MapGridPanelCell {
   x: number;
@@ -23,6 +24,12 @@ export interface MapGridPanelCell {
 })
 export class MapGridPanel {
   private environmentService = inject(EnvironmentService);
+  private hoverActivationTimer: ReturnType<typeof setTimeout> | null = null;
+  private hoverProgressTimer: ReturnType<typeof setInterval> | null = null;
+  private pendingHoverActivationCellId: string | null = null;
+  private inspectedCellId: string | null = null;
+  private hoverProgressCellId = signal<string | null>(null);
+  private hoverProgressPercent = signal(0);
 
   public mapSize = input.required<number>();
   public mapCellsById = input.required<Record<string, MapCell>>();
@@ -33,6 +40,7 @@ export class MapGridPanel {
   public sanctuaryStylesByElement = input.required<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>();
 
   public cellClicked = output<MapGridPanelCell>();
+  public inspectedCellChanged = output<MapGridPanelCell | null>();
 
   private hoveredCellId = signal<string | null>(null);
 
@@ -102,10 +110,49 @@ export class MapGridPanel {
 
   public onCellEnter(cell: MapGridPanelCell): void {
     this.hoveredCellId.set(cell.id);
+    this.pendingHoverActivationCellId = cell.id;
+    this.clearHoverActivationTimer();
+    this.startHoverProgress(cell.id);
+
+    this.hoverActivationTimer = setTimeout(() => {
+      if (this.hoveredCellId() !== cell.id) return;
+      if (this.pendingHoverActivationCellId !== cell.id) return;
+
+      this.inspectedCellId = cell.id;
+      this.inspectedCellChanged.emit(cell);
+    }, MAP_CELL_INSPECTION_HOVER_DELAY_MS);
   }
 
-  public onCellLeave(): void {
-    this.hoveredCellId.set(null);
+  public onCellLeave(cell: MapGridPanelCell): void {
+    if (this.hoveredCellId() === cell.id) {
+      this.hoveredCellId.set(null);
+    }
+
+    if (this.pendingHoverActivationCellId === cell.id) {
+      this.pendingHoverActivationCellId = null;
+      this.clearHoverActivationTimer();
+    }
+
+    if (this.hoverProgressCellId() === cell.id) {
+      this.clearHoverProgressTimer();
+      this.hoverProgressCellId.set(null);
+      this.hoverProgressPercent.set(0);
+    }
+
+    if (this.inspectedCellId === cell.id) {
+      this.inspectedCellId = null;
+      this.inspectedCellChanged.emit(null);
+    }
+  }
+
+  public ngOnDestroy(): void {
+    this.clearHoverActivationTimer();
+    this.clearHoverProgressTimer();
+  }
+
+  public hoverIntentProgressForCell(cell: MapGridPanelCell): number {
+    if (this.hoverProgressCellId() !== cell.id) return 0;
+    return this.hoverProgressPercent();
   }
 
   public sanctuaryStyleForCell(cell: MapGridPanelCell): SanctuaryTilesConfigEntry | null {
@@ -124,5 +171,41 @@ export class MapGridPanel {
 
   private isSpecialCell(x: number, y: number): boolean {
     return isSpecialCellCoordinate(x, y);
+  }
+
+  private clearHoverActivationTimer(): void {
+    if (!this.hoverActivationTimer) return;
+    clearTimeout(this.hoverActivationTimer);
+    this.hoverActivationTimer = null;
+  }
+
+  private startHoverProgress(cellId: string): void {
+    this.clearHoverProgressTimer();
+    this.hoverProgressCellId.set(cellId);
+    this.hoverProgressPercent.set(0);
+
+    const startedAt = Date.now();
+    const totalMs = MAP_CELL_INSPECTION_HOVER_DELAY_MS;
+
+    this.hoverProgressTimer = setInterval(() => {
+      if (this.pendingHoverActivationCellId !== cellId) {
+        this.clearHoverProgressTimer();
+        return;
+      }
+
+      const elapsed = Date.now() - startedAt;
+      const ratio = Math.max(0, Math.min(1, elapsed / totalMs));
+      this.hoverProgressPercent.set(Math.round(ratio * 100));
+
+      if (ratio >= 1) {
+        this.clearHoverProgressTimer();
+      }
+    }, 50);
+  }
+
+  private clearHoverProgressTimer(): void {
+    if (!this.hoverProgressTimer) return;
+    clearInterval(this.hoverProgressTimer);
+    this.hoverProgressTimer = null;
   }
 }

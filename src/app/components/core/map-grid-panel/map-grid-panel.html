@@ -30,9 +30,10 @@
             [envRightWidth]="environmentBorderWidth(cell, 'right')"
             [envBottomWidth]="environmentBorderWidth(cell, 'bottom')"
             [envLeftWidth]="environmentBorderWidth(cell, 'left')"
+            [hoverIntentProgress]="hoverIntentProgressForCell(cell)"
             (cellClicked)="cellClicked.emit(cell)"
             (cellEntered)="onCellEnter(cell)"
-            (cellLeft)="onCellLeave()"
+            (cellLeft)="onCellLeave(cell)"
         ></map-cell>
     }
 </div>

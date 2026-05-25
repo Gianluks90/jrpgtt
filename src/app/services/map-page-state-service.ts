@@ -6,7 +6,7 @@ import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { BiomeType, MapCell, SanctuaryElement } from "../models/MapCell";
 import { Player } from "../models/Player";
 import { ResourceLabel } from "../models/Resource";
-import { SanctuaryTilesConfigEntry } from "../models/TilesConfig";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "../models/TilesConfig";
 import { WorldState } from "../models/WorldState";
 import { EventLog } from "../models/EventLog";
 import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
@@ -37,6 +37,10 @@ export class MapPageStateService {
       iconUrl: "/map-icons/shrine-water-tile-icon.svg",
       backgroundColor: "#2e4c66",
       iconColor: "#1a3348",
+      actions: {
+        inactive: ["activate-sanctuary"],
+        active: ["donate-sanctuary", "pray-sanctuary"],
+      },
     },
     fire: {
       label: "Fire Sanctuary",
@@ -47,6 +51,10 @@ export class MapPageStateService {
       iconUrl: "/map-icons/shrine-fire-tile-icon.svg",
       backgroundColor: "#7a4736",
       iconColor: "#4c281f",
+      actions: {
+        inactive: ["activate-sanctuary"],
+        active: ["donate-sanctuary", "pray-sanctuary"],
+      },
     },
     wind: {
       label: "Wind Sanctuary",
@@ -57,6 +65,10 @@ export class MapPageStateService {
       iconUrl: "/map-icons/shrine-wind-tile-icon.svg",
       backgroundColor: "#556e78",
       iconColor: "#34434a",
+      actions: {
+        inactive: ["activate-sanctuary"],
+        active: ["donate-sanctuary", "pray-sanctuary"],
+      },
     },
     earth: {
       label: "Earth Sanctuary",
@@ -67,6 +79,10 @@ export class MapPageStateService {
       iconUrl: "/map-icons/shrine-earth-tile-icon.svg",
       backgroundColor: "#6b6651",
       iconColor: "#474230",
+      actions: {
+        inactive: ["activate-sanctuary"],
+        active: ["donate-sanctuary", "pray-sanctuary"],
+      },
     },
   };
 
@@ -76,6 +92,7 @@ export class MapPageStateService {
   public worldState = signal<WorldState | null>(null);
   public mapCellsById = signal<Record<string, MapCell>>({});
   public eventLogs = signal<EventLog[]>([]);
+  public tilesConfig = signal<TilesConfig | null>(null);
   public biomeResourcesByBiome = signal<Record<BiomeType, ResourceLabel[]>>(this.emptyBiomeResourcesMap);
   public sanctuaryStylesByElement = signal<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>(this.defaultSanctuaryStylesByElement);
   public latestEventLog = computed<EventLog | null>(() => this.eventLogs()[0] ?? null);
@@ -159,6 +176,8 @@ export class MapPageStateService {
               resources: [],
               money: PLAYER_STARTING_MONEY,
             },
+            actionsUsedThisTurn: rawPlayer.actionsUsedThisTurn ?? {},
+            statuses: Array.isArray(rawPlayer.statuses) ? rawPlayer.statuses : [],
           } as Player;
 
           if (
@@ -230,10 +249,12 @@ export class MapPageStateService {
   private async loadBiomeResourcesConfig(): Promise<void> {
     try {
       const config = await this.tilesConfigService.loadConfig();
+      this.tilesConfig.set(config);
       this.biomeResourcesByBiome.set(getBiomeResourcesMap(config));
       this.sanctuaryStylesByElement.set(config.specialTiles.sanctuaries);
     } catch (error) {
       console.error(error);
+      this.tilesConfig.set(null);
       this.biomeResourcesByBiome.set(this.emptyBiomeResourcesMap);
       this.sanctuaryStylesByElement.set(this.defaultSanctuaryStylesByElement);
     }

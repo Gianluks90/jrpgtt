@@ -7,7 +7,14 @@ export type EventLogCode =
   | "player.discoverEnvironment"
   | "player.expandEnvironment"
   | "player.enterSanctuary"
-  | "player.gainExperience";
+  | "player.gainExperience"
+  | "player.endTurn"
+  | "player.activateSanctuary"
+  | "player.donateSanctuary"
+  | "player.praySanctuary"
+  | "player.cellGather"
+  | "player.consumeRation"
+  | "player.hostileEnvironmentDamage";
 
 export interface EventLog {
   id: string;

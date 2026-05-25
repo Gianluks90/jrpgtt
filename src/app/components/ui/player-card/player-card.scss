@@ -96,7 +96,9 @@
 
 .hp-fill {
     height: 100%;
-    background: rgba(255, 255, 255, 0.82);
+    // background: rgba(255, 255, 255, 0.82);
+    background: var(--ok-color);
+
 }
 
 .stats-grid {

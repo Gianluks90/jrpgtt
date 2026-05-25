@@ -21,6 +21,36 @@
     z-index: 3;
 }
 
+.quadrant-influence-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2000;
+}
+
+.quadrant-influence-overlay {
+    position: absolute;
+    box-sizing: border-box;
+    border: 2px solid var(--influence-border-color, rgba(255, 255, 255, 0.55));
+    box-shadow:
+        inset 0 0 10px 4px color-mix(in srgb, var(--influence-border-color, rgba(255, 255, 255, 0.55)) 65%, transparent),
+        inset 0 0 16px 2px color-mix(in srgb, var(--influence-glow-color, rgba(255, 255, 255, 0.3)) 55%, transparent);
+    opacity: 0.14;
+    animation: quadrant-influence-breathe 14s ease-in-out infinite;
+}
+
+@keyframes quadrant-influence-breathe {
+    0% {
+        opacity: .07;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: .07;
+    }
+}
+
 .sector-line {
     position: absolute;
     width: 2px;

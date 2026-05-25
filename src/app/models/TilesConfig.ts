@@ -5,6 +5,8 @@ export interface BiomeTilesConfigEntry {
     label: string;
     walkable: boolean;
     resources: ResourceLabel[];
+    actions: string[];
+    conditions: string[];
 }
 
 export interface SanctuaryTilesConfigEntry {
@@ -16,6 +18,10 @@ export interface SanctuaryTilesConfigEntry {
     iconUrl: string;
     backgroundColor: string;
     iconColor: string;
+    actions: {
+        inactive: string[];
+        active: string[];
+    };
 }
 
 export interface SpecialTilesConfig {

@@ -3,32 +3,44 @@
 		"plains": {
 			"label": "Pianure",
 			"walkable": true,
-			"resources": ["food"]
+			"resources": ["food"],
+			"actions": ["cell-gather"],
+			"conditions": []
 		},
 		"forest": {
 			"label": "Foresta",
 			"walkable": true,
-			"resources": ["timber"]
+			"resources": ["timber"],
+			"actions": ["cell-gather"],
+			"conditions": []
 		},
 		"mountain": {
 			"label": "Montagne",
 			"walkable": true,
-			"resources": ["minerals"]
+			"resources": ["minerals"],
+			"actions": ["cell-gather"],
+			"conditions": []
 		},
 		"water": {
 			"label": "Acqua",
 			"walkable": true,
-			"resources": ["food"]
+			"resources": ["food"],
+			"actions": ["cell-gather"],
+			"conditions": []
 		},
 		"desert": {
 			"label": "Deserto",
 			"walkable": true,
-			"resources": []
+			"resources": [],
+			"actions": ["consume-ration"],
+			"conditions": ["hostile-environment"]
 		},
 		"ruins": {
 			"label": "Rovine",
 			"walkable": true,
-			"resources": ["timber", "minerals"]
+			"resources": ["timber", "minerals"],
+			"actions": ["cell-gather"],
+			"conditions": []
 		}
 	},
 	"specialTiles": {
@@ -41,7 +53,11 @@
 				},
 				"iconUrl": "/map-icons/shrine-water-tile-icon.svg",
 				"backgroundColor": "#2e4c66",
-				"iconColor": "#1a3348"
+				"iconColor": "#1a3348",
+				"actions": {
+					"inactive": ["activate-sanctuary"],
+					"active": ["donate-sanctuary", "pray-sanctuary"]
+				}
 			},
 			"fire": {
 				"label": "Santuario del Fuoco",
@@ -51,7 +67,11 @@
 				},
 				"iconUrl": "/map-icons/shrine-fire-tile-icon.svg",
 				"backgroundColor": "#7a4736",
-				"iconColor": "#4c281f"
+				"iconColor": "#4c281f",
+				"actions": {
+					"inactive": ["activate-sanctuary"],
+					"active": ["donate-sanctuary", "pray-sanctuary"]
+				}
 			},
 			"wind": {
 				"label": "Santuario del Vento",
@@ -61,7 +81,11 @@
 				},
 				"iconUrl": "/map-icons/shrine-wind-tile-icon.svg",
 				"backgroundColor": "#556e78",
-				"iconColor": "#34434a"
+				"iconColor": "#34434a",
+				"actions": {
+					"inactive": ["activate-sanctuary"],
+					"active": ["donate-sanctuary", "pray-sanctuary"]
+				}
 			},
 			"earth": {
 				"label": "Santuario della Terra",
@@ -71,7 +95,11 @@
 				},
 				"iconUrl": "/map-icons/shrine-earth-tile-icon.svg",
 				"backgroundColor": "#6b6651",
-				"iconColor": "#474230"
+				"iconColor": "#474230",
+				"actions": {
+					"inactive": ["activate-sanctuary"],
+					"active": ["donate-sanctuary", "pray-sanctuary"]
+				}
 			}
 		}
 	}

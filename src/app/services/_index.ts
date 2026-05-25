@@ -1,3 +1,4 @@
+export * from "./action-executor-service";
 export * from "./auth-service";
 export * from "./breakpoint-service";
 export * from "./environment-service";
@@ -9,4 +10,5 @@ export * from "./player-service";
 export * from "./player-progression-service";
 export * from "./sidebar-service";
 export * from "./tiles-config-service";
+export * from "./turn-service";
 export * from "./user-service";

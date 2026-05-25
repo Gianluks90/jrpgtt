@@ -18,7 +18,6 @@ import { SanctuaryElement } from "../models/MapCell";
 import { SPECIAL_CELLS, isSpecialCellCoordinate } from "../consts/special-cells";
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { EventLogService } from "./event-log-service";
-import { DAY_NIGHT_ROUNDS_PER_TOGGLE } from "../consts/day-night-cycle";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -71,6 +70,11 @@ export class MapService {
       const worldState = worldStateSnap.data() as WorldState;
       const gameMap = gameMapSnap.exists() ? gameMapSnap.data() as GameMap : null;
       const mapSize = gameMap?.size ?? 10;
+
+      const movedThisTurnByPlayer = worldState.movedThisTurnByPlayer ?? {};
+      if (movedThisTurnByPlayer[playerId] === worldState.currentTurn) {
+        throw new Error("You have already moved this turn");
+      }
 
       if (worldState.activePlayerId && worldState.activePlayerId !== playerId) {
         throw new Error("It is not your turn");
@@ -142,7 +146,11 @@ export class MapService {
         },
       }, { merge: true });
 
-      this.advanceTurn(nextWorldState);
+      nextWorldState.movedThisTurnByPlayer = {
+        ...movedThisTurnByPlayer,
+        [playerId]: worldState.currentTurn,
+      };
+
       transaction.set(worldStateRef, nextWorldState);
 
       transaction.set(gameRef, {
@@ -212,7 +220,7 @@ export class MapService {
       gainedExperience += 1;
     }
 
-    if (landedOnSpecialCell) {
+    if (landedOnSpecialCell && movedToNewCell) {
       gainedExperience += 2;
     }
 
@@ -424,34 +432,6 @@ export class MapService {
     };
 
     return drawn;
-  }
-
-  private advanceTurn(worldState: WorldState): void {
-    const order = worldState.turnOrder ?? [];
-    if (order.length === 0) {
-      worldState.currentTurn += 1;
-      return;
-    }
-
-    const currentIndex = worldState.activePlayerId ? order.indexOf(worldState.activePlayerId) : -1;
-    const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % order.length;
-
-    if (nextIndex === 0) {
-      worldState.currentTurn += 1;
-      this.toggleTimeOnRoundChange(worldState);
-    }
-
-    worldState.activePlayerId = order[nextIndex];
-  }
-
-  private toggleTimeOnRoundChange(worldState: WorldState): void {
-    const roundsPerToggle = Math.max(1, Math.floor(DAY_NIGHT_ROUNDS_PER_TOGGLE));
-    const transitionsSinceStart = Math.max(0, worldState.currentTurn - 1);
-    const shouldToggle = transitionsSinceStart % roundsPerToggle === 0;
-    if (!shouldToggle) return;
-
-    const currentTime = worldState.timeOfDay ?? "day";
-    worldState.timeOfDay = currentTime === "day" ? "night" : "day";
   }
 
   private emptyBiomePlacementCount(): BiomePlacementCount {

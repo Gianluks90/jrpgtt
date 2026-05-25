@@ -1,0 +1,33 @@
+<dialog-wrapper [title]="title">
+    <p class="info-text">{{ description }}</p>
+    <p class="info-text sanctuary-element">Sanctuary element: <strong>{{ sanctuaryLabel }}</strong></p>
+    <p class="info-text">Your coins: <strong>{{ playerMoney }}</strong></p>
+
+    <form [formGroup]="form">
+        <div class="form-field">
+            <label for="donatedCoins">Donation amount</label>
+            <input
+                id="donatedCoins"
+                type="number"
+                inputMode="numeric"
+                formControlName="donatedCoins"
+                [min]="donationCost"
+                [max]="donationCost"
+                [placeholder]="'Type ' + donationCost"
+            />
+            <p class="info-text">You must donate exactly {{ donationCost }} coins.</p>
+        </div>
+    </form>
+
+    @if (donationDisabled) {
+        <p class="error-text">You do not have enough coins for this action.</p>
+    }
+
+    <text-button
+        dialog-action
+        [text]="confirmLabel"
+        [disabled]="form.invalid || donationDisabled"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+</dialog-wrapper>

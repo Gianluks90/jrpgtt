@@ -43,6 +43,49 @@ export class EventLogService {
             const amount = Number(args["amount"] ?? 0);
             return `${playerName} gained ${amount} XP.`;
         },
+        "player.endTurn": ({ playerName }) => {
+            return `${playerName} ended the turn.`;
+        },
+        "player.activateSanctuary": ({ playerName, args }) => {
+            const sanctuary = String(args["sanctuaryLabel"] ?? "a sanctuary");
+            return `${playerName} activated ${sanctuary} and attuned to its element.`;
+        },
+        "player.donateSanctuary": ({ playerName, args }) => {
+            const sanctuary = String(args["sanctuaryLabel"] ?? "a sanctuary");
+            return `${playerName} donated to ${sanctuary} and shifted attunement.`;
+        },
+        "player.praySanctuary": ({ playerName, args }) => {
+            const sanctuary = String(args["sanctuaryLabel"] ?? "a sanctuary");
+            const healedHp = Number(args["healedHp"] ?? 0);
+            const lucky = Boolean(args["lucky"]);
+            if (lucky) {
+                return `${playerName} prayed at ${sanctuary} and restored ${healedHp} HP with a lucky blessing.`;
+            }
+
+            return `${playerName} prayed at ${sanctuary} and restored ${healedHp} HP.`;
+        },
+        "player.cellGather": ({ playerName, args }) => {
+            const resource = String(args["resource"] ?? "resource");
+            const lucky = Boolean(args["lucky"]);
+            if (!lucky) {
+                return `${playerName} attempted to gather but found nothing.`;
+            }
+
+            const extraResource = args["extraResource"];
+            if (typeof extraResource === "string" && extraResource) {
+                return `${playerName} gathered ${resource} and found extra ${extraResource} with luck.`;
+            }
+
+            return `${playerName} gathered ${resource}.`;
+        },
+        "player.consumeRation": ({ playerName }) => {
+            return `${playerName} consumed a ration and gained Nutrition.`;
+        },
+        "player.hostileEnvironmentDamage": ({ playerName, args }) => {
+            const damageHp = Number(args["damageHp"] ?? 0);
+            const environmentSize = Number(args["environmentSize"] ?? 1);
+            return `${playerName} suffered ${damageHp} HP from hostile desert (environment size ${environmentSize}).`;
+        },
     };
 
     constructor(private firebaseService: FirebaseService) { }

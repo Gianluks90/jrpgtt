@@ -1,4 +1,12 @@
-import { Component } from "@angular/core";
+import { Component, input, output } from "@angular/core";
+
+export interface CommandPanelAction {
+  id: string;
+  label: string;
+  description?: string;
+  disabled?: boolean;
+  pending?: boolean;
+}
 
 @Component({
   selector: "app-commands-panel",
@@ -6,4 +14,13 @@ import { Component } from "@angular/core";
   templateUrl: "./commands-panel.html",
   styleUrl: "./commands-panel.scss",
 })
-export class CommandsPanel {}
+export class CommandsPanel {
+  public actions = input<CommandPanelAction[]>([]);
+
+  public actionRequested = output<string>();
+
+  public onActionClick(action: CommandPanelAction): void {
+    if (action.disabled || action.pending) return;
+    this.actionRequested.emit(action.id);
+  }
+}

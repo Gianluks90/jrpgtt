@@ -1,6 +1,17 @@
 import { Timestamp } from "firebase/firestore";
 import { Inventory } from "./Inventory";
 import { LuckCheckResult } from "./LuckCheckResult";
+import { SanctuaryElement } from "./MapCell";
+
+export type PlayerStatusKey = "nutrition" | (string & {});
+
+export interface PlayerStatus {
+    key: PlayerStatusKey;
+    label: string;
+    description: string;
+    durationTurns: number;
+    effectKey?: string;
+}
 
 export interface Player {
     id: string;
@@ -9,11 +20,15 @@ export interface Player {
     parameters: PlayerParameters;
     level: number;
     experience: number;
+    pendingLevelUpChoices?: number;
+    attunedElement?: SanctuaryElement;
     inventory: Inventory;
     lastLuckCheck?: LuckCheckResult;
     isReady: boolean;
     color: string;
     joinedAt: Timestamp;
+    actionsUsedThisTurn?: Record<string, number>;
+    statuses?: PlayerStatus[];
 }
 
 export interface PlayerLocation {

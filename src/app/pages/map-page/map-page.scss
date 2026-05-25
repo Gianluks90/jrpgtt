@@ -59,6 +59,56 @@
         gap: 6px;
     }
 
+    .main-player-card-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .level-up-trigger {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border: 1px solid rgba(124, 255, 145, 0.85);
+        background: rgba(24, 79, 36, 0.55);
+        color: #8cff9a;
+        cursor: pointer;
+        animation: level-up-pulse 1s infinite;
+    }
+
+    .level-up-trigger:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        animation: none;
+    }
+
+    .level-up-trigger-icon {
+        width: 16px;
+        height: 16px;
+        background-color: currentColor;
+    }
+
+    .level-up-trigger-label {
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    @keyframes level-up-pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(124, 255, 145, 0.45);
+        }
+        70% {
+            box-shadow: 0 0 0 6px rgba(124, 255, 145, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(124, 255, 145, 0);
+        }
+    }
+
     .mini-player-list {
         display: flex;
         flex-direction: column;
@@ -174,6 +224,7 @@
 
         app-resource-counter,
         app-money-counter,
+        app-attunement-indicator,
         app-luck-indicator,
         app-day-night-cycle-panel {
             display: block;
@@ -183,6 +234,7 @@
 
         ::ng-deep .resource-counter-panel,
         ::ng-deep .money-counter-panel,
+        ::ng-deep .attunement-indicator-panel,
         ::ng-deep .luck-indicator-panel,
         ::ng-deep .day-night-panel {
             width: 100%;

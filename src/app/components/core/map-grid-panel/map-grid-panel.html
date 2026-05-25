@@ -15,6 +15,20 @@
         <span class="sector-label sector-label-third">III</span>
     </div>
 
+    <div class="quadrant-influence-layer" aria-hidden="true">
+        @for (overlay of quadrantInfluenceOverlays(); track overlay.id) {
+            <span
+                class="quadrant-influence-overlay"
+                [style.left]="'calc((100% / var(--map-size, 10)) * ' + overlay.startX + ')'"
+                [style.top]="'calc((100% / var(--map-size, 10)) * ' + overlay.startY + ')'"
+                [style.width]="'calc((100% / var(--map-size, 10)) * ' + overlay.size + ')'"
+                [style.height]="'calc((100% / var(--map-size, 10)) * ' + overlay.size + ')'"
+                [style.--influence-border-color]="overlay.borderColor"
+                [style.--influence-glow-color]="overlay.glowColor"
+            ></span>
+        }
+    </div>
+
     @for (cell of cells(); track cell.id) {
         <map-cell
             [special]="cell.isSpecial"

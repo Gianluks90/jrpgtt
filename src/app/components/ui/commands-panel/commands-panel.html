@@ -1,1 +1,26 @@
-<div class="commands-panel-root"></div>
+<div class="commands-panel-root">
+	<div class="commands-list">
+		@for (action of actions(); track action.id) {
+			<button
+				type="button"
+				class="command-card"
+				[disabled]="action.disabled || action.pending"
+				(click)="onActionClick(action)"
+			>
+				<span class="command-card-title">
+					@if (action.pending) {
+						Executing...
+					} @else {
+						{{ action.label }}
+					}
+				</span>
+				<span class="command-card-divider" aria-hidden="true"></span>
+				<span class="command-card-description">{{ action.description || '-' }}</span>
+			</button>
+		}
+
+		@if (actions().length === 0) {
+			<p class="commands-empty-state">No actions available for this position.</p>
+		}
+	</div>
+</div>

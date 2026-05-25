@@ -404,11 +404,14 @@ export class GameService {
       },
       level: 1,
       experience: 2,
+      pendingLevelUpChoices: 0,
       inventory: {
         items: [],
         resources: [],
         money: PLAYER_STARTING_MONEY,
       },
+      actionsUsedThisTurn: {},
+      statuses: [],
       isReady: false,
       color: palette[colorIndex],
       joinedAt: Timestamp.now(),
@@ -528,6 +531,8 @@ export class GameService {
         remainingDeck: [],
         discardedDeck: [],
         placedBiomeCount: this.emptyBiomePlacementCount(),
+        movedThisTurnByPlayer: {},
+        sanctuaryInfluenceByQuadrant: {},
       },
       gameMap: {
         size: config.map.size,

@@ -1,0 +1,11 @@
+<div class="attunement-indicator-panel">
+  <p class="attunement-indicator-title">Attunement</p>
+  <div class="attunement-indicator-root">
+    <span class="attunement-indicator-value-wrap" [class]="'attunement-indicator-value-wrap ' + elementClass()">
+      @if (iconUrl(); as icon) {
+        <span class="attunement-icon" [style.mask]="'url(' + icon + ') no-repeat center / contain'"></span>
+      }
+      <span class="attunement-value">{{ label() }}</span>
+    </span>
+  </div>
+</div>

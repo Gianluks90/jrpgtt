@@ -18,10 +18,25 @@
                     <p class="hud-title">Players</p>
                     <div class="panel-scroll-body player-list-column">
                         @if (sidebarMainPlayer(); as player) {
-                            <app-player-card
-                                [player]="player"
-                                [highlighted]="worldState()?.activePlayerId === player.id"
-                            ></app-player-card>
+                            <div class="main-player-card-wrap">
+                                <app-player-card
+                                    [player]="player"
+                                    [highlighted]="worldState()?.activePlayerId === player.id"
+                                ></app-player-card>
+
+                                @if (pendingLevelUpChoices() > 0) {
+                                    <button
+                                        type="button"
+                                        class="level-up-trigger"
+                                        [disabled]="!canOpenLevelUpDialog()"
+                                        [attr.aria-label]="'Open level-up choices (' + pendingLevelUpChoices() + ')'"
+                                        (click)="onOpenLevelUpDialog()"
+                                    >
+                                        <span class="level-up-trigger-icon flashing-text" [style.mask]="'url(./icons/shift_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg) no-repeat center / contain'"></span>
+                                        <span class="level-up-trigger-label flashing-text"> LEVEL +{{ pendingLevelUpChoices() }}</span>
+                                    </button>
+                                }
+                            </div>
                         }
 
                         <div class="mini-player-list">
@@ -41,7 +56,10 @@
 
                 <section class="hud sidebar-block commands-block">
                     <p class="hud-title">Commands</p>
-                    <app-commands-panel></app-commands-panel>
+                    <app-commands-panel
+                        [actions]="commandActions()"
+                        (actionRequested)="onCommandActionRequested($event)"
+                    ></app-commands-panel>
                 </section>
             </aside>
 
@@ -65,6 +83,7 @@
             <aside class="stage-right-utilities">
                 <app-resource-counter [resources]="myPlayer()?.inventory?.resources || []"></app-resource-counter>
                 <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
+                <app-attunement-indicator [element]="myPlayer()?.attunedElement ?? null"></app-attunement-indicator>
                 <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
 
                 <div class="cell-inspector-panel">

@@ -7,6 +7,15 @@ import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 import { isSpecialCellCoordinate } from "../../../consts/special-cells";
 import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspector";
 
+interface QuadrantInfluenceOverlay {
+  id: string;
+  startX: number;
+  startY: number;
+  size: number;
+  borderColor: string;
+  glowColor: string;
+}
+
 export interface MapGridPanelCell {
   x: number;
   y: number;
@@ -86,6 +95,37 @@ export class MapGridPanel {
     if (environment) return new Set<string>(environment);
 
     return new Set<string>([hoveredCellId]);
+  });
+
+  public quadrantInfluenceOverlays = computed<QuadrantInfluenceOverlay[]>(() => {
+    const size = this.mapSize();
+    if (size <= 0) return [];
+
+    const quadrantSize = Math.max(1, Math.floor(size / 2));
+    const specialActiveCells = Object.values(this.mapCellsById()).filter((cell) => {
+      return cell.isSpecial === true && cell.specialType === "sanctuary" && cell.active === true && !!cell.sanctuaryElement;
+    });
+
+    const overlays = new Map<string, QuadrantInfluenceOverlay>();
+    for (const cell of specialActiveCells) {
+      const quadrantId = this.getQuadrantId(cell.x, cell.y, quadrantSize);
+      if (!quadrantId) continue;
+
+      const startX = quadrantId === "Q2" || quadrantId === "Q4" ? quadrantSize : 0;
+      const startY = quadrantId === "Q3" || quadrantId === "Q4" ? quadrantSize : 0;
+      const colors = this.colorsForElement(cell.sanctuaryElement as SanctuaryElement);
+
+      overlays.set(quadrantId, {
+        id: quadrantId,
+        startX,
+        startY,
+        size: quadrantSize,
+        borderColor: colors.border,
+        glowColor: colors.glow,
+      });
+    }
+
+    return Array.from(overlays.values());
   });
 
   public isMovableCell(cell: MapGridPanelCell): boolean {
@@ -171,6 +211,43 @@ export class MapGridPanel {
 
   private isSpecialCell(x: number, y: number): boolean {
     return isSpecialCellCoordinate(x, y);
+  }
+
+  private getQuadrantId(x: number, y: number, quadrantSize: number): "Q1" | "Q2" | "Q3" | "Q4" | null {
+    if (quadrantSize <= 0) return null;
+
+    if (x < quadrantSize && y < quadrantSize) return "Q1";
+    if (x >= quadrantSize && y < quadrantSize) return "Q2";
+    if (x < quadrantSize && y >= quadrantSize) return "Q3";
+    return "Q4";
+  }
+
+  private colorsForElement(element: SanctuaryElement): { border: string; glow: string } {
+    if (element === "water") {
+      return {
+        border: "rgba(108, 184, 255, 0.72)",
+        glow: "rgba(108, 184, 255, 0.42)",
+      };
+    }
+
+    if (element === "fire") {
+      return {
+        border: "rgba(255, 138, 95, 0.72)",
+        glow: "rgba(255, 138, 95, 0.4)",
+      };
+    }
+
+    if (element === "wind") {
+      return {
+        border: "rgba(201, 171, 255, 0.72)",
+        glow: "rgba(201, 171, 255, 0.38)",
+      };
+    }
+
+    return {
+      border: "rgba(232, 210, 121, 0.72)",
+      glow: "rgba(232, 210, 121, 0.38)",
+    };
   }
 
   private clearHoverActivationTimer(): void {

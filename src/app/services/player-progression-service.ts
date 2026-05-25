@@ -55,31 +55,57 @@ export class PlayerProgressionService {
   public async checkLevelUpAndHandle(gameId: string, playerId: string, currentPlayer?: Player): Promise<Player> {
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
     let player = currentPlayer ? this.normalizePlayer(currentPlayer) : await this.getPlayer(gameId, playerId);
+    let pendingChoices = Math.max(0, Math.floor(Number(player.pendingLevelUpChoices ?? 0)));
+    let didLevelUp = false;
 
     while (player.experience >= player.level) {
       const requiredExperience = player.level;
-      const leveledPlayer = this.normalizePlayer({
+      player = this.normalizePlayer({
         ...player,
         experience: player.experience - requiredExperience,
         level: player.level + 1,
       });
 
-      await setDoc(playerRef, {
-        level: leveledPlayer.level,
-        experience: leveledPlayer.experience,
-      }, { merge: true });
-
-      const selectedCharacteristic = await this.openLevelUpDialog(leveledPlayer.level, leveledPlayer.experience);
-      const upgradedPlayer = this.applyCharacteristicIncrease(leveledPlayer, selectedCharacteristic);
-
-      await setDoc(playerRef, {
-        parameters: upgradedPlayer.parameters,
-      }, { merge: true });
-
-      player = upgradedPlayer;
+      pendingChoices += 1;
+      didLevelUp = true;
     }
 
-    return player;
+    if (didLevelUp) {
+      await setDoc(playerRef, {
+        level: player.level,
+        experience: player.experience,
+        pendingLevelUpChoices: pendingChoices,
+      }, { merge: true });
+    }
+
+    return {
+      ...player,
+      pendingLevelUpChoices: pendingChoices,
+    };
+  }
+
+  public async applyNextPendingLevelUp(gameId: string, playerId: string, currentPlayer?: Player): Promise<Player> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
+    const player = currentPlayer ? this.normalizePlayer(currentPlayer) : await this.getPlayer(gameId, playerId);
+    const pendingChoices = Math.max(0, Math.floor(Number(player.pendingLevelUpChoices ?? 0)));
+
+    if (pendingChoices <= 0) {
+      throw new Error("No pending level-up choices available");
+    }
+
+    const selectedCharacteristic = await this.openLevelUpDialog(player.level, player.experience);
+    const upgradedPlayer = this.applyCharacteristicIncrease(player, selectedCharacteristic);
+    const nextPendingChoices = pendingChoices - 1;
+
+    await setDoc(playerRef, {
+      parameters: upgradedPlayer.parameters,
+      pendingLevelUpChoices: nextPendingChoices,
+    }, { merge: true });
+
+    return {
+      ...upgradedPlayer,
+      pendingLevelUpChoices: nextPendingChoices,
+    };
   }
 
   public async assignExperienceAndCheckLevelUp(
@@ -184,6 +210,7 @@ export class PlayerProgressionService {
       ...player,
       level: Math.max(1, Math.floor(Number(player.level))),
       experience: Math.max(0, Math.floor(Number(player.experience))),
+      pendingLevelUpChoices: Math.max(0, Math.floor(Number(player.pendingLevelUpChoices ?? 0))),
       parameters: this.cloneParameters(player.parameters),
     };
   }

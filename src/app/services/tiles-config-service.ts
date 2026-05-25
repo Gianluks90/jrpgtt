@@ -54,6 +54,8 @@ export class TilesConfigService {
         label?: unknown;
         walkable?: unknown;
         resources?: unknown;
+        actions?: unknown;
+        conditions?: unknown;
       };
 
       if (typeof typedEntry.label !== "string" || !typedEntry.label.trim()) {
@@ -68,9 +70,29 @@ export class TilesConfigService {
         throw new Error(`Invalid tiles configuration: biome '${biome}' has invalid resources value`);
       }
 
+      if (!Array.isArray(typedEntry.actions)) {
+        throw new Error(`Invalid tiles configuration: biome '${biome}' has invalid actions value`);
+      }
+
+      if (!Array.isArray(typedEntry.conditions)) {
+        throw new Error(`Invalid tiles configuration: biome '${biome}' has invalid conditions value`);
+      }
+
       typedEntry.resources.forEach((resource) => {
         if (typeof resource !== "string" || !resourceLabels.has(resource as ResourceLabel)) {
           throw new Error(`Invalid tiles configuration: biome '${biome}' has unknown resource '${String(resource)}'`);
+        }
+      });
+
+      typedEntry.actions.forEach((action) => {
+        if (typeof action !== "string" || !action.trim()) {
+          throw new Error(`Invalid tiles configuration: biome '${biome}' has invalid action '${String(action)}'`);
+        }
+      });
+
+      typedEntry.conditions.forEach((condition) => {
+        if (typeof condition !== "string" || !condition.trim()) {
+          throw new Error(`Invalid tiles configuration: biome '${biome}' has invalid condition '${String(condition)}'`);
         }
       });
     });
@@ -98,6 +120,7 @@ export class TilesConfigService {
         iconUrl?: unknown;
         backgroundColor?: unknown;
         iconColor?: unknown;
+        actions?: unknown;
       };
 
       if (typeof typedEntry.label !== "string" || !typedEntry.label.trim()) {
@@ -132,6 +155,35 @@ export class TilesConfigService {
       if (typeof typedEntry.iconColor !== "string" || !typedEntry.iconColor.trim()) {
         throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid iconColor`);
       }
+
+      if (!typedEntry.actions || typeof typedEntry.actions !== "object") {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid actions object`);
+      }
+
+      const actions = typedEntry.actions as {
+        inactive?: unknown;
+        active?: unknown;
+      };
+
+      if (!Array.isArray(actions.inactive)) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid inactive actions`);
+      }
+
+      if (!Array.isArray(actions.active)) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid active actions`);
+      }
+
+      actions.inactive.forEach((action) => {
+        if (typeof action !== "string" || !action.trim()) {
+          throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid inactive action '${String(action)}'`);
+        }
+      });
+
+      actions.active.forEach((action) => {
+        if (typeof action !== "string" || !action.trim()) {
+          throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid active action '${String(action)}'`);
+        }
+      });
     });
 
     return raw as TilesConfig;

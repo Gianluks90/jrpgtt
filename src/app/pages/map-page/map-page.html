@@ -95,6 +95,15 @@
             <div class="footer-actions">
                 <div class="footer-placeholder">
                     <p class="hud-title">Log</p>
+                    <div class="footer-log-body">
+                        <p class="footer-log-text">{{ latestLogMessage() }}</p>
+                        <icon-button
+                            class="footer-log-expand-button"
+                            iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                            ariaLabel="Open logs"
+                            (clicked)="openLogsDialog()"
+                        ></icon-button>
+                    </div>
                 </div>
                 <icon-button
                     class="footer-home-button"

@@ -1,6 +1,8 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from "@angular/core";
+import { Dialog } from "@angular/cdk/dialog";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Timestamp } from "firebase/firestore";
+import { take } from "rxjs";
 import { Player } from "../../models/Player";
 import { BiomeType, MapCell, SanctuaryElement } from "../../models/MapCell";
 import { ResourceLabel } from "../../models/Resource";
@@ -20,6 +22,8 @@ import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-m
 import { SanctuaryTilesConfigEntry } from "../../models/TilesConfig";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
 import { MapPageStateService } from "../../services/map-page-state-service";
+import { DIALOGS_CONFIG } from "../../consts/dialog-configs";
+import { GameEventsLogDialog } from "../../components/dialogs/game-events-log-dialog/game-events-log-dialog";
 
 @Component({
   selector: "app-map-page",
@@ -42,6 +46,7 @@ import { MapPageStateService } from "../../services/map-page-state-service";
 export class MapPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private dialog = inject(Dialog);
   private mapService = inject(MapService);
   private environmentService = inject(EnvironmentService);
   private breakpointService = inject(BreakpointService);
@@ -55,9 +60,13 @@ export class MapPage implements OnInit, OnDestroy {
   public players = this.mapPageState.players;
   public worldState = this.mapPageState.worldState;
   public mapCellsById = this.mapPageState.mapCellsById;
+  public eventLogs = this.mapPageState.eventLogs;
   public biomeResourcesByBiome = this.mapPageState.biomeResourcesByBiome;
   public sanctuaryStylesByElement = this.mapPageState.sanctuaryStylesByElement;
   public mockPlayers = signal<Player[]>([]);
+  public latestLogMessage = computed<string>(() => {
+    return this.mapPageState.latestEventLogSummary();
+  });
 
   public biomeEnvironments = computed<BiomeEnvironment[]>(() => {
     return this.environmentService.getBiomeEnvironments(this.mapCellsById());
@@ -202,6 +211,15 @@ export class MapPage implements OnInit, OnDestroy {
 
   public onBackHome(): void {
     void this.router.navigate(["/home"]);
+  }
+
+  public openLogsDialog(): void {
+    this.dialog.open(GameEventsLogDialog, {
+      ...DIALOGS_CONFIG,
+      data: {
+        logs: this.eventLogs(),
+      },
+    }).closed.pipe(take(1)).subscribe();
   }
 
   public trackPlayer(_index: number, player: Player): string {

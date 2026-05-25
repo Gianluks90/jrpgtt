@@ -1,0 +1,16 @@
+<dialog-wrapper title="Event Log">
+    <div class="events-log-list">
+        @if (logs.length === 0) {
+            <p class="info-text">No events yet.</p>
+        } @else {
+            @for (log of logs; track log.id) {
+                <div class="event-log-item">
+                    <p class="event-log-message">{{ log.message }}</p>
+                    <p class="event-log-meta">{{ formatTimestamp(log) }}</p>
+                </div>
+            }
+        }
+    </div>
+
+    <text-button dialog-action text="Close" (clicked)="close()"></text-button>
+</dialog-wrapper>

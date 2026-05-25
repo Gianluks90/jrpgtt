@@ -246,16 +246,18 @@ export class GameService {
       throw new Error("Only the game owner can delete this game");
     }
 
-    const [playersSnapshot, mapCellsSnapshot, runtimeSnapshot] = await Promise.all([
+    const [playersSnapshot, mapCellsSnapshot, runtimeSnapshot, logsSnapshot] = await Promise.all([
       getDocs(collection(docRef, "players")),
       getDocs(collection(docRef, "mapCells")),
       getDocs(collection(docRef, "runtime")),
+      getDocs(collection(docRef, "logs")),
     ]);
 
     const refsToDelete: DocumentReference[] = [
       ...playersSnapshot.docs.map((playerDoc) => playerDoc.ref),
       ...mapCellsSnapshot.docs.map((mapCellDoc) => mapCellDoc.ref),
       ...runtimeSnapshot.docs.map((runtimeDoc) => runtimeDoc.ref),
+      ...logsSnapshot.docs.map((logDoc) => logDoc.ref),
       docRef,
     ];
 

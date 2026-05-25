@@ -11,12 +11,13 @@ import { GameMap } from "../models/GameMap";
 import { EnvironmentService } from "./environment-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { LuckService } from "./luck-service";
-import { EXPLORATION_LUCK_EXTRA_RESOURCE_ROLLS } from "../consts/luck-config";
+import { LUCK_CONFIG } from "../consts/luck/luck-config";
 import { LuckCheckResult } from "../models/LuckCheckResult";
 import { PlayerProgressionService } from "./player-progression-service";
 import { SanctuaryElement } from "../models/MapCell";
 import { SPECIAL_CELLS, isSpecialCellCoordinate } from "../consts/special-cells";
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
+import { EventLogService } from "./event-log-service";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -30,6 +31,7 @@ export class MapService {
     private tilesConfigService: TilesConfigService,
     private luckService: LuckService,
     private playerProgressionService: PlayerProgressionService,
+    private eventLogService: EventLogService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
@@ -43,6 +45,9 @@ export class MapService {
     let landedOnSpecialCell = false;
     let movedPlayerLuck = 0;
     let environmentProgressionEvent: EnvironmentProgressionEvent | null = null;
+    let movedPlayerName = "";
+    let movedToNewCell = false;
+    let movedSanctuaryElement: SanctuaryElement | undefined;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
@@ -60,6 +65,7 @@ export class MapService {
       }
 
       const player = playerSnap.data() as Player;
+      movedPlayerName = player.name;
       movedPlayerLuck = Math.max(0, Math.floor(player.parameters.luck.current));
       const worldState = worldStateSnap.data() as WorldState;
       const gameMap = gameMapSnap.exists() ? gameMapSnap.data() as GameMap : null;
@@ -84,10 +90,12 @@ export class MapService {
       };
 
       if (!targetCellSnap.exists()) {
+        movedToNewCell = true;
         let sanctuaryElement: SanctuaryElement | undefined;
         let drawnBiome: BiomeType;
         if (isSpecialCellCoordinate(targetX, targetY)) {
           sanctuaryElement = await this.drawSanctuaryElement(transaction, gameId);
+          movedSanctuaryElement = sanctuaryElement;
           drawnBiome = this.biomeFromSanctuaryElement(sanctuaryElement);
         } else {
           drawnBiome = this.drawBiome(nextWorldState);
@@ -141,8 +149,43 @@ export class MapService {
       }, { merge: true });
     });
 
-    // RACCOLTA RISORSA CASUALE
+    const movingPlayer = {
+      id: playerId,
+      name: movedPlayerName,
+    };
+
+    await this.tryCreateLog(gameId, movingPlayer, "player.move", {
+      x: targetX,
+      y: targetY,
+    });
+
     const landedBiome = movedBiome as BiomeType | null;
+
+    if (landedOnSpecialCell) {
+      await this.tryCreateLog(gameId, movingPlayer, "player.enterSanctuary", {
+        sanctuary: movedSanctuaryElement,
+        sanctuaryLabel: this.sanctuaryElementToLabel(movedSanctuaryElement),
+      });
+    } else if (movedToNewCell && landedBiome) {
+      await this.tryCreateLog(gameId, movingPlayer, "player.discoverBiome", {
+        biome: landedBiome,
+        biomeLabel: this.biomeToLabel(landedBiome),
+      });
+    }
+
+    if (environmentProgressionEvent && landedBiome && !landedOnSpecialCell) {
+      await this.tryCreateLog(
+        gameId,
+        movingPlayer,
+        environmentProgressionEvent === "discover" ? "player.discoverEnvironment" : "player.expandEnvironment",
+        {
+          biome: landedBiome,
+          biomeLabel: this.biomeToLabel(landedBiome),
+        },
+      );
+    }
+
+    // RACCOLTA RISORSA CASUALE
     if (landedBiome && !landedOnSpecialCell) {
       const luckResult = this.luckService.checkLuck(movedPlayerLuck);
       const tilesConfig = await this.tilesConfigService.loadConfig();
@@ -153,7 +196,7 @@ export class MapService {
         gainedResources.push(this.pickRandomResource(possibleResources));
 
         if (luckResult.success) {
-          for (let i = 0; i < EXPLORATION_LUCK_EXTRA_RESOURCE_ROLLS; i++) {
+          for (let i = 0; i < LUCK_CONFIG.exploration.extraResourceRolls; i++) {
             gainedResources.push(this.pickRandomResource(possibleResources));
           }
         }
@@ -173,6 +216,22 @@ export class MapService {
 
     if (gainedExperience > 0) {
       await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, playerId, gainedExperience);
+      await this.tryCreateLog(gameId, movingPlayer, "player.gainExperience", {
+        amount: gainedExperience,
+      });
+    }
+  }
+
+  private async tryCreateLog(
+    gameId: string,
+    player: Pick<Player, "id" | "name">,
+    code: string,
+    args: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      await this.eventLogService.newLog(gameId, player, code, args);
+    } catch (error) {
+      console.error("Unable to write gameplay event log", error);
     }
   }
 
@@ -202,6 +261,23 @@ export class MapService {
     if (element === "fire") return "desert";
     if (element === "wind") return "plains";
     return "mountain";
+  }
+
+  private biomeToLabel(biome: BiomeType): string {
+    if (biome === "plains") return "Plains";
+    if (biome === "forest") return "Forest";
+    if (biome === "mountain") return "Mountain";
+    if (biome === "water") return "Water";
+    if (biome === "desert") return "Desert";
+    return "Ruins";
+  }
+
+  private sanctuaryElementToLabel(element?: SanctuaryElement): string {
+    if (element === "water") return "Water Shrine";
+    if (element === "fire") return "Fire Shrine";
+    if (element === "wind") return "Wind Shrine";
+    if (element === "earth") return "Earth Shrine";
+    return "Elemental Shrine";
   }
 
   private async evaluateEnvironmentProgressionOnReveal(

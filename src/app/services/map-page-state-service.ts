@@ -1,4 +1,4 @@
-import { Injectable, signal } from "@angular/core";
+import { computed, inject, Injectable, signal } from "@angular/core";
 import { getAuth, onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getBiomeResourcesMap } from "../consts/biome-resources";
@@ -8,6 +8,9 @@ import { Player } from "../models/Player";
 import { ResourceLabel } from "../models/Resource";
 import { SanctuaryTilesConfigEntry } from "../models/TilesConfig";
 import { WorldState } from "../models/WorldState";
+import { EventLog } from "../models/EventLog";
+import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
+import { EventLogService } from "./event-log-service";
 import { FirebaseService } from "./firebase-service";
 import { TilesConfigService } from "./tiles-config-service";
 
@@ -56,12 +59,19 @@ export class MapPageStateService {
   public players = signal<Player[]>([]);
   public worldState = signal<WorldState | null>(null);
   public mapCellsById = signal<Record<string, MapCell>>({});
+  public eventLogs = signal<EventLog[]>([]);
   public biomeResourcesByBiome = signal<Record<BiomeType, ResourceLabel[]>>(this.emptyBiomeResourcesMap);
   public sanctuaryStylesByElement = signal<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>(this.defaultSanctuaryStylesByElement);
+  public latestEventLog = computed<EventLog | null>(() => this.eventLogs()[0] ?? null);
+  public latestEventLogSummary = computed<string>(() => {
+    const summary = this.buildLatestEventLogSummary(this.eventLogs(), this.players().length);
+    return this.truncateFooterLog(summary);
+  });
 
   private unsubscribers: Unsubscribe[] = [];
   private inventoryBackfillRequested = new Set<string>();
   private activeGameId: string | null = null;
+  private eventLogService = inject(EventLogService);
 
   constructor(
     private firebaseService: FirebaseService,
@@ -187,6 +197,10 @@ export class MapPageStateService {
         return nextCells;
       });
     }));
+
+    this.unsubscribers.push(this.eventLogService.listenLogs(gameId, (logs) => {
+      this.eventLogs.set(logs);
+    }));
   }
 
   public destroy(): void {
@@ -194,6 +208,7 @@ export class MapPageStateService {
     this.unsubscribers = [];
     this.activeGameId = null;
     this.inventoryBackfillRequested.clear();
+    this.eventLogs.set([]);
   }
 
   private async loadBiomeResourcesConfig(): Promise<void> {
@@ -206,5 +221,48 @@ export class MapPageStateService {
       this.biomeResourcesByBiome.set(this.emptyBiomeResourcesMap);
       this.sanctuaryStylesByElement.set(this.defaultSanctuaryStylesByElement);
     }
+  }
+
+  private buildLatestEventLogSummary(logs: EventLog[], playersCount: number): string {
+    if (logs.length === 0) return EVENT_LOG_CONFIG.footer.emptyMessage;
+
+    const latestLog = logs[0];
+    if (playersCount <= 1) {
+      return latestLog.message;
+    }
+
+    const latestAuthorId = latestLog.playerId;
+    const latestAuthorName = latestLog.playerName?.trim() || "Unknown";
+
+    const sameAuthorChain: EventLog[] = [];
+    for (const log of logs) {
+      if (log.playerId !== latestAuthorId) break;
+      sameAuthorChain.push(log);
+    }
+
+    if (sameAuthorChain.length <= 1) {
+      return latestLog.message;
+    }
+
+    const timeline = [...sameAuthorChain]
+      .reverse()
+      .map((log) => this.removePlayerPrefix(log.message, latestAuthorName))
+      .filter((message) => message.length > 0);
+
+    if (timeline.length === 0) return latestLog.message;
+    return `${latestAuthorName}: ${timeline.join(EVENT_LOG_CONFIG.footer.chainSeparator)}`;
+  }
+
+  private removePlayerPrefix(message: string, playerName: string): string {
+    const prefix = `${playerName} `;
+    if (!message.startsWith(prefix)) return message;
+    return message.slice(prefix.length);
+  }
+
+  private truncateFooterLog(text: string): string {
+    if (text.length <= EVENT_LOG_CONFIG.footer.maxSummaryLength) return text;
+
+    const maxPrefixLength = Math.max(0, EVENT_LOG_CONFIG.footer.maxSummaryLength - 3);
+    return `${text.slice(0, maxPrefixLength).trimEnd()}...`;
   }
 }

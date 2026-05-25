@@ -1,0 +1,30 @@
+.events-log-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.event-log-item {
+    border: 1px dotted rgba(255, 255, 255, 0.35);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.event-log-message {
+    margin: 0;
+    font-size: 0.7rem;
+    text-transform: none;
+    line-height: 1.35;
+}
+
+.event-log-meta {
+    margin: 0;
+    font-size: 0.56rem;
+    opacity: 0.72;
+    text-transform: none;
+}

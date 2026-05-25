@@ -70,9 +70,23 @@
 }
 
 .special-cell.revealed-cell {
+    background: var(--sanctuary-bg-color, #5f5a47);
     box-shadow:
         inset 0 0 0 1px rgba(255, 236, 164, 0.55),
         0 0 0 1px rgba(107, 79, 23, 0.9);
+}
+
+.special-cell.revealed-cell::before {
+    opacity: 0.9;
+    background-color: var(--sanctuary-icon-color, rgba(0, 0, 0, 0.35));
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 28px 28px;
+    mask-size: 28px 28px;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-image: var(--sanctuary-icon);
+    mask-image: var(--sanctuary-icon);
 }
 
 .special-cell.movable-cell {

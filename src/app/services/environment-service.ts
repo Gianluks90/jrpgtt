@@ -21,6 +21,7 @@ export class EnvironmentService {
       if (visited.has(cellId)) continue;
       const root = mapCellsById[cellId];
       if (!root) continue;
+      if (root.isSpecial === true) continue;
 
       const queue: string[] = [cellId];
       const component: string[] = [];
@@ -41,6 +42,7 @@ export class EnvironmentService {
 
           const neighborCell = mapCellsById[neighborId];
           if (!neighborCell) continue;
+          if (neighborCell.isSpecial === true) continue;
           if (neighborCell.biome !== root.biome) continue;
 
           visited.add(neighborId);
@@ -141,6 +143,7 @@ export class EnvironmentService {
     environmentCellIds.forEach((environmentCellId) => {
       const mapCell = mapCellsById[environmentCellId];
       if (!mapCell) return;
+      if (mapCell.isSpecial === true) return;
 
       this.buildAdjacentTargetIds(mapCell.x, mapCell.y, mapSize).forEach((targetId) => {
         targets.add(targetId);

@@ -2,47 +2,16 @@
     <div class="page-shell">
         @if (!isMobile()) {
             <div class="hud hud-world world-header">
-                <p class="hud-title">World</p>
-                <div class="world-header-content">
-                    <div class="world-header-col world-header-col-summary">
-                        <p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
-                        <p class="summary-item"><span>Round</span><strong>{{ currentRound() }}</strong></p>
-                        <p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerLabel() }}</strong></p>
-                    </div>
-
-                    <div class="world-header-col world-header-col-discovered">
-                        <p class="summary-item"><span>Discovered</span><strong>{{ discoveredTilesLabel() }}</strong></p>
-                        <p class="summary-item"><span>Active shrine</span><strong>{{ revealedSpecialCellsLabel() }}</strong></p>
-                    </div>
-
-                    <div class="world-header-col">
-                        <div class="world-biome-list">
-                            @for (biome of biomeOrderLeft; track biome) {
-                                <div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
-                                    <span class="biome-swatch" aria-hidden="true"></span>
-                                    <div class="biome-content">
-                                        <span class="biome-name">{{ biomeToLabel(biome) }}</span>
-                                        <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="world-header-col">
-                        <div class="world-biome-list">
-                            @for (biome of biomeOrderRight; track biome) {
-                            <div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
-                                <span class="biome-swatch" aria-hidden="true"></span>
-                                <div class="biome-content">
-                                    <span class="biome-name">{{ biomeToLabel(biome) }}</span>
-                                    <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
-                                </div>
-                            </div>
-                            }
-                        </div>
-                    </div>
-                </div>
+                <app-world-state-panel
+                    [worldState]="worldState()"
+                    [players]="players()"
+                    [currentUserId]="currentUserId()"
+                    [mapCellsById]="mapCellsById()"
+                    [mapSize]="mapSize()"
+                    [totalSpecialCells]="4"
+                    [showTitle]="true"
+                    title="World"
+                ></app-world-state-panel>
             </div>
 
             <div class="map-stage">
@@ -65,6 +34,7 @@
                         [players]="players()"
                         [activePlayerId]="worldState()?.activePlayerId ?? null"
                         [movableCellIds]="movableCellIds()"
+                        [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
                         [environmentByCellId]="environmentByCellId()"
                         (cellClicked)="onCellClick($event)"
                     ></app-map-grid-panel>
@@ -93,7 +63,7 @@
                             </div>
                             <p class="summary-item"><span>Resources</span><strong>{{ currentCellResourcesLabel() }}</strong></p>
                             <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
-                            <p class="summary-item"><span>Cell XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
+                            <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
                             <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
                         </div>
                     </div>
@@ -128,6 +98,7 @@
                     [players]="players()"
                     [activePlayerId]="worldState()?.activePlayerId ?? null"
                     [movableCellIds]="movableCellIds()"
+                    [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
                     [environmentByCellId]="environmentByCellId()"
                     (cellClicked)="onCellClick($event)"
                 ></app-map-grid-panel>
@@ -138,6 +109,7 @@
                 [players]="players()"
                 [currentUserId]="currentUserId()"
                 [mapCellsById]="mapCellsById()"
+                [mapSize]="mapSize()"
                 [environmentByCellId]="environmentByCellId()"
                 (backHome)="onBackHome()"
             ></app-map-mobile-controls>

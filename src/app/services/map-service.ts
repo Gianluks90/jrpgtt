@@ -13,6 +13,12 @@ import { TilesConfigService } from "./tiles-config-service";
 import { LuckService } from "./luck-service";
 import { EXPLORATION_LUCK_EXTRA_RESOURCE_ROLLS } from "../consts/luck-config";
 import { LuckCheckResult } from "../models/LuckCheckResult";
+import { PlayerProgressionService } from "./player-progression-service";
+import { SanctuaryElement } from "../models/MapCell";
+import { SPECIAL_CELLS, isSpecialCellCoordinate } from "../consts/special-cells";
+import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
+
+type EnvironmentProgressionEvent = "discover" | "expand";
 
 @Injectable({
   providedIn: "root",
@@ -23,6 +29,7 @@ export class MapService {
     private environmentService: EnvironmentService,
     private tilesConfigService: TilesConfigService,
     private luckService: LuckService,
+    private playerProgressionService: PlayerProgressionService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
@@ -33,7 +40,9 @@ export class MapService {
     const mapCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(targetX, targetY));
 
     let movedBiome: BiomeType | null = null;
+    let landedOnSpecialCell = false;
     let movedPlayerLuck = 0;
+    let environmentProgressionEvent: EnvironmentProgressionEvent | null = null;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
@@ -75,7 +84,24 @@ export class MapService {
       };
 
       if (!targetCellSnap.exists()) {
-        const drawnBiome = this.drawBiome(nextWorldState);
+        let sanctuaryElement: SanctuaryElement | undefined;
+        let drawnBiome: BiomeType;
+        if (isSpecialCellCoordinate(targetX, targetY)) {
+          sanctuaryElement = await this.drawSanctuaryElement(transaction, gameId);
+          drawnBiome = this.biomeFromSanctuaryElement(sanctuaryElement);
+        } else {
+          drawnBiome = this.drawBiome(nextWorldState);
+        }
+
+        environmentProgressionEvent = await this.evaluateEnvironmentProgressionOnReveal(
+          transaction,
+          gameId,
+          targetX,
+          targetY,
+          drawnBiome,
+          mapSize,
+        );
+
         const newCell: MapCell = {
           x: targetX,
           y: targetY,
@@ -83,11 +109,20 @@ export class MapService {
           revealedAtTurn: nextWorldState.currentTurn,
           discoveredBy: playerId,
         };
+
+        if (isSpecialCellCoordinate(targetX, targetY)) {
+          newCell.isSpecial = true;
+          newCell.specialType = "sanctuary";
+          newCell.sanctuaryElement = sanctuaryElement;
+          landedOnSpecialCell = true;
+        }
+
         transaction.set(mapCellRef, newCell);
         movedBiome = drawnBiome;
       } else {
         const cell = targetCellSnap.data() as MapCell;
         movedBiome = cell.biome;
+        landedOnSpecialCell = cell.isSpecial === true || isSpecialCellCoordinate(targetX, targetY);
       }
 
       transaction.set(playerRef, {
@@ -108,7 +143,7 @@ export class MapService {
 
     // RACCOLTA RISORSA CASUALE
     const landedBiome = movedBiome as BiomeType | null;
-    if (landedBiome) {
+    if (landedBiome && !landedOnSpecialCell) {
       const luckResult = this.luckService.checkLuck(movedPlayerLuck);
       const tilesConfig = await this.tilesConfigService.loadConfig();
       const biomeEntry = tilesConfig.biomes[landedBiome];
@@ -126,6 +161,126 @@ export class MapService {
 
       await this.applyExplorationOutcome(gameId, playerId, gainedResources, luckResult);
     }
+
+    let gainedExperience = 0;
+    if (environmentProgressionEvent) {
+      gainedExperience += 1;
+    }
+
+    if (landedOnSpecialCell) {
+      gainedExperience += 2;
+    }
+
+    if (gainedExperience > 0) {
+      await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, playerId, gainedExperience);
+    }
+  }
+
+  private async drawSanctuaryElement(transaction: Transaction, gameId: string): Promise<SanctuaryElement> {
+    const usedElements = new Set<SanctuaryElement>();
+
+    for (const specialCell of SPECIAL_CELLS) {
+      const specialCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(specialCell.x, specialCell.y));
+      const specialCellSnap = await transaction.get(specialCellRef);
+      if (!specialCellSnap.exists()) continue;
+
+      const specialCellData = specialCellSnap.data() as MapCell;
+      const element = specialCellData.sanctuaryElement;
+      if (!element) continue;
+      usedElements.add(element);
+    }
+
+    const deck: SanctuaryElement[] = ["water", "fire", "wind", "earth"];
+    const available = deck.filter((element) => !usedElements.has(element));
+    const pool = available.length > 0 ? available : deck;
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    return pool[randomIndex];
+  }
+
+  private biomeFromSanctuaryElement(element: SanctuaryElement): BiomeType {
+    if (element === "water") return "water";
+    if (element === "fire") return "desert";
+    if (element === "wind") return "plains";
+    return "mountain";
+  }
+
+  private async evaluateEnvironmentProgressionOnReveal(
+    transaction: Transaction,
+    gameId: string,
+    targetX: number,
+    targetY: number,
+    biome: BiomeType,
+    mapSize: number,
+  ): Promise<EnvironmentProgressionEvent | null> {
+    if (isSpecialCellCoordinate(targetX, targetY)) {
+      return null;
+    }
+
+    const adjacentSameBiomeCellIds = new Set<string>();
+
+    for (const neighbor of this.environmentService.getNeighborCoords(targetX, targetY)) {
+      if (!this.isInsideBounds(neighbor.x, neighbor.y, mapSize)) continue;
+
+      const neighborId = this.cellId(neighbor.x, neighbor.y);
+      const neighborRef = doc(this.firebaseService.database, "games", gameId, "mapCells", neighborId);
+      const neighborSnap = await transaction.get(neighborRef);
+      if (!neighborSnap.exists()) continue;
+
+      const neighborCell = neighborSnap.data() as MapCell;
+      if (neighborCell.isSpecial === true) continue;
+      if (neighborCell.biome !== biome) continue;
+
+      adjacentSameBiomeCellIds.add(neighborId);
+    }
+
+    if (adjacentSameBiomeCellIds.size === 0) {
+      return null;
+    }
+
+    const visited = new Set<string>();
+    const componentSizes: number[] = [];
+
+    for (const startId of adjacentSameBiomeCellIds) {
+      if (visited.has(startId)) continue;
+
+      const queue: string[] = [startId];
+      visited.add(startId);
+      let componentSize = 0;
+
+      while (queue.length > 0) {
+        const currentId = queue.shift();
+        if (!currentId) continue;
+        componentSize += 1;
+
+        const [xRaw, yRaw] = currentId.split("_");
+        const x = Number(xRaw);
+        const y = Number(yRaw);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+
+        for (const neighbor of this.environmentService.getNeighborCoords(x, y)) {
+          if (!this.isInsideBounds(neighbor.x, neighbor.y, mapSize)) continue;
+
+          const neighborId = this.cellId(neighbor.x, neighbor.y);
+          if (visited.has(neighborId)) continue;
+
+          const neighborRef = doc(this.firebaseService.database, "games", gameId, "mapCells", neighborId);
+          const neighborSnap = await transaction.get(neighborRef);
+          if (!neighborSnap.exists()) continue;
+
+          const neighborCell = neighborSnap.data() as MapCell;
+          if (neighborCell.isSpecial === true) continue;
+          if (neighborCell.biome !== biome) continue;
+
+          visited.add(neighborId);
+          queue.push(neighborId);
+        }
+      }
+
+      componentSizes.push(componentSize);
+    }
+
+    const hadExistingEnvironment = componentSizes.some((size) => size >= 2);
+    return hadExistingEnvironment ? "expand" : "discover";
   }
 
   private pickRandomResource(resources: ResourceLabel[]): ResourceLabel {
@@ -143,7 +298,7 @@ export class MapService {
     const playerSnap = await getDoc(playerRef);
     if (!playerSnap.exists()) return;
     const player = playerSnap.data() as Player;
-    const inventory = player.inventory ?? { items: [], resources: [], money: 0 };
+    const inventory = player.inventory ?? { items: [], resources: [], money: PLAYER_STARTING_MONEY };
     const resources = Array.isArray(inventory.resources) ? [...inventory.resources] : [];
 
     resourceLabels.forEach((resourceLabel) => {
@@ -167,7 +322,7 @@ export class MapService {
       inventory: {
         ...inventory,
         resources,
-        money: typeof inventory.money === "number" ? inventory.money : 0,
+        money: typeof inventory.money === "number" ? inventory.money : PLAYER_STARTING_MONEY,
       },
       lastLuckCheck: luckResult,
     }, { merge: true });
@@ -246,6 +401,10 @@ export class MapService {
       return false;
     }
 
+    if (sourceCell.isSpecial === true) {
+      return false;
+    }
+
     return this.isTargetReachableFromEnvironment(
       transaction,
       gameId,
@@ -294,6 +453,7 @@ export class MapService {
         if (!neighborSnap.exists()) continue;
 
         const neighborCell = neighborSnap.data() as MapCell;
+        if (neighborCell.isSpecial === true) continue;
         if (neighborCell.biome !== sourceCell.biome) continue;
 
         queue.push(neighborCell);

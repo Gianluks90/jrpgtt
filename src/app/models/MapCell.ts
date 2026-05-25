@@ -1,16 +1,12 @@
 export interface MapCell {
     x: number;
     y: number;
-
     biome: BiomeType;
-
     revealedAtTurn: number;
-
     discoveredBy: string;
-
     isSpecial?: boolean;
-
     specialType?: SpecialTileType;
+    sanctuaryElement?: SanctuaryElement;
 }
 
 export type BiomeType =
@@ -26,3 +22,5 @@ export type SpecialTileType =
     | 'boss'
     | 'shop'
     | 'sanctuary';
+
+export type SanctuaryElement = 'water' | 'fire' | 'wind' | 'earth';

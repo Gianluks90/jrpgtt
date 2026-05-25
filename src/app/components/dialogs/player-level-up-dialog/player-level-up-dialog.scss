@@ -1,0 +1,35 @@
+.choices {
+    display: grid;
+    gap: 10px;
+}
+
+.choice-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--fg-color);
+    padding: 10px;
+    cursor: pointer;
+}
+
+.choice-card.selected {
+    border-color: var(--ok-color);
+}
+
+.choice-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.choice-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.choice-description {
+    font-size: 0.6rem;
+    color: #e3e3e3;
+    line-height: 1.4;
+}

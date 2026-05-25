@@ -14,69 +14,51 @@ export class WorldStatePanel {
   public players = input<Player[]>([]);
   public currentUserId = input("");
   public mapCellsById = input<Record<string, MapCell>>({});
-  public environmentByCellId = input<Record<string, string[]>>({});
+  public mapSize = input(10);
+  public totalSpecialCells = input(4);
+
   public showTitle = input(false);
   public title = input("World");
   public mobileSidebarTitle = input(false);
 
-  public biomeOrder: Array<keyof WorldState["placedBiomeCount"]> = [
-    "plains",
-    "forest",
-    "mountain",
-    "water",
-    "desert",
-    "ruins",
-  ];
+  public biomeOrderLeft: BiomeType[] = ["plains", "forest", "mountain"];
+  public biomeOrderRight: BiomeType[] = ["water", "desert", "ruins"];
 
-  public myPlayer = computed<Player | null>(() => {
-    const uid = this.currentUserId();
-    if (!uid) return null;
-    return this.players().find((player) => player.id === uid) ?? null;
-  });
-
-  public isMyTurn = computed<boolean>(() => {
-    const uid = this.currentUserId();
-    const activePlayerId = this.worldState()?.activePlayerId;
-    if (!uid || !activePlayerId) return false;
-    return uid === activePlayerId;
-  });
-
-  public activePlayerName = computed<string>(() => {
+  public activePlayerLabel = computed<string>(() => {
     const activePlayerId = this.worldState()?.activePlayerId;
     if (!activePlayerId) return "-";
 
-    const player = this.players().find((candidate) => candidate.id === activePlayerId);
-    return player?.name?.trim() || activePlayerId.slice(0, 6);
+    const active = this.players().find((player) => player.id === activePlayerId) ?? null;
+    if (active?.name?.trim()) return active.name.trim();
+    return activePlayerId.slice(0, 6);
   });
 
-  public myLocationBiome = computed<BiomeType | null>(() => {
-    const player = this.myPlayer();
-    if (!player) return null;
+  public currentRound = computed<number>(() => {
+    const turn = this.worldState()?.currentTurn ?? 0;
+    const playersCount = this.players().length;
 
-    const cellId = this.cellId(player.location.x, player.location.y);
-    return this.mapCellsById()[cellId]?.biome ?? null;
+    if (turn <= 0 || playersCount <= 0) return 0;
+    return Math.ceil(turn / playersCount);
   });
 
-  public myLocationLabel = computed<string>(() => {
-    const biome = this.myLocationBiome();
-    if (!biome) return "Unknown";
+  public discoveredTilesLabel = computed<string>(() => {
+    const discovered = Object.keys(this.mapCellsById()).length;
+    const size = this.mapSize();
+    const total = size > 0 ? size * size : 0;
+    if (total <= 0) return `${discovered}/0`;
 
-    return this.biomeToLabel(biome);
+    const clampedDiscovered = Math.min(discovered, total);
+    return `${clampedDiscovered}/${total}`;
   });
 
-  public myLocationIsEnvironment = computed<boolean>(() => {
-    const player = this.myPlayer();
-    if (!player) return false;
-
-    const cellId = this.cellId(player.location.x, player.location.y);
-    return (this.environmentByCellId()[cellId]?.length ?? 0) >= 2;
+  public revealedSpecialCellsLabel = computed<string>(() => {
+    const specialCells = Object.values(this.mapCellsById()).filter((cell) => cell.isSpecial === true).length;
+    const totalSpecial = Math.max(0, this.totalSpecialCells());
+    const clampedSpecial = Math.min(specialCells, totalSpecial);
+    return `${clampedSpecial}/${totalSpecial}`;
   });
 
-  private cellId(x: number, y: number): string {
-    return `${x}_${y}`;
-  }
-
-  private biomeToLabel(biome: BiomeType): string {
+  public biomeToLabel(biome: BiomeType): string {
     if (biome === "plains") return "Plains";
     if (biome === "forest") return "Forest";
     if (biome === "mountain") return "Mountain";
@@ -84,4 +66,5 @@ export class WorldStatePanel {
     if (biome === "desert") return "Desert";
     return "Ruins";
   }
+
 }

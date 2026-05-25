@@ -3,6 +3,7 @@ import { Unsubscribe } from "firebase/auth";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { Player } from "../models/Player";
 import { FirebaseService } from "./firebase-service";
+import { PLAYER_SETUP_BASE_HP } from "../consts/player-defaults";
 
 export interface PlayerSetupData {
   name: string;
@@ -18,6 +19,8 @@ export interface PlayerSetupData {
   providedIn: "root",
 })
 export class PlayerService {
+  private readonly setupBaseHp = PLAYER_SETUP_BASE_HP;
+
   public myPlayer = signal<Player | null>(null);
 
   private playerUnsubscribe: Unsubscribe | null = null;
@@ -103,6 +106,8 @@ export class PlayerService {
       player.experience;
 
     const updatedTotal = strength + magic + luck + experience;
+    const hpBonusSteps = Math.max(0, strength - 3);
+    const hpWithStrengthBonus = this.applyStrengthSetupHpBonus(hpBonusSteps);
 
     if (!name) {
       throw new Error("Player name is required");
@@ -120,6 +125,7 @@ export class PlayerService {
       name,
       parameters: {
         ...player.parameters,
+        hp: hpWithStrengthBonus,
         strength: {
           ...player.parameters.strength,
           base: strength,
@@ -139,5 +145,23 @@ export class PlayerService {
       experience,
       isReady: true,
     }, { merge: true });
+  }
+
+  private applyStrengthSetupHpBonus(bonusSteps: number): Player["parameters"]["hp"] {
+    let nextBase = this.setupBaseHp;
+    let nextCurrent = this.setupBaseHp;
+    let nextMax = this.setupBaseHp;
+
+    for (let i = 0; i < bonusSteps; i++) {
+      nextBase = Math.max(1, Math.round(nextBase * 1.05));
+      nextCurrent = Math.max(1, Math.round(nextCurrent * 1.05));
+      nextMax = Math.max(1, Math.round(nextMax * 1.05));
+    }
+
+    return {
+      base: nextBase,
+      current: nextCurrent,
+      max: nextMax,
+    };
   }
 }

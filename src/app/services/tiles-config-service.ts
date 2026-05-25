@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { BiomeType } from "../models/MapCell";
+import { BiomeType, SanctuaryElement } from "../models/MapCell";
 import { ResourceLabel } from "../models/Resource";
 import { TilesConfig } from "../models/TilesConfig";
 
@@ -73,6 +73,47 @@ export class TilesConfigService {
           throw new Error(`Invalid tiles configuration: biome '${biome}' has unknown resource '${String(resource)}'`);
         }
       });
+    });
+
+    const rawSpecialTiles = (raw as { specialTiles?: unknown }).specialTiles;
+    if (!rawSpecialTiles || typeof rawSpecialTiles !== "object") {
+      throw new Error("Invalid tiles configuration: specialTiles map is missing");
+    }
+
+    const rawSanctuaries = (rawSpecialTiles as { sanctuaries?: unknown }).sanctuaries;
+    if (!rawSanctuaries || typeof rawSanctuaries !== "object") {
+      throw new Error("Invalid tiles configuration: sanctuaries map is missing");
+    }
+
+    const sanctuaryElements: SanctuaryElement[] = ["water", "fire", "wind", "earth"];
+    sanctuaryElements.forEach((element) => {
+      const entry = (rawSanctuaries as Record<string, unknown>)[element];
+      if (!entry || typeof entry !== "object") {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' entry is missing`);
+      }
+
+      const typedEntry = entry as {
+        label?: unknown;
+        iconUrl?: unknown;
+        backgroundColor?: unknown;
+        iconColor?: unknown;
+      };
+
+      if (typeof typedEntry.label !== "string" || !typedEntry.label.trim()) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid label`);
+      }
+
+      if (typeof typedEntry.iconUrl !== "string" || !typedEntry.iconUrl.trim()) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid iconUrl`);
+      }
+
+      if (typeof typedEntry.backgroundColor !== "string" || !typedEntry.backgroundColor.trim()) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid backgroundColor`);
+      }
+
+      if (typeof typedEntry.iconColor !== "string" || !typedEntry.iconColor.trim()) {
+        throw new Error(`Invalid tiles configuration: sanctuary '${element}' has invalid iconColor`);
+      }
     });
 
     return raw as TilesConfig;

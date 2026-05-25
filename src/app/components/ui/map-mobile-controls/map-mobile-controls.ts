@@ -24,6 +24,7 @@ export class MapMobileControls implements OnDestroy {
   public players = input<Player[]>([]);
   public currentUserId = input("");
   public mapCellsById = input<Record<string, MapCell>>({});
+  public mapSize = input(10);
   public environmentByCellId = input<Record<string, string[]>>({});
 
   public backHome = output<void>();

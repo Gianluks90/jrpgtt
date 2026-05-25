@@ -1,8 +1,10 @@
 import { Component, computed, inject, input, output, signal } from "@angular/core";
 import { Player } from "../../../models/Player";
-import { MapCell } from "../../../models/MapCell";
+import { MapCell, SanctuaryElement } from "../../../models/MapCell";
 import { MapCellComponent } from "../../ui/map-cell/map-cell";
 import { EnvironmentService, type EdgeDirection } from "../../../services/environment-service";
+import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
+import { isSpecialCellCoordinate } from "../../../consts/special-cells";
 
 export interface MapGridPanelCell {
   x: number;
@@ -28,6 +30,7 @@ export class MapGridPanel {
   public activePlayerId = input<string | null>(null);
   public movableCellIds = input.required<Set<string>>();
   public environmentByCellId = input.required<Record<string, string[]>>();
+  public sanctuaryStylesByElement = input.required<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>();
 
   public cellClicked = output<MapGridPanelCell>();
 
@@ -105,6 +108,12 @@ export class MapGridPanel {
     this.hoveredCellId.set(null);
   }
 
+  public sanctuaryStyleForCell(cell: MapGridPanelCell): SanctuaryTilesConfigEntry | null {
+    const element = cell.mapCell?.sanctuaryElement;
+    if (!element) return null;
+    return this.sanctuaryStylesByElement()[element] ?? null;
+  }
+
   public environmentBorderWidth(cell: MapGridPanelCell, direction: EdgeDirection): string {
     return this.environmentService.getEnvironmentBorderWidth(cell.id, direction, this.hoveredEnvironmentCellIds());
   }
@@ -114,11 +123,6 @@ export class MapGridPanel {
   }
 
   private isSpecialCell(x: number, y: number): boolean {
-    return (
-      (x === 3 && y === 3) ||
-      (x === 6 && y === 3) ||
-      (x === 3 && y === 6) ||
-      (x === 6 && y === 6)
-    );
+    return isSpecialCellCoordinate(x, y);
   }
 }

@@ -35,30 +35,6 @@
     //     min-height: 130px;
     // }
 
-    .world-header-content {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 8px;
-        margin-top: 4px;
-        align-items: stretch;
-    }
-
-    .world-header-col {
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-    }
-
-    .world-header-col-summary {
-        gap: 6px;
-    }
-
-    .world-header-col-discovered {
-        justify-content: flex-start;
-        gap: 6px;
-    }
-
     .map-stage {
         flex: 1;
         min-height: 0;
@@ -220,72 +196,6 @@
         height: 58px;
     }
 
-    .world-biome-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .world-biome-item {
-        --biome-accent: #9db58a;
-        display: flex;
-        align-items: stretch;
-        font-size: 0.6rem;
-        height: 24px;
-    }
-
-    .biome-swatch {
-        width: 11px;
-        flex: 0 0 24px;
-        border: 1px solid rgba(255, 255, 255, 0.95);
-        border-right: 0;
-        background: var(--biome-accent);
-        border-right: 1px solid rgba(255, 255, 255, 0.95);
-    }
-
-    .biome-content {
-        border: 1px solid var(--fg-color);
-        border-left: 0;
-        padding: 5px 6px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        flex: 1;
-    }
-
-    .biome-name {
-        text-transform: capitalize;
-    }
-
-    .biome-count {
-        line-height: 1;
-    }
-
-    .world-biome-item.biome-plains {
-        --biome-accent: #9db58a;
-    }
-
-    .world-biome-item.biome-forest {
-        --biome-accent: #6f946f;
-    }
-
-    .world-biome-item.biome-mountain {
-        --biome-accent: #9b9a97;
-    }
-
-    .world-biome-item.biome-water {
-        --biome-accent: #7d95b9;
-    }
-
-    .world-biome-item.biome-desert {
-        --biome-accent: #b9a37a;
-    }
-
-    .world-biome-item.biome-ruins {
-        --biome-accent: #8a7d77;
-    }
-
     .mobile-active-header {
         display: none;
     }
@@ -294,19 +204,11 @@
         .map-stage {
             grid-template-columns: 240px minmax(0, 1fr) 240px;
         }
-
-        .world-header-content {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
     }
 
     @media (max-width: 980px) {
         .map-stage {
             grid-template-columns: 200px minmax(0, 1fr) 200px;
-        }
-
-        .world-header-content {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 

@@ -1,12 +1,13 @@
 import { Injectable, signal } from "@angular/core";
 import { FirebaseService } from "./firebase-service";
 import { getAuth, Unsubscribe } from "firebase/auth";
-import { arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, limit, onSnapshot, query, setDoc, Timestamp, where, writeBatch } from "firebase/firestore";
+import { arrayRemove, arrayUnion, collection, doc, getDoc, getDocs, limit, onSnapshot, query, setDoc, Timestamp, where, writeBatch, type DocumentReference } from "firebase/firestore";
 import { Game } from "../models/Game";
 import { Player } from "../models/Player";
 import { BiomeType, MapCell } from "../models/MapCell";
 import { GameConfig } from "../models/GameConfig";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
+import { PLAYER_SETUP_BASE_HP, PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 
 interface StartGameSetupContext {
   game: Game;
@@ -234,15 +235,44 @@ export class GameService {
 
   public async deleteGame(gameId: string): Promise<void> {
     const docRef = doc(this.firebaseService.database, "games", gameId);
-    const playersSnapshot = await getDocs(collection(docRef, "players"));
+    const gameSnap = await getDoc(docRef);
+    if (!gameSnap.exists()) {
+      throw new Error("Game not found");
+    }
 
-    const batch = writeBatch(this.firebaseService.database);
-    playersSnapshot.docs.forEach((playerDoc) => {
-      batch.delete(playerDoc.ref);
-    });
-    batch.delete(docRef);
+    const game = gameSnap.data() as Game;
+    const currentUserId = getAuth().currentUser?.uid;
+    if (!currentUserId || game.ownerId !== currentUserId) {
+      throw new Error("Only the game owner can delete this game");
+    }
 
-    await batch.commit();
+    const [playersSnapshot, mapCellsSnapshot, runtimeSnapshot] = await Promise.all([
+      getDocs(collection(docRef, "players")),
+      getDocs(collection(docRef, "mapCells")),
+      getDocs(collection(docRef, "runtime")),
+    ]);
+
+    const refsToDelete: DocumentReference[] = [
+      ...playersSnapshot.docs.map((playerDoc) => playerDoc.ref),
+      ...mapCellsSnapshot.docs.map((mapCellDoc) => mapCellDoc.ref),
+      ...runtimeSnapshot.docs.map((runtimeDoc) => runtimeDoc.ref),
+      docRef,
+    ];
+
+    await this.commitDeleteInChunks(refsToDelete);
+  }
+
+  private async commitDeleteInChunks(refs: DocumentReference[]): Promise<void> {
+    const chunkSize = 400;
+    for (let start = 0; start < refs.length; start += chunkSize) {
+      const chunk = refs.slice(start, start + chunkSize);
+      const batch = writeBatch(this.firebaseService.database);
+      chunk.forEach((ref) => {
+        batch.delete(ref);
+      });
+
+      await batch.commit();
+    }
   }
 
   public async updateGame(gameId: string, updates: Partial<Pick<Game, "name" | "maxPlayers" | "status">>): Promise<void> {
@@ -306,11 +336,20 @@ export class GameService {
     setupContext.spawns.forEach((spawn) => {
       const playerRef = doc(collection(docRef, "players"), spawn.playerId);
       const spawnCellRef = doc(mapCellsCollectionRef, this.cellId(spawn.x, spawn.y));
+      const player = setupContext.players.find((candidate) => candidate.id === spawn.playerId);
+      const inventory = player?.inventory;
 
       batch.set(playerRef, {
         location: {
           x: spawn.x,
           y: spawn.y,
+        },
+        inventory: {
+          items: inventory?.items ?? [],
+          resources: inventory?.resources ?? [],
+          money: typeof inventory?.money === "number"
+            ? Math.max(PLAYER_STARTING_MONEY, Math.floor(inventory.money))
+            : PLAYER_STARTING_MONEY,
         },
       }, { merge: true });
 
@@ -344,9 +383,9 @@ export class GameService {
       },
       parameters: {
         hp: {
-          base: 100,
-          current: 100,
-          max: 100
+          base: PLAYER_SETUP_BASE_HP,
+          current: PLAYER_SETUP_BASE_HP,
+          max: PLAYER_SETUP_BASE_HP
         },
         strength: {
           base: 3,
@@ -366,7 +405,7 @@ export class GameService {
       inventory: {
         items: [],
         resources: [],
-        money: 0,
+        money: PLAYER_STARTING_MONEY,
       },
       isReady: false,
       color: palette[colorIndex],

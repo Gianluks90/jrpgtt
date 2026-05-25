@@ -23,6 +23,7 @@
             [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
             [dangerOverlayLevel]="dangerOverlayLevel(cell)"
             [biome]="cell.mapCell?.biome ?? null"
+            [sanctuaryStyle]="sanctuaryStyleForCell(cell)"
             [players]="cell.players"
             [activePlayerId]="activePlayerId()"
             [envTopWidth]="environmentBorderWidth(cell, 'top')"

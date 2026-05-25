@@ -1,27 +1,46 @@
 <div class="world-state-panel-root">
-    @if (showTitle()) {
-        <p class="hud-title" [class.mobile-sidebar-title]="mobileSidebarTitle()">{{ title() }}</p>
-    }
+	@if (showTitle()) {
+		<p class="hud-title" [class.mobile-sidebar-title]="mobileSidebarTitle()">{{ title() }}</p>
+	}
 
-    <div class="world-summary">
-        <p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
-        <p class="summary-item"><span>Location</span><strong>{{ myLocationLabel() }}</strong></p>
-        <p class="summary-item"><span>Environment</span><strong>{{ myLocationIsEnvironment() ? 'yes' : 'no' }}</strong></p>
-        <p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerName() }}</strong></p>
-        @if (!isMyTurn()) {
-            <p class="summary-item wait-item">Wait for your turn</p>
-        }
-    </div>
+	<div class="world-header-content">
+		<div class="world-header-col world-header-col-summary">
+			<p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
+			<p class="summary-item"><span>Round</span><strong>{{ currentRound() }}</strong></p>
+			<p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerLabel() }}</strong></p>
+		</div>
 
-    <div class="world-biome-list">
-        @for (biome of biomeOrder; track biome) {
-            <div class="world-biome-item" [class]="'biome-' + biome">
-                <span class="biome-swatch" aria-hidden="true"></span>
-                <div class="biome-content">
-                    <span class="biome-name">{{ biome }}</span>
-                    <span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
-                </div>
-            </div>
-        }
-    </div>
+		<div class="world-header-col world-header-col-discovered">
+			<p class="summary-item"><span>Discovered</span><strong>{{ discoveredTilesLabel() }}</strong></p>
+			<p class="summary-item"><span>Active shrine</span><strong>{{ revealedSpecialCellsLabel() }}</strong></p>
+		</div>
+
+		<div class="world-header-col">
+			<div class="world-biome-list">
+				@for (biome of biomeOrderLeft; track biome) {
+					<div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
+						<span class="biome-swatch" aria-hidden="true"></span>
+						<div class="biome-content">
+							<span class="biome-name">{{ biomeToLabel(biome) }}</span>
+							<span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+
+		<div class="world-header-col">
+			<div class="world-biome-list">
+				@for (biome of biomeOrderRight; track biome) {
+				<div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
+					<span class="biome-swatch" aria-hidden="true"></span>
+					<div class="biome-content">
+						<span class="biome-name">{{ biomeToLabel(biome) }}</span>
+						<span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
+					</div>
+				</div>
+				}
+			</div>
+		</div>
+	</div>
 </div>

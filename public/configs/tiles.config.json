@@ -30,5 +30,33 @@
 			"walkable": true,
 			"resources": ["timber", "minerals"]
 		}
+	},
+	"specialTiles": {
+		"sanctuaries": {
+			"water": {
+				"label": "Santuario dell'Acqua",
+				"iconUrl": "/map-icons/shrine-water-tile-icon.svg",
+				"backgroundColor": "#2e4c66",
+				"iconColor": "#1a3348"
+			},
+			"fire": {
+				"label": "Santuario del Fuoco",
+				"iconUrl": "/map-icons/shrine-fire-tile-icon.svg",
+				"backgroundColor": "#7a4736",
+				"iconColor": "#4c281f"
+			},
+			"wind": {
+				"label": "Santuario del Vento",
+				"iconUrl": "/map-icons/shrine-wind-tile-icon.svg",
+				"backgroundColor": "#556e78",
+				"iconColor": "#34434a"
+			},
+			"earth": {
+				"label": "Santuario della Terra",
+				"iconUrl": "/map-icons/shrine-earth-tile-icon.svg",
+				"backgroundColor": "#6b6651",
+				"iconColor": "#474230"
+			}
+		}
 	}
 }

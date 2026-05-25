@@ -1,6 +1,7 @@
 import { Component, input, output } from "@angular/core";
 import { BiomeType } from "../../../models/MapCell";
 import { Player } from "../../../models/Player";
+import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 
 @Component({
   selector: "map-cell",
@@ -15,6 +16,7 @@ export class MapCellComponent {
   public hoveredEnvironment = input(false);
   public dangerOverlayLevel = input<0 | 1 | 2>(0, { alias: "dangerOverlayLevel" });
   public biome = input<BiomeType | null>(null);
+  public sanctuaryStyle = input<SanctuaryTilesConfigEntry | null>(null);
   public players = input<Player[]>([]);
   public activePlayerId = input<string | null>(null);
 

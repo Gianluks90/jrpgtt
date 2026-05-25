@@ -1,0 +1,47 @@
+[
+  {
+    "id": "mock_player_1",
+    "name": "ARI",
+    "color": "#7cc3ff",
+    "level": 1,
+    "experience": 0,
+    "isReady": true,
+    "location": { "x": 0, "y": 0 },
+    "parameters": {
+      "hp": { "base": 80, "current": 88, "max": 88 },
+      "strength": { "base": 3, "current": 5 },
+      "magic": { "base": 3, "current": 3 },
+      "luck": { "base": 1, "current": 1 }
+    }
+  },
+  {
+    "id": "mock_player_2",
+    "name": "BRAM",
+    "color": "#ffd27c",
+    "level": 1,
+    "experience": 0,
+    "isReady": true,
+    "location": { "x": 0, "y": 0 },
+    "parameters": {
+      "hp": { "base": 80, "current": 84, "max": 84 },
+      "strength": { "base": 3, "current": 4 },
+      "magic": { "base": 3, "current": 4 },
+      "luck": { "base": 1, "current": 1 }
+    }
+  },
+  {
+    "id": "mock_player_3",
+    "name": "CLEO",
+    "color": "#bca0ff",
+    "level": 1,
+    "experience": 0,
+    "isReady": true,
+    "location": { "x": 0, "y": 0 },
+    "parameters": {
+      "hp": { "base": 80, "current": 80, "max": 80 },
+      "strength": { "base": 3, "current": 3 },
+      "magic": { "base": 3, "current": 5 },
+      "luck": { "base": 1, "current": 1 }
+    }
+  }
+]

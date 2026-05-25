@@ -3,44 +3,12 @@
 		<p class="hud-title" [class.mobile-sidebar-title]="mobileSidebarTitle()">{{ title() }}</p>
 	}
 
-	<div class="world-header-content">
-		<div class="world-header-col world-header-col-summary">
-			<p class="summary-item"><span>Turn</span><strong>{{ worldState()?.currentTurn ?? 0 }}</strong></p>
-			<p class="summary-item"><span>Round</span><strong>{{ currentRound() }}</strong></p>
-			<p class="summary-item"><span>Active</span><strong class="flashing-text">{{ activePlayerLabel() }}</strong></p>
-		</div>
-
-		<div class="world-header-col world-header-col-discovered">
-			<p class="summary-item"><span>Discovered</span><strong>{{ discoveredTilesLabel() }}</strong></p>
-			<p class="summary-item"><span>Active shrine</span><strong>{{ revealedSpecialCellsLabel() }}</strong></p>
-		</div>
-
-		<div class="world-header-col">
-			<div class="world-biome-list">
-				@for (biome of biomeOrderLeft; track biome) {
-					<div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
-						<span class="biome-swatch" aria-hidden="true"></span>
-						<div class="biome-content">
-							<span class="biome-name">{{ biomeToLabel(biome) }}</span>
-							<span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
-						</div>
-					</div>
-				}
-			</div>
-		</div>
-
-		<div class="world-header-col">
-			<div class="world-biome-list">
-				@for (biome of biomeOrderRight; track biome) {
-				<div class="world-biome-item" [class]="'world-biome-item biome-' + biome">
-					<span class="biome-swatch" aria-hidden="true"></span>
-					<div class="biome-content">
-						<span class="biome-name">{{ biomeToLabel(biome) }}</span>
-						<span class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</span>
-					</div>
-				</div>
-				}
-			</div>
-		</div>
-	</div>
+	<p class="world-summary-line">
+		@for (entry of worldSummaryEntries(); track entry.label) {
+			<span class="world-summary-entry">
+				<span class="world-summary-label">{{ entry.label }}</span>
+				<strong class="world-summary-value" [class.flashing-text]="entry.isActivePlayer">{{ entry.value }}</strong>
+			</span>
+		}
+	</p>
 </div>

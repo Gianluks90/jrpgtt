@@ -1,5 +1,6 @@
 import { Component, computed, inject, OnDestroy, OnInit, signal } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
+import { Timestamp } from "firebase/firestore";
 import { Player } from "../../models/Player";
 import { BiomeType, MapCell, SanctuaryElement } from "../../models/MapCell";
 import { ResourceLabel } from "../../models/Resource";
@@ -13,6 +14,8 @@ import { MapCellComponent } from "../../components/ui/map-cell/map-cell";
 import { ResourceCounter } from "../../components/ui/resource-counter/resource-counter";
 import { MoneyCounter } from "../../components/ui/money-counter/money-counter";
 import { LuckIndicator } from "../../components/ui/luck-indicator/luck-indicator";
+import { BiomesCounter } from "../../components/ui/biomes-counter/biomes-counter";
+import { CommandsPanel } from "../../components/ui/commands-panel/commands-panel";
 import { MapMobileControls } from "../../components/ui/map-mobile-controls/map-mobile-controls";
 import { SanctuaryTilesConfigEntry } from "../../models/TilesConfig";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
@@ -30,6 +33,8 @@ import { MapPageStateService } from "../../services/map-page-state-service";
     ResourceCounter,
     MoneyCounter,
     LuckIndicator,
+    BiomesCounter,
+    CommandsPanel,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
@@ -52,6 +57,7 @@ export class MapPage implements OnInit, OnDestroy {
   public mapCellsById = this.mapPageState.mapCellsById;
   public biomeResourcesByBiome = this.mapPageState.biomeResourcesByBiome;
   public sanctuaryStylesByElement = this.mapPageState.sanctuaryStylesByElement;
+  public mockPlayers = signal<Player[]>([]);
 
   public biomeEnvironments = computed<BiomeEnvironment[]>(() => {
     return this.environmentService.getBiomeEnvironments(this.mapCellsById());
@@ -78,6 +84,26 @@ export class MapPage implements OnInit, OnDestroy {
     const activePlayerId = this.worldState()?.activePlayerId;
     if (!activePlayerId) return null;
     return this.players().find((player) => player.id === activePlayerId) ?? null;
+  });
+
+  public sidebarPlayers = computed<Player[]>(() => {
+    const me = this.myPlayer();
+    const mocks = this.mockPlayers();
+    if (!me) return mocks;
+    return [me, ...mocks];
+  });
+
+  public sidebarMainPlayer = computed<Player | null>(() => {
+    const me = this.myPlayer();
+    if (me) return me;
+    return this.sidebarPlayers()[0] ?? null;
+  });
+
+  public sidebarOtherPlayers = computed<Player[]>(() => {
+    const main = this.sidebarMainPlayer();
+    const all = this.sidebarPlayers();
+    if (!main) return all;
+    return all.filter((player) => player.id !== main.id);
   });
 
   public currentCellCoordinatesLabel = computed<string>(() => {
@@ -167,6 +193,7 @@ export class MapPage implements OnInit, OnDestroy {
   public ngOnInit(): void {
     if (!this.gameId) return;
     this.mapPageState.init(this.gameId);
+    void this.loadMockPlayersForLayout();
   }
 
   public ngOnDestroy(): void {
@@ -206,6 +233,101 @@ export class MapPage implements OnInit, OnDestroy {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
+  }
+
+  private async loadMockPlayersForLayout(): Promise<void> {
+    try {
+      const response = await fetch("/configs/mock/players-setup.mock.json");
+      if (!response.ok) {
+        this.mockPlayers.set([]);
+        return;
+      }
+
+      const raw = (await response.json()) as unknown;
+      if (!Array.isArray(raw)) {
+        this.mockPlayers.set([]);
+        return;
+      }
+
+      const parsed = raw
+        .slice(0, 3)
+        .map((entry, index) => this.toMockPlayer(entry, index))
+        .filter((player): player is Player => player !== null);
+
+      this.mockPlayers.set(parsed);
+    } catch {
+      this.mockPlayers.set([]);
+    }
+  }
+
+  private toMockPlayer(entry: unknown, index: number): Player | null {
+    if (!entry || typeof entry !== "object") return null;
+
+    const candidate = entry as {
+      id?: unknown;
+      name?: unknown;
+      color?: unknown;
+      level?: unknown;
+      experience?: unknown;
+      isReady?: unknown;
+      location?: { x?: unknown; y?: unknown };
+      parameters?: {
+        hp?: { base?: unknown; current?: unknown; max?: unknown };
+        strength?: { base?: unknown; current?: unknown; max?: unknown };
+        magic?: { base?: unknown; current?: unknown; max?: unknown };
+        luck?: { base?: unknown; current?: unknown; max?: unknown };
+      };
+    };
+
+    const hpBase = this.toNumber(candidate.parameters?.hp?.base, 20);
+    const hpCurrent = this.toNumber(candidate.parameters?.hp?.current, hpBase);
+    const hpMax = this.toNumber(candidate.parameters?.hp?.max, hpBase);
+
+    return {
+      id: typeof candidate.id === "string" ? candidate.id : `mock-player-${index + 1}`,
+      name: typeof candidate.name === "string" ? candidate.name : `Mock ${index + 1}`,
+      color: typeof candidate.color === "string" ? candidate.color : "#ffffff",
+      level: this.toNumber(candidate.level, 1),
+      experience: this.toNumber(candidate.experience, 0),
+      isReady: typeof candidate.isReady === "boolean" ? candidate.isReady : true,
+      location: {
+        x: this.toNumber(candidate.location?.x, 0),
+        y: this.toNumber(candidate.location?.y, 0),
+      },
+      parameters: {
+        hp: {
+          base: hpBase,
+          current: hpCurrent,
+          max: hpMax,
+        },
+        strength: {
+          base: this.toNumber(candidate.parameters?.strength?.base, 4),
+          current: this.toNumber(candidate.parameters?.strength?.current, 4),
+          max: this.toNumber(candidate.parameters?.strength?.max, 4),
+        },
+        magic: {
+          base: this.toNumber(candidate.parameters?.magic?.base, 4),
+          current: this.toNumber(candidate.parameters?.magic?.current, 4),
+          max: this.toNumber(candidate.parameters?.magic?.max, 4),
+        },
+        luck: {
+          base: this.toNumber(candidate.parameters?.luck?.base, 4),
+          current: this.toNumber(candidate.parameters?.luck?.current, 4),
+          max: this.toNumber(candidate.parameters?.luck?.max, 4),
+        },
+      },
+      inventory: {
+        money: 0,
+        items: [],
+        resources: [],
+      },
+      joinedAt: Timestamp.now(),
+    };
+  }
+
+  private toNumber(value: unknown, fallback: number): number {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    return fallback;
   }
 
   public async onCellClick(cell: MapGridPanelCell): Promise<void> {

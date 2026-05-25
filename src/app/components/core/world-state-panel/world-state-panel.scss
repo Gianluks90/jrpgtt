@@ -8,10 +8,10 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    justify-content: center;
     width: 100%;
-    min-height: 0;
-    padding-top: 2px;
+    min-height: 100%;
+    padding: 0 8px;
 }
 
 .hud-title {
@@ -33,124 +33,63 @@
     margin-bottom: 4px;
 }
 
-.world-header-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    gap: 8px;
-    margin-top: 4px;
-    align-items: stretch;
-}
-
-.world-header-col {
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-}
-
-.world-header-col-summary {
-    gap: 6px;
-}
-
-.world-header-col-discovered {
-    justify-content: flex-start;
-    gap: 6px;
-}
-
-.summary-item {
+.world-summary-line {
     margin: 0;
+    width: 100%;
+    padding: 0;
+    font-size: 0.58rem;
+    letter-spacing: 0.01em;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+.world-summary-entry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    min-width: 0;
     border: 1px dotted rgba(255, 255, 255, 0.25);
     padding: 6px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 0.58rem;
-
-    span {
-        opacity: 0.7;
-    }
-
-    strong {
-        font-size: 0.62rem;
-        text-transform: capitalize;
-    }
 }
 
-.world-biome-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+.world-summary-label {
+    opacity: 0.68;
 }
 
-.world-biome-item {
-    --biome-accent: #9db58a;
-    display: flex;
-    align-items: stretch;
-    font-size: 0.6rem;
-    height: 24px;
-}
-
-.biome-swatch {
-    width: 11px;
-    flex: 0 0 24px;
-    border: 1px solid rgba(255, 255, 255, 0.95);
-    border-right: 0;
-    background: var(--biome-accent);
-    border-right: 1px solid rgba(255, 255, 255, 0.95);
-}
-
-.biome-content {
-    border: 1px solid var(--fg-color);
-    border-left: 0;
-    padding: 5px 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
-}
-
-.biome-name {
-    text-transform: capitalize;
-}
-
-.biome-count {
-    line-height: 1;
-}
-
-.world-biome-item.biome-plains {
-    --biome-accent: #9db58a;
-}
-
-.world-biome-item.biome-forest {
-    --biome-accent: #6f946f;
-}
-
-.world-biome-item.biome-mountain {
-    --biome-accent: #9b9a97;
-}
-
-.world-biome-item.biome-water {
-    --biome-accent: #7d95b9;
-}
-
-.world-biome-item.biome-desert {
-    --biome-accent: #b9a37a;
-}
-
-.world-biome-item.biome-ruins {
-    --biome-accent: #8a7d77;
+.world-summary-value {
+    font-size: 0.62rem;
+    color: #ffffff;
+    opacity: 1;
+    font-weight: 600;
 }
 
 @media (max-width: 1220px) {
-    .world-header-content {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .world-summary-line {
+        font-size: 0.58rem;
+        gap: 10px;
     }
 }
 
 @media (max-width: 760px) {
-    .world-header-content {
-        grid-template-columns: 1fr;
+    .world-state-panel-root {
+        justify-content: flex-start;
+        padding: 0;
+    }
+
+    .world-summary-line {
+        text-align: left;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        row-gap: 4px;
     }
 }

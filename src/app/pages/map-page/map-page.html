@@ -5,7 +5,6 @@
                 <app-world-state-panel
                     [worldState]="worldState()"
                     [players]="players()"
-                    [currentUserId]="currentUserId()"
                     [mapCellsById]="mapCellsById()"
                     [mapSize]="mapSize()"
                     [totalSpecialCells]="4"
@@ -15,29 +14,52 @@
             </div>
 
             <div class="map-stage">
-                <aside class="hud stage-sidebar">
-                    <p class="hud-title">Players</p>
-                    <div class="panel-scroll-body player-list-column">
-                        @for (player of players(); track trackPlayer($index, player)) {
-                            <app-player-card
-                                [player]="player"
-                                [highlighted]="worldState()?.activePlayerId === player.id"
-                            ></app-player-card>
-                        }
-                    </div>
+                <aside class="stage-sidebar">
+                    <section class="hud sidebar-block players-block">
+                        <p class="hud-title">Players</p>
+                        <div class="panel-scroll-body player-list-column">
+                            @if (sidebarMainPlayer(); as player) {
+                                <app-player-card
+                                    [player]="player"
+                                    [highlighted]="worldState()?.activePlayerId === player.id"
+                                ></app-player-card>
+                            }
+
+                            <div class="mini-player-list">
+                                @for (player of sidebarOtherPlayers(); track trackPlayer($index, player)) {
+                                    <div class="mini-player-row">
+                                        <span class="mini-player-color" [style.background]="player.color"></span>
+                                        <span class="mini-player-name">{{ player.name }}</span>
+                                        <span class="mini-player-level">Lv. {{ player.level }}</span>
+                                        <span class="mini-player-spacer"></span>
+                                        <span class="mini-player-hp-label">HP</span>
+                                        <strong class="mini-player-hp-value">{{ player.parameters.hp.current }}</strong>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="hud sidebar-block commands-block">
+                        <p class="hud-title">Commands</p>
+                        <app-commands-panel></app-commands-panel>
+                    </section>
                 </aside>
 
                 <div class="map-wrapper">
-                    <app-map-grid-panel
-                        [mapSize]="mapSize()"
-                        [mapCellsById]="mapCellsById()"
-                        [players]="players()"
-                        [activePlayerId]="worldState()?.activePlayerId ?? null"
-                        [movableCellIds]="movableCellIds()"
-                        [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
-                        [environmentByCellId]="environmentByCellId()"
-                        (cellClicked)="onCellClick($event)"
-                    ></app-map-grid-panel>
+                    <div class="map-center-shell">
+                        <app-map-grid-panel
+                            [mapSize]="mapSize()"
+                            [mapCellsById]="mapCellsById()"
+                            [players]="players()"
+                            [activePlayerId]="worldState()?.activePlayerId ?? null"
+                            [movableCellIds]="movableCellIds()"
+                            [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
+                            [environmentByCellId]="environmentByCellId()"
+                            (cellClicked)="onCellClick($event)"
+                        ></app-map-grid-panel>
+                        <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
+                    </div>
                 </div>
 
                 <aside class="stage-right-utilities">
@@ -72,7 +94,7 @@
 
             <div class="footer-actions">
                 <div class="footer-placeholder">
-                    <p class="hud-title">Footer</p>
+                    <p class="hud-title">Log</p>
                 </div>
                 <icon-button
                     class="footer-home-button"

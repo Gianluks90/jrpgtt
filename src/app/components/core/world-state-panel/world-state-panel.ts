@@ -1,6 +1,6 @@
 import { Component, computed, input } from "@angular/core";
 import { Player } from "../../../models/Player";
-import { BiomeType, MapCell } from "../../../models/MapCell";
+import { MapCell } from "../../../models/MapCell";
 import { WorldState } from "../../../models/WorldState";
 
 @Component({
@@ -12,7 +12,6 @@ import { WorldState } from "../../../models/WorldState";
 export class WorldStatePanel {
   public worldState = input<WorldState | null>(null);
   public players = input<Player[]>([]);
-  public currentUserId = input("");
   public mapCellsById = input<Record<string, MapCell>>({});
   public mapSize = input(10);
   public totalSpecialCells = input(4);
@@ -20,9 +19,6 @@ export class WorldStatePanel {
   public showTitle = input(false);
   public title = input("World");
   public mobileSidebarTitle = input(false);
-
-  public biomeOrderLeft: BiomeType[] = ["plains", "forest", "mountain"];
-  public biomeOrderRight: BiomeType[] = ["water", "desert", "ruins"];
 
   public activePlayerLabel = computed<string>(() => {
     const activePlayerId = this.worldState()?.activePlayerId;
@@ -58,13 +54,19 @@ export class WorldStatePanel {
     return `${clampedSpecial}/${totalSpecial}`;
   });
 
-  public biomeToLabel(biome: BiomeType): string {
-    if (biome === "plains") return "Plains";
-    if (biome === "forest") return "Forest";
-    if (biome === "mountain") return "Mountain";
-    if (biome === "water") return "Water";
-    if (biome === "desert") return "Desert";
-    return "Ruins";
-  }
+  public worldSummaryEntries = computed<Array<{ label: string; value: string; isActivePlayer: boolean }>>(() => {
+    const turn = this.worldState()?.currentTurn ?? 0;
+    const round = this.currentRound();
+    const discovered = this.discoveredTilesLabel();
+    const activeShrines = this.revealedSpecialCellsLabel();
+    const activePlayer = this.activePlayerLabel();
 
+    return [
+      { label: "Turn", value: String(turn), isActivePlayer: false },
+      { label: "Round", value: String(round), isActivePlayer: false },
+      { label: "Discovered", value: discovered, isActivePlayer: false },
+      { label: "Active shrines", value: activeShrines, isActivePlayer: false },
+      { label: "Active player", value: activePlayer, isActivePlayer: true },
+    ];
+  });
 }

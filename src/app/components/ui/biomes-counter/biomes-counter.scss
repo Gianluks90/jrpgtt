@@ -1,0 +1,57 @@
+:host {
+  display: block;
+}
+
+.biomes-counter-root {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.biome-counter-item {
+  --biome-accent: #9db58a;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.biome-swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: var(--biome-accent);
+  display: inline-block;
+  flex: 0 0 16px;
+}
+
+.biome-count {
+  font-size: 0.7rem;
+  line-height: 1;
+  min-width: 10px;
+}
+
+.biome-counter-item.biome-plains {
+  --biome-accent: #9db58a;
+}
+
+.biome-counter-item.biome-forest {
+  --biome-accent: #6f946f;
+}
+
+.biome-counter-item.biome-mountain {
+  --biome-accent: #9b9a97;
+}
+
+.biome-counter-item.biome-water {
+  --biome-accent: #7d95b9;
+}
+
+.biome-counter-item.biome-desert {
+  --biome-accent: #b9a37a;
+}
+
+.biome-counter-item.biome-ruins {
+  --biome-accent: #8a7d77;
+}

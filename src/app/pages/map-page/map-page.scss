@@ -31,10 +31,6 @@
         padding: 4px 12px;
     }
 
-    // .world-header {
-    //     min-height: 130px;
-    // }
-
     .map-stage {
         flex: 1;
         min-height: 0;
@@ -44,17 +40,70 @@
     }
 
     .stage-sidebar {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
         gap: 10px;
         min-height: 0;
         overflow: visible;
+    }
+
+    .sidebar-block {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     .player-list-column {
         display: flex;
         flex-direction: column;
         gap: 6px;
+    }
+
+    .mini-player-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .mini-player-row {
+        margin: 0;
+        border: 1px dotted rgba(255, 255, 255, 0.25);
+        padding: 6px 8px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.58rem;
+        line-height: 1;
+    }
+
+    .mini-player-color {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 10px;
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        display: inline-block;
+    }
+
+    .mini-player-name {
+        font-weight: 600;
+        text-transform: none;
+    }
+
+    .mini-player-level {
+        opacity: 0.72;
+    }
+
+    .mini-player-spacer {
+        flex-grow: 1;
+        min-width: 8px;
+    }
+
+    .mini-player-hp-label {
+        opacity: 0.72;
+    }
+
+    .mini-player-hp-value {
+        font-size: 0.62rem;
     }
 
     .panel-scroll-body {
@@ -65,6 +114,14 @@
         flex-direction: column;
         gap: 10px;
         flex: 1;
+    }
+
+    .commands-block app-commands-panel {
+        display: block;
+        width: 100%;
+        min-height: 0;
+        flex: 1;
+        margin-top: 4px;
     }
 
     .summary-item {
@@ -94,6 +151,20 @@
         align-items: center;
         justify-content: center;
         padding: 2px 0;
+    }
+
+    .map-center-shell {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .map-floating-biomes-counter {
+        position: absolute;
+        left: calc(100% + 10px);
+        top: 50%;
+        transform: translateY(-50%);
     }
 
     .stage-right-utilities {
@@ -176,6 +247,13 @@
         > * {
             align-self: center;
         }
+    }
+
+    .world-header {
+        // min-height: 58px;
+        // height: 58px;
+        display: flex;
+        align-items: center;
     }
 
     .footer-placeholder {

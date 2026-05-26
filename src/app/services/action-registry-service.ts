@@ -15,6 +15,7 @@ export interface ActionCardContext {
   worldTurn: number;
   biome?: BiomeType;
   biomeResourceLabels?: ResourceLabel[];
+  hasPendingResourcePickup?: boolean;
 }
 
 @Injectable({ providedIn: "root" })
@@ -65,11 +66,12 @@ export class ActionRegistryService {
 
     if (actionId === "cell-gather") {
       const availableResources = context.biomeResourceLabels ?? [];
+      const foodQty = (player.inventory?.resources ?? []).find((resource) => resource.label === "food")?.quantity ?? 0;
       return {
         id: "cell-gather",
         label: "Gather",
-        description: "Attempt a lucky gather. On success, collect 1 resource and end your turn.",
-        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || availableResources.length === 0 || actionAlreadyUsed,
+        description: "Spend 1 food to gather 1 biome resource and end your turn.",
+        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || availableResources.length === 0 || foodQty < 1 || actionAlreadyUsed || context.hasPendingResourcePickup === true,
         pending: false,
       };
     }

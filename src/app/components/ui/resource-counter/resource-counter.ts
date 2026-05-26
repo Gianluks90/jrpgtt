@@ -1,4 +1,4 @@
-import { Component, computed, input } from "@angular/core";
+import { Component, computed, input, output } from "@angular/core";
 import { ResourceLabel, ResourceStack } from "../../../models/Resource";
 import { RESOURCE_CATALOG } from "../../../consts/resources-catalog";
 
@@ -10,7 +10,10 @@ import { RESOURCE_CATALOG } from "../../../consts/resources-catalog";
 })
 export class ResourceCounter {
   public resources = input<ResourceStack[]>([]);
+  public currentCount = input<number>(0);
+  public maxCount = input<number>(12);
   public resourceCatalog = RESOURCE_CATALOG;
+  public panelClicked = output<void>();
 
   public counterItems = computed<Array<{ label: ResourceLabel; quantity: number }>>(() => {
     const byLabel = new Map<ResourceLabel, number>();
@@ -26,4 +29,8 @@ export class ResourceCounter {
       };
     });
   });
+
+  public onPanelClicked(): void {
+    this.panelClicked.emit();
+  }
 }

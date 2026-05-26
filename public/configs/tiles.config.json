@@ -38,7 +38,7 @@
 		"ruins": {
 			"label": "Rovine",
 			"walkable": true,
-			"resources": ["timber", "minerals"],
+			"resources": ["timber", "minerals", "cloth"],
 			"actions": ["cell-gather"],
 			"conditions": []
 		}

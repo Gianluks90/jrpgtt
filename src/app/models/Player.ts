@@ -2,6 +2,7 @@ import { Timestamp } from "firebase/firestore";
 import { Inventory } from "./Inventory";
 import { LuckCheckResult } from "./LuckCheckResult";
 import { SanctuaryElement } from "./MapCell";
+import { ResourceLabel } from "./Resource";
 
 export type PlayerStatusKey = "nutrition" | (string & {});
 
@@ -11,6 +12,12 @@ export interface PlayerStatus {
     description: string;
     durationTurns: number;
     effectKey?: string;
+}
+
+export interface PendingResourcePickup {
+    resource: ResourceLabel;
+    source: "exploration";
+    requestedAtTurn: number;
 }
 
 export interface Player {
@@ -29,6 +36,7 @@ export interface Player {
     joinedAt: Timestamp;
     actionsUsedThisTurn?: Record<string, number>;
     statuses?: PlayerStatus[];
+    pendingResourcePickup?: PendingResourcePickup | null;
 }
 
 export interface PlayerLocation {

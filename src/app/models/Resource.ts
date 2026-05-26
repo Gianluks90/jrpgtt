@@ -1,4 +1,4 @@
-export type ResourceLabel = "timber" | "food" | "minerals";
+export type ResourceLabel = "timber" | "food" | "minerals" | "cloth";
 
 export interface ResourceDefinition {
     label: ResourceLabel;

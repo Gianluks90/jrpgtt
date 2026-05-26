@@ -66,17 +66,7 @@ export class EventLogService {
         },
         "player.cellGather": ({ playerName, args }) => {
             const resource = String(args["resource"] ?? "resource");
-            const lucky = Boolean(args["lucky"]);
-            if (!lucky) {
-                return `${playerName} attempted to gather but found nothing.`;
-            }
-
-            const extraResource = args["extraResource"];
-            if (typeof extraResource === "string" && extraResource) {
-                return `${playerName} gathered ${resource} and found extra ${extraResource} with luck.`;
-            }
-
-            return `${playerName} gathered ${resource}.`;
+            return `${playerName} spent 1 food and gathered ${resource}.`;
         },
         "player.consumeRation": ({ playerName }) => {
             return `${playerName} consumed a ration and gained Nutrition.`;
@@ -85,6 +75,23 @@ export class EventLogService {
             const damageHp = Number(args["damageHp"] ?? 0);
             const environmentSize = Number(args["environmentSize"] ?? 1);
             return `${playerName} suffered ${damageHp} HP from hostile desert (environment size ${environmentSize}).`;
+        },
+        "player.discardResource": ({ playerName, args }) => {
+            const resource = String(args["resource"] ?? "resource");
+            return `${playerName} discarded 1 ${resource}.`;
+        },
+        "player.pendingPickupCancelled": ({ playerName, args }) => {
+            const resource = String(args["resource"] ?? "resource");
+            return `${playerName} cancelled collecting pending ${resource}.`;
+        },
+        "player.swapResource": ({ playerName, args }) => {
+            const droppedResource = String(args["droppedResource"] ?? "resource");
+            const gainedResource = String(args["gainedResource"] ?? "resource");
+            return `${playerName} discarded ${droppedResource} and collected ${gainedResource}.`;
+        },
+        "player.resolvePendingPickup": ({ playerName, args }) => {
+            const resource = String(args["resource"] ?? "resource");
+            return `${playerName} collected pending ${resource}.`;
         },
     };
 

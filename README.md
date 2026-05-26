@@ -4,13 +4,13 @@
 
 ## Core Gameplay
 
-- [ ] Ogni punto Strength oltre il 3 (valore base) aumenta gli hp del 5% (parsato a intero). Commento: Aggiunge profondità alla crescita del personaggio, bilanciamento da valutare. Difficoltà: Media. Impatto: Medio.
-- [ ] Scoprire un nuovo ambiente ricompensa con 1 punto esperienza. Commento: Incentiva l’esplorazione, ottimo per il ritmo di gioco. Difficoltà: Bassa. Impatto: Medio.
-- [ ] Per avanzare di livello il player ha bisogno di tanti punti esperienza quanto è il suo livello attuale. Commento: Progressione semplice e scalabile, da testare per evitare stagnazione. Difficoltà: Bassa. Impatto: Medio.
-- [ ] Quando il player sale di livello si apre una dialog che chiede quale dei tre parametri aumentare di 1 punto (Strength, Magic, Luck) - la dialog non può essere chiusa (disableClose: true). Commento: Scelta forzata, interessante per coinvolgimento, attenzione all’usabilità. Difficoltà: Media. Impatto: Alto.
-- [ ] Si potrebbe includere il ciclo giorno notte che cambia ogni round... al X esimo giorno completo potrebbe succedere qualcosa. Commento: Aggiunge varietà e possibili eventi speciali, da valutare impatto su complessità. Difficoltà: Alta. Impatto: Alto.
+- [x] Ogni punto Strength oltre il 3 (valore base) aumenta gli hp del 5% (parsato a intero). Commento: Aggiunge profondità alla crescita del personaggio, bilanciamento da valutare. Difficoltà: Media. Impatto: Medio.
+- [x] Scoprire un nuovo ambiente ricompensa con 1 punto esperienza. Commento: Incentiva l’esplorazione, ottimo per il ritmo di gioco. Difficoltà: Bassa. Impatto: Medio.
+- [x] Per avanzare di livello il player ha bisogno di tanti punti esperienza quanto è il suo livello attuale. Commento: Progressione semplice e scalabile, da testare per evitare stagnazione. Difficoltà: Bassa. Impatto: Medio.
+- [x] Quando il player sale di livello si apre una dialog che chiede quale dei tre parametri aumentare di 1 punto (Strength, Magic, Luck) - la dialog non può essere chiusa (disableClose: true). Commento: Scelta forzata, interessante per coinvolgimento, attenzione all’usabilità. Difficoltà: Media. Impatto: Alto.
+- [x] Si potrebbe includere il ciclo giorno notte che cambia ogni round... al X esimo giorno completo potrebbe succedere qualcosa. Commento: Aggiunge varietà e possibili eventi speciali, da valutare impatto su complessità. Difficoltà: Alta. Impatto: Alto.
 - [ ] Si potrebbe introdurre il meteo (che influenza gli elementi) - strettamente legato al ciclo giorno/notte. Commento: Approfondisce la strategia, ma aumenta la complessità di gestione. Difficoltà: Alta. Impatto: Medio.
-- [ ] I nemici incontrati in una casella potrebbero avere un livello pari alla colonna in cui si trovano o a quelle adiacenti per variare le possibilità dei giocatori. Commento: Aumenta la varietà e la difficoltà degli incontri, rende la progressione più dinamica. Difficoltà: Media. Impatto: Medio.
+- [x] I nemici incontrati in una casella potrebbero avere un livello pari alla colonna in cui si trovano o a quelle adiacenti per variare le possibilità dei giocatori. Commento: Aumenta la varietà e la difficoltà degli incontri, rende la progressione più dinamica. Difficoltà: Media. Impatto: Medio.
 - [ ] Quando un nemico non viene sconfitto resta nella casella dove è comparso in attesa del prossimo player, il suo marker potrebbe essere un rombo rosso lampeggiante. Commento: Aumenta la tensione e la strategia, aggiunge un feedback visivo chiaro e memorabile. Difficoltà: Media. Impatto: Alto.
 - [ ] Modalità “Evento Globale”: ogni tot turni si attiva un evento che modifica temporaneamente le regole (es. tutti i danni raddoppiati, risorse che valgono il doppio, ecc.). Commento: Rende ogni partita unica e imprevedibile, stimola l’adattamento. Difficoltà: Alta. Impatto: Alto.
 - [ ] Sistema di “Trappole” nascoste: alcune celle possono contenere trappole che si attivano al passaggio, con effetti variabili (perdita risorse, spostamento forzato, ecc.). Commento: Aggiunge rischio e varietà all’esplorazione. Difficoltà: Media. Impatto: Medio.
@@ -34,8 +34,8 @@
 
 ## Sistema Elementale
 
-- [ ] Il santuario dell'elemento determina l'elemento dominante nel suo quadrante. Commento: Sistema interessante per strategia e rigiocabilità. Difficoltà: Media. Impatto: Medio.
-- [ ] Un player inizia senza elemento ma può favorirne uno visitando un santuario (visitando un altro santuario è possibile cambiare elemento). Commento: Sistema interessante per strategia e rigiocabilità. Difficoltà: Media. Impatto: Medio.
+- [x] Il santuario dell'elemento determina l'elemento dominante nel suo quadrante. Commento: Sistema interessante per strategia e rigiocabilità. Difficoltà: Media. Impatto: Medio.
+- [x] Un player inizia senza elemento ma può favorirne uno visitando un santuario (visitando un altro santuario è possibile cambiare elemento). Commento: Sistema interessante per strategia e rigiocabilità. Difficoltà: Media. Impatto: Medio.
 - [ ] Potrebbe essere interessante aggiungere una nuova risorsa (tessuto). Commento: Amplia le possibilità di crafting e gestione risorse, da bilanciare con le altre risorse. Difficoltà: Bassa. Impatto: Basso.
 - [ ] Sinergie elementali: se più giocatori favoriscono lo stesso elemento, si sblocca un potere globale temporaneo per tutti. Commento: Stimola la collaborazione e la strategia tra i giocatori. Difficoltà: Alta. Impatto: Alto.
 - [ ] Debolezze elementali dinamiche: ogni giorno/notte cambia la debolezza di un elemento, influenzando le strategie. Commento: Rende la scelta dell’elemento più interessante e variabile. Difficoltà: Media. Impatto: Medio.

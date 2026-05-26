@@ -81,7 +81,12 @@
             </div>
 
             <aside class="stage-right-utilities">
-                <app-resource-counter [resources]="myPlayer()?.inventory?.resources || []"></app-resource-counter>
+                <app-resource-counter
+                    [resources]="myPlayer()?.inventory?.resources || []"
+                    [currentCount]="resourceCount()"
+                    [maxCount]="resourceCapacity()"
+                    (panelClicked)="onResourcePanelClicked()"
+                ></app-resource-counter>
                 <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
                 <app-attunement-indicator [element]="myPlayer()?.attunedElement ?? null"></app-attunement-indicator>
                 <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>

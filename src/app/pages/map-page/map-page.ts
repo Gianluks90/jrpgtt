@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from "@angular/core";
+import { Component, computed, effect, inject, Injector, OnDestroy, OnInit, signal } from "@angular/core";
 import { Dialog } from "@angular/cdk/dialog";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Timestamp } from "firebase/firestore";
@@ -33,6 +33,11 @@ import {
 } from "../../components/dialogs/action-dialogs/sanctuary-action-dialog/sanctuary-action-dialog";
 import { DialogResponse } from "../../models/DialogResponse";
 import { PlayerProgressionService } from "../../services/player-progression-service";
+import {
+  ResourceInventoryDialog,
+  ResourceInventoryDialogResult,
+} from "../../components/dialogs/action-dialogs/resource-inventory-dialog/resource-inventory-dialog";
+import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
 
 @Component({
   selector: "app-map-page",
@@ -58,6 +63,7 @@ export class MapPage implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private dialog = inject(Dialog);
+  private injector = inject(Injector);
   private mapService = inject(MapService);
   private actionExecutorService = inject(ActionExecutorService);
   private playerProgressionService = inject(PlayerProgressionService);
@@ -80,6 +86,8 @@ export class MapPage implements OnInit, OnDestroy {
   public sanctuaryStylesByElement = this.mapPageState.sanctuaryStylesByElement;
   public mockPlayers = signal<Player[]>([]);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
+  public inventoryDialogOpen = signal(false);
+  private lastPendingDialogKey = signal<string | null>(null);
   public latestLogMessage = computed<string>(() => {
     return this.mapPageState.latestEventLogSummary();
   });
@@ -118,7 +126,24 @@ export class MapPage implements OnInit, OnDestroy {
     if (!this.isMyTurn()) return false;
     if (!this.hasMovedOnCurrentTurn()) return false;
     if (this.pendingActionId() !== null) return false;
+    if (this.myPlayer()?.pendingResourcePickup) return false;
     return true;
+  });
+
+  public resourceCount = computed<number>(() => {
+    const resources = this.myPlayer()?.inventory?.resources ?? [];
+    return resources.reduce((total, resource) => {
+      return total + Math.max(0, Math.floor(Number(resource.quantity ?? 0)));
+    }, 0);
+  });
+
+  public resourceCapacity = computed<number>(() => {
+    const configured = this.myPlayer()?.inventory?.resourceCapacity;
+    if (typeof configured === "number" && Number.isFinite(configured)) {
+      return Math.max(1, Math.floor(configured));
+    }
+
+    return DEFAULT_RESOURCE_INVENTORY_CAPACITY;
   });
 
   public pendingLevelUpChoices = computed<number>(() => {
@@ -136,7 +161,9 @@ export class MapPage implements OnInit, OnDestroy {
     actions.push({
       id: "end-turn",
       label: "End turn",
-      description: this.hasMovedOnCurrentTurn()
+      description: this.myPlayer()?.pendingResourcePickup
+        ? "Resolve pending resource pickup before ending your turn."
+        : this.hasMovedOnCurrentTurn()
         ? "Pass control to the next player."
         : "Move at least once before ending your turn.",
       disabled: !this.canEndTurn(),
@@ -372,6 +399,22 @@ export class MapPage implements OnInit, OnDestroy {
   public ngOnInit(): void {
     if (!this.gameId) return;
     this.mapPageState.init(this.gameId);
+    effect(() => {
+      const player = this.myPlayer();
+      const pendingPickup = player?.pendingResourcePickup ?? null;
+      if (!pendingPickup) {
+        this.lastPendingDialogKey.set(null);
+        return;
+      }
+
+      const key = `${pendingPickup.resource}:${pendingPickup.requestedAtTurn}`;
+      if (this.inventoryDialogOpen() || this.lastPendingDialogKey() === key) {
+        return;
+      }
+
+      this.lastPendingDialogKey.set(key);
+      void this.openResourceInventoryDialog("pending");
+    }, { injector: this.injector });
     void this.loadMockPlayersForLayout();
   }
 
@@ -398,6 +441,10 @@ export class MapPage implements OnInit, OnDestroy {
 
   public onInspectionCellChanged(cell: MapGridPanelCell | null): void {
     this.inspectedCell.set(cell);
+  }
+
+  public async onResourcePanelClicked(): Promise<void> {
+    await this.openResourceInventoryDialog("manage");
   }
 
   private resourceToLabel(resource: ResourceLabel): string {
@@ -511,10 +558,12 @@ export class MapPage implements OnInit, OnDestroy {
       inventory: {
         money: 0,
         items: [],
-        resources: [],
+        resources: [{ label: "food", quantity: 3 }],
+        resourceCapacity: DEFAULT_RESOURCE_INVENTORY_CAPACITY,
       },
       actionsUsedThisTurn: {},
       statuses: [],
+      pendingResourcePickup: null,
       joinedAt: Timestamp.now(),
     };
   }
@@ -643,6 +692,7 @@ export class MapPage implements OnInit, OnDestroy {
           worldTurn,
           biome: cell.biome,
           biomeResourceLabels: biomeResources,
+          hasPendingResourcePickup: !!player.pendingResourcePickup,
         });
         if (!card) return null;
         return {
@@ -794,6 +844,112 @@ export class MapPage implements OnInit, OnDestroy {
     } finally {
       this.pendingActionId.set(null);
     }
+  }
+
+  private async openResourceInventoryDialog(mode: "manage" | "pending"): Promise<void> {
+    const player = this.myPlayer();
+    if (!player || this.inventoryDialogOpen()) return;
+
+    const pendingResource = player.pendingResourcePickup?.resource ?? null;
+    if (mode === "pending" && !pendingResource) {
+      return;
+    }
+
+    this.inventoryDialogOpen.set(true);
+    try {
+      const dialogRef = this.dialog.open(ResourceInventoryDialog, {
+        ...DIALOGS_CONFIG,
+        data: {
+          resources: player.inventory?.resources ?? [],
+          maxCapacity: this.resourceCapacity(),
+          pendingResource: mode === "pending" ? pendingResource : null,
+        },
+      });
+
+      const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+      const result = this.asResourceInventoryResult(response);
+
+      if (mode === "pending") {
+        await this.applyPendingInventoryDialogResult(player, result);
+        return;
+      }
+
+      if (result?.type === "discard") {
+        await this.actionExecutorService.discardResource(this.gameId, {
+          id: player.id,
+          name: player.name,
+        }, result.resourceLabel);
+      }
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Error while managing resources");
+    } finally {
+      this.inventoryDialogOpen.set(false);
+    }
+  }
+
+  private async applyPendingInventoryDialogResult(
+    player: Player,
+    result: ResourceInventoryDialogResult | null,
+  ): Promise<void> {
+    if (!player.pendingResourcePickup) return;
+
+    if (!result || result.type === "close" || result.type === "cancel-collect") {
+      await this.actionExecutorService.resolvePendingResourcePickup(this.gameId, {
+        id: player.id,
+        name: player.name,
+      }, {
+        collect: false,
+      });
+      return;
+    }
+
+    if (result.type === "swap-and-collect") {
+      await this.actionExecutorService.resolvePendingResourcePickup(this.gameId, {
+        id: player.id,
+        name: player.name,
+      }, {
+        collect: true,
+        discardResourceLabel: result.resourceLabel,
+      });
+      return;
+    }
+  }
+
+  private asResourceInventoryResult(response: unknown): ResourceInventoryDialogResult | null {
+    if (typeof response !== "object" || response === null || !("data" in response)) {
+      return null;
+    }
+
+    const data = (response as { data?: unknown }).data;
+    if (!data || typeof data !== "object") {
+      return null;
+    }
+
+    const typed = data as { type?: unknown; resourceLabel?: unknown };
+    if (typed.type === "discard" && typeof typed.resourceLabel === "string") {
+      return {
+        type: "discard",
+        resourceLabel: typed.resourceLabel as ResourceLabel,
+      };
+    }
+
+    if (typed.type === "swap-and-collect" && typeof typed.resourceLabel === "string") {
+      return {
+        type: "swap-and-collect",
+        resourceLabel: typed.resourceLabel as ResourceLabel,
+      };
+    }
+
+    if (typed.type === "cancel-collect") {
+      return { type: "cancel-collect" };
+    }
+
+    if (typed.type === "close") {
+      return { type: "close" };
+    }
+
+    return null;
   }
 
   private getMyCurrentSanctuaryCell(): MapCell | null {

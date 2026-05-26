@@ -10,6 +10,12 @@
   background: rgba(0, 0, 0, 0.78);
   padding: 10px 10px 8px;
   min-height: 52px;
+  cursor: pointer;
+}
+
+.resource-counter-panel:hover,
+.resource-counter-panel:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .resource-counter-title {

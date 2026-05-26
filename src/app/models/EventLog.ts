@@ -14,7 +14,11 @@ export type EventLogCode =
   | "player.praySanctuary"
   | "player.cellGather"
   | "player.consumeRation"
-  | "player.hostileEnvironmentDamage";
+  | "player.hostileEnvironmentDamage"
+  | "player.discardResource"
+  | "player.pendingPickupCancelled"
+  | "player.swapResource"
+  | "player.resolvePendingPickup";
 
 export interface EventLog {
   id: string;

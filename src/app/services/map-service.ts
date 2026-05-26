@@ -4,20 +4,19 @@ import { doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/fi
 import { Player } from "../models/Player";
 import { ResourceLabel } from "../models/Resource";
 import { setDoc } from "firebase/firestore";
-import { RESOURCE_CATALOG } from "../consts/resources-catalog";
 import { BiomeType, MapCell } from "../models/MapCell";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
 import { GameMap } from "../models/GameMap";
 import { EnvironmentService } from "./environment-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { LuckService } from "./luck-service";
-import { LUCK_CONFIG } from "../consts/luck/luck-config";
 import { LuckCheckResult } from "../models/LuckCheckResult";
 import { PlayerProgressionService } from "./player-progression-service";
 import { SanctuaryElement } from "../models/MapCell";
 import { SPECIAL_CELLS, isSpecialCellCoordinate } from "../consts/special-cells";
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { EventLogService } from "./event-log-service";
+import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -48,6 +47,7 @@ export class MapService {
     let movedPlayerName = "";
     let movedToNewCell = false;
     let movedSanctuaryElement: SanctuaryElement | undefined;
+    let movedOnTurn = 0;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
@@ -67,7 +67,11 @@ export class MapService {
       const player = playerSnap.data() as Player;
       movedPlayerName = player.name;
       movedPlayerLuck = Math.max(0, Math.floor(player.parameters.luck.current));
+      if (player.pendingResourcePickup) {
+        throw new Error("Resolve pending resource pickup before moving");
+      }
       const worldState = worldStateSnap.data() as WorldState;
+      movedOnTurn = worldState.currentTurn ?? 0;
       const gameMap = gameMapSnap.exists() ? gameMapSnap.data() as GameMap : null;
       const mapSize = gameMap?.size ?? 10;
 
@@ -201,18 +205,11 @@ export class MapService {
       const tilesConfig = await this.tilesConfigService.loadConfig();
       const biomeEntry = tilesConfig.biomes[landedBiome];
       const possibleResources = biomeEntry?.resources ?? [];
-      const gainedResources: ResourceLabel[] = [];
-      if (possibleResources.length > 0) {
-        gainedResources.push(this.pickRandomResource(possibleResources));
+      const gainedResource = luckResult.success && possibleResources.length > 0
+        ? this.pickRandomResource(possibleResources)
+        : null;
 
-        if (luckResult.success) {
-          for (let i = 0; i < LUCK_CONFIG.exploration.extraResourceRolls; i++) {
-            gainedResources.push(this.pickRandomResource(possibleResources));
-          }
-        }
-      }
-
-      await this.applyExplorationOutcome(gameId, playerId, gainedResources, luckResult);
+      await this.applyExplorationOutcome(gameId, playerId, gainedResource, luckResult, movedOnTurn);
     }
 
     let gainedExperience = 0;
@@ -377,8 +374,9 @@ export class MapService {
   private async applyExplorationOutcome(
     gameId: string,
     playerId: string,
-    resourceLabels: ResourceLabel[],
+    resourceLabel: ResourceLabel | null,
     luckResult: LuckCheckResult,
+    worldTurn: number,
   ): Promise<void> {
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
     const playerSnap = await getDoc(playerRef);
@@ -386,32 +384,59 @@ export class MapService {
     const player = playerSnap.data() as Player;
     const inventory = player.inventory ?? { items: [], resources: [], money: PLAYER_STARTING_MONEY };
     const resources = Array.isArray(inventory.resources) ? [...inventory.resources] : [];
+    const capacity = typeof inventory.resourceCapacity === "number"
+      ? Math.max(1, Math.floor(inventory.resourceCapacity))
+      : DEFAULT_RESOURCE_INVENTORY_CAPACITY;
 
-    resourceLabels.forEach((resourceLabel) => {
-      const idx = resources.findIndex((r) => r.label === resourceLabel);
-      if (idx >= 0) {
-        resources[idx] = {
-          ...resources[idx],
-          quantity: (resources[idx].quantity ?? 0) + 1,
+    const totalResourceCount = this.getTotalResourceCount(resources);
+    let pendingResourcePickup = player.pendingResourcePickup ?? null;
+
+    if (resourceLabel) {
+      if (totalResourceCount >= capacity) {
+        pendingResourcePickup = {
+          resource: resourceLabel,
+          source: "exploration",
+          requestedAtTurn: Math.max(0, Math.floor(worldTurn)),
         };
-        return;
+      } else {
+        this.addSingleResource(resources, resourceLabel);
+        pendingResourcePickup = null;
       }
-
-      resources.push({
-        label: resourceLabel,
-        quantity: 1,
-        iconUrl: RESOURCE_CATALOG[resourceLabel]?.iconUrl,
-      });
-    });
+    }
 
     await setDoc(playerRef, {
       inventory: {
         ...inventory,
         resources,
         money: typeof inventory.money === "number" ? inventory.money : PLAYER_STARTING_MONEY,
+        resourceCapacity: capacity,
       },
       lastLuckCheck: luckResult,
+      pendingResourcePickup,
     }, { merge: true });
+  }
+
+  private getTotalResourceCount(resources: Player["inventory"]["resources"]): number {
+    return resources.reduce((total, resource) => {
+      const qty = Math.max(0, Math.floor(Number(resource?.quantity ?? 0)));
+      return total + qty;
+    }, 0);
+  }
+
+  private addSingleResource(resources: Player["inventory"]["resources"], resourceLabel: ResourceLabel): void {
+    const idx = resources.findIndex((resource) => resource.label === resourceLabel);
+    if (idx >= 0) {
+      resources[idx] = {
+        ...resources[idx],
+        quantity: Math.max(0, Math.floor(Number(resources[idx].quantity ?? 0))) + 1,
+      };
+      return;
+    }
+
+    resources.push({
+      label: resourceLabel,
+      quantity: 1,
+    });
   }
 
   private drawBiome(worldState: WorldState): BiomeType {

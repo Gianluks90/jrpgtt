@@ -11,6 +11,7 @@ import { LuckService } from "./luck-service";
 import { PlayerProgressionService } from "./player-progression-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { TurnService } from "./turn-service";
+import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 
 @Injectable({
   providedIn: "root",
@@ -62,6 +63,10 @@ export class ActionExecutorService {
       const worldState = worldStateSnap.data() as WorldState;
       const player = playerSnap.data() as Player;
       const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+
+      if (player.pendingResourcePickup) {
+        throw new Error("Resolve pending resource pickup before ending your turn");
+      }
 
       if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
         throw new Error("It is not your turn");
@@ -475,15 +480,6 @@ export class ActionExecutorService {
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
 
-    const playerSnap = await getDoc(playerRef);
-    if (!playerSnap.exists()) {
-      throw new Error("Player not found");
-    }
-
-    const playerForLuck = playerSnap.data() as Player;
-    const playerLuck = Math.max(0, Math.floor(Number(playerForLuck.parameters?.luck?.current ?? 0)));
-    const luckResult = this.luckService.checkLuck(playerLuck);
-
     let gatheredResource: ResourceLabel | null = null;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateSnap, playerTxSnap] = await Promise.all([
@@ -506,6 +502,10 @@ export class ActionExecutorService {
       this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before gathering");
 
       const player = playerTxSnap.data() as Player;
+      if (player.pendingResourcePickup) {
+        throw new Error("Resolve pending resource pickup before gathering");
+      }
+
       const worldTurn = worldState.currentTurn ?? 0;
       this.ensureActionAvailable(player, "cell-gather", worldTurn, "You can only gather once per turn.");
 
@@ -539,11 +539,15 @@ export class ActionExecutorService {
         throw new Error("No resources available on this biome");
       }
 
-      let nextResources = player.inventory?.resources ?? [];
-      if (luckResult.success) {
-        gatheredResource = this.pickRandom(biomeConfig.resources);
-        nextResources = this.addResource(nextResources, gatheredResource, 1);
+      const currentResources = player.inventory?.resources ?? [];
+      const foodAmount = currentResources.find((resource) => resource.label === "food")?.quantity ?? 0;
+      if (foodAmount < 1) {
+        throw new Error("You need at least 1 food to gather");
       }
+
+      gatheredResource = this.pickRandom(biomeConfig.resources);
+      let nextResources = this.addResource(currentResources, "food", -1);
+      nextResources = this.addResource(nextResources, gatheredResource, 1);
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
       const nextStatuses = this.decrementStatuses(currentStatuses);
@@ -554,9 +558,9 @@ export class ActionExecutorService {
         inventory: {
           ...(player.inventory ?? { items: [], resources: [], money: 0 }),
           resources: nextResources,
+          resourceCapacity: this.getResourceCapacity(player),
         },
         statuses: nextStatuses,
-        lastLuckCheck: luckResult,
         actionsUsedThisTurn: this.markActionUsed(player, "cell-gather", worldTurn),
       }, { merge: true });
 
@@ -570,8 +574,142 @@ export class ActionExecutorService {
 
     await this.tryCreateLog(gameId, actor, "player.cellGather", {
       resource: gatheredResource,
-      lucky: luckResult.success,
+      spentFood: 1,
       turnEnded: true,
+    });
+  }
+
+  public async discardResource(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    resourceLabel: ResourceLabel,
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const playerSnap = await transaction.get(playerRef);
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const player = playerSnap.data() as Player;
+      const currentResources = player.inventory?.resources ?? [];
+      const hasResource = currentResources.some((resource) => {
+        return resource.label === resourceLabel && Math.max(0, Math.floor(Number(resource.quantity ?? 0))) > 0;
+      });
+
+      if (!hasResource) {
+        throw new Error("Resource not available");
+      }
+
+      const nextResources = this.addResource(currentResources, resourceLabel, -1);
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          resources: nextResources,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.discardResource", {
+      resource: resourceLabel,
+      amount: 1,
+    });
+  }
+
+  public async resolvePendingResourcePickup(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    options: {
+      collect: boolean;
+      discardResourceLabel?: ResourceLabel;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    let pendingResource: ResourceLabel | null = null;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const playerSnap = await transaction.get(playerRef);
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const player = playerSnap.data() as Player;
+      const pendingPickup = player.pendingResourcePickup ?? null;
+      if (!pendingPickup) {
+        throw new Error("No pending resource pickup to resolve");
+      }
+
+      pendingResource = pendingPickup.resource;
+      if (!options.collect) {
+        transaction.set(playerRef, {
+          pendingResourcePickup: null,
+        }, { merge: true });
+        return;
+      }
+
+      let nextResources = [...(player.inventory?.resources ?? [])];
+      if (options.discardResourceLabel) {
+        const hasDiscardable = nextResources.some((resource) => {
+          return resource.label === options.discardResourceLabel
+            && Math.max(0, Math.floor(Number(resource.quantity ?? 0))) > 0;
+        });
+
+        if (!hasDiscardable) {
+          throw new Error("Selected resource cannot be discarded");
+        }
+
+        nextResources = this.addResource(nextResources, options.discardResourceLabel, -1);
+      }
+
+      const capacity = this.getResourceCapacity(player);
+      const totalAfterDiscard = this.getTotalResourceCount(nextResources);
+      if (totalAfterDiscard >= capacity) {
+        throw new Error("No free inventory slot for pending resource");
+      }
+
+      nextResources = this.addResource(nextResources, pendingPickup.resource, 1);
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          resources: nextResources,
+          resourceCapacity: capacity,
+        },
+        pendingResourcePickup: null,
+      }, { merge: true });
+    });
+
+    if (!pendingResource) {
+      return;
+    }
+
+    if (!options.collect) {
+      await this.tryCreateLog(gameId, actor, "player.pendingPickupCancelled", {
+        resource: pendingResource,
+      });
+      return;
+    }
+
+    if (options.discardResourceLabel) {
+      await this.tryCreateLog(gameId, actor, "player.swapResource", {
+        droppedResource: options.discardResourceLabel,
+        gainedResource: pendingResource,
+      });
+      return;
+    }
+
+    await this.tryCreateLog(gameId, actor, "player.resolvePendingPickup", {
+      resource: pendingResource,
     });
   }
 
@@ -762,6 +900,21 @@ export class ActionExecutorService {
       quantity: nextQty,
     };
     return nextResources;
+  }
+
+  private getTotalResourceCount(resources: ResourceStack[]): number {
+    return resources.reduce((total, resource) => {
+      return total + Math.max(0, Math.floor(Number(resource.quantity ?? 0)));
+    }, 0);
+  }
+
+  private getResourceCapacity(player: Player): number {
+    const configuredCapacity = player.inventory?.resourceCapacity;
+    if (typeof configuredCapacity === "number" && Number.isFinite(configuredCapacity)) {
+      return Math.max(1, Math.floor(configuredCapacity));
+    }
+
+    return DEFAULT_RESOURCE_INVENTORY_CAPACITY;
   }
 
   private pickRandom<T>(values: T[]): T {

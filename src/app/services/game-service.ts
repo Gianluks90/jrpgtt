@@ -8,6 +8,7 @@ import { BiomeType, MapCell } from "../models/MapCell";
 import { GameConfig } from "../models/GameConfig";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
 import { PLAYER_SETUP_BASE_HP, PLAYER_STARTING_MONEY } from "../consts/player-defaults";
+import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 
 interface StartGameSetupContext {
   game: Game;
@@ -348,10 +349,13 @@ export class GameService {
         },
         inventory: {
           items: inventory?.items ?? [],
-          resources: inventory?.resources ?? [],
+          resources: (inventory?.resources?.length ?? 0) > 0 ? inventory?.resources : [{ label: "food", quantity: 3 }],
           money: typeof inventory?.money === "number"
             ? Math.max(PLAYER_STARTING_MONEY, Math.floor(inventory.money))
             : PLAYER_STARTING_MONEY,
+          resourceCapacity: typeof inventory?.resourceCapacity === "number"
+            ? Math.max(1, Math.floor(inventory.resourceCapacity))
+            : DEFAULT_RESOURCE_INVENTORY_CAPACITY,
         },
       }, { merge: true });
 
@@ -407,11 +411,13 @@ export class GameService {
       pendingLevelUpChoices: 0,
       inventory: {
         items: [],
-        resources: [],
+        resources: [{ label: "food", quantity: 3 }],
         money: PLAYER_STARTING_MONEY,
+        resourceCapacity: DEFAULT_RESOURCE_INVENTORY_CAPACITY,
       },
       actionsUsedThisTurn: {},
       statuses: [],
+      pendingResourcePickup: null,
       isReady: false,
       color: palette[colorIndex],
       joinedAt: Timestamp.now(),

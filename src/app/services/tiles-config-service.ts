@@ -42,7 +42,7 @@ export class TilesConfigService {
     }
 
     const biomeKeys: BiomeType[] = ["plains", "forest", "mountain", "water", "desert", "ruins"];
-    const resourceLabels = new Set<ResourceLabel>(["timber", "food", "minerals"]);
+    const resourceLabels = new Set<ResourceLabel>(["timber", "food", "minerals", "cloth"]);
 
     biomeKeys.forEach((biome) => {
       const entry = (rawBiomes as Record<string, unknown>)[biome];

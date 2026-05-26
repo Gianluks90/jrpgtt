@@ -1,0 +1,57 @@
+<dialog-wrapper [title]="title + ' (' + totalResources + '/' + maxCapacity + ')'">
+    <p class="info-text">{{ subtitle }}</p>
+    <!-- <p class="capacity-text">Capacity: <strong>{{ totalResources }}/{{ maxCapacity }}</strong></p> -->
+
+    <div class="resources-list">
+        @for (resource of resources; track resource.label) {
+            <button
+                type="button"
+                class="resource-row"
+                [class.selected]="selectedDiscardLabel() === resource.label"
+                (click)="onSelectResource(resource.label)"
+            >
+                <span class="resource-meta">
+                    <img
+                        class="resource-icon"
+                        [src]="resourceCatalog[resource.label]?.iconUrl"
+                        [alt]="resource.label"
+                        width="18"
+                        height="18"
+                    />
+                    <span>{{ toLabel(resource.label) }}</span>
+                </span>
+                <strong>x{{ resource.quantity }}</strong>
+            </button>
+        }
+
+        @if (resources.length === 0) {
+            <p class="empty-text">No resources available.</p>
+        }
+    </div>
+
+    @if (pendingResource) {
+        <text-button
+            dialog-action
+            [fullWidth]="true"
+            [text]="'Discard selected and collect ' + pendingLabel"
+            [disabled]="!selectedDiscardLabel()"
+            (clicked)="swapAndCollect()"
+        ></text-button>
+    }
+
+    @if (pendingResource) {
+        <text-button dialog-action text="Cancel collect" (clicked)="cancelCollect()"></text-button>
+    }
+
+    @if (!pendingResource) {
+        <text-button
+            dialog-action
+            text="Discard selected"
+            [fullWidth]="true"
+            [disabled]="!selectedDiscardLabel()"
+            (clicked)="discardSelected()"
+        ></text-button>
+    }
+
+    <text-button dialog-action text="Close" (clicked)="close()"></text-button>
+</dialog-wrapper>

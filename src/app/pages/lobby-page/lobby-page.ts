@@ -216,6 +216,7 @@ export class LobbyPage implements OnInit, OnDestroy {
       ...DIALOGS_CONFIG,
       data: {
         name: player.name,
+        alignment: player.alignment ?? "neutral",
         parameters: {
           strength: player.parameters.strength.base,
           magic: player.parameters.magic.base,

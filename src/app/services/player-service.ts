@@ -1,12 +1,13 @@
 import { Injectable, signal } from "@angular/core";
 import { Unsubscribe } from "firebase/auth";
 import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
-import { Player } from "../models/Player";
+import { Player, PlayerAlignment } from "../models/Player";
 import { FirebaseService } from "./firebase-service";
 import { PLAYER_SETUP_BASE_HP } from "../consts/player-defaults";
 
 export interface PlayerSetupData {
   name: string;
+  alignment: PlayerAlignment;
   parameters: {
     strength: number;
     magic: number;
@@ -98,6 +99,7 @@ export class PlayerService {
     const luck = Math.max(0, Math.floor(Number(setup.parameters.luck)));
     const experience = Math.floor(Number(setup.experience));
     const name = String(setup.name ?? "").trim();
+    const alignment = setup.alignment;
 
     const originalTotal =
       player.parameters.strength.base +
@@ -113,6 +115,10 @@ export class PlayerService {
       throw new Error("Player name is required");
     }
 
+    if (alignment !== "good" && alignment !== "neutral" && alignment !== "evil") {
+      throw new Error("Invalid alignment selected");
+    }
+
     if (experience !== 0) {
       throw new Error("Spend all experience points before setting ready");
     }
@@ -123,6 +129,7 @@ export class PlayerService {
 
     await setDoc(playerRef, {
       name,
+      alignment,
       parameters: {
         ...player.parameters,
         hp: hpWithStrengthBonus,

@@ -16,6 +16,27 @@
         <span class="pool-value" [class.pool-empty]="experience === 0">{{ experience }}</span>
     </div>
 
+    <div class="alignment-box" [class.invalid]="form.controls['alignment'].invalid && form.controls['alignment'].touched">
+        <span class="info-text">Alignment</span>
+        <div class="alignment-options" role="radiogroup" aria-label="Player alignment">
+            @for (alignment of alignments; track alignment) {
+                <button
+                    type="button"
+                    class="alignment-option"
+                    [class.is-active]="form.controls['alignment'].value === alignment"
+                    [class.good]="alignment === 'good'"
+                    [class.neutral]="alignment === 'neutral'"
+                    [class.evil]="alignment === 'evil'"
+                    [attr.aria-pressed]="form.controls['alignment'].value === alignment"
+                    (click)="form.controls['alignment'].setValue(alignment)"
+                >
+                    <span class="alignment-icon" [style.mask]="'url(/alignment-icons/' + alignment + '-icon.svg) no-repeat center / contain'"></span>
+                    <span class="alignment-label">{{ alignment }}</span>
+                </button>
+            }
+        </div>
+    </div>
+
     <div class="parameter-row">
         <span class="parameter-name">Strength</span>
         <button type="button" class="param-btn" [disabled]="!canDecrease('strength')" (click)="decreaseParameter('strength')">-</button>

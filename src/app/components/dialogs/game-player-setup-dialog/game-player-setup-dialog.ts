@@ -2,11 +2,13 @@ import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, ValidatorFn, Validators } from "@angular/forms";
 import { DialogResponse } from "../../../models/DialogResponse";
+import { PlayerAlignment } from "../../../models/Player";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
 
 export interface GamePlayerSetupDialogData {
   name: string;
+  alignment: PlayerAlignment;
   parameters: {
     strength: number;
     magic: number;
@@ -32,6 +34,8 @@ function notDefaultPlayerNameValidator(defaultName: string): ValidatorFn {
   styleUrl: "./game-player-setup-dialog.scss",
 })
 export class GamePlayerSetupDialog {
+
+  public readonly alignments: PlayerAlignment[] = ["good", "neutral", "evil"];
 
   public form: FormGroup;
   public readonly minParameterValue: Record<"strength" | "magic" | "luck", number>;
@@ -62,6 +66,7 @@ export class GamePlayerSetupDialog {
           notDefaultPlayerNameValidator(DEFAULT_PLAYER_NAME),
         ],
       ],
+      alignment: [data.alignment, [Validators.required]],
     });
   }
 
@@ -100,6 +105,7 @@ export class GamePlayerSetupDialog {
       result: "confirm",
       data: {
         name: String(data.name ?? "").trim().toUpperCase(),
+        alignment: data.alignment as PlayerAlignment,
         parameters: {
           strength: this.strength,
           magic: this.magic,

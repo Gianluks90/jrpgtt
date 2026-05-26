@@ -5,6 +5,7 @@ import { SanctuaryElement } from "./MapCell";
 import { ResourceLabel } from "./Resource";
 
 export type PlayerStatusKey = "nutrition" | (string & {});
+export type PlayerAlignment = "evil" | "neutral" | "good";
 
 export interface PlayerStatus {
     key: PlayerStatusKey;
@@ -23,6 +24,7 @@ export interface PendingResourcePickup {
 export interface Player {
     id: string;
     name: string;
+    alignment?: PlayerAlignment;
     location: PlayerLocation;
     parameters: PlayerParameters;
     level: number;

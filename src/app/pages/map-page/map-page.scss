@@ -41,10 +41,26 @@
 
     .stage-sidebar {
         display: grid;
-        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
         gap: 10px;
         min-height: 0;
         overflow: visible;
+
+        app-map-players-panel {
+            min-height: 0;
+            height: 100%;
+        }
+    }
+
+    .sidebar-luck-meter {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    .sidebar-luck-meter ::ng-deep .luck-indicator-panel {
+        width: 100%;
+        min-width: 0;
     }
 
     .sidebar-block {
@@ -53,145 +69,12 @@
         flex-direction: column;
     }
 
-    .player-list-column {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .main-player-card-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .level-up-trigger {
-        width: 100%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 6px 8px;
-        border: 1px solid rgba(124, 255, 145, 0.85);
-        background: rgba(24, 79, 36, 0.55);
-        color: #8cff9a;
-        cursor: pointer;
-        animation: level-up-pulse 1s infinite;
-    }
-
-    .level-up-trigger:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-        animation: none;
-    }
-
-    .level-up-trigger-icon {
-        width: 16px;
-        height: 16px;
-        background-color: currentColor;
-    }
-
-    .level-up-trigger-label {
-        font-size: 0.58rem;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-    }
-
-    @keyframes level-up-pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(124, 255, 145, 0.45);
-        }
-        70% {
-            box-shadow: 0 0 0 6px rgba(124, 255, 145, 0);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(124, 255, 145, 0);
-        }
-    }
-
-    .mini-player-list {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .mini-player-row {
-        margin: 0;
-        border: 1px dotted rgba(255, 255, 255, 0.25);
-        padding: 6px 8px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 0.58rem;
-        line-height: 1;
-    }
-
-    .mini-player-color {
-        width: 10px;
-        height: 10px;
-        flex: 0 0 10px;
-        border: 1px solid rgba(255, 255, 255, 0.65);
-        display: inline-block;
-    }
-
-    .mini-player-name {
-        font-weight: 600;
-        text-transform: none;
-    }
-
-    .mini-player-level {
-        opacity: 0.72;
-    }
-
-    .mini-player-spacer {
-        flex-grow: 1;
-        min-width: 8px;
-    }
-
-    .mini-player-hp-label {
-        opacity: 0.72;
-    }
-
-    .mini-player-hp-value {
-        font-size: 0.62rem;
-    }
-
-    .panel-scroll-body {
-        min-height: 0;
-        margin-top: 4px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        flex: 1;
-    }
-
     .commands-block app-commands-panel {
         display: block;
         width: 100%;
         min-height: 0;
         flex: 1;
         margin-top: 4px;
-    }
-
-    .summary-item {
-        margin: 0;
-        border: 1px dotted rgba(255, 255, 255, 0.25);
-        padding: 6px 8px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        font-size: 0.58rem;
-
-        span {
-            opacity: 0.7;
-        }
-
-        strong {
-            font-size: 0.62rem;
-            text-transform: capitalize;
-        }
     }
 
     .map-wrapper {
@@ -224,132 +107,29 @@
 
         app-resource-counter,
         app-money-counter,
+        app-alignment-indicator,
         app-attunement-indicator,
-        app-luck-indicator,
+        app-map-cell-inspector-panel,
         app-day-night-cycle-panel {
             display: block;
             width: 100%;
             height: auto;
         }
 
+        app-map-cell-inspector-panel {
+            min-height: 0;
+            flex: 1;
+            height: 100%;
+        }
+
         ::ng-deep .resource-counter-panel,
         ::ng-deep .money-counter-panel,
+        ::ng-deep .alignment-indicator-panel,
         ::ng-deep .attunement-indicator-panel,
-        ::ng-deep .luck-indicator-panel,
         ::ng-deep .day-night-panel {
             width: 100%;
             min-width: 0;
         }
-    }
-
-    .cell-inspector-panel {
-        border: var(--overlay-border);
-        background: rgba(0, 0, 0, 0.78);
-        padding: 10px 8px 8px;
-        position: relative;
-        min-height: 0;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .cell-inspector-body {
-        min-height: 0;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .inspector-biome-row {
-        padding: 4px 0;
-    }
-
-    .inspector-biome-value {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        width: 100%;
-        opacity: 1;
-    }
-
-    .inspector-cell-preview {
-        position: relative;
-        width: 40px;
-        height: 40px;
-        flex: 0 0 40px;
-        border: 1px solid rgba(255, 255, 255, 0.7);
-        background: var(--preview-bg-color, #050505);
-    }
-
-    .inspector-cell-preview::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: var(--preview-icon-color, transparent);
-        opacity: 0.88;
-        -webkit-mask-image: var(--preview-icon-url);
-        mask-image: var(--preview-icon-url);
-        -webkit-mask-repeat: no-repeat;
-        mask-repeat: no-repeat;
-        -webkit-mask-size: 28px 28px;
-        mask-size: 28px 28px;
-        -webkit-mask-position: center;
-        mask-position: center;
-    }
-
-    .inspector-cell-preview.is-special {
-        border: 1px solid rgba(235, 210, 118, 0.95);
-        box-shadow:
-            inset 0 0 0 1px rgba(255, 236, 164, 0.55),
-            0 0 0 1px rgba(107, 79, 23, 0.9);
-    }
-
-    .inspector-biome-name {
-        font-size: 0.66rem;
-        font-weight: 600;
-        text-transform: none;
-        color: #ffffff;
-        opacity: 1;
-    }
-
-    .inspector-section-title {
-        margin: 6px 0 8px;
-        padding: 0 0 4px;
-        font-size: 0.55rem;
-        opacity: 0.74;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-    }
-
-    .inspector-special-value {
-        margin: 0 0 4px;
-        padding: 0 8px;
-        font-size: 0.6rem;
-        text-transform: none;
-        color: #ffffff;
-        opacity: 0.92;
-    }
-
-    .inspector-description-value {
-        margin: 0 0 4px;
-        padding: 0 8px;
-        font-size: 0.6rem;
-        line-height: 1.35;
-        text-transform: none;
-        color: #ffffff;
-        opacity: 0.9;
-    }
-
-    .inspector-resources-value {
-        margin: 0 0 4px;
-        padding: 0 8px;
-        font-size: 0.6rem;
-        text-transform: none;
-        color: #ffffff;
-        opacity: 0.92;
     }
 
     .footer-actions {
@@ -370,49 +150,6 @@
         // height: 58px;
         display: flex;
         align-items: center;
-    }
-
-    .footer-placeholder {
-        flex: 1;
-        min-height: 58px;
-        border: var(--overlay-border);
-        background: rgba(0, 0, 0, 0.78);
-        position: relative;
-        display: flex;
-        align-items: center;
-        padding: 0 8px;
-    }
-
-    .footer-log-body {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding-left: 4px;
-    }
-
-    .footer-log-text {
-        margin: 0;
-        flex: 1;
-        min-width: 0;
-        font-size: 0.58rem;
-        opacity: 0.9;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-transform: none;
-    }
-
-    .footer-log-expand-button {
-        display: inline-flex;
-        flex: 0 0 auto;
-    }
-
-    .footer-log-expand-button::ng-deep .icon-button {
-        width: 42px;
-        height: 42px;
-        border: 0;
-        background: transparent;
     }
 
     .footer-home-button {

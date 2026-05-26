@@ -1,0 +1,9 @@
+<div class="alignment-indicator-panel">
+  <p class="alignment-indicator-title">Alignment</p>
+  <div class="alignment-indicator-root">
+    <span class="alignment-indicator-value-wrap" [class]="'alignment-indicator-value-wrap ' + alignmentClass()">
+      <span class="alignment-icon" [style.mask]="'url(' + iconUrl() + ') no-repeat center / contain'"></span>
+      <span class="alignment-value">{{ label() }}</span>
+    </span>
+  </div>
+</div>

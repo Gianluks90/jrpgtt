@@ -14,45 +14,14 @@
 
         <div class="map-stage">
             <aside class="stage-sidebar">
-                <section class="hud sidebar-block players-block">
-                    <p class="hud-title">Players</p>
-                    <div class="panel-scroll-body player-list-column">
-                        @if (sidebarMainPlayer(); as player) {
-                            <div class="main-player-card-wrap">
-                                <app-player-card
-                                    [player]="player"
-                                    [highlighted]="worldState()?.activePlayerId === player.id"
-                                ></app-player-card>
-
-                                @if (pendingLevelUpChoices() > 0) {
-                                    <button
-                                        type="button"
-                                        class="level-up-trigger"
-                                        [disabled]="!canOpenLevelUpDialog()"
-                                        [attr.aria-label]="'Open level-up choices (' + pendingLevelUpChoices() + ')'"
-                                        (click)="onOpenLevelUpDialog()"
-                                    >
-                                        <span class="level-up-trigger-icon flashing-text" [style.mask]="'url(./icons/shift_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg) no-repeat center / contain'"></span>
-                                        <span class="level-up-trigger-label flashing-text"> LEVEL +{{ pendingLevelUpChoices() }}</span>
-                                    </button>
-                                }
-                            </div>
-                        }
-
-                        <div class="mini-player-list">
-                            @for (player of sidebarOtherPlayers(); track trackPlayer($index, player)) {
-                                <div class="mini-player-row">
-                                    <span class="mini-player-color" [style.background]="player.color"></span>
-                                    <span class="mini-player-name">{{ player.name }}</span>
-                                    <span class="mini-player-level">Lv. {{ player.level }}</span>
-                                    <span class="mini-player-spacer"></span>
-                                    <span class="mini-player-hp-label">HP</span>
-                                    <strong class="mini-player-hp-value">{{ player.parameters.hp.current }}</strong>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </section>
+                <app-map-players-panel
+                    [myPlayer]="myPlayer()"
+                    [mockPlayers]="mockPlayers()"
+                    [activePlayerId]="worldState()?.activePlayerId ?? null"
+                    [pendingLevelUpChoices]="pendingLevelUpChoices()"
+                    [canOpenLevelUpDialog]="canOpenLevelUpDialog()"
+                    (openLevelUpRequested)="onOpenLevelUpDialog()"
+                ></app-map-players-panel>
 
                 <section class="hud sidebar-block commands-block">
                     <p class="hud-title">Commands</p>
@@ -61,6 +30,8 @@
                         (actionRequested)="onCommandActionRequested($event)"
                     ></app-commands-panel>
                 </section>
+
+                <app-luck-indicator class="sidebar-luck-meter" [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
             </aside>
 
             <div class="map-wrapper">
@@ -88,63 +59,29 @@
                     (panelClicked)="onResourcePanelClicked()"
                 ></app-resource-counter>
                 <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
+                <app-alignment-indicator [alignment]="myPlayer()?.alignment ?? 'neutral'"></app-alignment-indicator>
                 <app-attunement-indicator [element]="myPlayer()?.attunedElement ?? null"></app-attunement-indicator>
-                <app-luck-indicator [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
 
-                <div class="cell-inspector-panel">
-                    <p class="hud-title">Cell inspector</p>
-
-                    <div class="cell-inspector-body">
-                        <p class="inspector-section-title">Info</p>
-
-                        <div class="inspector-biome-row">
-                            <span class="inspector-biome-value">
-                                <span
-                                    class="inspector-cell-preview"
-                                    [class.is-special]="currentCellIsSpecial()"
-                                    [style.--preview-bg-color]="currentCellPreviewBackground()"
-                                    [style.--preview-icon-url]="currentCellPreviewIconUrl() ? 'url(' + currentCellPreviewIconUrl() + ')' : null"
-                                    [style.--preview-icon-color]="currentCellPreviewIconColor()"
-                                ></span>
-                                <strong class="inspector-biome-name">{{ currentCellBiomeLabel() }}</strong>
-                            </span>
-                        </div>
-
-                        <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
-                        <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
-                        <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
-                        <p class="summary-item"><span>Enemies level</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
-
-                        @if (currentCellIsSpecial()) {
-                            <p class="inspector-section-title">Special</p>
-                            <p class="inspector-special-value">{{ currentCellSpecialStatusLabel() }}</p>
-
-                            <p class="inspector-section-title">Description</p>
-                            <p class="inspector-description-value">{{ currentCellSpecialDescription() }}</p>
-                        }
-
-                        <p class="inspector-section-title">Resources</p>
-                        <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
-                    </div>
-                </div>
+                <app-map-cell-inspector-panel
+                    [inspectedCell]="inspectedCell()"
+                    [activePlayer]="activePlayer()"
+                    [players]="players()"
+                    [mapCellsById]="mapCellsById()"
+                    [mapSize]="mapSize()"
+                    [environmentByCellId]="environmentByCellId()"
+                    [biomeResourcesByBiome]="biomeResourcesByBiome()"
+                    [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
+                ></app-map-cell-inspector-panel>
 
                 <app-day-night-cycle-panel [worldState]="worldState()"></app-day-night-cycle-panel>
             </aside>
         </div>
 
         <div class="footer-actions">
-            <div class="footer-placeholder">
-                <p class="hud-title">Log</p>
-                <div class="footer-log-body">
-                    <p class="footer-log-text">{{ latestLogMessage() }}</p>
-                    <icon-button
-                        class="footer-log-expand-button"
-                        iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                        ariaLabel="Open logs"
-                        (clicked)="openLogsDialog()"
-                    ></icon-button>
-                </div>
-            </div>
+            <app-map-log-panel
+                [latestMessage]="latestLogMessage()"
+                (openLogsRequested)="openLogsDialog()"
+            ></app-map-log-panel>
             <icon-button
                 class="footer-home-button"
                 iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"

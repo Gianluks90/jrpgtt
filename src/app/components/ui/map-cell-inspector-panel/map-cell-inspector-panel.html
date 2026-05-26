@@ -1,0 +1,36 @@
+<div class="cell-inspector-panel">
+  <p class="panel-title">Cell inspector</p>
+
+  <div class="cell-inspector-body">
+    <p class="inspector-section-title">Info</p>
+
+    <div class="inspector-biome-row">
+      <span class="inspector-biome-value">
+        <span
+          class="inspector-cell-preview"
+          [class.is-special]="currentCellIsSpecial()"
+          [style.--preview-bg-color]="currentCellPreviewBackground()"
+          [style.--preview-icon-url]="currentCellPreviewIconUrl() ? 'url(' + currentCellPreviewIconUrl() + ')' : null"
+          [style.--preview-icon-color]="currentCellPreviewIconColor()"
+        ></span>
+        <strong class="inspector-biome-name">{{ currentCellBiomeLabel() }}</strong>
+      </span>
+    </div>
+
+    <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
+    <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
+    <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+    <p class="summary-item"><span>Enemies level</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
+
+    @if (currentCellIsSpecial()) {
+      <p class="inspector-section-title">Special</p>
+      <p class="inspector-special-value">{{ currentCellSpecialStatusLabel() }}</p>
+
+      <p class="inspector-section-title">Description</p>
+      <p class="inspector-description-value">{{ currentCellSpecialDescription() }}</p>
+    }
+
+    <p class="inspector-section-title">Resources</p>
+    <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
+  </div>
+</div>

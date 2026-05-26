@@ -1,0 +1,139 @@
+:host {
+  display: block;
+  min-height: 0;
+  height: 100%;
+}
+
+.players-panel {
+  border: var(--overlay-border);
+  background: rgba(0, 0, 0, 0.78);
+  padding: 8px;
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 0.65rem;
+  position: absolute;
+  left: 12px;
+  top: -10px;
+  background: var(--bg-color);
+  padding: 4px 12px;
+}
+
+.panel-scroll-body {
+  min-height: 0;
+  margin-top: 4px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.player-list-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.main-player-card-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.level-up-trigger {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(124, 255, 145, 0.85);
+  background: rgba(24, 79, 36, 0.55);
+  color: #8cff9a;
+  cursor: pointer;
+  animation: level-up-pulse 1s infinite;
+}
+
+.level-up-trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  animation: none;
+}
+
+.level-up-trigger-icon {
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+}
+
+.level-up-trigger-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+@keyframes level-up-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(124, 255, 145, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(124, 255, 145, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(124, 255, 145, 0);
+  }
+}
+
+.mini-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mini-player-row {
+  margin: 0;
+  border: 1px dotted rgba(255, 255, 255, 0.25);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.mini-player-color {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  display: inline-block;
+}
+
+.mini-player-name {
+  font-weight: 600;
+  text-transform: none;
+}
+
+.mini-player-level {
+  opacity: 0.72;
+}
+
+.mini-player-spacer {
+  flex-grow: 1;
+  min-width: 8px;
+}
+
+.mini-player-hp-label {
+  opacity: 0.72;
+}
+
+.mini-player-hp-value {
+  font-size: 0.62rem;
+}

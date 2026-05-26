@@ -383,6 +383,7 @@ export class GameService {
     return {
       id: playerId,
       name: '? ? ?',
+      alignment: "neutral",
       location: {
         x: 0,
         y: 0,

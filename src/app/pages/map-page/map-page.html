@@ -16,6 +16,7 @@
             <aside class="stage-sidebar">
                 <app-map-players-panel
                     [myPlayer]="myPlayer()"
+                    [myPlayerComputedStats]="myPlayerComputedStats()"
                     [mockPlayers]="mockPlayers()"
                     [activePlayerId]="worldState()?.activePlayerId ?? null"
                     [pendingLevelUpChoices]="pendingLevelUpChoices()"

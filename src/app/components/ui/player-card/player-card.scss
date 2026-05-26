@@ -24,6 +24,56 @@
     padding-top: 2px;
 }
 
+.effects-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    list-style: none;
+    padding-top: 8px;
+}
+
+.effects-item {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+}
+
+.effect-icon {
+    width: 12px;
+    height: 12px;
+    -webkit-mask-image: var(--effect-icon);
+    mask-image: var(--effect-icon);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    margin-top: 1px;
+}
+
+.effect-icon-bonus {
+    background: #9ee6a4;
+}
+
+.effect-icon-malus {
+    background: #ff9b9b;
+}
+
+.effect-text {
+    color: #ffffff;
+    font-size: 0.55rem;
+    line-height: 1.2;
+}
+
+.effects-empty {
+    color: #ffffff;
+    font-size: 0.56rem;
+}
+
 .player-row {
     display: flex;
     align-items: center;
@@ -107,6 +157,14 @@
     gap: 6px;
 }
 
+.stats-grid-tooltip-trigger {
+    cursor: default;
+}
+
+.stats-grid-tooltip-trigger:hover .stat-box {
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
 .stat-box {
     border: 1px solid rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.03);
@@ -127,6 +185,24 @@
 .stat-value {
     font-size: 0.8rem;
     line-height: 1;
+}
+
+.stat-delta {
+    font-size: 0.48rem;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.boosted {
+    color: #9ee6a4;
+}
+
+.reduced {
+    color: #ff9b9b;
+}
+
+.neutral {
+    color: inherit;
 }
 
 .hp-section {

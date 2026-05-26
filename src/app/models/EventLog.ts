@@ -7,6 +7,7 @@ export type EventLogCode =
   | "player.discoverEnvironment"
   | "player.expandEnvironment"
   | "player.enterSanctuary"
+  | "player.discoverLandmark"
   | "player.gainExperience"
   | "player.endTurn"
   | "player.activateSanctuary"

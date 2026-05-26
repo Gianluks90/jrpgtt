@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.ui-tooltip {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.ui-tooltip-trigger {
+  display: block;
+  width: 100%;
+}
+
+.ui-tooltip-panel {
+  position: fixed;
+  min-width: 180px;
+  max-width: 360px;
+  border: var(--overlay-border);
+  background: rgba(0, 0, 0, 0.92);
+  padding: 10px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 120;
+  pointer-events: none;
+}
+
+.ui-tooltip-title {
+  margin: 0;
+  font-size: 0.65rem;
+  position: absolute;
+  left: 12px;
+  top: -10px;
+  background: var(--bg-color);
+  padding: 4px 12px;
+  color: var(--fg-color);
+  line-height: 1;
+}
+
+.ui-tooltip-body {
+  display: block;
+  color: #ffffff;
+}

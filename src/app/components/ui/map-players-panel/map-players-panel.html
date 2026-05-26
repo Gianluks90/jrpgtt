@@ -5,6 +5,7 @@
       <div class="main-player-card-wrap">
         <app-player-card
           [player]="player"
+          [computedStats]="myPlayerComputedStats()"
           [highlighted]="activePlayerId() === player.id"
         ></app-player-card>
 

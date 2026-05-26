@@ -1,11 +1,13 @@
 <div
     class="map-cell"
     [class.special-cell]="special()"
+    [class.sanctuary-cell]="isSanctuaryCell()"
+    [class.landmark-cell]="isLandmarkCell()"
     [class.revealed-cell]="revealed()"
     [class.unrevealed-cell]="!revealed()"
     [class.movable-cell]="movable()"
     [class.environment-hover-cell]="hoveredEnvironment()"
-    [class]="biome() && !special() ? 'biome-' + biome() : ''"
+    [class]="biome() && !isSanctuaryCell() ? 'biome-' + biome() : ''"
     [style.--env-top-width]="envTopWidth()"
     [style.--env-right-width]="envRightWidth()"
     [style.--env-bottom-width]="envBottomWidth()"
@@ -13,6 +15,7 @@
     [style.--sanctuary-icon]="sanctuaryStyle()?.iconUrl ? 'url(' + sanctuaryStyle()?.iconUrl + ')' : null"
     [style.--sanctuary-bg-color]="sanctuaryStyle()?.backgroundColor ?? null"
     [style.--sanctuary-icon-color]="sanctuaryStyle()?.iconColor ?? null"
+    [style.--landmark-icon]="landmarkIconUrl() ? 'url(' + landmarkIconUrl() + ')' : null"
     (click)="onClick()"
     (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()"
@@ -26,6 +29,12 @@
             class="danger-overlay"
             [class.danger-overlay-strong]="dangerOverlayLevel() === 2"
         ></div>
+    }
+
+    @if (revealed() && isLandmarkCell() && landmarkIconUrl()) {
+        <div class="landmark-marker" aria-hidden="true">
+            <span class="landmark-notch"></span>
+        </div>
     }
 
     @if (players().length > 0) {

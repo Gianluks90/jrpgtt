@@ -4,7 +4,7 @@
     "specialTilesCount": 4,
     "spawnColumns": [0, 1],
     "spawnRule": {
-      "allowedQuadrant": "first"
+      "allowedRegion": "first"
     },
     "biomeDeckConfig": {
       "plains": 20,

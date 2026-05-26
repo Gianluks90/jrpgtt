@@ -1,9 +1,12 @@
+import { RegionSelector } from "./WorldZone";
+
 export interface MapConfig {
     size: number;
     specialTilesCount: 4;
     spawnColumns?: number[];
     spawnRule: {
-        allowedQuadrant: 'first' | 'second' | 'third' | 'random';
+        allowedRegion?: RegionSelector;
+        allowedQuadrant?: RegionSelector;
     };
     biomeDeckConfig: BiomeDeckConfig;
 }

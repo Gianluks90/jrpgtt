@@ -1,5 +1,5 @@
 import { Component, input, output } from "@angular/core";
-import { BiomeType } from "../../../models/MapCell";
+import { BiomeType, SpecialTileType } from "../../../models/MapCell";
 import { Player } from "../../../models/Player";
 import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 
@@ -12,11 +12,13 @@ import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 export class MapCellComponent {
   public revealed = input(false);
   public special = input(false);
+  public specialType = input<SpecialTileType | null>(null);
   public movable = input(false);
   public hoveredEnvironment = input(false);
   public dangerOverlayLevel = input<0 | 1 | 2>(0, { alias: "dangerOverlayLevel" });
   public biome = input<BiomeType | null>(null);
   public sanctuaryStyle = input<SanctuaryTilesConfigEntry | null>(null);
+  public landmarkIconUrl = input<string | null>(null);
   public players = input<Player[]>([]);
   public activePlayerId = input<string | null>(null);
 
@@ -57,5 +59,13 @@ export class MapCellComponent {
 
   public extraPlayersCount(): number {
     return Math.max(0, this.players().length - 1);
+  }
+
+  public isSanctuaryCell(): boolean {
+    return this.specialType() === "sanctuary";
+  }
+
+  public isLandmarkCell(): boolean {
+    return this.specialType() === "landmark";
   }
 }

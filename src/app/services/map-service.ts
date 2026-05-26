@@ -17,6 +17,8 @@ import { SPECIAL_CELLS, isSpecialCellCoordinate } from "../consts/special-cells"
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { EventLogService } from "./event-log-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { LandmarksService } from "./landmarks-service";
+import { PlayerStatsModifierService } from "./player-stats-modifier-service";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -31,6 +33,8 @@ export class MapService {
     private luckService: LuckService,
     private playerProgressionService: PlayerProgressionService,
     private eventLogService: EventLogService,
+    private landmarksService: LandmarksService,
+    private playerStatsModifierService: PlayerStatsModifierService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
@@ -47,6 +51,8 @@ export class MapService {
     let movedPlayerName = "";
     let movedToNewCell = false;
     let movedSanctuaryElement: SanctuaryElement | undefined;
+    let movedLandmarkName = "";
+    let landedSpecialType: "sanctuary" | "landmark" | null = null;
     let movedOnTurn = 0;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
@@ -66,7 +72,6 @@ export class MapService {
 
       const player = playerSnap.data() as Player;
       movedPlayerName = player.name;
-      movedPlayerLuck = Math.max(0, Math.floor(player.parameters.luck.current));
       if (player.pendingResourcePickup) {
         throw new Error("Resolve pending resource pickup before moving");
       }
@@ -133,14 +138,73 @@ export class MapService {
           newCell.specialType = "sanctuary";
           newCell.sanctuaryElement = sanctuaryElement;
           landedOnSpecialCell = true;
+          landedSpecialType = "sanctuary";
+        } else {
+          const landmarkTarget = this.landmarksService.findTargetAtCoordinate(
+            nextWorldState.landmarkTargets,
+            targetX,
+            targetY,
+          );
+
+          if (landmarkTarget) {
+            newCell.isSpecial = true;
+            newCell.specialType = "landmark";
+            newCell.landmarkId = landmarkTarget.landmarkId;
+            newCell.landmarkCategory = landmarkTarget.category;
+            newCell.landmarkDisplayName = this.landmarksService.buildLandmarkDisplayName(landmarkTarget, drawnBiome);
+
+            if (landmarkTarget.alignmentModifier) {
+              newCell.landmarkAlignmentModifier = landmarkTarget.alignmentModifier;
+            }
+
+            movedLandmarkName = newCell.landmarkDisplayName;
+            landedOnSpecialCell = true;
+            landedSpecialType = "landmark";
+          }
         }
 
         transaction.set(mapCellRef, newCell);
         movedBiome = drawnBiome;
+
+        const projectedPlayer: Player = {
+          ...player,
+          location: {
+            x: targetX,
+            y: targetY,
+          },
+        };
+        movedPlayerLuck = this.playerStatsModifierService.computeEffectiveLuck({
+          player: projectedPlayer,
+          currentCell: newCell,
+          worldState,
+          mapSize,
+        });
       } else {
         const cell = targetCellSnap.data() as MapCell;
         movedBiome = cell.biome;
         landedOnSpecialCell = cell.isSpecial === true || isSpecialCellCoordinate(targetX, targetY);
+        if (cell.specialType === "sanctuary") {
+          landedSpecialType = "sanctuary";
+          movedSanctuaryElement = cell.sanctuaryElement;
+        }
+        if (cell.specialType === "landmark") {
+          landedSpecialType = "landmark";
+          movedLandmarkName = cell.landmarkDisplayName ?? "Unknown Landmark";
+        }
+
+        const projectedPlayer: Player = {
+          ...player,
+          location: {
+            x: targetX,
+            y: targetY,
+          },
+        };
+        movedPlayerLuck = this.playerStatsModifierService.computeEffectiveLuck({
+          player: projectedPlayer,
+          currentCell: cell,
+          worldState,
+          mapSize,
+        });
       }
 
       transaction.set(playerRef, {
@@ -175,10 +239,14 @@ export class MapService {
 
     const landedBiome = movedBiome as BiomeType | null;
 
-    if (landedOnSpecialCell) {
+    if (landedSpecialType === "sanctuary") {
       await this.tryCreateLog(gameId, movingPlayer, "player.enterSanctuary", {
         sanctuary: movedSanctuaryElement,
         sanctuaryLabel: this.sanctuaryElementToLabel(movedSanctuaryElement),
+      });
+    } else if (landedSpecialType === "landmark") {
+      await this.tryCreateLog(gameId, movingPlayer, "player.discoverLandmark", {
+        landmarkName: movedLandmarkName || "Unknown Landmark",
       });
     } else if (movedToNewCell && landedBiome) {
       await this.tryCreateLog(gameId, movingPlayer, "player.discoverBiome", {
@@ -217,7 +285,7 @@ export class MapService {
       gainedExperience += 1;
     }
 
-    if (landedOnSpecialCell && movedToNewCell) {
+    if (landedSpecialType === "sanctuary" && movedToNewCell) {
       gainedExperience += 2;
     }
 

@@ -1,0 +1,19 @@
+<div
+  class="ui-tooltip"
+  (mouseenter)="onMouseEnter()"
+  (mousemove)="onMouseMove($event)"
+  (mouseleave)="onMouseLeave()"
+>
+  <div class="ui-tooltip-trigger">
+    <ng-content select="[tooltipTrigger]"></ng-content>
+  </div>
+
+  @if (isVisible()) {
+    <div class="ui-tooltip-panel" role="tooltip" [style.left.px]="panelLeft()" [style.top.px]="panelTop()">
+      <div class="ui-tooltip-title">{{ title() }}</div>
+      <div class="ui-tooltip-body">
+        <ng-content select="[tooltipContent]"></ng-content>
+      </div>
+    </div>
+  }
+</div>

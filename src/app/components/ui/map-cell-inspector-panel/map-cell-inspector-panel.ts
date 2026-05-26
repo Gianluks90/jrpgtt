@@ -1,10 +1,11 @@
-import { Component, computed, input } from "@angular/core";
+import { Component, computed, inject, input } from "@angular/core";
 import { isSpecialCellCoordinate } from "../../../consts/special-cells";
 import { MapCell, SanctuaryElement, BiomeType } from "../../../models/MapCell";
 import { Player } from "../../../models/Player";
 import { ResourceLabel } from "../../../models/Resource";
 import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 import { MapGridPanelCell } from "../../core/map-grid-panel/map-grid-panel";
+import { LandmarksService } from "../../../services/landmarks-service";
 
 @Component({
   selector: "app-map-cell-inspector-panel",
@@ -13,6 +14,7 @@ import { MapGridPanelCell } from "../../core/map-grid-panel/map-grid-panel";
   styleUrl: "./map-cell-inspector-panel.scss",
 })
 export class MapCellInspectorPanel {
+  private landmarksService = inject(LandmarksService);
   public inspectedCell = input<MapGridPanelCell | null>(null);
   public activePlayer = input<Player | null>(null);
   public players = input<Player[]>([]);
@@ -47,7 +49,7 @@ export class MapCellInspectorPanel {
       id,
       mapCell,
       players: playersOnCell,
-      isSpecial: isSpecialCellCoordinate(x, y),
+      isSpecial: isSpecialCellCoordinate(x, y) || mapCell?.isSpecial === true,
     };
   });
 
@@ -70,13 +72,17 @@ export class MapCellInspectorPanel {
 
   public currentCellBiome = computed<BiomeType | null>(() => {
     const cell = this.currentCell();
-    if (!cell || cell.isSpecial === true) return null;
+    if (!cell) return null;
+    if (cell.isSpecial === true && cell.specialType === "sanctuary") return null;
     return cell.biome;
   });
 
   public currentCellBiomeLabel = computed<string>(() => {
     const cell = this.currentCell();
     if (cell?.isSpecial === true) {
+      if (cell.specialType === "landmark") {
+        return cell.landmarkDisplayName ?? "Unknown Landmark";
+      }
       return this.sanctuaryElementToLabel(cell.sanctuaryElement);
     }
 
@@ -138,7 +144,12 @@ export class MapCellInspectorPanel {
 
   public currentCellSpecialStatusLabel = computed<string>(() => {
     if (!this.currentCellIsSpecial()) return "-";
-    const sanctuaryIsActive = this.currentCell()?.active === true;
+    const currentCell = this.currentCell();
+    if (currentCell?.specialType === "landmark") {
+      return `${this.landmarksService.getCategoryLabel(currentCell.landmarkCategory)} discovered`;
+    }
+
+    const sanctuaryIsActive = currentCell?.active === true;
     return sanctuaryIsActive ? "Sanctuary active" : "Sanctuary inactive";
   });
 
@@ -146,6 +157,11 @@ export class MapCellInspectorPanel {
     if (!this.currentCellIsSpecial()) return "-";
 
     const currentCell = this.currentCell();
+    if (currentCell?.specialType === "landmark") {
+      const alignment = currentCell.landmarkAlignmentModifier ? ` (${currentCell.landmarkAlignmentModifier})` : "";
+      return `A ${this.landmarksService.getCategoryLabel(currentCell.landmarkCategory)}${alignment} overlays this biome tile.`;
+    }
+
     const sanctuaryElement = currentCell?.sanctuaryElement;
     if (!sanctuaryElement) {
       return "The sanctuary is still dormant and hidden.";
@@ -160,7 +176,7 @@ export class MapCellInspectorPanel {
 
   public currentCellPreviewBackground = computed<string>(() => {
     const cell = this.currentCell();
-    if (cell?.isSpecial === true) {
+    if (cell?.isSpecial === true && cell.specialType === "sanctuary") {
       const style = cell.sanctuaryElement ? this.sanctuaryStylesByElement()[cell.sanctuaryElement] : null;
       return style?.backgroundColor ?? "#5f5a47";
     }
@@ -178,6 +194,9 @@ export class MapCellInspectorPanel {
   public currentCellPreviewIconUrl = computed<string | null>(() => {
     const cell = this.currentCell();
     if (cell?.isSpecial === true) {
+      if (cell.specialType === "landmark") {
+        return this.landmarksService.getCategoryIconUrl(cell.landmarkCategory);
+      }
       const style = cell.sanctuaryElement ? this.sanctuaryStylesByElement()[cell.sanctuaryElement] : null;
       return style?.iconUrl ?? null;
     }
@@ -194,6 +213,9 @@ export class MapCellInspectorPanel {
   public currentCellPreviewIconColor = computed<string>(() => {
     const cell = this.currentCell();
     if (cell?.isSpecial === true) {
+      if (cell.specialType === "landmark") {
+        return "rgba(255, 255, 255, 0.95)";
+      }
       const style = cell.sanctuaryElement ? this.sanctuaryStylesByElement()[cell.sanctuaryElement] : null;
       return style?.iconColor ?? "rgba(0, 0, 0, 0.35)";
     }

@@ -13,20 +13,49 @@
     </div>
 
     <div class="player-content">
-        <div class="stats-grid">
-            <div class="stat-box">
-                <span class="stat-label">STR</span>
-                <span class="stat-value">{{ player().parameters.strength.current }}</span>
+        <app-ui-tooltip
+            [tooltipId]="'player-effects-' + player().id"
+            [title]="'Active effects'"
+        >
+            <div tooltipTrigger class="stats-grid stats-grid-tooltip-trigger">
+                <div class="stat-box">
+                    <span class="stat-label">STR</span>
+                    <span class="stat-value" [class]="deltaClass(strengthDelta())">{{ strengthValue() }}</span>
+                    @if (strengthDelta() !== 0) {
+                        <span class="stat-delta" [class]="deltaClass(strengthDelta())">({{ deltaLabel(strengthDelta()) }})</span>
+                    }
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">MAG</span>
+                    <span class="stat-value" [class]="deltaClass(magicDelta())">{{ magicValue() }}</span>
+                    @if (magicDelta() !== 0) {
+                        <span class="stat-delta" [class]="deltaClass(magicDelta())">({{ deltaLabel(magicDelta()) }})</span>
+                    }
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">LCK</span>
+                    <span class="stat-value" [class]="deltaClass(luckDelta())">{{ luckValue() }}</span>
+                    @if (luckDelta() !== 0) {
+                        <span class="stat-delta" [class]="deltaClass(luckDelta())">({{ deltaLabel(luckDelta()) }})</span>
+                    }
+                </div>
             </div>
-            <div class="stat-box">
-                <span class="stat-label">MAG</span>
-                <span class="stat-value">{{ player().parameters.magic.current }}</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">LCK</span>
-                <span class="stat-value">{{ player().parameters.luck.current }}</span>
-            </div>
-        </div>
+
+            <span tooltipContent>
+                @if (hasActiveEffects()) {
+                    <ul class="effects-list">
+                        @for (effect of activeEffects(); track effect.key) {
+                            <li class="effects-item">
+                                <span class="effect-icon" [class.effect-icon-bonus]="effect.isBonus" [class.effect-icon-malus]="!effect.isBonus" [style.--effect-icon]="'url(' + effect.iconUrl + ')'" aria-hidden="true"></span>
+                                <span class="effect-text">{{ effect.label }}</span>
+                            </li>
+                        }
+                    </ul>
+                } @else {
+                    <span class="effects-empty">No active bonuses or maluses.</span>
+                }
+            </span>
+        </app-ui-tooltip>
     </div>
 
     <div class="hp-section">

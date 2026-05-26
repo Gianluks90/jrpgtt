@@ -21,6 +21,8 @@ import { MapPageActionsService } from "../../services/map-page-actions-service";
 import { MapPageInteractionService } from "../../services/map-page-interaction-service";
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
+import { PlayerComputedStats } from "../../models/PlayerComputedStats";
+import { PlayerStatsModifierService } from "../../services/player-stats-modifier-service";
 
 @Component({
   selector: "app-map-page",
@@ -52,6 +54,7 @@ export class MapPage implements OnInit, OnDestroy {
   private mapPageLayoutService = inject(MapPageLayoutService);
   private mapPageActionsService = inject(MapPageActionsService);
   private mapPageInteractionService = inject(MapPageInteractionService);
+  private playerStatsModifierService = inject(PlayerStatsModifierService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -132,6 +135,21 @@ export class MapPage implements OnInit, OnDestroy {
 
   public canOpenLevelUpDialog = computed<boolean>(() => {
     return this.pendingLevelUpChoices() > 0 && !this.mapPageInteractionService.isOpeningLevelUp();
+  });
+
+  public myPlayerComputedStats = computed<PlayerComputedStats | null>(() => {
+    const player = this.myPlayer();
+    if (!player) return null;
+
+    const mapCellId = `${player.location.x}_${player.location.y}`;
+    const currentCell = this.mapCellsById()[mapCellId] ?? null;
+
+    return this.playerStatsModifierService.computeStats({
+      player,
+      currentCell,
+      worldState: this.worldState(),
+      mapSize: this.mapSize(),
+    });
   });
 
   public commandActions = computed<CommandPanelAction[]>(() => {

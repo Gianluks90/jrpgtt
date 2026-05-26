@@ -39,6 +39,10 @@ export class EventLogService {
             const sanctuary = String(args["sanctuaryLabel"] ?? "a sanctuary");
             return `${playerName} entered ${sanctuary}.`;
         },
+        "player.discoverLandmark": ({ playerName, args }) => {
+            const landmarkName = String(args["landmarkName"] ?? "a landmark");
+            return `${playerName} discovered ${landmarkName}.`;
+        },
         "player.gainExperience": ({ playerName, args }) => {
             const amount = Number(args["amount"] ?? 0);
             return `${playerName} gained ${amount} XP.`;

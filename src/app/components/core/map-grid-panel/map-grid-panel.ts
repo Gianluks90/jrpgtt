@@ -6,9 +6,12 @@ import { EnvironmentService, type EdgeDirection } from "../../../services/enviro
 import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 import { isSpecialCellCoordinate } from "../../../consts/special-cells";
 import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspector";
+import { LandmarksService } from "../../../services/landmarks-service";
+import { WorldZonesService } from "../../../services/world-zones-service";
+import { QuadrantId } from "../../../models/WorldZone";
 
 interface QuadrantInfluenceOverlay {
-  id: string;
+  id: QuadrantId;
   startX: number;
   startY: number;
   size: number;
@@ -33,6 +36,8 @@ export interface MapGridPanelCell {
 })
 export class MapGridPanel {
   private environmentService = inject(EnvironmentService);
+  private landmarksService = inject(LandmarksService);
+  private worldZonesService = inject(WorldZonesService);
   private hoverActivationTimer: ReturnType<typeof setTimeout> | null = null;
   private hoverProgressTimer: ReturnType<typeof setInterval> | null = null;
   private pendingHoverActivationCellId: string | null = null;
@@ -79,7 +84,7 @@ export class MapGridPanel {
           id,
           mapCell: mapCells[id] ?? null,
           players: playersByCell[id] ?? [],
-          isSpecial: this.isSpecialCell(x, y),
+          isSpecial: this.isSpecialCell(x, y, mapCells[id] ?? null),
         });
       }
     }
@@ -100,26 +105,21 @@ export class MapGridPanel {
   public quadrantInfluenceOverlays = computed<QuadrantInfluenceOverlay[]>(() => {
     const size = this.mapSize();
     if (size <= 0) return [];
-
-    const quadrantSize = Math.max(1, Math.floor(size / 2));
     const specialActiveCells = Object.values(this.mapCellsById()).filter((cell) => {
       return cell.isSpecial === true && cell.specialType === "sanctuary" && cell.active === true && !!cell.sanctuaryElement;
     });
 
-    const overlays = new Map<string, QuadrantInfluenceOverlay>();
+    const overlays = new Map<QuadrantId, QuadrantInfluenceOverlay>();
     for (const cell of specialActiveCells) {
-      const quadrantId = this.getQuadrantId(cell.x, cell.y, quadrantSize);
-      if (!quadrantId) continue;
-
-      const startX = quadrantId === "Q2" || quadrantId === "Q4" ? quadrantSize : 0;
-      const startY = quadrantId === "Q3" || quadrantId === "Q4" ? quadrantSize : 0;
+      const quadrantId = this.worldZonesService.getQuadrantIdByCoordinate(cell.x, cell.y, size);
+      const bounds = this.worldZonesService.getQuadrantBounds(quadrantId, size);
       const colors = this.colorsForElement(cell.sanctuaryElement as SanctuaryElement);
 
       overlays.set(quadrantId, {
         id: quadrantId,
-        startX,
-        startY,
-        size: quadrantSize,
+        startX: bounds.startX,
+        startY: bounds.startY,
+        size: bounds.size,
         borderColor: colors.border,
         glowColor: colors.glow,
       });
@@ -201,6 +201,18 @@ export class MapGridPanel {
     return this.sanctuaryStylesByElement()[element] ?? null;
   }
 
+  public specialTypeForCell(cell: MapGridPanelCell): "sanctuary" | "landmark" | null {
+    if (cell.mapCell?.specialType === "sanctuary") return "sanctuary";
+    if (cell.mapCell?.specialType === "landmark") return "landmark";
+    if (isSpecialCellCoordinate(cell.x, cell.y)) return "sanctuary";
+    return null;
+  }
+
+  public landmarkIconUrlForCell(cell: MapGridPanelCell): string | null {
+    if (cell.mapCell?.specialType !== "landmark") return null;
+    return this.landmarksService.getCategoryIconUrl(cell.mapCell.landmarkCategory);
+  }
+
   public environmentBorderWidth(cell: MapGridPanelCell, direction: EdgeDirection): string {
     return this.environmentService.getEnvironmentBorderWidth(cell.id, direction, this.hoveredEnvironmentCellIds());
   }
@@ -209,17 +221,8 @@ export class MapGridPanel {
     return `${x}_${y}`;
   }
 
-  private isSpecialCell(x: number, y: number): boolean {
-    return isSpecialCellCoordinate(x, y);
-  }
-
-  private getQuadrantId(x: number, y: number, quadrantSize: number): "Q1" | "Q2" | "Q3" | "Q4" | null {
-    if (quadrantSize <= 0) return null;
-
-    if (x < quadrantSize && y < quadrantSize) return "Q1";
-    if (x >= quadrantSize && y < quadrantSize) return "Q2";
-    if (x < quadrantSize && y >= quadrantSize) return "Q3";
-    return "Q4";
+  private isSpecialCell(x: number, y: number, mapCell: MapCell | null): boolean {
+    return mapCell?.isSpecial === true || isSpecialCellCoordinate(x, y);
   }
 
   private colorsForElement(element: SanctuaryElement): { border: string; glow: string } {

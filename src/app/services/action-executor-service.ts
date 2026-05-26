@@ -9,9 +9,11 @@ import { EventLogService } from "./event-log-service";
 import { FirebaseService } from "./firebase-service";
 import { LuckService } from "./luck-service";
 import { PlayerProgressionService } from "./player-progression-service";
+import { PlayerStatsModifierService } from "./player-stats-modifier-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { TurnService } from "./turn-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { WorldZonesService } from "./world-zones-service";
 
 @Injectable({
   providedIn: "root",
@@ -25,7 +27,9 @@ export class ActionExecutorService {
     private eventLogService: EventLogService,
     private playerProgressionService: PlayerProgressionService,
     private luckService: LuckService,
+    private playerStatsModifierService: PlayerStatsModifierService,
     private tilesConfigService: TilesConfigService,
+    private worldZonesService: WorldZonesService,
   ) { }
 
   public async endTurn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
@@ -230,7 +234,11 @@ export class ActionExecutorService {
       }, { merge: true });
 
       const mapSize = gameMap?.size ?? 10;
-      const quadrant = this.getQuadrantLabel(player.location.x, mapSize);
+      const quadrant = this.worldZonesService.getQuadrantIdByCoordinate(
+        player.location.x,
+        player.location.y,
+        mapSize,
+      );
       transaction.set(worldStateRef, {
         sanctuaryInfluenceByQuadrant: {
           ...(worldState.sanctuaryInfluenceByQuadrant ?? {}),
@@ -359,16 +367,39 @@ export class ActionExecutorService {
     }
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
 
-    const playerSnap = await getDoc(playerRef);
+    const [playerSnap, worldStateSnap, gameMapSnap] = await Promise.all([
+      getDoc(playerRef),
+      getDoc(worldStateRef),
+      getDoc(gameMapRef),
+    ]);
     if (!playerSnap.exists()) {
       throw new Error("Player not found");
     }
+    if (!worldStateSnap.exists()) {
+      throw new Error("World state not found");
+    }
 
     const playerForLuck = playerSnap.data() as Player;
-    const playerLuck = Math.max(0, Math.floor(Number(playerForLuck.parameters?.luck?.current ?? 0)));
+    const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+    const mapCellRefForLuck = doc(
+      this.firebaseService.database,
+      "games",
+      gameId,
+      "mapCells",
+      this.cellId(playerForLuck.location.x, playerForLuck.location.y),
+    );
+    const mapCellSnapForLuck = await getDoc(mapCellRefForLuck);
+    const mapCellForLuck = mapCellSnapForLuck.exists() ? (mapCellSnapForLuck.data() as MapCell) : null;
+    const playerLuck = this.playerStatsModifierService.computeEffectiveLuck({
+      player: playerForLuck,
+      currentCell: mapCellForLuck,
+      worldState: worldStateSnap.data() as WorldState,
+      mapSize,
+    });
     const luckResult = this.luckService.checkLuck(playerLuck);
     const healRatio = luckResult.success ? 0.15 : 0.05;
 
@@ -976,15 +1007,5 @@ export class ActionExecutorService {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
-  }
-
-  private getQuadrantLabel(x: number, mapSize: number): "I" | "II" | "III" {
-    const size = Math.max(1, Math.floor(mapSize));
-    const firstBoundary = Math.max(1, Math.floor(size * 0.5));
-    const secondBoundary = Math.max(firstBoundary + 1, Math.floor(size * 0.8));
-
-    if (x < firstBoundary) return "I";
-    if (x < secondBoundary) return "II";
-    return "III";
   }
 }

@@ -1,9 +1,10 @@
 import { BiomeType } from "./MapCell";
 import { SanctuaryElement } from "./MapCell";
+import { LandmarkTarget } from "./Landmark";
+import { QuadrantId } from "./WorldZone";
 
 export type BiomePlacementCount = Record<BiomeType, number>;
 export type TimeOfDay = "day" | "night";
-export type QuadrantLabel = "I" | "II" | "III";
 
 export interface WorldState {
     currentTurn: number;
@@ -15,5 +16,6 @@ export interface WorldState {
     turnOrder?: string[];
     activePlayerId?: string;
     movedThisTurnByPlayer?: Record<string, number>;
-    sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantLabel, SanctuaryElement>>;
+    sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;
+    landmarkTargets?: LandmarkTarget[];
 }

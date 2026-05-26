@@ -32,12 +32,14 @@
     @for (cell of cells(); track cell.id) {
         <map-cell
             [special]="cell.isSpecial"
+            [specialType]="specialTypeForCell(cell)"
             [revealed]="isRevealedCell(cell)"
             [movable]="isMovableCell(cell)"
             [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
             [dangerOverlayLevel]="dangerOverlayLevel(cell)"
             [biome]="cell.mapCell?.biome ?? null"
             [sanctuaryStyle]="sanctuaryStyleForCell(cell)"
+            [landmarkIconUrl]="landmarkIconUrlForCell(cell)"
             [players]="cell.players"
             [activePlayerId]="activePlayerId()"
             [envTopWidth]="environmentBorderWidth(cell, 'top')"

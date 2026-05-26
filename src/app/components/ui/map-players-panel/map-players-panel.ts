@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from "@angular/core";
 import { Player } from "../../../models/Player";
+import { PlayerComputedStats } from "../../../models/PlayerComputedStats";
 import { PlayerCard } from "../player-card/player-card";
 
 @Component({
@@ -11,6 +12,7 @@ import { PlayerCard } from "../player-card/player-card";
 })
 export class MapPlayersPanel {
   public myPlayer = input<Player | null>(null);
+  public myPlayerComputedStats = input<PlayerComputedStats | null>(null);
   public mockPlayers = input<Player[]>([]);
   public activePlayerId = input<string | null>(null);
   public pendingLevelUpChoices = input(0);

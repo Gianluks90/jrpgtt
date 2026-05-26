@@ -9,6 +9,8 @@ import { GameConfig } from "../models/GameConfig";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
 import { PLAYER_SETUP_BASE_HP, PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { LandmarksService } from "./landmarks-service";
+import { WorldZonesService } from "./world-zones-service";
 
 interface StartGameSetupContext {
   game: Game;
@@ -34,7 +36,11 @@ export class GameService {
   private snapshotPlayerId: string | null = null;
   private readonly gameConfigUrl = "/configs/game-init.config.json";
 
-  constructor(private firebaseService: FirebaseService) { }
+  constructor(
+    private firebaseService: FirebaseService,
+    private landmarksService: LandmarksService,
+    private worldZonesService: WorldZonesService,
+  ) { }
 
   public startMyGameSnapshot(playerId: string): void {
     if (this.gameUnsubscribe && this.snapshotPlayerId === playerId) return;
@@ -481,10 +487,11 @@ export class GameService {
       return config.map.spawnColumns.filter((column) => column >= 0 && column < size);
     }
 
-    const rule = config.map.spawnRule.allowedQuadrant;
-    if (rule === "first") return [0, 1, 2, 3, 4];
-    if (rule === "second") return [5, 6, 7];
-    if (rule === "third") return [8, 9];
+    const rule = config.map.spawnRule.allowedRegion ?? config.map.spawnRule.allowedQuadrant ?? "random";
+    const regionColumns = this.worldZonesService.getRegionColumns(rule, size);
+    if (regionColumns.length > 0) {
+      return regionColumns;
+    }
 
     const columns = Array.from({ length: size }, (_, index) => index);
     return columns;
@@ -540,6 +547,7 @@ export class GameService {
         placedBiomeCount: this.emptyBiomePlacementCount(),
         movedThisTurnByPlayer: {},
         sanctuaryInfluenceByQuadrant: {},
+        landmarkTargets: [],
       },
       gameMap: {
         size: config.map.size,
@@ -553,6 +561,7 @@ export class GameService {
       this.setupBiomeDeck,
       this.setupTurnOrder,
       this.setupPlayerSpawns,
+      this.setupLandmarks,
     ];
 
     setupPipeline.forEach((setupStep) => {
@@ -587,6 +596,14 @@ export class GameService {
         y: point.y,
       };
     });
+  }
+
+  private setupLandmarks(context: StartGameSetupContext): void {
+    const excludedCoordinates = context.spawns.map((spawn) => ({ x: spawn.x, y: spawn.y }));
+    context.worldState.landmarkTargets = this.landmarksService.generateLandmarkTargets(
+      context.config.map.size,
+      excludedCoordinates,
+    );
   }
 
   private shuffleArray<T>(items: T[]): T[] {

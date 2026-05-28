@@ -8,13 +8,15 @@ Questa documentazione è basata sull’architettura reale del progetto.
 
 # Filosofia del sistema
 
-Le action sono divise in 4 layer distinti:
+Le action sono divise in 6 layer distinti (architettura attuale):
 
 | Layer | Responsabilità |
 |---|---|
 | Config JSON | definisce dove l’action esiste |
-| Action Registry | costruisce la UI |
-| Map Page | dispatcha il click |
+| MapPageStateService | carica tiles config e stato utile alla map |
+| MapPageActionsService | risolve gli actionId disponibili nella cella corrente |
+| Action Registry | costruisce le card UI |
+| MapPageInteractionService | dispatcha il click e gestisce pending/dialog |
 | Action Executor | gameplay reale e update Firestore |
 
 IMPORTANTE:
@@ -32,15 +34,19 @@ Quando un player usa una action:
 ```txt
 Config JSON
 ↓
-Action Registry
+MapPageStateService (load config)
 ↓
-Map Page
+MapPageActionsService (resolve action ids)
 ↓
-Action Executor
+ActionRegistryService (build cards)
+↓
+MapPageInteractionService (dispatch)
+↓
+ActionExecutorService
 ↓
 Firestore Transaction
 ↓
-Event Log
+EventLogService
 ```
 
 ---
@@ -117,10 +123,13 @@ await this.tryCreateLog(...)
 | File | Ruolo |
 |---|---|
 | `tiles.config.json` | definizione actions/conditions |
+| `map-page-state-service.ts` | carica config e mapping usati dalla map |
+| `map-page-actions-service.ts` | compone command action da cella + config |
 | `action-registry-service.ts` | card UI |
-| `map-page.ts` | dispatch action |
+| `map-page-interaction-service.ts` | dispatch action e gestione pendingActionId |
+| `map-page.ts` | wiring tra signals/eventi e servizi |
 | `action-executor-service.ts` | gameplay reale |
-| `event-log-service.ts` | formatter log |
+| `event-log-service.ts` | formatter + scrittura log |
 | `EventLog.ts` | tipi log |
 
 ---
@@ -150,7 +159,26 @@ Dice solo:
 
 ---
 
-# STEP 2 — Action Registry
+# STEP 2 — Risoluzione action (config-driven)
+
+File principali:
+
+```txt
+map-page-actions-service.ts
+action-registry-service.ts
+```
+
+Pipeline UI attuale:
+
+1) `MapPageActionsService.buildCommandActions()` risolve gli `actionId` disponibili dalla cella corrente (biome/special tile) usando `tiles.config.json`.
+
+2) Per ogni `actionId`, chiama `ActionRegistryService.buildActionCard(...)`.
+
+3) La lista risultante viene renderizzata dal command panel.
+
+---
+
+# STEP 3 — Action Registry
 
 File:
 
@@ -218,55 +246,47 @@ Serve solo per:
 
 ---
 
-# STEP 3 — Map Page Dispatch
+# STEP 4 — Dispatch (Interaction Service)
 
-Dentro la map page:
+La map page non fa più dispatch con `if/switch` per ogni action.
+
+La map page delega a `MapPageInteractionService`:
 
 ```ts
-if (actionId === "drink-water") {
-  await this.onDrinkWater();
-  return;
+public async onCommandActionRequested(actionId: string): Promise<void> {
+  await this.mapPageInteractionService.handleCommandAction({
+    actionId,
+    gameId: this.gameId,
+    myPlayer: this.myPlayer(),
+    isMyTurn: this.isMyTurn(),
+    canEndTurn: this.canEndTurn(),
+    mapCellsById: this.mapCellsById(),
+  });
 }
 ```
 
 ---
 
-# Handler standard
+# Handler standard (dentro map-page-interaction-service.ts)
 
 ```ts
-private async onDrinkWater(): Promise<void> {
+"drink-water": async () => {
+  if (!input.myPlayer || !input.isMyTurn) return;
 
-  const player = this.myPlayer();
-
-  if (!player || !this.isMyTurn()) {
-    return;
-  }
-
-  this.pendingActionId.set("drink-water");
-
-  try {
-
-    await this.actionExecutorService.drinkWater(
-      this.gameId,
-      {
-        id: player.id,
-        name: player.name,
-      },
-    );
-
-  } finally {
-
-    this.pendingActionId.set(null);
-
-  }
-}
+  await this.runNamedAction("drink-water", async () => {
+    await this.actionExecutorService.drinkWater(input.gameId, {
+      id: input.myPlayer.id,
+      name: input.myPlayer.name,
+    });
+  }, "Error while drinking water");
+},
 ```
 
 ---
 
 # pendingActionId
 
-Serve per:
+`pendingActionId` vive in `MapPageInteractionService` e serve per:
 - spinner;
 - loading state;
 - anti double click;
@@ -274,7 +294,7 @@ Serve per:
 
 ---
 
-# STEP 4 — Executor
+# STEP 5 — Executor
 
 File:
 
@@ -558,7 +578,8 @@ Aggiungere tipo:
 Formatter:
 
 ```ts
-"player.drinkWater": ({ playerName, healedHp }) => {
+"player.drinkWater": ({ playerName, args }) => {
+  const healedHp = Number(args["healedHp"] ?? 0);
   return `${playerName} drank fresh water and recovered ${healedHp} HP.`;
 },
 ```
@@ -568,9 +589,9 @@ Formatter:
 # Checklist completa nuova action
 
 - [ ] Action aggiunta nel config JSON
+- [ ] Action risolta in `MapPageActionsService` (config-driven)
 - [ ] Registry UI creato
-- [ ] Dispatch aggiunto nella map page
-- [ ] Handler creato
+- [ ] Handler creato in `MapPageInteractionService`
 - [ ] Metodo executor implementato
 - [ ] Validazioni aggiunte
 - [ ] Update Firestore implementati
@@ -588,7 +609,7 @@ Formatter:
 | Resource exchange | cell-gather |
 | Protection status | consume-ration |
 | Environment damage | hostile-environment |
-| Turn-ending action | gather |
+| Turn-ending action | cell-gather |
 | Attunement swap | donate-sanctuary |
 
 ---
@@ -603,9 +624,10 @@ Tutti i controlli veri devono stare nell’executor.
 
 ---
 
-# 2. Non mettere gameplay nella MapPage
+# 2. Non mettere gameplay nei layer UI
 
-La map page deve solo dispatchare.
+`map-page.ts` orchestra e delega, `map-page-interaction-service.ts` dispatcha.
+Il gameplay resta in `ActionExecutorService`.
 
 ---
 
@@ -669,3 +691,17 @@ Il progetto crescerà meglio con:
 - generic reward system.
 
 Ma la struttura attuale è già solida e scalabile.
+
+---
+
+# Checklist rapida (uso quotidiano)
+
+- [ ] Aggiungi action id in `tiles.config.json` (biome o special tile)
+- [ ] Verifica che l’action venga risolta da `MapPageActionsService`
+- [ ] Aggiungi/aggiorna card in `ActionRegistryService`
+- [ ] Registra handler in `MapPageInteractionService` con `runNamedAction`
+- [ ] Implementa metodo in `ActionExecutorService` (`VALIDATE -> COMPUTE -> APPLY -> LOG`)
+- [ ] Aggiungi `EventLogCode` in `EventLog.ts` e formatter in `EventLogService` (usa `args`)
+- [ ] Applica anti-spam turno (`ensureActionAvailable`) e movement requirement quando richiesto
+- [ ] Decidi se l’action chiude il turno (`turnService.advanceTurn`) o no
+- [ ] Testa in game: happy path + error path principali

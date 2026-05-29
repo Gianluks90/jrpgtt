@@ -1,4 +1,5 @@
 export interface LuckCheckResult {
+  checkId?: string;
   roll: number;
   luckBonus: number;
   total: number;

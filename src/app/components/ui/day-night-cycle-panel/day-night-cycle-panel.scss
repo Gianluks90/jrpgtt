@@ -32,7 +32,25 @@
   padding: 4px 8px;
 }
 
+.day-night-icon-horizon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.day-night-label-horizon {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  height: 1.05em;
+  overflow: hidden;
+}
+
 .day-night-icon {
+  display: block;
   width: 18px;
   height: 18px;
   background-color: #ffd64f;
@@ -40,6 +58,8 @@
   mask-repeat: no-repeat;
   mask-size: contain;
   mask-position: center;
+  transform: translateY(0);
+  will-change: transform, opacity;
 }
 
 .day-night-icon.is-night {
@@ -47,15 +67,52 @@
   mask-image: url("/day-night-icons/night-icon.svg");
 }
 
+.day-night-icon.is-transitioning {
+  animation-name: day-night-icon-horizon-shift;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+@keyframes day-night-icon-horizon-shift {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  45% {
+    transform: translateY(140%);
+    opacity: 0;
+  }
+
+  55% {
+    transform: translateY(140%);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .day-night-label {
+  display: inline-block;
   margin: 0;
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #ffd64f;
+  transform: translateY(0);
+  will-change: transform, opacity;
 }
 
 .day-night-label.is-night {
   color: #79caff;
+}
+
+.day-night-label.is-transitioning {
+  animation-name: day-night-icon-horizon-shift;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
 }

@@ -2,13 +2,11 @@
   <p class="luck-indicator-title">Luck-meter</p>
   <div class="luck-indicator-root">
     <span class="luck-indicator-value-wrap">
-      @if (result(); as value) {
-        <span class="luck-indicator-status" [class]="'luck-indicator-status ' + statusClass()">{{ statusLabel() }}</span>
-        <span class="luck-indicator-total">{{ value.total }}/{{ value.threshold }}</span>
-      } @else {
-        <span class="luck-indicator-status luck-indicator-status neutral">-</span>
-        <span class="luck-indicator-total">0/0</span>
-      }
+      <span class="luck-indicator-status" [class]="'luck-indicator-status ' + statusClass()">{{ statusLabel() }}</span>
+      <span class="luck-indicator-total-wrap">
+        <span class="luck-indicator-total-current" [class.rolling]="isRolling()">{{ shownTotal() }}</span>
+        <span class="luck-indicator-total-threshold">/{{ shownThreshold() }}</span>
+      </span>
     </span>
   </div>
 </div>

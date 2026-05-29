@@ -49,6 +49,12 @@ export class ActionExecutorService {
       environmentSize: number;
     } | null = null;
 
+    let regeneratingWaters: {
+      biome: string;
+      healingHp: number;
+      environmentSize: number;
+    } | null = null;
+
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateSnap, playerSnap, gameMapSnap] = await Promise.all([
         transaction.get(worldStateRef),
@@ -100,9 +106,10 @@ export class ActionExecutorService {
       if (currentCell && currentCell.isSpecial !== true) {
         const biomeConfig = tilesConfig.biomes[currentCell.biome];
         const isHostileEnvironment = (biomeConfig?.conditions ?? []).includes("hostile-environment");
+        const isRegeneratingWaters = (biomeConfig?.conditions ?? []).includes("regenerating-waters");
+        const environmentSize = await this.computeConnectedBiomeSize(transaction, gameId, currentCell, mapSize);
 
         if (isHostileEnvironment && !hasNutrition) {
-          const environmentSize = await this.computeConnectedBiomeSize(transaction, gameId, currentCell, mapSize);
           const hpMax = Math.max(
             1,
             Math.floor(Number(
@@ -115,6 +122,23 @@ export class ActionExecutorService {
           hostileDamage = {
             biome: currentCell.biome,
             damageHp,
+            environmentSize: Math.max(1, environmentSize),
+          };
+        }
+
+        if (isRegeneratingWaters) {
+          const hpMax = Math.max(
+            1,
+            Math.floor(Number(
+              typeof player.parameters.hp.max === "number" ? player.parameters.hp.max : player.parameters.hp.base,
+            )),
+          );
+          const healingRatio = Math.min(0.15, 0.03 * Math.max(1, environmentSize));
+          const healingHp = Math.max(1, Math.floor(hpMax * healingRatio));
+          nextHpCurrent = Math.min(hpMax, nextHpCurrent + healingHp);
+          regeneratingWaters = {
+            biome: currentCell.biome,
+            healingHp,
             environmentSize: Math.max(1, environmentSize),
           };
         }
@@ -154,6 +178,19 @@ export class ActionExecutorService {
         biome: hostileDamageLog.biome,
         damageHp: hostileDamageLog.damageHp,
         environmentSize: hostileDamageLog.environmentSize,
+      });
+    }
+
+    const regeneratingWatersLog = regeneratingWaters as {
+      biome: string;
+      healingHp: number;
+      environmentSize: number;
+    } | null;
+    if (regeneratingWatersLog) {
+      await this.tryCreateLog(gameId, actor, "player.regeneratingWatersHealing", {
+        biome: regeneratingWatersLog.biome,
+        healingHp: regeneratingWatersLog.healingHp,
+        environmentSize: regeneratingWatersLog.environmentSize,
       });
     }
 

@@ -33,11 +33,13 @@
 .luck-indicator-value-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
   background: rgba(0,0,0,0.7);
   border-radius: 4px;
   padding: 2px 6px;
   min-height: 22px;
+  width: 100%;
 }
 
 .luck-indicator-status {
@@ -60,10 +62,49 @@
   color: #d2d2d2;
 }
 
-.luck-indicator-total {
+.luck-indicator-total-wrap {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  min-width: 56px;
+}
+
+.luck-indicator-total-current,
+.luck-indicator-total-threshold {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #ffffff;
-  min-width: 44px;
   text-align: right;
+}
+
+.luck-indicator-total-current {
+  color: #ffffff;
+  min-width: 22px;
+}
+
+.luck-indicator-total-threshold {
+  color: #d2d2d2;
+  min-width: 34px;
+}
+
+.luck-indicator-total-current.rolling {
+  opacity: 0.92;
+  letter-spacing: 0.04em;
+  animation: luck-indicator-roll-flicker 0.11s steps(2, end) infinite;
+}
+
+@keyframes luck-indicator-roll-flicker {
+  0% {
+    opacity: 0.6;
+    transform: translateX(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(0.5px);
+  }
+
+  100% {
+    opacity: 0.75;
+    transform: translateX(-0.5px);
+  }
 }

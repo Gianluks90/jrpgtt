@@ -19,6 +19,7 @@ export class LuckService {
     const nearSuccess = !success && total >= (config.successThreshold - config.nearSuccessMargin);
 
     return {
+      checkId: this.generateCheckId(),
       roll,
       luckBonus,
       total,
@@ -26,6 +27,12 @@ export class LuckService {
       success,
       nearSuccess,
     };
+  }
+
+  private generateCheckId(): string {
+    const now = Date.now().toString(36);
+    const randomPart = Math.floor(Math.random() * 1_000_000).toString(36).padStart(4, "0");
+    return `${now}-${randomPart}`;
   }
 
   private randomIntInclusive(min: number, max: number): number {

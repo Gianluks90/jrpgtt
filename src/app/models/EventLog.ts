@@ -16,6 +16,7 @@ export type EventLogCode =
   | "player.cellGather"
   | "player.consumeRation"
   | "player.hostileEnvironmentDamage"
+  | "player.regeneratingWatersHealing"
   | "player.discardResource"
   | "player.pendingPickupCancelled"
   | "player.swapResource"

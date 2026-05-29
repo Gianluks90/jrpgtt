@@ -98,6 +98,12 @@ Dice solo:
 
 # STEP 2 - Valida naming e formato
 
+> Nota localizzativa (dove intervenire)
+>
+> - `public/configs/tiles.config.json`: controlla che gli id dentro `conditions` siano coerenti e puliti.
+> - `src/app/services/tiles-config-service.ts`: qui estendi la validazione runtime se vuoi imporre nuove regole di naming/formato.
+> - `src/app/models/TilesConfig.ts`: toccalo solo se cambia il contratto tipizzato (di solito non serve per una nuova condition).
+
 `TilesConfigService` valida che `conditions` sia un array di stringhe non vuote.
 
 Best practice naming:
@@ -109,6 +115,13 @@ Best practice naming:
 ---
 
 # STEP 3 - Applica la regola in executor
+
+> Nota localizzativa (dove intervenire)
+>
+> - `src/app/services/action-executor-service.ts`: punto principale per applicare la regola gameplay autoritativa.
+> - Trigger `endTurn`: modifica il metodo `endTurn(...)` nello stesso file.
+> - Trigger action-specifica: modifica il metodo action corrispondente nello stesso file.
+> - Trigger su movimento: usa il punto autoritativo del movimento in `src/app/services/map-service.ts` e mantieni la regola gameplay lato service (non in UI).
 
 Scegli il trigger corretto:
 
@@ -143,6 +156,11 @@ if (hasCondition && !hasProtectionStatus) {
 
 # STEP 4 - Integra eventuale status di protezione
 
+> Nota localizzativa (dove intervenire)
+>
+> - `src/app/services/action-executor-service.ts`: aggiungi il check `hasStatus(...)` nello stesso punto in cui applichi la condition.
+> - `src/app/models/Player.ts`: aggiorna `PlayerStatusKey` solo se introduci una nuova chiave status esplicita a livello dominio.
+
 Pattern corretto:
 
 - condition = mondo
@@ -169,6 +187,12 @@ if (hasCondition && !hasWarmth) {
 ---
 
 # STEP 5 - Logga l'effetto (se rilevante)
+
+> Nota localizzativa (dove intervenire)
+>
+> - `src/app/models/EventLog.ts`: aggiungi il nuovo codice evento nel type `EventLogCode`.
+> - `src/app/services/event-log-service.ts`: aggiungi il formatter testuale del nuovo codice log.
+> - `src/app/services/action-executor-service.ts`: invoca `tryCreateLog(...)` nel punto in cui l'effetto viene realmente applicato.
 
 Se la condition produce un effetto visibile (damage, drain, ecc.), aggiungi log.
 

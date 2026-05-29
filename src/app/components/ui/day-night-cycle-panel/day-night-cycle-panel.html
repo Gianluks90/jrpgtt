@@ -2,7 +2,21 @@
   <p class="day-night-title">{{ title() }}</p>
 
   <div class="day-night-body">
-    <span class="day-night-icon" [class.is-night]="timeOfDay() === 'night'"></span>
-    <strong class="day-night-label" [class.is-night]="timeOfDay() === 'night'">{{ label() }}</strong>
+    <span class="day-night-icon-horizon">
+      <span
+        class="day-night-icon"
+        [class.is-night]="timeOfDay() === 'night'"
+        [class.is-transitioning]="isTransitioning()"
+        [style.animation-duration]="transitionDuration()"
+      ></span>
+    </span>
+    <span class="day-night-label-horizon">
+      <strong
+        class="day-night-label"
+        [class.is-night]="timeOfDay() === 'night'"
+        [class.is-transitioning]="isTransitioning()"
+        [style.animation-duration]="transitionDuration()"
+      >{{ label() }}</strong>
+    </span>
   </div>
 </div>

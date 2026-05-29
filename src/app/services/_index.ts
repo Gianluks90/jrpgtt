@@ -1,4 +1,5 @@
 export * from "./action-executor-service";
+export * from "./action-catalog-service";
 export * from "./auth-service";
 export * from "./breakpoint-service";
 export * from "./environment-service";
@@ -9,6 +10,8 @@ export * from "./map-service";
 export * from "./map-page-state-service";
 export * from "./player-service";
 export * from "./player-progression-service";
+export * from "./player-turn-effects-service";
+export * from "./safe-place-fast-travel-service";
 export * from "./sidebar-service";
 export * from "./tiles-config-service";
 export * from "./turn-service";

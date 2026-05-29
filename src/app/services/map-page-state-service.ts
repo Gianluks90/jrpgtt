@@ -11,6 +11,7 @@ import { WorldState } from "../models/WorldState";
 import { EventLog } from "../models/EventLog";
 import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
 import { EventLogService } from "./event-log-service";
+import { ActionCatalogService } from "./action-catalog-service";
 import { FirebaseService } from "./firebase-service";
 import { LandmarksConfigService } from "./landmarks-config-service";
 import { TilesConfigService } from "./tiles-config-service";
@@ -111,6 +112,7 @@ export class MapPageStateService {
     private firebaseService: FirebaseService,
     private tilesConfigService: TilesConfigService,
     private landmarksConfigService: LandmarksConfigService,
+    private actionCatalogService: ActionCatalogService,
   ) { }
 
   public init(gameId: string): void {
@@ -122,6 +124,7 @@ export class MapPageStateService {
 
     void this.loadBiomeResourcesConfig();
     void this.loadLandmarksConfig();
+    void this.loadActionCatalog();
 
     const auth = getAuth();
     if (typeof auth.authStateReady === "function") {
@@ -266,6 +269,14 @@ export class MapPageStateService {
   private async loadLandmarksConfig(): Promise<void> {
     try {
       await this.landmarksConfigService.loadConfig();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async loadActionCatalog(): Promise<void> {
+    try {
+      await this.actionCatalogService.loadConfig();
     } catch (error) {
       console.error(error);
     }

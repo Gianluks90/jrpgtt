@@ -3,6 +3,8 @@ import { TimeOfDay } from "../models/WorldState";
 export type SafePlaceLandmarkId = "capital" | "city" | "village" | "camp";
 
 export type SafePlaceActionId =
+  | "safe-place-wait"
+  | "fast-travel"
   | "capital-doctor"
   | "capital-inn"
   | "city-healer"
@@ -13,13 +15,15 @@ export type SafePlaceActionId =
 export type SafePlaceDoctorActionId = "capital-doctor" | "city-healer";
 
 export const SAFE_PLACE_ACTIONS_BY_LANDMARK: Record<SafePlaceLandmarkId, SafePlaceActionId[]> = {
-  capital: ["capital-doctor", "capital-inn"],
-  city: ["city-healer"],
-  village: ["village-craftsman"],
-  camp: ["camp-gatherer", "camp-hunter"],
+  capital: ["safe-place-wait", "fast-travel", "capital-doctor", "capital-inn"],
+  city: ["safe-place-wait", "fast-travel", "city-healer"],
+  village: ["safe-place-wait", "fast-travel", "village-craftsman"],
+  camp: ["safe-place-wait", "fast-travel", "camp-gatherer", "camp-hunter"],
 };
 
-export const SAFE_PLACE_ACTION_LANDMARK: Record<SafePlaceActionId, SafePlaceLandmarkId> = {
+export const SAFE_PLACE_ACTION_LANDMARK: Record<SafePlaceActionId, SafePlaceLandmarkId | "any-safe-place"> = {
+  "safe-place-wait": "any-safe-place",
+  "fast-travel": "any-safe-place",
   "capital-doctor": "capital",
   "capital-inn": "capital",
   "city-healer": "city",
@@ -30,6 +34,10 @@ export const SAFE_PLACE_ACTION_LANDMARK: Record<SafePlaceActionId, SafePlaceLand
 
 export function isSafePlaceActionId(actionId: string): actionId is SafePlaceActionId {
   return (
+    actionId === "safe-place-wait"
+    ||
+    actionId === "fast-travel"
+    ||
     actionId === "capital-doctor"
     || actionId === "capital-inn"
     || actionId === "city-healer"

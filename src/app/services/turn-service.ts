@@ -1,27 +1,89 @@
 import { Injectable } from "@angular/core";
 import { DAY_NIGHT_ROUNDS_PER_TOGGLE } from "../consts/day-night-cycle";
-import { WorldState } from "../models/WorldState";
+import { PendingTeleportState, WorldState } from "../models/WorldState";
+import { PlayerTurnEffectsService } from "./player-turn-effects-service";
+
+export interface TurnAdvanceResult {
+  skippedPlayerIds: string[];
+  teleportArrivals: Array<{
+    playerId: string;
+    destination: PendingTeleportState;
+  }>;
+}
 
 @Injectable({
   providedIn: "root",
 })
 export class TurnService {
-  public advanceTurn(worldState: WorldState): void {
+  constructor(private playerTurnEffectsService: PlayerTurnEffectsService) {}
+
+  public advanceTurn(worldState: WorldState): TurnAdvanceResult {
+    const result: TurnAdvanceResult = {
+      skippedPlayerIds: [],
+      teleportArrivals: [],
+    };
+
     const order = worldState.turnOrder ?? [];
     if (order.length === 0) {
       worldState.currentTurn += 1;
-      return;
+      return result;
     }
 
-    const currentIndex = worldState.activePlayerId ? order.indexOf(worldState.activePlayerId) : -1;
-    const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % order.length;
+    let currentIndex = worldState.activePlayerId ? order.indexOf(worldState.activePlayerId) : -1;
+    const maxIterations = Math.max(order.length + 1, order.length * 3);
+    let iteration = 0;
 
-    if (nextIndex === 0) {
-      worldState.currentTurn += 1;
-      this.toggleTimeOnRoundChange(worldState);
+    while (iteration < maxIterations) {
+      const nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % order.length;
+
+      if (nextIndex === 0) {
+        worldState.currentTurn += 1;
+        this.toggleTimeOnRoundChange(worldState);
+      }
+
+      const candidatePlayerId = order[nextIndex];
+      currentIndex = nextIndex;
+
+      if (this.playerTurnEffectsService.consumeSkippedTurn(worldState, candidatePlayerId)) {
+        result.skippedPlayerIds.push(candidatePlayerId);
+
+        if (this.playerTurnEffectsService.getSkippedTurns(worldState, candidatePlayerId) <= 0) {
+          const teleportAfterSkippedTurn = this.playerTurnEffectsService.consumeTeleport(worldState, candidatePlayerId);
+          if (teleportAfterSkippedTurn) {
+            result.teleportArrivals.push({
+              playerId: candidatePlayerId,
+              destination: teleportAfterSkippedTurn,
+            });
+          }
+        }
+
+        iteration += 1;
+        continue;
+      }
+
+      const teleportAtTurnStart = this.playerTurnEffectsService.consumeTeleport(worldState, candidatePlayerId);
+      if (teleportAtTurnStart) {
+        result.teleportArrivals.push({
+          playerId: candidatePlayerId,
+          destination: teleportAtTurnStart,
+        });
+      }
+
+      if (this.playerTurnEffectsService.consumeAutoMoveOnTurnStart(worldState, candidatePlayerId)) {
+        worldState.movedThisTurnByPlayer = {
+          ...(worldState.movedThisTurnByPlayer ?? {}),
+          [candidatePlayerId]: worldState.currentTurn,
+        };
+      }
+
+      worldState.activePlayerId = candidatePlayerId;
+      return result;
     }
 
-    worldState.activePlayerId = order[nextIndex];
+    // Fallback guard against malformed state loops.
+    worldState.activePlayerId = order[currentIndex < 0 ? 0 : currentIndex];
+
+    return result;
   }
 
   private toggleTimeOnRoundChange(worldState: WorldState): void {

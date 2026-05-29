@@ -3,6 +3,7 @@ import { addDoc, collection, limit, onSnapshot, orderBy, query, Timestamp, Unsub
 import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
 import { EventLog, EventLogCode } from "../models/EventLog";
 import { Player } from "../models/Player";
+import { ActionCatalogService } from "./action-catalog-service";
 import { FirebaseService } from "./firebase-service";
 
 interface EventLogContext {
@@ -79,25 +80,43 @@ export class EventLogService {
             const actionId = String(args["actionId"] ?? "heal");
             const healedHp = Number(args["healedHp"] ?? 0);
             const spentCoins = Number(args["spentCoins"] ?? 0);
-            const place = actionId === "capital-doctor" ? "Capital Doctor" : "City Healer";
+            const fallbackPlace = actionId === "capital-doctor" ? "Capital Doctor" : "City Healer";
+            const place = this.getActionSourceLabel(actionId, fallbackPlace);
             return `${playerName} used ${place}, restored ${healedHp} HP and spent ${spentCoins} coins.`;
         },
         "player.capitalInn": ({ playerName, args }) => {
             const healedHp = Number(args["healedHp"] ?? 0);
             const spentCoins = Number(args["spentCoins"] ?? 0);
-            return `${playerName} rested at the Capital Inn, restored ${healedHp} HP, spent ${spentCoins} coins and ended the turn.`;
+            const source = this.getActionSourceLabel("capital-inn", "Capital Inn");
+            return `${playerName} rested at the ${source}, restored ${healedHp} HP, spent ${spentCoins} coins and ended the turn.`;
         },
         "player.villageCraftsmanExchange": ({ playerName, args }) => {
             const giveLabel = String(args["giveLabel"] ?? "resource");
             const receiveLabel = String(args["receiveLabel"] ?? "resource");
             const amount = Number(args["amount"] ?? 0);
-            return `${playerName} exchanged ${amount} ${giveLabel} for ${amount} ${receiveLabel} at the Village Craftsman and ended the turn.`;
+            const source = this.getActionSourceLabel("village-craftsman", "Village Craftsman");
+            return `${playerName} exchanged ${amount} ${giveLabel} for ${amount} ${receiveLabel} at the ${source} and ended the turn.`;
         },
         "player.campReward": ({ playerName, args }) => {
             const actionId = String(args["actionId"] ?? "camp-action");
             const rewards = String(args["rewards"] ?? "");
-            const source = actionId === "camp-gatherer" ? "Camp Gatherer" : "Camp Hunter";
+            const fallbackSource = actionId === "camp-gatherer" ? "Camp Gatherer" : "Camp Hunter";
+            const source = this.getActionSourceLabel(actionId, fallbackSource);
             return `${playerName} used ${source} and gained ${rewards}.`;
+        },
+        "player.safePlaceWait": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("safe-place-wait", "Safe Place Wait");
+            const place = String(args["place"] ?? "safe place");
+            return `${playerName} waited at ${place} using ${source}, simulated movement on the same cell and ended the turn.`;
+        },
+        "player.fastTravelBooked": ({ playerName, args }) => {
+            const from = String(args["from"] ?? "a safe place");
+            const to = String(args["to"] ?? "a safe place");
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            const skippedTurns = Math.max(1, Number(args["skippedTurns"] ?? 1));
+            const source = this.getActionSourceLabel("fast-travel", "Fast Travel");
+            const turnLabel = skippedTurns === 1 ? "turn" : "turns";
+            return `${playerName} booked ${source} from ${from} to ${to}, spent ${spentCoins} coins and will skip ${skippedTurns} ${turnLabel} before arriving.`;
         },
         "player.hostileEnvironmentDamage": ({ playerName, args }) => {
             const damageHp = Number(args["damageHp"] ?? 0);
@@ -128,7 +147,10 @@ export class EventLogService {
         },
     };
 
-    constructor(private firebaseService: FirebaseService) { }
+    constructor(
+        private firebaseService: FirebaseService,
+        private actionCatalogService: ActionCatalogService,
+    ) { }
 
     public async newLog(
         gameId: string,
@@ -209,5 +231,9 @@ export class EventLogService {
         return entries
             .map(([key, value]) => `${key}=${String(value)}`)
             .join(" | ");
+    }
+
+    private getActionSourceLabel(actionId: string, fallbackLabel: string): string {
+        return this.actionCatalogService.getLogSourceLabel(actionId, fallbackLabel);
     }
 }

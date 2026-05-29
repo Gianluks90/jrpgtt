@@ -6,6 +6,11 @@ import { QuadrantId } from "./WorldZone";
 export type BiomePlacementCount = Record<BiomeType, number>;
 export type TimeOfDay = "day" | "night";
 
+export interface PendingTeleportState {
+    x: number;
+    y: number;
+}
+
 export interface WorldState {
     currentTurn: number;
     phase: 'lobby' | 'turn' | 'resolution';
@@ -16,6 +21,9 @@ export interface WorldState {
     turnOrder?: string[];
     activePlayerId?: string;
     movedThisTurnByPlayer?: Record<string, number>;
+    pendingAutoMoveOnTurnStartByPlayer?: Record<string, boolean>;
+    skippedTurnsByPlayer?: Record<string, number>;
+    pendingTeleportsByPlayer?: Record<string, PendingTeleportState>;
     sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;
     landmarkTargets?: LandmarkTarget[];
 }

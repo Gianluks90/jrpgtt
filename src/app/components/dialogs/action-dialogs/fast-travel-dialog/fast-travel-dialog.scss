@@ -1,0 +1,51 @@
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.route-option {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  text-align: left;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.route-option:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.route-option.selected {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.route-title {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.route-meta {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.route-warning {
+  font-size: 0.5rem;
+  color: var(--warning-color);
+}
+
+.error-text {
+  margin: 6px 0 8px;
+  font-size: 0.58rem;
+  color: #f08d8d;
+}

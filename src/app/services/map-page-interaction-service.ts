@@ -1,7 +1,12 @@
 import { Injectable, signal } from "@angular/core";
 import { Dialog } from "@angular/cdk/dialog";
 import { firstValueFrom, take } from "rxjs";
-import { DIALOGS_CONFIG, DOCTOR_HEAL_DIALOG_CONFIG, RESOURCE_EXCHANGE_DIALOG_CONFIG } from "../consts/dialog-configs";
+import {
+  DIALOGS_CONFIG,
+  DOCTOR_HEAL_DIALOG_CONFIG,
+  FAST_TRAVEL_DIALOG_CONFIG,
+  RESOURCE_EXCHANGE_DIALOG_CONFIG,
+} from "../consts/dialog-configs";
 import { GameEventsLogDialog } from "../components/dialogs/game-events-log-dialog/game-events-log-dialog";
 import { MapService } from "./map-service";
 import { ActionExecutorService } from "./action-executor-service";
@@ -30,9 +35,31 @@ import {
   ResourceExchangeDialogData,
   ResourceExchangeDialogResult,
 } from "../components/dialogs/action-dialogs/resource-exchange-dialog/resource-exchange-dialog";
+import {
+  FastTravelDialog,
+  FastTravelDialogData,
+  FastTravelDialogResult,
+} from "../components/dialogs/action-dialogs/fast-travel-dialog/fast-travel-dialog";
+import {
+  ActionCatalogFlowDefinition,
+  ActionFlowDialogDefinition,
+  ActionFlowHandler,
+} from "../models/ActionCatalog";
 import { DialogResponse } from "../models/DialogResponse";
 import { EventLog } from "../models/EventLog";
-import { SafePlaceDoctorActionId } from "../consts/safe-place-actions";
+import { isDoctorActionId, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
+import { ActionCatalogService } from "./action-catalog-service";
+import { SafePlaceFastTravelService } from "./safe-place-fast-travel-service";
+
+interface HandleCommandActionInput {
+  actionId: string;
+  gameId: string;
+  myPlayer: Player | null;
+  isMyTurn: boolean;
+  canEndTurn: boolean;
+  worldState: WorldState | null;
+  mapCellsById: Record<string, MapCell>;
+}
 
 @Injectable({
   providedIn: "root",
@@ -47,6 +74,8 @@ export class MapPageInteractionService {
     private mapService: MapService,
     private actionExecutorService: ActionExecutorService,
     private playerProgressionService: PlayerProgressionService,
+    private actionCatalogService: ActionCatalogService,
+    private safePlaceFastTravelService: SafePlaceFastTravelService,
   ) {}
 
   public resetUiState(): void {
@@ -83,173 +112,317 @@ export class MapPageInteractionService {
     }
   }
 
-  public async handleCommandAction(input: {
-    actionId: string;
-    gameId: string;
-    myPlayer: Player | null;
-    isMyTurn: boolean;
-    canEndTurn: boolean;
-    worldState: WorldState | null;
-    mapCellsById: Record<string, MapCell>;
-  }): Promise<void> {
-    const handlers: Record<string, () => Promise<void>> = {
-      "end-turn": async () => {
-        if (!input.myPlayer || !input.canEndTurn) return;
-        await this.runNamedAction("end-turn", async () => {
-          await this.actionExecutorService.endTurn(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          });
-        }, "Error while ending turn");
-      },
-      "activate-sanctuary": async () => {
-        await this.runSanctuaryAction({
-          gameId: input.gameId,
-          myPlayer: input.myPlayer,
-          isMyTurn: input.isMyTurn,
-          mapCellsById: input.mapCellsById,
-          actionId: "activate-sanctuary",
-          mode: "activate",
-          requiredActive: false,
-          errorMessage: "Error while activating sanctuary",
-          execute: async (player) => {
-            await this.actionExecutorService.activateSanctuary(input.gameId, {
-              id: player.id,
-              name: player.name,
-            });
-          },
-        });
-      },
-      "donate-sanctuary": async () => {
-        await this.runSanctuaryAction({
-          gameId: input.gameId,
-          myPlayer: input.myPlayer,
-          isMyTurn: input.isMyTurn,
-          mapCellsById: input.mapCellsById,
-          actionId: "donate-sanctuary",
-          mode: "donate",
-          requiredActive: true,
-          errorMessage: "Error while donating at sanctuary",
-          execute: async (player) => {
-            await this.actionExecutorService.donateAtSanctuary(input.gameId, {
-              id: player.id,
-              name: player.name,
-            });
-          },
-        });
-      },
-      "pray-sanctuary": async () => {
-        await this.runSanctuaryAction({
-          gameId: input.gameId,
-          myPlayer: input.myPlayer,
-          isMyTurn: input.isMyTurn,
-          mapCellsById: input.mapCellsById,
-          actionId: "pray-sanctuary",
-          mode: null,
-          requiredActive: true,
-          errorMessage: "Error while praying at sanctuary",
-          execute: async (player) => {
-            await this.actionExecutorService.prayAtSanctuary(input.gameId, {
-              id: player.id,
-              name: player.name,
-            });
-          },
-        });
-      },
-      "cell-gather": async () => {
-        if (!input.myPlayer || !input.isMyTurn) return;
-        await this.runNamedAction("cell-gather", async () => {
-          await this.actionExecutorService.cellGather(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          });
-        }, "Error while gathering resources");
-      },
-      "consume-ration": async () => {
-        if (!input.myPlayer || !input.isMyTurn) return;
-        await this.runNamedAction("consume-ration", async () => {
-          await this.actionExecutorService.consumeRation(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          });
-        }, "Error while consuming ration");
-      },
-      "capital-doctor": async () => {
-        await this.runDoctorHealAction({
-          gameId: input.gameId,
-          myPlayer: input.myPlayer,
-          worldState: input.worldState,
-          isMyTurn: input.isMyTurn,
-          actionId: "capital-doctor",
-          errorMessage: "Error while using capital doctor",
-        });
-      },
-      "city-healer": async () => {
-        await this.runDoctorHealAction({
-          gameId: input.gameId,
-          myPlayer: input.myPlayer,
-          worldState: input.worldState,
-          isMyTurn: input.isMyTurn,
-          actionId: "city-healer",
-          errorMessage: "Error while using city healer",
-        });
-      },
-      "capital-inn": async () => {
-        if (!input.myPlayer || !input.isMyTurn) return;
-        await this.runNamedAction("capital-inn", async () => {
-          await this.actionExecutorService.capitalInn(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          });
-        }, "Error while resting at capital inn");
-      },
-      "village-craftsman": async () => {
-        if (!input.myPlayer || !input.isMyTurn) return;
-
-        const result = await this.openResourceExchangeDialog({
-          resources: input.myPlayer.inventory?.resources ?? [],
-        });
-
-        if (!result) return;
-
-        await this.runNamedAction("village-craftsman", async () => {
-          await this.actionExecutorService.villageCraftsmanExchange(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          }, {
-            giveLabel: result.giveLabel,
-            receiveLabel: result.receiveLabel,
-            amount: result.amount,
-          });
-        }, "Error while exchanging resources at village craftsman");
-      },
-      "camp-gatherer": async () => {
-        if (!input.myPlayer || !input.isMyTurn) return;
-        await this.runNamedAction("camp-gatherer", async () => {
-          await this.actionExecutorService.campGatherer(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          });
-        }, "Error while using camp gatherer");
-      },
-      "camp-hunter": async () => {
-        if (!input.myPlayer || !input.isMyTurn) return;
-        await this.runNamedAction("camp-hunter", async () => {
-          await this.actionExecutorService.campHunter(input.gameId, {
-            id: input.myPlayer!.id,
-            name: input.myPlayer!.name,
-          });
-        }, "Error while using camp hunter");
-      },
-    };
-
-    const handler = handlers[input.actionId];
-    if (!handler) {
+  public async handleCommandAction(input: HandleCommandActionInput): Promise<void> {
+    const flow = this.actionCatalogService.getFlow(input.actionId);
+    if (!flow) {
       window.alert(`Action '${input.actionId}' is not implemented yet.`);
       return;
     }
 
-    await handler();
+    const trigger = flow.trigger ?? "command-panel";
+    if (trigger !== "command-panel") {
+      window.alert(`Action '${input.actionId}' is not configured for command panel trigger.`);
+      return;
+    }
+
+    if (flow.requiresMyTurn && (!input.myPlayer || !input.isMyTurn)) {
+      return;
+    }
+
+    if (flow.requiresCanEndTurn && !input.canEndTurn) {
+      return;
+    }
+
+    await this.executeCommandActionFlow(flow, input);
+  }
+
+  private async executeCommandActionFlow(
+    flow: ActionCatalogFlowDefinition,
+    input: HandleCommandActionInput,
+  ): Promise<void> {
+    const handler: ActionFlowHandler = flow.handler;
+    const errorMessage = flow.errorMessage;
+    const player = input.myPlayer;
+
+    if (handler === "end-turn") {
+      if (!player || !input.canEndTurn) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.endTurn(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "sanctuary-activate") {
+      const sanctuaryFlow = this.resolveSanctuaryFlowConfig(handler, flow.dialog);
+      if (!sanctuaryFlow) {
+        window.alert(`Action '${input.actionId}' has an invalid sanctuary dialog configuration.`);
+        return;
+      }
+
+      await this.runSanctuaryAction({
+        gameId: input.gameId,
+        myPlayer: player,
+        isMyTurn: input.isMyTurn,
+        mapCellsById: input.mapCellsById,
+        actionId: input.actionId,
+        mode: sanctuaryFlow.mode,
+        requiredActive: sanctuaryFlow.requiredActive,
+        errorMessage,
+        execute: async (resolvedPlayer) => {
+          await this.actionExecutorService.activateSanctuary(input.gameId, {
+            id: resolvedPlayer.id,
+            name: resolvedPlayer.name,
+          });
+        },
+      });
+      return;
+    }
+
+    if (handler === "sanctuary-donate") {
+      const sanctuaryFlow = this.resolveSanctuaryFlowConfig(handler, flow.dialog);
+      if (!sanctuaryFlow) {
+        window.alert(`Action '${input.actionId}' has an invalid sanctuary dialog configuration.`);
+        return;
+      }
+
+      await this.runSanctuaryAction({
+        gameId: input.gameId,
+        myPlayer: player,
+        isMyTurn: input.isMyTurn,
+        mapCellsById: input.mapCellsById,
+        actionId: input.actionId,
+        mode: sanctuaryFlow.mode,
+        requiredActive: sanctuaryFlow.requiredActive,
+        errorMessage,
+        execute: async (resolvedPlayer) => {
+          await this.actionExecutorService.donateAtSanctuary(input.gameId, {
+            id: resolvedPlayer.id,
+            name: resolvedPlayer.name,
+          });
+        },
+      });
+      return;
+    }
+
+    if (handler === "sanctuary-pray") {
+      const sanctuaryFlow = this.resolveSanctuaryFlowConfig(handler, flow.dialog);
+      if (!sanctuaryFlow) {
+        window.alert(`Action '${input.actionId}' has an invalid sanctuary dialog configuration.`);
+        return;
+      }
+
+      await this.runSanctuaryAction({
+        gameId: input.gameId,
+        myPlayer: player,
+        isMyTurn: input.isMyTurn,
+        mapCellsById: input.mapCellsById,
+        actionId: input.actionId,
+        mode: sanctuaryFlow.mode,
+        requiredActive: sanctuaryFlow.requiredActive,
+        errorMessage,
+        execute: async (resolvedPlayer) => {
+          await this.actionExecutorService.prayAtSanctuary(input.gameId, {
+            id: resolvedPlayer.id,
+            name: resolvedPlayer.name,
+          });
+        },
+      });
+      return;
+    }
+
+    if (handler === "biome-cell-gather") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.cellGather(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "biome-consume-ration") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.consumeRation(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "safe-place-doctor") {
+      if (!player) return;
+
+      const dialogType = flow.dialog?.type ?? "doctor-heal";
+      if (dialogType !== "doctor-heal") {
+        window.alert(`Action '${input.actionId}' has an invalid doctor dialog configuration.`);
+        return;
+      }
+
+      if (!isDoctorActionId(input.actionId)) {
+        window.alert(`Action '${input.actionId}' has an invalid doctor flow mapping.`);
+        return;
+      }
+
+      await this.runDoctorHealAction({
+        gameId: input.gameId,
+        myPlayer: player,
+        worldState: input.worldState,
+        isMyTurn: input.isMyTurn,
+        actionId: input.actionId,
+        errorMessage,
+      });
+      return;
+    }
+
+    if (handler === "safe-place-inn") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.capitalInn(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "safe-place-resource-exchange") {
+      if (!player) return;
+
+      const dialogType = flow.dialog?.type ?? "resource-exchange";
+      if (dialogType !== "resource-exchange") {
+        window.alert(`Action '${input.actionId}' has an invalid resource exchange dialog configuration.`);
+        return;
+      }
+
+      const result = await this.openResourceExchangeDialog({
+        resources: player.inventory?.resources ?? [],
+      });
+
+      if (!result) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.villageCraftsmanExchange(input.gameId, {
+          id: player.id,
+          name: player.name,
+        }, {
+          giveLabel: result.giveLabel,
+          receiveLabel: result.receiveLabel,
+          amount: result.amount,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "safe-place-wait") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.waitAtSafePlace(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "safe-place-fast-travel") {
+      if (!player) return;
+
+      const dialogType = flow.dialog?.type ?? "safe-place-fast-travel";
+      if (dialogType !== "safe-place-fast-travel") {
+        window.alert(`Action '${input.actionId}' has an invalid fast travel dialog configuration.`);
+        return;
+      }
+
+      const originCell = input.mapCellsById[this.cellId(player.location.x, player.location.y)] ?? null;
+      if (!this.safePlaceFastTravelService.isSafePlaceCell(originCell)) {
+        return;
+      }
+
+      const routes = this.safePlaceFastTravelService.buildRoutes(originCell, input.mapCellsById);
+      const dialogResult = await this.openFastTravelDialog({
+        originName: this.safePlaceFastTravelService.getSafePlaceName(originCell),
+        playerMoney: player.inventory?.money ?? 0,
+        routes,
+      });
+      if (!dialogResult) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.fastTravelAtSafePlace(input.gameId, {
+          id: player.id,
+          name: player.name,
+        }, {
+          destinationX: dialogResult.destinationX,
+          destinationY: dialogResult.destinationY,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "safe-place-camp-gatherer") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.campGatherer(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "safe-place-camp-hunter") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.campHunter(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    window.alert(`Action '${input.actionId}' is not implemented yet.`);
+  }
+
+  private resolveSanctuaryFlowConfig(
+    handler: ActionFlowHandler,
+    dialog: ActionFlowDialogDefinition | undefined,
+  ): { mode: SanctuaryActionDialogData["mode"] | null; requiredActive: boolean } | null {
+    const defaultMode: SanctuaryActionDialogData["mode"] | null = handler === "sanctuary-activate"
+      ? "activate"
+      : handler === "sanctuary-donate"
+        ? "donate"
+        : null;
+
+    const defaultRequiredActive = handler !== "sanctuary-activate";
+
+    if (!dialog || dialog.type === "none") {
+      return {
+        mode: defaultMode,
+        requiredActive: defaultRequiredActive,
+      };
+    }
+
+    if (dialog.type !== "sanctuary-action") {
+      return null;
+    }
+
+    return {
+      mode: dialog.sanctuaryMode ?? defaultMode,
+      requiredActive: typeof dialog.requiredActive === "boolean" ? dialog.requiredActive : defaultRequiredActive,
+    };
   }
 
   public async openLevelUpDialog(input: {
@@ -445,6 +618,16 @@ export class MapPageInteractionService {
     return this.asResourceExchangeDialogResult(response);
   }
 
+  private async openFastTravelDialog(data: FastTravelDialogData): Promise<FastTravelDialogResult | null> {
+    const dialogRef = this.dialog.open(FastTravelDialog, {
+      ...FAST_TRAVEL_DIALOG_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    return this.asFastTravelDialogResult(response);
+  }
+
   private isConfirmSanctuaryActionResponse(response: unknown): response is DialogResponse<SanctuaryActionDialogResult> {
     if (typeof response !== "object" || response === null) return false;
     if (!("result" in response)) return false;
@@ -499,6 +682,39 @@ export class MapPageInteractionService {
       giveLabel: data.giveLabel,
       receiveLabel: data.receiveLabel,
       amount,
+    };
+  }
+
+  private asFastTravelDialogResult(response: unknown): FastTravelDialogResult | null {
+    if (typeof response !== "object" || response === null) {
+      return null;
+    }
+
+    const typed = response as { result?: unknown; data?: unknown };
+    if (typed.result !== "confirm" || !typed.data || typeof typed.data !== "object") {
+      return null;
+    }
+
+    const data = typed.data as {
+      destinationX?: unknown;
+      destinationY?: unknown;
+      destinationName?: unknown;
+      cost?: unknown;
+    };
+
+    const destinationX = Number(data.destinationX);
+    const destinationY = Number(data.destinationY);
+    const cost = Number(data.cost);
+
+    if (!Number.isFinite(destinationX) || !Number.isFinite(destinationY) || !Number.isFinite(cost)) {
+      return null;
+    }
+
+    return {
+      destinationX: Math.max(0, Math.floor(destinationX)),
+      destinationY: Math.max(0, Math.floor(destinationY)),
+      destinationName: typeof data.destinationName === "string" ? data.destinationName : "Safe place",
+      cost: Math.max(0, Math.floor(cost)),
     };
   }
 

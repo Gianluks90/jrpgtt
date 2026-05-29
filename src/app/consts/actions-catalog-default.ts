@@ -1,0 +1,333 @@
+import { ActionsCatalogConfig } from "../models/ActionCatalog";
+
+export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
+  actions: [
+    {
+      id: "end-turn",
+      ui: {
+        label: "End turn",
+        descriptionTemplate: "{reason}",
+        i18n: {
+          labelKey: "actions.endTurn.label",
+          descriptionKey: "actions.endTurn.description",
+        },
+      },
+      flow: {
+        handler: "end-turn",
+        errorMessage: "Error while ending turn",
+        trigger: "command-panel",
+        validators: ["my-turn"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+        requiresCanEndTurn: true,
+      },
+    },
+    {
+      id: "activate-sanctuary",
+      ui: {
+        label: "Activate",
+        descriptionTemplate: "Donate 5 coins to activate {sanctuaryLabel}, gain 2 XP and attune to its element.",
+        i18n: {
+          labelKey: "actions.activateSanctuary.label",
+          descriptionKey: "actions.activateSanctuary.description",
+        },
+      },
+      flow: {
+        handler: "sanctuary-activate",
+        errorMessage: "Error while activating sanctuary",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "sanctuary-action",
+          sanctuaryMode: "activate",
+          requiredActive: false,
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
+      id: "donate-sanctuary",
+      ui: {
+        label: "Donate",
+        descriptionTemplate: "Donate 5 coins to shift your attunement to {sanctuaryLabel}.",
+        i18n: {
+          labelKey: "actions.donateSanctuary.label",
+          descriptionKey: "actions.donateSanctuary.description",
+        },
+      },
+      flow: {
+        handler: "sanctuary-donate",
+        errorMessage: "Error while donating at sanctuary",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "sanctuary-action",
+          sanctuaryMode: "donate",
+          requiredActive: true,
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
+      id: "pray-sanctuary",
+      ui: {
+        label: "Pray",
+        descriptionTemplate: "Recover 5% HP, or 15% on lucky prayer.",
+        i18n: {
+          labelKey: "actions.praySanctuary.label",
+          descriptionKey: "actions.praySanctuary.description",
+        },
+      },
+      flow: {
+        handler: "sanctuary-pray",
+        errorMessage: "Error while praying at sanctuary",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
+      id: "cell-gather",
+      ui: {
+        label: "Gather",
+        descriptionTemplate: "Spend 1 food to gather 1 biome resource and end your turn.",
+        i18n: {
+          labelKey: "actions.cellGather.label",
+          descriptionKey: "actions.cellGather.description",
+        },
+      },
+      flow: {
+        handler: "biome-cell-gather",
+        errorMessage: "Error while gathering resources",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
+      id: "consume-ration",
+      ui: {
+        label: "Consume ration",
+        descriptionTemplate: "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert damage.",
+        i18n: {
+          labelKey: "actions.consumeRation.label",
+          descriptionKey: "actions.consumeRation.description",
+        },
+      },
+      flow: {
+        handler: "biome-consume-ration",
+        errorMessage: "Error while consuming ration",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
+      id: "safe-place-wait",
+      ui: {
+        label: "Wait",
+        descriptionTemplate: "Safe place: simulate movement on your current cell and end the turn without cost.",
+        i18n: {
+          labelKey: "actions.safePlaceWait.label",
+          descriptionKey: "actions.safePlaceWait.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-wait",
+        errorMessage: "Error while waiting at safe place",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Safe Place Wait",
+      },
+    },
+    {
+      id: "fast-travel",
+      ui: {
+        label: "Fast travel",
+        descriptionTemplate: "Safe place: travel to a discovered safe place. Cost 1 coin per orthogonal cell (max 15), then end turn and skip your next turn.",
+        i18n: {
+          labelKey: "actions.fastTravel.label",
+          descriptionKey: "actions.fastTravel.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-fast-travel",
+        errorMessage: "Error while using fast travel",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "safe-place-fast-travel",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Fast Travel",
+      },
+    },
+    {
+      id: "capital-doctor",
+      ui: {
+        label: "Doctor",
+        descriptionTemplate: "Capital: restore 5% HP per treatment. Cost {costPerUnit} coins each ({timeOfDay}), then end turn.",
+        i18n: {
+          labelKey: "actions.capitalDoctor.label",
+          descriptionKey: "actions.capitalDoctor.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-doctor",
+        errorMessage: "Error while using capital doctor",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "doctor-heal",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Capital Doctor",
+      },
+    },
+    {
+      id: "city-healer",
+      ui: {
+        label: "Healer",
+        descriptionTemplate: "City: restore 5% HP per treatment. Cost {costPerUnit} coins each ({timeOfDay}), then end turn.",
+        i18n: {
+          labelKey: "actions.cityHealer.label",
+          descriptionKey: "actions.cityHealer.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-doctor",
+        errorMessage: "Error while using city healer",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "doctor-heal",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "City Healer",
+      },
+    },
+    {
+      id: "capital-inn",
+      ui: {
+        label: "Inn",
+        descriptionTemplate: "Capital: restore 50% HP, spend 10 coins and end turn (day only).",
+        i18n: {
+          labelKey: "actions.capitalInn.label",
+          descriptionKey: "actions.capitalInn.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-inn",
+        errorMessage: "Error while resting at capital inn",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Capital Inn",
+      },
+    },
+    {
+      id: "village-craftsman",
+      ui: {
+        label: "Craftsman",
+        descriptionTemplate: "Village: exchange resources 1:1, then end turn.",
+        i18n: {
+          labelKey: "actions.villageCraftsman.label",
+          descriptionKey: "actions.villageCraftsman.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-resource-exchange",
+        errorMessage: "Error while exchanging resources at village craftsman",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "resource-exchange",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Village Craftsman",
+      },
+    },
+    {
+      id: "camp-gatherer",
+      ui: {
+        label: "Gatherer",
+        descriptionTemplate: "Camp: gain 1 timber and 1 minerals, then end turn.",
+        warningTemplate: "Warning: camp reward needs {requiredSlots} free slots, available {availableSlots}.",
+        i18n: {
+          labelKey: "actions.campGatherer.label",
+          descriptionKey: "actions.campGatherer.description",
+          warningKey: "actions.campGatherer.warning.capacity",
+        },
+      },
+      flow: {
+        handler: "safe-place-camp-gatherer",
+        errorMessage: "Error while using camp gatherer",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Camp Gatherer",
+      },
+    },
+    {
+      id: "camp-hunter",
+      ui: {
+        label: "Hunter",
+        descriptionTemplate: "Camp: gain 1 food and 1 cloth, then end turn.",
+        warningTemplate: "Warning: camp reward needs {requiredSlots} free slots, available {availableSlots}.",
+        i18n: {
+          labelKey: "actions.campHunter.label",
+          descriptionKey: "actions.campHunter.description",
+          warningKey: "actions.campHunter.warning.capacity",
+        },
+      },
+      flow: {
+        handler: "safe-place-camp-hunter",
+        errorMessage: "Error while using camp hunter",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Camp Hunter",
+      },
+    },
+  ],
+};

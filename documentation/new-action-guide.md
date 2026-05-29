@@ -1,707 +1,427 @@
-# Actions System Guide
+# Action Catalog Guide (for everyone)
 
-Guida pratica e completa per creare nuove action nel gioco.
+Questa guida spiega come aggiungere una nuova action nel progetto anche se non conosci ancora il flusso interno.
 
-Questa documentazione è basata sull’architettura reale del progetto.
+Obiettivo: aggiungere una action senza rompere UI, gameplay e log.
 
----
+## 1. Mappa mentale del flusso
 
-# Filosofia del sistema
+Quando clicchi una action nel pannello comandi, il flusso e questo:
 
-Le action sono divise in 6 layer distinti (architettura attuale):
+1. `public/configs/actions.config.json`
+2. `src/app/services/action-catalog-service.ts`
+3. `src/app/services/map-page-actions-service.ts`
+4. `src/app/services/action-registry-service.ts`
+5. `src/app/services/map-page-interaction-service.ts`
+6. `src/app/services/action-executor-service.ts`
+7. `src/app/services/event-log-service.ts`
 
-| Layer | Responsabilità |
-|---|---|
-| Config JSON | definisce dove l’action esiste |
-| MapPageStateService | carica tiles config e stato utile alla map |
-| MapPageActionsService | risolve gli actionId disponibili nella cella corrente |
-| Action Registry | costruisce le card UI |
-| MapPageInteractionService | dispatcha il click e gestisce pending/dialog |
-| Action Executor | gameplay reale e update Firestore |
+In breve:
+- il catalogo definisce metadata e flow
+- il registry costruisce la card UI
+- interaction dispatcha il trigger
+- executor applica la logica reale (autoritativa)
+- event log formatta il messaggio finale
 
-IMPORTANTE:
+## 2. Dove si definisce una action
 
-La UI NON è autoritativa.
+Una nuova action richiede sempre due definizioni:
 
-Tutti i controlli reali devono vivere dentro `ActionExecutorService`.
+1. Dove appare sulla mappa (placement):
+- biome: `public/configs/tiles.config.json`
+- safe landmark: `public/configs/landmarks.config.json`
 
----
+2. Come si comporta (catalogo):
+- `public/configs/actions.config.json`
 
-# Flusso completo di una action
+Se il JSON esterno non e disponibile, il fallback e in:
+- `src/app/consts/actions-catalog-default.ts`
 
-Quando un player usa una action:
+## 3. Schema minimo di una action nel catalogo
 
-```txt
-Config JSON
-↓
-MapPageStateService (load config)
-↓
-MapPageActionsService (resolve action ids)
-↓
-ActionRegistryService (build cards)
-↓
-MapPageInteractionService (dispatch)
-↓
-ActionExecutorService
-↓
-Firestore Transaction
-↓
-EventLogService
+Esempio reale semplificato:
+
+```json
+{
+  "id": "capital-doctor",
+  "ui": {
+    "label": "Doctor",
+    "descriptionTemplate": "Capital: restore 5% HP per treatment. Cost {costPerUnit} coins each ({timeOfDay}), then end turn.",
+    "i18n": {
+      "labelKey": "actions.capitalDoctor.label",
+      "descriptionKey": "actions.capitalDoctor.description"
+    }
+  },
+  "flow": {
+    "handler": "safe-place-doctor",
+    "errorMessage": "Error while using capital doctor",
+    "trigger": "command-panel",
+    "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+    "dialog": {
+      "type": "doctor-heal"
+    },
+    "requiresMyTurn": true
+  },
+  "log": {
+    "sourceLabel": "Capital Doctor"
+  }
+}
 ```
 
----
+## 4. Trigger disponibili
 
-# Architettura mentale corretta
+Al momento esiste un trigger ufficiale:
 
-Una action dovrebbe sempre seguire questo schema:
+- `command-panel`
 
-```txt
-VALIDATE
-↓
-COMPUTE
-↓
-APPLY
-↓
-LOG
-```
+Significa che la action puo essere eseguita dal pannello comandi mappa.
 
----
+Validazione trigger:
+- `MapPageInteractionService.handleCommandAction(...)` rifiuta trigger diversi.
 
-# VALIDATE
+## 5. Validators disponibili
 
-Controlli:
-- turno corretto;
-- player valido;
-- movement requirement;
-- action anti spam;
-- biome corretto;
-- risorse sufficienti;
-- status richiesti.
+I validator catalogati oggi sono comuni (UI gate):
 
----
+- `my-turn`
+- `moved-this-turn`
+- `not-busy`
+- `action-not-used`
 
-# COMPUTE
+Sono letti in:
+- `ActionRegistryService.isCommonValidatorDisabled(...)`
 
-Calcoli:
-- heal;
-- damage;
-- luck;
-- reward;
-- status;
-- resource changes.
+Importante:
+- questi validator migliorano UX e prevengono click inutili
+- NON sostituiscono i controlli autoritativi dell executor
 
-IMPORTANTE:
-Non modificare Firestore qui.
+## 6. Dialog type disponibili
 
----
+Nel catalogo, `flow.dialog.type` puo essere:
 
-# APPLY
+- `none`
+- `sanctuary-action`
+- `doctor-heal`
+- `resource-exchange`
 
-Qui avvengono i veri update:
-- player;
-- worldState;
-- mapCell;
-- inventory;
-- statuses.
+Dettaglio sanctuary:
+- `sanctuaryMode`: `activate` o `donate`
+- `requiredActive`: `true` o `false`
 
-Sempre dentro transaction.
+Risoluzione dialog runtime:
+- `MapPageInteractionService.resolveSanctuaryFlowConfig(...)`
 
----
+## 6.1 Warning config-driven (i18n-ready)
 
-# LOG
+Per mostrare warning non bloccanti come "inventario pieno" usa il catalogo action, non stringhe hardcoded nel service.
 
-I log vengono creati fuori dalla transaction tramite:
-
-```ts
-await this.tryCreateLog(...)
-```
-
----
-
-# File principali coinvolti
-
-| File | Ruolo |
-|---|---|
-| `tiles.config.json` | definizione actions/conditions |
-| `map-page-state-service.ts` | carica config e mapping usati dalla map |
-| `map-page-actions-service.ts` | compone command action da cella + config |
-| `action-registry-service.ts` | card UI |
-| `map-page-interaction-service.ts` | dispatch action e gestione pendingActionId |
-| `map-page.ts` | wiring tra signals/eventi e servizi |
-| `action-executor-service.ts` | gameplay reale |
-| `event-log-service.ts` | formatter + scrittura log |
-| `EventLog.ts` | tipi log |
-
----
-
-# Creare una nuova action
-
----
-
-# STEP 1 — Config JSON
-
-Aggiungere la action nel biome o special tile.
+Campi consigliati in `ui`:
+- `warningTemplate`: testo warning con placeholder, per esempio `{requiredSlots}` e `{availableSlots}`
+- `i18n.warningKey`: chiave futura per la traduzione
 
 Esempio:
 
 ```json
-"water": {
-  "actions": [
-    "drink-water"
-  ]
+"ui": {
+  "label": "Gatherer",
+  "descriptionTemplate": "Camp: gain 1 timber and 1 minerals, then end turn.",
+  "warningTemplate": "Warning: camp reward needs {requiredSlots} free slots, available {availableSlots}.",
+  "i18n": {
+    "labelKey": "actions.campGatherer.label",
+    "descriptionKey": "actions.campGatherer.description",
+    "warningKey": "actions.campGatherer.warning.capacity"
+  }
 }
 ```
 
-Questo NON contiene logica.
+## 7. Checklist completa per aggiungere una nuova action
 
-Dice solo:
-> questa action esiste qui.
+### Step 1 - Definisci placement (dove compare)
 
----
+Se biome:
+- aggiungi `"my-action-id"` in `tiles.config.json` dentro `biomes.<biome>.actions`
 
-# STEP 2 — Risoluzione action (config-driven)
+Se safe landmark:
+- aggiungi `"my-action-id"` in `landmarks.config.json` dentro `safePlaceActionsByLandmark.<landmarkId>`
 
-File principali:
+### Step 2 - Definisci metadata e flow nel catalogo
 
-```txt
-map-page-actions-service.ts
-action-registry-service.ts
-```
+Aggiungi la action in:
+- `public/configs/actions.config.json`
 
-Pipeline UI attuale:
+Mantieni allineato anche fallback:
+- `src/app/consts/actions-catalog-default.ts`
 
-1) `MapPageActionsService.buildCommandActions()` risolve gli `actionId` disponibili dalla cella corrente (biome/special tile) usando `tiles.config.json`.
+### Step 3 - Verifica handler
 
-2) Per ogni `actionId`, chiama `ActionRegistryService.buildActionCard(...)`.
+Se usi un handler gia esistente (`safe-place-doctor`, `safe-place-inn`, ecc.) non devi cambiare i type.
 
-3) La lista risultante viene renderizzata dal command panel.
+Se serve un handler nuovo:
 
----
+1. aggiungi il nuovo valore in `ActionFlowHandler`:
+- `src/app/models/ActionCatalog.ts`
 
-# STEP 3 — Action Registry
+2. aggiorna parser type-guard:
+- `ActionCatalogService.isFlowHandler(...)`
 
-File:
+3. implementa il branch nel dispatcher:
+- `MapPageInteractionService.executeCommandActionFlow(...)`
 
-```txt
-action-registry-service.ts
-```
+### Step 4 - Crea la card UI (label/description/disabled)
 
-Metodo:
+Aggiungi il branch in:
+- `ActionRegistryService.buildActionCard(...)`
 
-```ts
-buildActionCard()
-```
+Regola pratica:
+- usa `commonDisabled` per i validator comuni
+- aggiungi solo i gate specifici della tua action (es: soldi minimi, HP mancanti, capacita inventario)
 
-Qui si crea la card UI.
+### Step 5 - Implementa gameplay reale nell executor
 
-Esempio:
+Aggiungi metodo in:
+- `ActionExecutorService`
 
-```ts
-if (actionId === "drink-water") {
-
-  const hpCurrent = Math.max(
-    0,
-    Math.floor(Number(player.parameters.hp.current)),
-  );
-
-  const hpMax = Math.max(
-    1,
-    Math.floor(Number(
-      typeof player.parameters.hp.max === "number"
-        ? player.parameters.hp.max
-        : player.parameters.hp.base,
-    )),
-  );
-
-  return {
-    id: "drink-water",
-    label: "Drink water",
-    description: "Recover 1% HP.",
-    disabled:
-      !isMyTurn ||
-      !hasMovedThisTurn ||
-      isBusy ||
-      hpCurrent >= hpMax ||
-      actionAlreadyUsed,
-    pending: false,
-  };
-}
-```
-
----
-
-# Regole importanti del registry
-
-Il registry:
-- NON deve modificare gameplay;
-- NON deve aggiornare Firestore;
-- NON deve essere trusted.
-
-Serve solo per:
-- UX;
-- label;
-- description;
-- disabled logic;
-- evitare click inutili.
-
----
-
-# STEP 4 — Dispatch (Interaction Service)
-
-La map page non fa più dispatch con `if/switch` per ogni action.
-
-La map page delega a `MapPageInteractionService`:
+Template consigliato:
 
 ```ts
-public async onCommandActionRequested(actionId: string): Promise<void> {
-  await this.mapPageInteractionService.handleCommandAction({
-    actionId,
-    gameId: this.gameId,
-    myPlayer: this.myPlayer(),
-    isMyTurn: this.isMyTurn(),
-    canEndTurn: this.canEndTurn(),
-    mapCellsById: this.mapCellsById(),
-  });
-}
-```
-
----
-
-# Handler standard (dentro map-page-interaction-service.ts)
-
-```ts
-"drink-water": async () => {
-  if (!input.myPlayer || !input.isMyTurn) return;
-
-  await this.runNamedAction("drink-water", async () => {
-    await this.actionExecutorService.drinkWater(input.gameId, {
-      id: input.myPlayer.id,
-      name: input.myPlayer.name,
-    });
-  }, "Error while drinking water");
-},
-```
-
----
-
-# pendingActionId
-
-`pendingActionId` vive in `MapPageInteractionService` e serve per:
-- spinner;
-- loading state;
-- anti double click;
-- UX.
-
----
-
-# STEP 5 — Executor
-
-File:
-
-```txt
-action-executor-service.ts
-```
-
-Qui vive il gameplay reale.
-
----
-
-# Template standard executor
-
-```ts
-public async myAction(
-  gameId: string,
-  actor: Pick<Player, "id" | "name">,
-): Promise<void> {
-
+public async myAction(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
   if (!gameId || !actor.id) {
     throw new Error("Invalid action payload");
   }
 
-  const worldStateRef = doc(...);
-  const playerRef = doc(...);
-  const gameRef = doc(...);
-
   await runTransaction(this.firebaseService.database, async (transaction) => {
-
-    // LOAD DATA
-
-    // VALIDATE
-
-    // COMPUTE
-
-    // APPLY
-
+    // 1) LOAD
+    // 2) VALIDATE (autoritativo)
+    // 3) COMPUTE
+    // 4) APPLY
   });
 
-  // LOG
+  await this.tryCreateLog(gameId, actor, "player.myAction", { /* args */ });
 }
 ```
 
----
-
-# Validazioni standard
-
-Quasi tutte le action usano queste.
-
----
-
-## Turn ownership
+Validator autoritativi minimi da replicare in executor:
 
 ```ts
-if (
-  worldState.activePlayerId &&
-  worldState.activePlayerId !== actor.id
-) {
+if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
   throw new Error("It is not your turn");
 }
+
+this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using this action");
+
+this.ensureActionAvailable(player, "my-action-id", worldTurn, "You can only use this action once per turn.");
 ```
 
----
+### Step 6 - Log
 
-## Movement requirement
+Se riusi un codice log esistente, spesso basta aggiornare args.
 
-```ts
-this.ensurePlayerMovedThisTurn(
-  worldState,
-  actor.id,
-  "You must move before using cell actions",
-);
-```
+Se aggiungi un codice nuovo:
 
----
+1. aggiungi codice in:
+- `src/app/models/EventLog.ts`
 
-## Anti spam per turno
+2. aggiungi formatter in:
+- `src/app/services/event-log-service.ts`
 
-```ts
-this.ensureActionAvailable(
-  player,
-  "drink-water",
-  worldTurn,
-  "You can only use this action once per turn.",
-);
-```
+3. (opzionale ma consigliato) aggiungi `log.sourceLabel` nel catalogo action
 
----
+## 8. Esempio A - Nuova action semplice (senza dialog)
 
-# Accesso cella corrente
+Scenario: `camp-bonfire`
+- placement: camp
+- trigger: command panel
+- dialog: none
+- effetto: +1 nutrition e end turn
 
-Pattern standard:
-
-```ts
-const mapCellRef = doc(
-  this.firebaseService.database,
-  "games",
-  gameId,
-  "mapCells",
-  this.cellId(player.location.x, player.location.y),
-);
-
-const mapCellSnap = await transaction.get(mapCellRef);
-```
-
----
-
-# Validazione biome
-
-```ts
-if (mapCell.isSpecial === true) {
-  throw new Error("Invalid biome action");
-}
-
-const biomeConfig = tilesConfig.biomes[mapCell.biome];
-
-if (!(biomeConfig.actions ?? []).includes("drink-water")) {
-  throw new Error("Action not available here");
-}
-```
-
----
-
-# Status System
-
-I player status vivono dentro:
-
-```ts
-player.statuses
-```
-
-Formato:
-
-```ts
-{
-  key: "nutrition",
-  label: "Nutrition",
-  description: "...",
-  durationTurns: 1,
-}
-```
-
----
-
-# Utility status disponibili
-
----
-
-## normalizeStatuses
-
-Pulisce dati invalidi.
-
-```ts
-this.normalizeStatuses(player.statuses)
-```
-
----
-
-## hasStatus
-
-```ts
-this.hasStatus(statuses, "nutrition")
-```
-
----
-
-## decrementStatuses
-
-Riduce durata turni.
-
-```ts
-this.decrementStatuses(statuses)
-```
-
----
-
-## upsertStatus
-
-Refresh o inserimento status.
-
-```ts
-this.upsertStatus(statuses, nextStatus)
-```
-
----
-
-# Conditions
-
-Le conditions appartengono ai biome.
-
-Esempio:
+Catalogo:
 
 ```json
-"conditions": [
-  "hostile-environment"
-]
-```
-
----
-
-# Pattern corretto
-
-Il mondo applica pressione.
-
-Il player usa status per reagire.
-
-Esempio:
-
-```txt
-Biome condition:
-freezing
-
-Player status:
-warmth
-```
-
-Logica:
-
-```ts
-if (isFreezing && !hasWarmth) {
-  damagePlayer();
+{
+  "id": "camp-bonfire",
+  "ui": {
+    "label": "Bonfire",
+    "descriptionTemplate": "Camp: gain Nutrition for 1 turn and end turn.",
+    "warningTemplate": "Warning: this action needs {requiredSlots} free slots.",
+    "i18n": {
+      "warningKey": "actions.campBonfire.warning.capacity"
+    }
+  },
+  "flow": {
+    "handler": "safe-place-camp-bonfire",
+    "errorMessage": "Error while using camp bonfire",
+    "trigger": "command-panel",
+    "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+    "dialog": { "type": "none" },
+    "requiresMyTurn": true
+  },
+  "log": {
+    "sourceLabel": "Camp Bonfire"
+  }
 }
 ```
 
----
+Poi devi:
+- aggiungere handler type + parser
+- branch in interaction dispatcher
+- metodo executor
+- formatter log (se codice nuovo)
 
-# Resource Helpers
+## 9. Esempio B - Nuova action con dialog
 
----
+Scenario: `city-alchemist`
+- placement: city
+- dialog: resource-exchange
 
-## addResource
+Catalogo:
 
-Aggiunge o rimuove risorse.
-
-```ts
-this.addResource(resources, "food", -1)
+```json
+{
+  "id": "city-alchemist",
+  "ui": {
+    "label": "Alchemist",
+    "descriptionTemplate": "City: exchange resources with alchemy rates, then end turn."
+  },
+  "flow": {
+    "handler": "safe-place-resource-exchange",
+    "errorMessage": "Error while using city alchemist",
+    "trigger": "command-panel",
+    "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+    "dialog": { "type": "resource-exchange" },
+    "requiresMyTurn": true
+  },
+  "log": {
+    "sourceLabel": "City Alchemist"
+  }
+}
 ```
 
----
+Se riusi `safe-place-resource-exchange`, spesso non serve nuovo handler.
+Se cambiano regole di scambio, crea nuovo handler + nuovo metodo executor.
 
-## pickRandom
+## 10. Errori comuni da evitare
 
-```ts
-this.pickRandom(values)
+- Aggiungere action nel catalogo ma non nel placement config
+- Aggiungere action nel placement ma senza branch in `ActionRegistryService`
+- Fidarsi solo del disabled UI senza validazioni in executor
+- Dimenticare `markActionUsed` e/o end turn quando richiesto dal design
+- Dimenticare aggiornamento `APP_VERSION`
+
+## 11. Sanity check finale
+
+Prima della commit:
+
+1. apri la cella corretta e verifica che il comando compaia
+2. verifica disabled/enabled in base ai vincoli
+3. esegui action e controlla update Firestore
+4. verifica log finale
+5. esegui build
+
+Comando build:
+
+```bash
+npm run build
 ```
 
----
+## 12. Regola d oro
 
-# Fine turno
+UI e catalogo guidano il flusso, ma l executor e sempre la fonte di verita.
+Se una regola gameplay conta davvero, deve essere validata in transaction.
 
-Action che consumano il turno:
+## 13. Playbook rapido (template operativi)
 
-```ts
-const nextWorldState: WorldState = {
-  ...worldState,
-};
+Questa sezione e pensata per chi deve aggiungere una action velocemente.
 
-this.turnService.advanceTurn(nextWorldState);
+### Template 1 - Action senza dialog (esecuzione diretta)
 
-transaction.set(worldStateRef, nextWorldState);
+Usa questo template quando il click deve eseguire subito la logica senza input utente.
+
+```json
+{
+  "id": "camp-bonfire",
+  "ui": {
+    "label": "Bonfire",
+    "descriptionTemplate": "Camp: gain Nutrition for 1 turn and end turn."
+  },
+  "flow": {
+    "handler": "safe-place-camp-bonfire",
+    "errorMessage": "Error while using camp bonfire",
+    "trigger": "command-panel",
+    "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+    "dialog": {
+      "type": "none"
+    },
+    "requiresMyTurn": true
+  },
+  "log": {
+    "sourceLabel": "Camp Bonfire"
+  }
+}
 ```
 
----
+### Template 2 - Action con dialog di conferma (sanctuary)
 
-# Event Log
+Usa questo template quando devi chiedere conferma prima dell esecuzione.
 
----
-
-# STEP 1 — EventLog.ts
-
-Aggiungere tipo:
-
-```ts
-| "player.drinkWater"
+```json
+{
+  "id": "activate-sanctuary",
+  "ui": {
+    "label": "Activate",
+    "descriptionTemplate": "Donate 5 coins to activate {sanctuaryLabel}, gain 2 XP and attune to its element."
+  },
+  "flow": {
+    "handler": "sanctuary-activate",
+    "errorMessage": "Error while activating sanctuary",
+    "trigger": "command-panel",
+    "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+    "dialog": {
+      "type": "sanctuary-action",
+      "sanctuaryMode": "activate",
+      "requiredActive": false
+    },
+    "requiresMyTurn": true
+  }
+}
 ```
 
----
+### Template 3 - Action con dialog di input (resource exchange)
 
-# STEP 2 — EventLogService
+Usa questo template quando il player deve scegliere valori prima dell esecuzione.
 
-Formatter:
-
-```ts
-"player.drinkWater": ({ playerName, args }) => {
-  const healedHp = Number(args["healedHp"] ?? 0);
-  return `${playerName} drank fresh water and recovered ${healedHp} HP.`;
-},
+```json
+{
+  "id": "city-alchemist",
+  "ui": {
+    "label": "Alchemist",
+    "descriptionTemplate": "City: exchange resources with alchemy rates, then end turn."
+  },
+  "flow": {
+    "handler": "safe-place-resource-exchange",
+    "errorMessage": "Error while using city alchemist",
+    "trigger": "command-panel",
+    "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+    "dialog": {
+      "type": "resource-exchange"
+    },
+    "requiresMyTurn": true
+  },
+  "log": {
+    "sourceLabel": "City Alchemist"
+  }
+}
 ```
 
----
+## 14. Passaggi essenziali (riassunto passo-passo)
 
-# Checklist completa nuova action
-
-- [ ] Action aggiunta nel config JSON
-- [ ] Action risolta in `MapPageActionsService` (config-driven)
-- [ ] Registry UI creato
-- [ ] Handler creato in `MapPageInteractionService`
-- [ ] Metodo executor implementato
-- [ ] Validazioni aggiunte
-- [ ] Update Firestore implementati
-- [ ] Event log aggiunto
-- [ ] Action anti spam implementata
-- [ ] Testata in game
-
----
-
-# Pattern gameplay già presenti nel progetto
-
-| Pattern | Esempio |
-|---|---|
-| Heal | pray-sanctuary |
-| Resource exchange | cell-gather |
-| Protection status | consume-ration |
-| Environment damage | hostile-environment |
-| Turn-ending action | cell-gather |
-| Attunement swap | donate-sanctuary |
-
----
-
-# Best Practices
-
----
-
-# 1. Mai fidarsi della UI
-
-Tutti i controlli veri devono stare nell’executor.
-
----
-
-# 2. Non mettere gameplay nei layer UI
-
-`map-page.ts` orchestra e delega, `map-page-interaction-service.ts` dispatcha.
-Il gameplay resta in `ActionExecutorService`.
-
----
-
-# 3. Le transaction sono autoritative
-
-Tutte le modifiche gameplay devono stare dentro:
-
-```ts
-runTransaction(...)
-```
-
----
-
-# 4. Il registry è solo UX
-
-Il registry non è sicurezza.
-
----
-
-# 5. Mantieni naming coerente
-
-Usa id chiari:
-
-```txt
-drink-water
-consume-ration
-pray-sanctuary
-```
-
----
-
-# 6. Le condition descrivono il mondo
-
-NON il player.
-
----
-
-# 7. Gli status descrivono il player
-
-NON il biome.
-
----
-
-# 8. Evita logica duplicata
-
-Quando più action condividono regole:
-- estrai helper;
-- crea utility;
-- centralizza validation.
-
----
-
-# Evoluzioni future consigliate
-
-Il progetto crescerà meglio con:
-
-- action definitions centralizzate;
-- effect system;
-- generic condition processor;
-- generic resource cost system;
-- generic reward system.
-
-Ma la struttura attuale è già solida e scalabile.
-
----
-
-# Checklist rapida (uso quotidiano)
-
-- [ ] Aggiungi action id in `tiles.config.json` (biome o special tile)
-- [ ] Verifica che l’action venga risolta da `MapPageActionsService`
-- [ ] Aggiungi/aggiorna card in `ActionRegistryService`
-- [ ] Registra handler in `MapPageInteractionService` con `runNamedAction`
-- [ ] Implementa metodo in `ActionExecutorService` (`VALIDATE -> COMPUTE -> APPLY -> LOG`)
-- [ ] Aggiungi `EventLogCode` in `EventLog.ts` e formatter in `EventLogService` (usa `args`)
-- [ ] Applica anti-spam turno (`ensureActionAvailable`) e movement requirement quando richiesto
-- [ ] Decidi se l’action chiude il turno (`turnService.advanceTurn`) o no
-- [ ] Testa in game: happy path + error path principali
+- Definisci il placement della action in `tiles.config.json` o `landmarks.config.json`.
+- Aggiungi la action in `public/configs/actions.config.json` con `id`, `ui`, `flow` e (se utile) `log`.
+- Se la action puo avere blocchi "di stato" (non errori), definisci `ui.warningTemplate` e `i18n.warningKey`.
+- Allinea il fallback in `src/app/consts/actions-catalog-default.ts`.
+- Se l handler non esiste, aggiungilo in `ActionFlowHandler` e nel parser `ActionCatalogService.isFlowHandler(...)`.
+- Aggiungi il branch in `MapPageInteractionService.executeCommandActionFlow(...)`.
+- Aggiungi/aggiorna il branch card in `ActionRegistryService.buildActionCard(...)`.
+- Implementa la logica autoritativa in `ActionExecutorService` (validate, compute, apply).
+- Aggiorna i log: `EventLog.ts` + `EventLogService` se introduci un nuovo code.
+- Verifica in gioco: comparsa action, stato disabled, esecuzione, update dati, log finale.
+- Esegui `npm run build` e aggiorna `APP_VERSION`.

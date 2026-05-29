@@ -10,6 +10,8 @@ import { FirebaseService } from "./firebase-service";
 import { LuckService } from "./luck-service";
 import { PlayerProgressionService } from "./player-progression-service";
 import { PlayerStatsModifierService } from "./player-stats-modifier-service";
+import { PlayerTurnEffectsService } from "./player-turn-effects-service";
+import { SafePlaceFastTravelService } from "./safe-place-fast-travel-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { TurnService } from "./turn-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
@@ -29,6 +31,8 @@ export class ActionExecutorService {
     private playerProgressionService: PlayerProgressionService,
     private luckService: LuckService,
     private playerStatsModifierService: PlayerStatsModifierService,
+    private playerTurnEffectsService: PlayerTurnEffectsService,
+    private safePlaceFastTravelService: SafePlaceFastTravelService,
     private tilesConfigService: TilesConfigService,
     private worldZonesService: WorldZonesService,
   ) { }
@@ -160,7 +164,7 @@ export class ActionExecutorService {
         ...worldState,
       };
 
-      this.turnService.advanceTurn(nextWorldState);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
       transaction.set(worldStateRef, nextWorldState);
       transaction.set(gameRef, {
         updatedAt: Timestamp.now(),
@@ -621,7 +625,7 @@ export class ActionExecutorService {
       const currentStatuses = this.normalizeStatuses(player.statuses);
       const nextStatuses = this.decrementStatuses(currentStatuses);
       const nextWorldState: WorldState = { ...worldState };
-      this.turnService.advanceTurn(nextWorldState);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -976,7 +980,7 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.turnService.advanceTurn(nextWorldState);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         parameters: {
@@ -1086,7 +1090,7 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.turnService.advanceTurn(nextWorldState);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         parameters: {
@@ -1116,6 +1120,237 @@ export class ActionExecutorService {
     await this.tryCreateLog(gameId, actor, "player.capitalInn", {
       spentCoins: innCost,
       healedHp,
+      turnEnded: true,
+    });
+  }
+
+  public async fastTravelAtSafePlace(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      destinationX: number;
+      destinationY: number;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const rawDestinationX = Number(payload.destinationX);
+    const rawDestinationY = Number(payload.destinationY);
+    if (!Number.isFinite(rawDestinationX) || !Number.isFinite(rawDestinationY)) {
+      throw new Error("Invalid fast travel destination");
+    }
+
+    const destinationX = Math.max(0, Math.floor(rawDestinationX));
+    const destinationY = Math.max(0, Math.floor(rawDestinationY));
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let travelCost = 0;
+    let originName = "Safe place";
+    let destinationName = "Safe place";
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "fast-travel", worldTurn, "You can only fast travel once per turn.");
+
+      const originCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const destinationCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(destinationX, destinationY),
+      );
+
+      const [originCellSnap, destinationCellSnap] = await Promise.all([
+        transaction.get(originCellRef),
+        transaction.get(destinationCellRef),
+      ]);
+
+      if (!originCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      if (!destinationCellSnap.exists()) {
+        throw new Error("Destination safe place has not been discovered yet");
+      }
+
+      const originCell = originCellSnap.data() as MapCell;
+      const destinationCell = destinationCellSnap.data() as MapCell;
+
+      if (!this.safePlaceFastTravelService.isSafePlaceCell(originCell)) {
+        throw new Error("You must be at a safe place to use Fast Travel");
+      }
+
+      if (!this.safePlaceFastTravelService.isSafePlaceCell(destinationCell)) {
+        throw new Error("Fast Travel destination must be a discovered safe place");
+      }
+
+      if (originCell.x === destinationCell.x && originCell.y === destinationCell.y) {
+        throw new Error("Fast Travel destination must differ from your current safe place");
+      }
+
+      originName = this.safePlaceFastTravelService.getSafePlaceName(originCell);
+      destinationName = this.safePlaceFastTravelService.getSafePlaceName(destinationCell);
+
+      travelCost = this.safePlaceFastTravelService.calculateTravelCost(
+        { x: originCell.x, y: originCell.y },
+        { x: destinationCell.x, y: destinationCell.y },
+      );
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < travelCost) {
+        throw new Error("Not enough coins for selected fast travel route");
+      }
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+
+      this.playerTurnEffectsService.scheduleTeleport(nextWorldState, actor.id, {
+        x: destinationCell.x,
+        y: destinationCell.y,
+      });
+      this.playerTurnEffectsService.scheduleSkippedTurns(nextWorldState, actor.id, 1);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - travelCost,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "fast-travel", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.fastTravelBooked", {
+      from: originName,
+      to: destinationName,
+      spentCoins: travelCost,
+      skippedTurns: 1,
+      turnEnded: true,
+    });
+  }
+
+  public async waitAtSafePlace(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let placeName = "safe place";
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "safe-place-wait", worldTurn, "You can only wait once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      if (!this.safePlaceFastTravelService.isSafePlaceCell(mapCell)) {
+        throw new Error("You must be at a safe place to use Wait");
+      }
+
+      placeName = this.safePlaceFastTravelService.getSafePlaceName(mapCell);
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+
+      this.playerTurnEffectsService.scheduleAutoMoveOnTurnStart(nextWorldState, actor.id);
+
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+
+      transaction.set(playerRef, {
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "safe-place-wait", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.safePlaceWait", {
+      place: placeName,
+      simulatedMove: true,
       turnEnded: true,
     });
   }
@@ -1203,7 +1438,7 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.turnService.advanceTurn(nextWorldState);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -1289,8 +1524,6 @@ export class ActionExecutorService {
       this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
 
       const player = playerSnap.data() as Player;
-      const worldTurn = worldState.currentTurn ?? 0;
-      this.ensureActionAvailable(player, input.actionId, worldTurn, "You can only use this camp action once per turn.");
 
       const mapCellRef = doc(
         this.firebaseService.database,
@@ -1327,7 +1560,7 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.turnService.advanceTurn(nextWorldState);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -1336,7 +1569,6 @@ export class ActionExecutorService {
           resourceCapacity: capacity,
         },
         statuses: nextStatuses,
-        actionsUsedThisTurn: this.markActionUsed(player, input.actionId, worldTurn),
       }, { merge: true });
 
       transaction.set(worldStateRef, nextWorldState);
@@ -1352,6 +1584,33 @@ export class ActionExecutorService {
       rewards: input.rewards.map((reward) => `${reward.label}+${reward.quantity}`).join(", "),
       turnEnded: true,
     });
+  }
+
+  private applyTurnAdvanceAndDeferredEffects(
+    transaction: Transaction,
+    gameId: string,
+    nextWorldState: WorldState,
+  ): void {
+    const turnAdvance = this.turnService.advanceTurn(nextWorldState);
+
+    for (const arrival of turnAdvance.teleportArrivals) {
+      const destinationX = Math.max(0, Math.floor(Number(arrival.destination.x ?? 0)));
+      const destinationY = Math.max(0, Math.floor(Number(arrival.destination.y ?? 0)));
+      const teleportedPlayerRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "players",
+        arrival.playerId,
+      );
+
+      transaction.set(teleportedPlayerRef, {
+        location: {
+          x: destinationX,
+          y: destinationY,
+        },
+      }, { merge: true });
+    }
   }
 
   private async tryCreateLog(

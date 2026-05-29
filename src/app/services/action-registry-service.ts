@@ -6,6 +6,7 @@ import { ResourceLabel } from "../models/Resource";
 import { TimeOfDay } from "../models/WorldState";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { getDoctorCostPerUnit, isDoctorActionId } from "../consts/safe-place-actions";
+import { ActionCatalogService } from "./action-catalog-service";
 
 export interface ActionCardContext {
   isBusy: boolean;
@@ -24,6 +25,8 @@ export interface ActionCardContext {
 
 @Injectable({ providedIn: "root" })
 export class ActionRegistryService {
+  constructor(private actionCatalogService: ActionCatalogService) {}
+
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
     const { isBusy, hasMoney, isMyTurn, hasMovedThisTurn, sanctuaryLabel, player, cell, timeOfDay } = context;
     const actionsUsed = player.actionsUsedThisTurn ?? {};
@@ -31,14 +34,20 @@ export class ActionRegistryService {
     const actionAlreadyUsed = actionsUsed[actionId] === worldTurn;
     const hp = this.getHpState(player);
     const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
-    const commonDisabled = !isMyTurn || !hasMovedThisTurn || isBusy || actionAlreadyUsed;
+    const commonDisabled = this.isCommonValidatorDisabled(actionId, context, actionAlreadyUsed);
 
     if (actionId === "activate-sanctuary") {
       return {
         id: "activate-sanctuary",
-        label: "Activate",
-        description: `Donate 5 coins to activate ${sanctuaryLabel ?? "the shrine"}, gain 2 XP and attune to its element.`,
-        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || !hasMoney || actionAlreadyUsed,
+        label: this.actionCatalogService.getLabel(actionId, "Activate"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          `Donate 5 coins to activate ${sanctuaryLabel ?? "the shrine"}, gain 2 XP and attune to its element.`,
+          {
+            sanctuaryLabel: sanctuaryLabel ?? "the shrine",
+          },
+        ),
+        disabled: commonDisabled || !hasMoney,
         pending: false,
       };
     }
@@ -47,9 +56,15 @@ export class ActionRegistryService {
       const canDonate = !!player.attunedElement && player.attunedElement !== cell.sanctuaryElement;
       return {
         id: "donate-sanctuary",
-        label: "Donate",
-        description: `Donate 5 coins to shift your attunement to ${sanctuaryLabel ?? "the shrine"}.`,
-        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || !hasMoney || !canDonate || actionAlreadyUsed,
+        label: this.actionCatalogService.getLabel(actionId, "Donate"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          `Donate 5 coins to shift your attunement to ${sanctuaryLabel ?? "the shrine"}.`,
+          {
+            sanctuaryLabel: sanctuaryLabel ?? "the shrine",
+          },
+        ),
+        disabled: commonDisabled || !hasMoney || !canDonate,
         pending: false,
       };
     }
@@ -64,9 +79,9 @@ export class ActionRegistryService {
       const hasMissingHp = hpCurrent < hpMax;
       return {
         id: "pray-sanctuary",
-        label: "Pray",
-        description: "Recover 5% HP, or 15% on lucky prayer.",
-        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || !canPray || !hasMissingHp || actionAlreadyUsed,
+        label: this.actionCatalogService.getLabel(actionId, "Pray"),
+        description: this.actionCatalogService.getDescription(actionId, "Recover 5% HP, or 15% on lucky prayer."),
+        disabled: commonDisabled || !canPray || !hasMissingHp,
         pending: false,
       };
     }
@@ -76,9 +91,9 @@ export class ActionRegistryService {
       const foodQty = (player.inventory?.resources ?? []).find((resource) => resource.label === "food")?.quantity ?? 0;
       return {
         id: "cell-gather",
-        label: "Gather",
-        description: "Spend 1 food to gather 1 biome resource and end your turn.",
-        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || availableResources.length === 0 || foodQty < 1 || actionAlreadyUsed || context.hasPendingResourcePickup === true,
+        label: this.actionCatalogService.getLabel(actionId, "Gather"),
+        description: this.actionCatalogService.getDescription(actionId, "Spend 1 food to gather 1 biome resource and end your turn."),
+        disabled: commonDisabled || availableResources.length === 0 || foodQty < 1 || context.hasPendingResourcePickup === true,
         pending: false,
       };
     }
@@ -88,22 +103,55 @@ export class ActionRegistryService {
       const hasNutrition = (player.statuses ?? []).some((status) => status.key === "nutrition" && status.durationTurns > 0);
       return {
         id: "consume-ration",
-        label: "Consume ration",
-        description: "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert damage.",
-        disabled: !isMyTurn || !hasMovedThisTurn || isBusy || foodQty < 1 || hasNutrition || actionAlreadyUsed,
+        label: this.actionCatalogService.getLabel(actionId, "Consume ration"),
+        description: this.actionCatalogService.getDescription(actionId, "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert damage."),
+        disabled: commonDisabled || foodQty < 1 || hasNutrition,
+        pending: false,
+      };
+    }
+
+    if (actionId === "safe-place-wait") {
+      return {
+        id: "safe-place-wait",
+        label: this.actionCatalogService.getLabel(actionId, "Wait"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Safe place: simulate movement on your current cell and end the turn without cost.",
+        ),
+        disabled: commonDisabled,
+        pending: false,
+      };
+    }
+
+    if (actionId === "fast-travel") {
+      return {
+        id: "fast-travel",
+        label: this.actionCatalogService.getLabel(actionId, "Fast travel"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Safe place: travel to a discovered safe place. Cost 1 coin per orthogonal cell (max 15), then end turn and skip your next turn.",
+        ),
+        disabled: commonDisabled,
         pending: false,
       };
     }
 
     if (isDoctorActionId(actionId)) {
       const costPerUnit = getDoctorCostPerUnit(actionId, timeOfDay);
-      const label = actionId === "capital-doctor" ? "Doctor" : "Healer";
       const descriptionTarget = actionId === "capital-doctor" ? "Capital" : "City";
+      const fallbackLabel = actionId === "capital-doctor" ? "Doctor" : "Healer";
 
       return {
         id: actionId,
-        label,
-        description: `${descriptionTarget}: restore 5% HP per treatment. Cost ${costPerUnit} coins each (${timeOfDay}), then end turn.`,
+        label: this.actionCatalogService.getLabel(actionId, fallbackLabel),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          `${descriptionTarget}: restore 5% HP per treatment. Cost ${costPerUnit} coins each (${timeOfDay}), then end turn.`,
+          {
+            costPerUnit,
+            timeOfDay,
+          },
+        ),
         disabled: commonDisabled || hp.missing <= 0 || currentMoney < costPerUnit,
         pending: false,
       };
@@ -113,8 +161,8 @@ export class ActionRegistryService {
       const isNight = timeOfDay === "night";
       return {
         id: "capital-inn",
-        label: "Inn",
-        description: "Capital: restore 50% HP, spend 10 coins and end turn (day only).",
+        label: this.actionCatalogService.getLabel(actionId, "Inn"),
+        description: this.actionCatalogService.getDescription(actionId, "Capital: restore 50% HP, spend 10 coins and end turn (day only)."),
         disabled: commonDisabled || hp.missing <= 0 || currentMoney < 10 || isNight,
         pending: false,
       };
@@ -124,30 +172,48 @@ export class ActionRegistryService {
       const hasTradableResources = this.hasTradableResources(player);
       return {
         id: "village-craftsman",
-        label: "Craftsman",
-        description: "Village: exchange resources 1:1, then end turn.",
+        label: this.actionCatalogService.getLabel(actionId, "Craftsman"),
+        description: this.actionCatalogService.getDescription(actionId, "Village: exchange resources 1:1, then end turn."),
         disabled: commonDisabled || !hasTradableResources,
         pending: false,
       };
     }
 
     if (actionId === "camp-gatherer") {
-      const hasCapacity = this.hasFreeCapacityFor(player, 2);
+      const requiredSlots = 2;
+      const availableSlots = this.getFreeResourceSlots(player);
+      const hasCapacity = availableSlots >= requiredSlots;
+      const capacityWarning = !commonDisabled && !hasCapacity
+        ? this.actionCatalogService.getWarning(actionId, {
+          requiredSlots,
+          availableSlots,
+        }) ?? undefined
+        : undefined;
       return {
         id: "camp-gatherer",
-        label: "Gatherer",
-        description: "Camp: gain 1 timber and 1 minerals, then end turn.",
+        label: this.actionCatalogService.getLabel(actionId, "Gatherer"),
+        description: this.actionCatalogService.getDescription(actionId, "Camp: gain 1 timber and 1 minerals, then end turn."),
+        warning: capacityWarning,
         disabled: commonDisabled || !hasCapacity,
         pending: false,
       };
     }
 
     if (actionId === "camp-hunter") {
-      const hasCapacity = this.hasFreeCapacityFor(player, 2);
+      const requiredSlots = 2;
+      const availableSlots = this.getFreeResourceSlots(player);
+      const hasCapacity = availableSlots >= requiredSlots;
+      const capacityWarning = !commonDisabled && !hasCapacity
+        ? this.actionCatalogService.getWarning(actionId, {
+          requiredSlots,
+          availableSlots,
+        }) ?? undefined
+        : undefined;
       return {
         id: "camp-hunter",
-        label: "Hunter",
-        description: "Camp: gain 1 food and 1 cloth, then end turn.",
+        label: this.actionCatalogService.getLabel(actionId, "Hunter"),
+        description: this.actionCatalogService.getDescription(actionId, "Camp: gain 1 food and 1 cloth, then end turn."),
+        warning: capacityWarning,
         disabled: commonDisabled || !hasCapacity,
         pending: false,
       };
@@ -180,7 +246,7 @@ export class ActionRegistryService {
     return resources.some((resource) => Math.max(0, Math.floor(Number(resource.quantity ?? 0))) > 0);
   }
 
-  private hasFreeCapacityFor(player: Player, neededAmount: number): boolean {
+  private getFreeResourceSlots(player: Player): number {
     const resources = player.inventory?.resources ?? [];
     const total = resources.reduce((sum, resource) => {
       return sum + Math.max(0, Math.floor(Number(resource.quantity ?? 0)));
@@ -191,6 +257,22 @@ export class ActionRegistryService {
       ? Math.max(1, Math.floor(configuredCapacity))
       : DEFAULT_RESOURCE_INVENTORY_CAPACITY;
 
-    return total + neededAmount <= capacity;
+    return Math.max(0, capacity - total);
+  }
+
+  private isCommonValidatorDisabled(
+    actionId: string,
+    context: ActionCardContext,
+    actionAlreadyUsed: boolean,
+  ): boolean {
+    const requiresMyTurn = this.actionCatalogService.hasValidator(actionId, "my-turn");
+    const requiresMovedThisTurn = this.actionCatalogService.hasValidator(actionId, "moved-this-turn");
+    const requiresNotBusy = this.actionCatalogService.hasValidator(actionId, "not-busy");
+    const requiresActionNotUsed = this.actionCatalogService.hasValidator(actionId, "action-not-used");
+
+    return (requiresMyTurn && !context.isMyTurn)
+      || (requiresMovedThisTurn && !context.hasMovedThisTurn)
+      || (requiresNotBusy && context.isBusy)
+      || (requiresActionNotUsed && actionAlreadyUsed);
   }
 }

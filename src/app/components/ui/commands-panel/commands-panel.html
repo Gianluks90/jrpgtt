@@ -16,6 +16,9 @@
 				</span>
 				<span class="command-card-divider" aria-hidden="true"></span>
 				<span class="command-card-description">{{ action.description || '-' }}</span>
+				@if (action.warning) {
+					<span class="command-card-warning">{{ action.warning }}</span>
+				}
 			</button>
 		}
 

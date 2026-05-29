@@ -1,0 +1,46 @@
+<dialog-wrapper title="Fast travel">
+    <p class="info-text">Stai partendo da <strong>{{ originName }}</strong>.</p>
+    <p class="info-text">Available coins: <strong>{{ playerMoney }}</strong>.</p>
+    <p class="info-text">Route cost is 1 coin per orthogonal cell, capped at 15.</p>
+
+    @if (routes.length === 0) {
+        <p class="error-text">No discovered safe-place destinations are available yet.</p>
+    } @else {
+        <div class="routes-list">
+            @for (route of routes; track route.cellId) {
+                <button
+                    type="button"
+                    class="route-option"
+                    [class.selected]="selectedRouteCellId === route.cellId"
+                    (click)="selectRoute(route.cellId)"
+                >
+                    <span class="route-title">{{ route.destinationName }}</span>
+                    <span class="route-meta">Coordinates: {{ route.x + 1 }}, {{ route.y + 1 }}</span>
+                    <span class="route-meta">Cost: <strong>{{ route.cost }}</strong> coins</span>
+                    @if (isTooExpensive(route)) {
+                        <span class="route-warning">Not enough coins for this route.</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+
+    @if (selectedRoute && !canConfirm) {
+        <p class="error-text">Selected route costs {{ selectedRoute.cost }} coins, but you only have {{ playerMoney }}.</p>
+    }
+
+    @if (selectedRoute && canConfirm) {
+        <p class="info-text">
+            Destination: <strong>{{ selectedRoute.destinationName }}</strong>.
+            Confirming ends your turn and you will skip one additional turn before arrival.
+        </p>
+    }
+
+    <text-button
+        dialog-action
+        text="Confirm route"
+        [disabled]="!canConfirm"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+</dialog-wrapper>

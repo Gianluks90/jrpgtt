@@ -15,3 +15,8 @@ export const RESOURCE_EXCHANGE_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     maxWidth: '620px',
 };
+
+export const FAST_TRAVEL_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    maxWidth: '680px',
+};

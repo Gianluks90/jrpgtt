@@ -4,6 +4,7 @@ export interface CommandPanelAction {
   id: string;
   label: string;
   description?: string;
+  warning?: string;
   disabled?: boolean;
   pending?: boolean;
 }

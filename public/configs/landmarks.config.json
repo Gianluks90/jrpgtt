@@ -48,9 +48,9 @@
     "evil": "Cursed"
   },
   "safePlaceActionsByLandmark": {
-    "capital": ["capital-doctor", "capital-inn"],
-    "city": ["city-healer"],
-    "village": ["village-craftsman"],
-    "camp": ["camp-gatherer", "camp-hunter"]
+    "capital": ["safe-place-wait", "fast-travel", "capital-doctor", "capital-inn"],
+    "city": ["safe-place-wait", "fast-travel", "city-healer"],
+    "village": ["safe-place-wait", "fast-travel", "village-craftsman"],
+    "camp": ["safe-place-wait", "fast-travel", "camp-gatherer", "camp-hunter"]
   }
 }

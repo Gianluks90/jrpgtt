@@ -7,6 +7,7 @@ import { TilesConfig } from "../models/TilesConfig";
 import { ResourceLabel } from "../models/Resource";
 import { WorldState } from "../models/WorldState";
 import { LandmarksService } from "./landmarks-service";
+import { ActionCatalogService } from "./action-catalog-service";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -29,19 +30,23 @@ export class MapPageActionsService {
   constructor(
     private actionRegistry: ActionRegistryService,
     private landmarksService: LandmarksService,
+    private actionCatalogService: ActionCatalogService,
   ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
     const actions: CommandPanelAction[] = [];
+    const endTurnReason = input.player?.pendingResourcePickup
+      ? "Resolve pending resource pickup before ending your turn."
+      : input.hasMovedOnCurrentTurn
+        ? "Pass control to the next player."
+        : "Move at least once before ending your turn.";
 
     actions.push({
       id: "end-turn",
-      label: "End turn",
-      description: input.player?.pendingResourcePickup
-        ? "Resolve pending resource pickup before ending your turn."
-        : input.hasMovedOnCurrentTurn
-          ? "Pass control to the next player."
-          : "Move at least once before ending your turn.",
+      label: this.actionCatalogService.getLabel("end-turn", "End turn"),
+      description: this.actionCatalogService.getDescription("end-turn", endTurnReason, {
+        reason: endTurnReason,
+      }),
       disabled: !input.canEndTurn,
       pending: input.pendingActionId === "end-turn",
     });

@@ -15,6 +15,8 @@ export type EventLogCode =
   | "player.praySanctuary"
   | "player.cellGather"
   | "player.consumeRation"
+  | "player.safePlaceWait"
+  | "player.fastTravelBooked"
   | "player.hostileEnvironmentDamage"
   | "player.regeneratingWatersHealing"
   | "player.discardResource"

@@ -8,6 +8,7 @@ import {
   SAFE_LANDMARK_BIOME_SUFFIXES,
   isKnownLandmarkCategory,
 } from "../consts/landmarks-catalog";
+import { SAFE_PLACE_ACTIONS_BY_LANDMARK, SafePlaceLandmarkId } from "../consts/safe-place-actions";
 import { SPECIAL_CELLS } from "../consts/special-cells";
 import { BiomeType } from "../models/MapCell";
 import {
@@ -17,7 +18,9 @@ import {
   LandmarkDefinition,
   LandmarkTarget,
 } from "../models/Landmark";
+import { LandmarksConfig } from "../models/LandmarksConfig";
 import { QuadrantId } from "../models/WorldZone";
+import { LandmarksConfigService } from "./landmarks-config-service";
 import { WorldZonesService } from "./world-zones-service";
 
 interface PlacementCoordinate {
@@ -31,32 +34,41 @@ interface PlacementCoordinate {
 export class LandmarksService {
   private readonly quadrantOrder: QuadrantId[] = ["Q1", "Q2", "Q3", "Q4"];
 
-  constructor(private worldZonesService: WorldZonesService) {}
+  constructor(
+    private worldZonesService: WorldZonesService,
+    private landmarksConfigService: LandmarksConfigService,
+  ) {}
 
-  public generateLandmarkTargets(
+  public async loadConfig(): Promise<LandmarksConfig> {
+    return this.landmarksConfigService.loadConfig();
+  }
+
+  public async generateLandmarkTargets(
     mapSize: number,
     excludedCoordinates: Array<{ x: number; y: number }>,
-  ): LandmarkTarget[] {
+  ): Promise<LandmarkTarget[]> {
+    const config = await this.landmarksConfigService.loadConfig();
     const excluded = new Set<string>([
       ...excludedCoordinates.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
       ...SPECIAL_CELLS.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
     ]);
 
-    const definitionsByCategory = this.buildDefinitionsByCategory();
+    const categoryOrder = this.getCategoryOrder(config);
+    const definitionsByCategory = this.buildDefinitionsByCategory(this.getDefinitions(config));
     const categoryIndices: Partial<Record<LandmarkCategory, number>> = {};
-    const midAlignmentPool = this.shuffleArray([...MID_LANDMARK_ALIGNMENT_DISTRIBUTION]);
+    const midAlignmentPool = this.shuffleArray([...this.getMidAlignmentDistribution(config)]);
     let midAlignmentIndex = 0;
 
     const targets: LandmarkTarget[] = [];
     for (const quadrantId of this.quadrantOrder) {
       const availableCoordinates = this.buildQuadrantCandidates(quadrantId, mapSize, excluded);
-      if (availableCoordinates.length < LANDMARK_CATEGORY_ORDER.length) {
+      if (availableCoordinates.length < categoryOrder.length) {
         throw new Error(`Not enough free cells in quadrant ${quadrantId} to place landmarks`);
       }
 
-      const selectedCoordinates = this.shuffleArray(availableCoordinates).slice(0, LANDMARK_CATEGORY_ORDER.length);
+      const selectedCoordinates = this.shuffleArray(availableCoordinates).slice(0, categoryOrder.length);
 
-      LANDMARK_CATEGORY_ORDER.forEach((category, index) => {
+      categoryOrder.forEach((category, index) => {
         const coordinate = selectedCoordinates[index];
         if (!coordinate) return;
 
@@ -93,14 +105,15 @@ export class LandmarksService {
     return targets.find((target) => target.x === x && target.y === y) ?? null;
   }
 
-  public buildLandmarkDisplayName(target: LandmarkTarget, biome: BiomeType): string {
-    const definition = this.getDefinitionById(target.landmarkId);
+  public async buildLandmarkDisplayName(target: LandmarkTarget, biome: BiomeType): Promise<string> {
+    const config = await this.landmarksConfigService.loadConfig();
+    const definition = this.getDefinitionByIdFromDefinitions(target.landmarkId, this.getDefinitions(config));
     if (!definition) {
       return "Unknown Landmark";
     }
 
     if (target.category === "safe") {
-      const suffix = SAFE_LANDMARK_BIOME_SUFFIXES[biome];
+      const suffix = this.getSafeBiomeSuffixes(config)[biome];
       if (suffix.kind === "prefix") {
         return `${suffix.value} ${definition.baseName}`;
       }
@@ -108,7 +121,8 @@ export class LandmarksService {
     }
 
     if (target.category === "mid") {
-      const modifier = LANDMARK_ALIGNMENT_PREFIX[target.alignmentModifier ?? "neutral"];
+      const alignmentPrefixes = this.getAlignmentPrefixes(config);
+      const modifier = alignmentPrefixes[target.alignmentModifier ?? "neutral"];
       if (!modifier) return definition.baseName;
       return `${modifier} ${definition.baseName}`;
     }
@@ -117,11 +131,17 @@ export class LandmarksService {
   }
 
   public getCategoryDefinition(category: LandmarkCategory): LandmarkCategoryDefinition | null {
-    if (isKnownLandmarkCategory(category)) {
-      return LANDMARK_CATEGORY_DEFINITIONS[category];
+    if (!isKnownLandmarkCategory(category)) {
+      return null;
     }
 
-    return null;
+    const categories = this.getCategoryDefinitionsMap(this.landmarksConfigService.getCachedConfig());
+    const configCategory = categories[category];
+    if (configCategory) {
+      return configCategory;
+    }
+
+    return LANDMARK_CATEGORY_DEFINITIONS[category];
   }
 
   public getCategoryIconUrl(category: LandmarkCategory | undefined): string | null {
@@ -131,12 +151,32 @@ export class LandmarksService {
 
   public getDefinitionById(landmarkId: string | undefined): LandmarkDefinition | null {
     if (!landmarkId) return null;
-    return LANDMARK_DEFINITIONS.find((definition) => definition.id === landmarkId) ?? null;
+
+    const config = this.landmarksConfigService.getCachedConfig();
+    return this.getDefinitionByIdFromDefinitions(landmarkId, this.getDefinitions(config));
   }
 
   public getCategoryLabel(category: LandmarkCategory | undefined): string {
     if (!category) return "Unknown";
     return this.getCategoryDefinition(category)?.label ?? category;
+  }
+
+  public getSafePlaceActionIds(landmarkId: string | undefined): string[] {
+    if (!landmarkId) {
+      return [];
+    }
+
+    const cached = this.landmarksConfigService.getCachedConfig();
+    const configuredActions = cached?.safePlaceActionsByLandmark?.[landmarkId];
+    if (Array.isArray(configuredActions)) {
+      return configuredActions.filter((actionId) => typeof actionId === "string" && actionId.trim().length > 0);
+    }
+
+    if (this.isSafeLandmarkId(landmarkId)) {
+      return [...SAFE_PLACE_ACTIONS_BY_LANDMARK[landmarkId]];
+    }
+
+    return [];
   }
 
   private buildQuadrantCandidates(
@@ -158,10 +198,10 @@ export class LandmarksService {
     return candidates;
   }
 
-  private buildDefinitionsByCategory(): Record<string, LandmarkDefinition[]> {
+  private buildDefinitionsByCategory(definitions: LandmarkDefinition[]): Record<string, LandmarkDefinition[]> {
     const grouped: Record<string, LandmarkDefinition[]> = {};
 
-    for (const definition of LANDMARK_DEFINITIONS) {
+    for (const definition of definitions) {
       const bucket = grouped[definition.category] ?? [];
       bucket.push(definition);
       grouped[definition.category] = bucket;
@@ -188,6 +228,65 @@ export class LandmarksService {
     const definition = pool[index % pool.length];
     indices[category] = index + 1;
     return definition;
+  }
+
+  private getCategoryOrder(config: LandmarksConfig | null): LandmarkCategory[] {
+    if (!config?.categoryOrder || config.categoryOrder.length === 0) {
+      return [...LANDMARK_CATEGORY_ORDER];
+    }
+
+    return [...config.categoryOrder];
+  }
+
+  private getDefinitions(config: LandmarksConfig | null): LandmarkDefinition[] {
+    if (!config?.definitions || config.definitions.length === 0) {
+      return [...LANDMARK_DEFINITIONS];
+    }
+
+    return [...config.definitions];
+  }
+
+  private getMidAlignmentDistribution(config: LandmarksConfig | null): LandmarkAlignmentModifier[] {
+    if (!config?.midAlignmentDistribution || config.midAlignmentDistribution.length === 0) {
+      return [...MID_LANDMARK_ALIGNMENT_DISTRIBUTION];
+    }
+
+    return [...config.midAlignmentDistribution];
+  }
+
+  private getSafeBiomeSuffixes(config: LandmarksConfig | null) {
+    if (!config?.safeBiomeSuffixes) {
+      return SAFE_LANDMARK_BIOME_SUFFIXES;
+    }
+
+    return config.safeBiomeSuffixes;
+  }
+
+  private getAlignmentPrefixes(config: LandmarksConfig | null) {
+    if (!config?.alignmentPrefixes) {
+      return LANDMARK_ALIGNMENT_PREFIX;
+    }
+
+    return config.alignmentPrefixes;
+  }
+
+  private getCategoryDefinitionsMap(config: LandmarksConfig | null): Record<string, LandmarkCategoryDefinition> {
+    if (!config?.categories) {
+      return LANDMARK_CATEGORY_DEFINITIONS;
+    }
+
+    return config.categories;
+  }
+
+  private getDefinitionByIdFromDefinitions(
+    landmarkId: string,
+    definitions: LandmarkDefinition[],
+  ): LandmarkDefinition | null {
+    return definitions.find((definition) => definition.id === landmarkId) ?? null;
+  }
+
+  private isSafeLandmarkId(value: string): value is SafePlaceLandmarkId {
+    return value === "capital" || value === "city" || value === "village" || value === "camp";
   }
 
   private shuffleArray<T>(items: T[]): T[] {

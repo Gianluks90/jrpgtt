@@ -1,0 +1,56 @@
+{
+  "categories": {
+    "safe": {
+      "id": "safe",
+      "label": "Safe place",
+      "iconUrl": "/landmark-icons/safe-place-icon.svg"
+    },
+    "mid": {
+      "id": "mid",
+      "label": "Mid place",
+      "iconUrl": "/landmark-icons/mid-place-icon.svg"
+    },
+    "bad": {
+      "id": "bad",
+      "label": "Bad place",
+      "iconUrl": "/landmark-icons/bad-place-icon.svg"
+    }
+  },
+  "categoryOrder": ["safe", "mid", "bad"],
+  "definitions": [
+    { "id": "capital", "baseName": "Capital", "category": "safe" },
+    { "id": "city", "baseName": "City", "category": "safe" },
+    { "id": "village", "baseName": "Village", "category": "safe" },
+    { "id": "camp", "baseName": "Camp", "category": "safe" },
+
+    { "id": "graveyard", "baseName": "Graveyard", "category": "mid", "usesAlignmentModifier": true },
+    { "id": "temple", "baseName": "Temple", "category": "mid", "usesAlignmentModifier": true },
+    { "id": "castle", "baseName": "Castle", "category": "mid", "usesAlignmentModifier": true },
+    { "id": "academy", "baseName": "Academy", "category": "mid", "usesAlignmentModifier": true },
+
+    { "id": "cave", "baseName": "Cave", "category": "bad" },
+    { "id": "dungeon", "baseName": "Dungeon", "category": "bad" },
+    { "id": "manor", "baseName": "Manor", "category": "bad" },
+    { "id": "altar", "baseName": "Altar", "category": "bad" }
+  ],
+  "midAlignmentDistribution": ["good", "neutral", "neutral", "evil"],
+  "safeBiomeSuffixes": {
+    "plains": { "kind": "prefix", "value": "Frontier" },
+    "forest": { "kind": "suffix", "value": "of the Woods" },
+    "mountain": { "kind": "prefix", "value": "Highland" },
+    "water": { "kind": "prefix", "value": "Coastal" },
+    "desert": { "kind": "suffix", "value": "of the Desert" },
+    "ruins": { "kind": "suffix", "value": "of the Fallen" }
+  },
+  "alignmentPrefixes": {
+    "good": "Blessed",
+    "neutral": "",
+    "evil": "Cursed"
+  },
+  "safePlaceActionsByLandmark": {
+    "capital": ["capital-doctor", "capital-inn"],
+    "city": ["city-healer"],
+    "village": ["village-craftsman"],
+    "camp": ["camp-gatherer", "camp-hunter"]
+  }
+}

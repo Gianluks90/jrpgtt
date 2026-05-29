@@ -75,6 +75,30 @@ export class EventLogService {
         "player.consumeRation": ({ playerName }) => {
             return `${playerName} consumed a ration and gained Nutrition.`;
         },
+        "player.safePlaceHeal": ({ playerName, args }) => {
+            const actionId = String(args["actionId"] ?? "heal");
+            const healedHp = Number(args["healedHp"] ?? 0);
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            const place = actionId === "capital-doctor" ? "Capital Doctor" : "City Healer";
+            return `${playerName} used ${place}, restored ${healedHp} HP and spent ${spentCoins} coins.`;
+        },
+        "player.capitalInn": ({ playerName, args }) => {
+            const healedHp = Number(args["healedHp"] ?? 0);
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            return `${playerName} rested at the Capital Inn, restored ${healedHp} HP, spent ${spentCoins} coins and ended the turn.`;
+        },
+        "player.villageCraftsmanExchange": ({ playerName, args }) => {
+            const giveLabel = String(args["giveLabel"] ?? "resource");
+            const receiveLabel = String(args["receiveLabel"] ?? "resource");
+            const amount = Number(args["amount"] ?? 0);
+            return `${playerName} exchanged ${amount} ${giveLabel} for ${amount} ${receiveLabel} at the Village Craftsman and ended the turn.`;
+        },
+        "player.campReward": ({ playerName, args }) => {
+            const actionId = String(args["actionId"] ?? "camp-action");
+            const rewards = String(args["rewards"] ?? "");
+            const source = actionId === "camp-gatherer" ? "Camp Gatherer" : "Camp Hunter";
+            return `${playerName} used ${source} and gained ${rewards}.`;
+        },
         "player.hostileEnvironmentDamage": ({ playerName, args }) => {
             const damageHp = Number(args["damageHp"] ?? 0);
             const environmentSize = Number(args["environmentSize"] ?? 1);

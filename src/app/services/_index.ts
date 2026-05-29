@@ -4,6 +4,7 @@ export * from "./breakpoint-service";
 export * from "./environment-service";
 export * from "./firebase-service";
 export * from "./luck-service";
+export * from "./landmarks-config-service";
 export * from "./map-service";
 export * from "./map-page-state-service";
 export * from "./player-service";

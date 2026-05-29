@@ -3,6 +3,9 @@ import { Player } from "../models/Player";
 import { BiomeType, MapCell } from "../models/MapCell";
 import { CommandPanelAction } from "../components/ui/commands-panel/commands-panel";
 import { ResourceLabel } from "../models/Resource";
+import { TimeOfDay } from "../models/WorldState";
+import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { getDoctorCostPerUnit, isDoctorActionId } from "../consts/safe-place-actions";
 
 export interface ActionCardContext {
   isBusy: boolean;
@@ -13,6 +16,7 @@ export interface ActionCardContext {
   player: Player;
   cell: MapCell;
   worldTurn: number;
+  timeOfDay: TimeOfDay;
   biome?: BiomeType;
   biomeResourceLabels?: ResourceLabel[];
   hasPendingResourcePickup?: boolean;
@@ -21,10 +25,13 @@ export interface ActionCardContext {
 @Injectable({ providedIn: "root" })
 export class ActionRegistryService {
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
-    const { isBusy, hasMoney, isMyTurn, hasMovedThisTurn, sanctuaryLabel, player, cell } = context;
+    const { isBusy, hasMoney, isMyTurn, hasMovedThisTurn, sanctuaryLabel, player, cell, timeOfDay } = context;
     const actionsUsed = player.actionsUsedThisTurn ?? {};
     const worldTurn = context.worldTurn ?? 0;
     const actionAlreadyUsed = actionsUsed[actionId] === worldTurn;
+    const hp = this.getHpState(player);
+    const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+    const commonDisabled = !isMyTurn || !hasMovedThisTurn || isBusy || actionAlreadyUsed;
 
     if (actionId === "activate-sanctuary") {
       return {
@@ -88,7 +95,102 @@ export class ActionRegistryService {
       };
     }
 
+    if (isDoctorActionId(actionId)) {
+      const costPerUnit = getDoctorCostPerUnit(actionId, timeOfDay);
+      const label = actionId === "capital-doctor" ? "Doctor" : "Healer";
+      const descriptionTarget = actionId === "capital-doctor" ? "Capital" : "City";
+
+      return {
+        id: actionId,
+        label,
+        description: `${descriptionTarget}: restore 5% HP per treatment. Cost ${costPerUnit} coins each (${timeOfDay}), then end turn.`,
+        disabled: commonDisabled || hp.missing <= 0 || currentMoney < costPerUnit,
+        pending: false,
+      };
+    }
+
+    if (actionId === "capital-inn") {
+      const isNight = timeOfDay === "night";
+      return {
+        id: "capital-inn",
+        label: "Inn",
+        description: "Capital: restore 50% HP, spend 10 coins and end turn (day only).",
+        disabled: commonDisabled || hp.missing <= 0 || currentMoney < 10 || isNight,
+        pending: false,
+      };
+    }
+
+    if (actionId === "village-craftsman") {
+      const hasTradableResources = this.hasTradableResources(player);
+      return {
+        id: "village-craftsman",
+        label: "Craftsman",
+        description: "Village: exchange resources 1:1, then end turn.",
+        disabled: commonDisabled || !hasTradableResources,
+        pending: false,
+      };
+    }
+
+    if (actionId === "camp-gatherer") {
+      const hasCapacity = this.hasFreeCapacityFor(player, 2);
+      return {
+        id: "camp-gatherer",
+        label: "Gatherer",
+        description: "Camp: gain 1 timber and 1 minerals, then end turn.",
+        disabled: commonDisabled || !hasCapacity,
+        pending: false,
+      };
+    }
+
+    if (actionId === "camp-hunter") {
+      const hasCapacity = this.hasFreeCapacityFor(player, 2);
+      return {
+        id: "camp-hunter",
+        label: "Hunter",
+        description: "Camp: gain 1 food and 1 cloth, then end turn.",
+        disabled: commonDisabled || !hasCapacity,
+        pending: false,
+      };
+    }
+
     // fallback for unknown actions
     return null;
+  }
+
+  private getHpState(player: Player): { current: number; max: number; missing: number } {
+    const current = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
+    const max = Math.max(
+      1,
+      Math.floor(Number(
+        typeof player.parameters.hp.max === "number"
+          ? player.parameters.hp.max
+          : player.parameters.hp.base,
+      )),
+    );
+
+    return {
+      current,
+      max,
+      missing: Math.max(0, max - current),
+    };
+  }
+
+  private hasTradableResources(player: Player): boolean {
+    const resources = player.inventory?.resources ?? [];
+    return resources.some((resource) => Math.max(0, Math.floor(Number(resource.quantity ?? 0))) > 0);
+  }
+
+  private hasFreeCapacityFor(player: Player, neededAmount: number): boolean {
+    const resources = player.inventory?.resources ?? [];
+    const total = resources.reduce((sum, resource) => {
+      return sum + Math.max(0, Math.floor(Number(resource.quantity ?? 0)));
+    }, 0);
+
+    const configuredCapacity = player.inventory?.resourceCapacity;
+    const capacity = typeof configuredCapacity === "number" && Number.isFinite(configuredCapacity)
+      ? Math.max(1, Math.floor(configuredCapacity))
+      : DEFAULT_RESOURCE_INVENTORY_CAPACITY;
+
+    return total + neededAmount <= capacity;
   }
 }

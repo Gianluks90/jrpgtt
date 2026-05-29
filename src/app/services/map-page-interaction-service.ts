@@ -1,13 +1,14 @@
 import { Injectable, signal } from "@angular/core";
 import { Dialog } from "@angular/cdk/dialog";
 import { firstValueFrom, take } from "rxjs";
-import { DIALOGS_CONFIG } from "../consts/dialog-configs";
+import { DIALOGS_CONFIG, DOCTOR_HEAL_DIALOG_CONFIG, RESOURCE_EXCHANGE_DIALOG_CONFIG } from "../consts/dialog-configs";
 import { GameEventsLogDialog } from "../components/dialogs/game-events-log-dialog/game-events-log-dialog";
 import { MapService } from "./map-service";
 import { ActionExecutorService } from "./action-executor-service";
 import { PlayerProgressionService } from "./player-progression-service";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
 import { Player } from "../models/Player";
+import { WorldState } from "../models/WorldState";
 import { MapGridPanelCell } from "../components/core/map-grid-panel/map-grid-panel";
 import {
   ResourceInventoryDialog,
@@ -19,8 +20,19 @@ import {
   SanctuaryActionDialogData,
   SanctuaryActionDialogResult,
 } from "../components/dialogs/action-dialogs/sanctuary-action-dialog/sanctuary-action-dialog";
+import {
+  DoctorHealDialog,
+  DoctorHealDialogData,
+  DoctorHealDialogResult,
+} from "../components/dialogs/action-dialogs/doctor-heal-dialog/doctor-heal-dialog";
+import {
+  ResourceExchangeDialog,
+  ResourceExchangeDialogData,
+  ResourceExchangeDialogResult,
+} from "../components/dialogs/action-dialogs/resource-exchange-dialog/resource-exchange-dialog";
 import { DialogResponse } from "../models/DialogResponse";
 import { EventLog } from "../models/EventLog";
+import { SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 
 @Injectable({
   providedIn: "root",
@@ -77,6 +89,7 @@ export class MapPageInteractionService {
     myPlayer: Player | null;
     isMyTurn: boolean;
     canEndTurn: boolean;
+    worldState: WorldState | null;
     mapCellsById: Record<string, MapCell>;
   }): Promise<void> {
     const handlers: Record<string, () => Promise<void>> = {
@@ -160,6 +173,73 @@ export class MapPageInteractionService {
             name: input.myPlayer!.name,
           });
         }, "Error while consuming ration");
+      },
+      "capital-doctor": async () => {
+        await this.runDoctorHealAction({
+          gameId: input.gameId,
+          myPlayer: input.myPlayer,
+          worldState: input.worldState,
+          isMyTurn: input.isMyTurn,
+          actionId: "capital-doctor",
+          errorMessage: "Error while using capital doctor",
+        });
+      },
+      "city-healer": async () => {
+        await this.runDoctorHealAction({
+          gameId: input.gameId,
+          myPlayer: input.myPlayer,
+          worldState: input.worldState,
+          isMyTurn: input.isMyTurn,
+          actionId: "city-healer",
+          errorMessage: "Error while using city healer",
+        });
+      },
+      "capital-inn": async () => {
+        if (!input.myPlayer || !input.isMyTurn) return;
+        await this.runNamedAction("capital-inn", async () => {
+          await this.actionExecutorService.capitalInn(input.gameId, {
+            id: input.myPlayer!.id,
+            name: input.myPlayer!.name,
+          });
+        }, "Error while resting at capital inn");
+      },
+      "village-craftsman": async () => {
+        if (!input.myPlayer || !input.isMyTurn) return;
+
+        const result = await this.openResourceExchangeDialog({
+          resources: input.myPlayer.inventory?.resources ?? [],
+        });
+
+        if (!result) return;
+
+        await this.runNamedAction("village-craftsman", async () => {
+          await this.actionExecutorService.villageCraftsmanExchange(input.gameId, {
+            id: input.myPlayer!.id,
+            name: input.myPlayer!.name,
+          }, {
+            giveLabel: result.giveLabel,
+            receiveLabel: result.receiveLabel,
+            amount: result.amount,
+          });
+        }, "Error while exchanging resources at village craftsman");
+      },
+      "camp-gatherer": async () => {
+        if (!input.myPlayer || !input.isMyTurn) return;
+        await this.runNamedAction("camp-gatherer", async () => {
+          await this.actionExecutorService.campGatherer(input.gameId, {
+            id: input.myPlayer!.id,
+            name: input.myPlayer!.name,
+          });
+        }, "Error while using camp gatherer");
+      },
+      "camp-hunter": async () => {
+        if (!input.myPlayer || !input.isMyTurn) return;
+        await this.runNamedAction("camp-hunter", async () => {
+          await this.actionExecutorService.campHunter(input.gameId, {
+            id: input.myPlayer!.id,
+            name: input.myPlayer!.name,
+          });
+        }, "Error while using camp hunter");
       },
     };
 
@@ -281,6 +361,48 @@ export class MapPageInteractionService {
     }, options.errorMessage);
   }
 
+  private async runDoctorHealAction(options: {
+    gameId: string;
+    myPlayer: Player | null;
+    worldState: WorldState | null;
+    isMyTurn: boolean;
+    actionId: SafePlaceDoctorActionId;
+    errorMessage: string;
+  }): Promise<void> {
+    const player = options.myPlayer;
+    if (!player || !options.isMyTurn) return;
+
+    const hpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
+    const hpMax = Math.max(
+      1,
+      Math.floor(Number(
+        typeof player.parameters.hp.max === "number"
+          ? player.parameters.hp.max
+          : player.parameters.hp.base,
+      )),
+    );
+
+    const dialogResult = await this.openDoctorHealDialog({
+      actionId: options.actionId,
+      timeOfDay: options.worldState?.timeOfDay ?? "day",
+      playerMoney: player.inventory?.money ?? 0,
+      hpCurrent,
+      hpMax,
+    });
+
+    if (!dialogResult) return;
+
+    await this.runNamedAction(options.actionId, async () => {
+      await this.actionExecutorService.healAtSafePlace(options.gameId, {
+        id: player.id,
+        name: player.name,
+      }, {
+        actionId: options.actionId,
+        units: dialogResult.units,
+      });
+    }, options.errorMessage);
+  }
+
   private getCurrentSanctuaryCell(player: Player | null, mapCellsById: Record<string, MapCell>): MapCell | null {
     if (!player) return null;
 
@@ -303,10 +425,81 @@ export class MapPageInteractionService {
     return this.isConfirmSanctuaryActionResponse(response);
   }
 
+  private async openDoctorHealDialog(data: DoctorHealDialogData): Promise<DoctorHealDialogResult | null> {
+    const dialogRef = this.dialog.open(DoctorHealDialog, {
+      ...DOCTOR_HEAL_DIALOG_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    return this.asDoctorHealDialogResult(response);
+  }
+
+  private async openResourceExchangeDialog(data: ResourceExchangeDialogData): Promise<ResourceExchangeDialogResult | null> {
+    const dialogRef = this.dialog.open(ResourceExchangeDialog, {
+      ...RESOURCE_EXCHANGE_DIALOG_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    return this.asResourceExchangeDialogResult(response);
+  }
+
   private isConfirmSanctuaryActionResponse(response: unknown): response is DialogResponse<SanctuaryActionDialogResult> {
     if (typeof response !== "object" || response === null) return false;
     if (!("result" in response)) return false;
     return response.result === "confirm";
+  }
+
+  private asDoctorHealDialogResult(response: unknown): DoctorHealDialogResult | null {
+    if (typeof response !== "object" || response === null) {
+      return null;
+    }
+
+    const typed = response as { result?: unknown; data?: unknown };
+    if (typed.result !== "confirm" || !typed.data || typeof typed.data !== "object") {
+      return null;
+    }
+
+    const data = typed.data as { units?: unknown };
+    const units = Math.max(0, Math.floor(Number(data.units ?? 0)));
+    if (!Number.isFinite(units) || units <= 0) {
+      return null;
+    }
+
+    return { units };
+  }
+
+  private asResourceExchangeDialogResult(response: unknown): ResourceExchangeDialogResult | null {
+    if (typeof response !== "object" || response === null) {
+      return null;
+    }
+
+    const typed = response as { result?: unknown; data?: unknown };
+    if (typed.result !== "confirm" || !typed.data || typeof typed.data !== "object") {
+      return null;
+    }
+
+    const data = typed.data as {
+      giveLabel?: unknown;
+      receiveLabel?: unknown;
+      amount?: unknown;
+    };
+
+    if (!this.isResourceLabel(data.giveLabel) || !this.isResourceLabel(data.receiveLabel)) {
+      return null;
+    }
+
+    const amount = Math.max(0, Math.floor(Number(data.amount ?? 0)));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return null;
+    }
+
+    return {
+      giveLabel: data.giveLabel,
+      receiveLabel: data.receiveLabel,
+      amount,
+    };
   }
 
   private async applyPendingInventoryDialogResult(
@@ -371,6 +564,10 @@ export class MapPageInteractionService {
     }
 
     return null;
+  }
+
+  private isResourceLabel(value: unknown): value is ResourceLabel {
+    return value === "food" || value === "timber" || value === "minerals" || value === "cloth";
   }
 
   private cellId(x: number, y: number): string {

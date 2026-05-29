@@ -1,0 +1,60 @@
+<dialog-wrapper title="Resource exchange">
+    <p class="info-text">Exchange resources 1:1 with the village craftsman. Confirming this action ends your turn.</p>
+
+    <form [formGroup]="form">
+        <div class="form-field">
+            <label for="giveLabel">Give</label>
+            <select id="giveLabel" formControlName="giveLabel" (change)="onGiveChanged()">
+                @for (option of giveOptions; track option.label) {
+                    <option [value]="option.label">{{ toLabel(option.label) }} (x{{ option.quantity }})</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label for="receiveLabel">Receive</label>
+            <select id="receiveLabel" formControlName="receiveLabel">
+                @for (option of receiveOptions; track option) {
+                    <option [value]="option" [disabled]="option === selectedGiveLabel">{{ toLabel(option) }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label for="exchangeAmount">Amount</label>
+            <input
+                id="exchangeAmount"
+                type="number"
+                inputMode="numeric"
+                formControlName="amount"
+                min="1"
+                [max]="maxAmount"
+                (blur)="onAmountBlur()"
+            />
+            <p class="info-text">Maximum: {{ maxAmount }}</p>
+        </div>
+    </form>
+
+    @if (giveOptions.length === 0) {
+        <p class="error-text">You need at least 1 resource to perform an exchange.</p>
+    }
+
+    @if (!canConfirm && selectedGiveLabel && selectedReceiveLabel && selectedAmount > 0) {
+        <p class="error-text">Invalid selection. Ensure resources differ and amount is within available quantity.</p>
+    }
+
+    @if (canConfirm && selectedGiveLabel && selectedReceiveLabel) {
+        <p class="info-text">
+            You will exchange <strong>{{ selectedAmount }}</strong> {{ toLabel(selectedGiveLabel) }}
+            for <strong>{{ selectedAmount }}</strong> {{ toLabel(selectedReceiveLabel) }}.
+        </p>
+    }
+
+    <text-button
+        dialog-action
+        text="Confirm exchange"
+        [disabled]="!canConfirm"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+</dialog-wrapper>

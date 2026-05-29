@@ -267,6 +267,7 @@ export class MapPage implements OnInit, OnDestroy {
       myPlayer: this.myPlayer(),
       isMyTurn: this.isMyTurn(),
       canEndTurn: this.canEndTurn(),
+      worldState: this.worldState(),
       mapCellsById: this.mapCellsById(),
     });
   }

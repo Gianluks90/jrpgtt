@@ -1,0 +1,50 @@
+<dialog-wrapper [title]="title">
+    <p class="info-text">
+        {{ providerLabel }} restores 5% HP per treatment.
+        Cost per treatment: <strong>{{ costPerUnit }}</strong> coins
+        @if (timeOfDay === 'night') {
+            <span>(night tariff)</span>
+        }
+    </p>
+    <p class="info-text">Current HP: <strong>{{ hpCurrent }}/{{ hpMax }}</strong></p>
+    <p class="info-text">Your coins: <strong>{{ playerMoney }}</strong></p>
+
+    <form [formGroup]="form">
+        <div class="form-field">
+            <label for="doctorUnits">Treatments (5% each)</label>
+            <input
+                id="doctorUnits"
+                type="number"
+                inputMode="numeric"
+                formControlName="units"
+                min="1"
+                [max]="maxUnitsByHp"
+            />
+            <p class="info-text">Maximum by HP: {{ maxUnitsByHp }} | maximum by coins: {{ maxUnitsByMoney }}</p>
+        </div>
+    </form>
+
+    @if (hpMissing <= 0) {
+        <p class="error-text">Your HP is already full.</p>
+    }
+
+    @if (maxUnitsByMoney <= 0 && hpMissing > 0) {
+        <p class="error-text">You do not have enough coins for a single treatment.</p>
+    }
+
+    @if (!hasEnoughMoneyForSelection && selectedUnits > 0) {
+        <p class="error-text">Selected treatments cost {{ totalCost }} coins, but you only have {{ playerMoney }}.</p>
+    }
+
+    @if (selectedUnits > 0) {
+        <p class="info-text">Expected heal: <strong>+{{ expectedHeal }} HP</strong> | Total cost: <strong>{{ totalCost }}</strong></p>
+    }
+
+    <text-button
+        dialog-action
+        text="Confirm"
+        [disabled]="!canConfirm"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+</dialog-wrapper>

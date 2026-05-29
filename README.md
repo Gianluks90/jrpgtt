@@ -23,7 +23,7 @@
 - [ ] Animazioni per i cambiamenti di stato (es. livello, risorse, condizioni meteo) per aumentare il coinvolgimento. Commento: Rende l’esperienza più immersiva e chiara. Difficoltà: Media. Impatto: Basso.
 - [ ] Durante il proprio turno prima di selezionare il movimento sotto le colonne interessate comparirà l'indicazione del livello dei nemici che si possono incontrare in quelle colonne. Commento: Fornisce informazioni utili per la strategia, migliora la pianificazione. Difficoltà: Media. Impatto: Alto.
 - [x] Aggiungere un'animazione al luck-meter temporizzata per simulare una scelta casuale di numeri (movimento rapido numeri per 1 secondo prima di mostrare il risultato finale). Commento: Aumenta il coinvolgimento e la suspense, rende il sistema di fortuna più tangibile. Difficoltà: Media. Impatto: Medio.
-- [ ] Aggiungere un'animazione al cambio di time (day <-> night) con l'icona che scende in basso, sparisce, si sostituisce e risale. Commento: Rende il ciclo giorno/notte più evidente e coinvolgente, migliora l’atmosfera. Difficoltà: Media. Impatto: Medio.
+- [x] Aggiungere un'animazione al cambio di time (day <-> night) con l'icona che scende in basso, sparisce, si sostituisce e risale. Commento: Rende il ciclo giorno/notte più evidente e coinvolgente, migliora l’atmosfera. Difficoltà: Media. Impatto: Medio.
 
 ## Eventi Speciali
 

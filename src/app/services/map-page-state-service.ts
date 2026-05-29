@@ -12,6 +12,7 @@ import { EventLog } from "../models/EventLog";
 import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
 import { EventLogService } from "./event-log-service";
 import { FirebaseService } from "./firebase-service";
+import { LandmarksConfigService } from "./landmarks-config-service";
 import { TilesConfigService } from "./tiles-config-service";
 
 @Injectable({
@@ -109,6 +110,7 @@ export class MapPageStateService {
   constructor(
     private firebaseService: FirebaseService,
     private tilesConfigService: TilesConfigService,
+    private landmarksConfigService: LandmarksConfigService,
   ) { }
 
   public init(gameId: string): void {
@@ -119,6 +121,7 @@ export class MapPageStateService {
     this.activeGameId = gameId;
 
     void this.loadBiomeResourcesConfig();
+    void this.loadLandmarksConfig();
 
     const auth = getAuth();
     if (typeof auth.authStateReady === "function") {
@@ -257,6 +260,14 @@ export class MapPageStateService {
       this.tilesConfig.set(null);
       this.biomeResourcesByBiome.set(this.emptyBiomeResourcesMap);
       this.sanctuaryStylesByElement.set(this.defaultSanctuaryStylesByElement);
+    }
+  }
+
+  private async loadLandmarksConfig(): Promise<void> {
+    try {
+      await this.landmarksConfigService.loadConfig();
+    } catch (error) {
+      console.error(error);
     }
   }
 

@@ -14,6 +14,7 @@ import { TilesConfigService } from "./tiles-config-service";
 import { TurnService } from "./turn-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { WorldZonesService } from "./world-zones-service";
+import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 
 @Injectable({
   providedIn: "root",
@@ -874,6 +875,485 @@ export class ActionExecutorService {
     });
   }
 
+  public async healAtSafePlace(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      actionId: SafePlaceDoctorActionId;
+      units: number;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const units = Math.max(0, Math.floor(Number(payload.units ?? 0)));
+    if (!Number.isFinite(units) || units <= 0) {
+      throw new Error("Invalid heal amount");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let healedHp = 0;
+    let spentCoins = 0;
+    let appliedUnits = 0;
+    let actionTimeOfDay: "day" | "night" = "day";
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, payload.actionId, worldTurn, "You can only use this action once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      const expectedLandmarkId = payload.actionId === "capital-doctor" ? "capital" : "city";
+      this.ensurePlayerOnLandmark(
+        mapCell,
+        expectedLandmarkId,
+        payload.actionId === "capital-doctor"
+          ? "You must be at Capital to use the Doctor"
+          : "You must be at City to use the Healer",
+      );
+
+      const hp = this.getHpState(player);
+      if (hp.missing <= 0) {
+        throw new Error("Your HP is already full");
+      }
+
+      actionTimeOfDay = worldState.timeOfDay ?? "day";
+      const costPerUnit = getDoctorCostPerUnit(payload.actionId, actionTimeOfDay);
+      const maxUnitsByHp = Math.ceil(hp.missing / hp.healPerUnit);
+
+      if (units > maxUnitsByHp) {
+        throw new Error("Selected heal amount exceeds missing HP");
+      }
+
+      spentCoins = units * costPerUnit;
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < spentCoins) {
+        throw new Error("Not enough coins for selected heal amount");
+      }
+
+      healedHp = Math.min(hp.missing, units * hp.healPerUnit);
+      const nextHpCurrent = Math.min(hp.max, hp.current + healedHp);
+      healedHp = Math.max(0, nextHpCurrent - hp.current);
+      appliedUnits = units;
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      this.turnService.advanceTurn(nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          hp: {
+            ...player.parameters.hp,
+            current: nextHpCurrent,
+          },
+        },
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - spentCoins,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, payload.actionId, worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.safePlaceHeal", {
+      actionId: payload.actionId,
+      healedHp,
+      spentCoins,
+      units: appliedUnits,
+      timeOfDay: actionTimeOfDay,
+      turnEnded: true,
+    });
+  }
+
+  public async capitalInn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const innCost = 10;
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let healedHp = 0;
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      if ((worldState.timeOfDay ?? "day") === "night") {
+        throw new Error("Inn is available only during daytime");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "capital-inn", worldTurn, "You can only rest at inn once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "capital", "You must be at Capital to use the Inn");
+
+      const hp = this.getHpState(player);
+      if (hp.missing <= 0) {
+        throw new Error("Your HP is already full");
+      }
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < innCost) {
+        throw new Error("You need 10 coins to rest at inn");
+      }
+
+      const requestedHeal = Math.max(1, Math.floor(hp.max * 0.5));
+      const nextHpCurrent = Math.min(hp.max, hp.current + requestedHeal);
+      healedHp = Math.max(0, nextHpCurrent - hp.current);
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      this.turnService.advanceTurn(nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          hp: {
+            ...player.parameters.hp,
+            current: nextHpCurrent,
+          },
+        },
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - innCost,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "capital-inn", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.capitalInn", {
+      spentCoins: innCost,
+      healedHp,
+      turnEnded: true,
+    });
+  }
+
+  public async villageCraftsmanExchange(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      giveLabel: ResourceLabel;
+      receiveLabel: ResourceLabel;
+      amount: number;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    if (!this.isResourceLabel(payload.giveLabel) || !this.isResourceLabel(payload.receiveLabel)) {
+      throw new Error("Invalid resource selection");
+    }
+
+    if (payload.giveLabel === payload.receiveLabel) {
+      throw new Error("Exchange requires two different resources");
+    }
+
+    const amount = Math.max(0, Math.floor(Number(payload.amount ?? 0)));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error("Invalid exchange amount");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "village-craftsman", worldTurn, "You can only trade once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "village", "You must be at Village to use the Craftsman");
+
+      const currentResources = player.inventory?.resources ?? [];
+      const currentGiveQuantity = currentResources.find((resource) => resource.label === payload.giveLabel)?.quantity ?? 0;
+      if (Math.max(0, Math.floor(Number(currentGiveQuantity))) < amount) {
+        throw new Error("Not enough resources to exchange");
+      }
+
+      let nextResources = this.addResource(currentResources, payload.giveLabel, -amount);
+      nextResources = this.addResource(nextResources, payload.receiveLabel, amount);
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      this.turnService.advanceTurn(nextWorldState);
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          resources: nextResources,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "village-craftsman", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.villageCraftsmanExchange", {
+      giveLabel: payload.giveLabel,
+      receiveLabel: payload.receiveLabel,
+      amount,
+      turnEnded: true,
+    });
+  }
+
+  public async campGatherer(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    await this.applyCampRewardAction(gameId, actor, {
+      actionId: "camp-gatherer",
+      rewards: [
+        { label: "timber", quantity: 1 },
+        { label: "minerals", quantity: 1 },
+      ],
+    });
+  }
+
+  public async campHunter(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    await this.applyCampRewardAction(gameId, actor, {
+      actionId: "camp-hunter",
+      rewards: [
+        { label: "food", quantity: 1 },
+        { label: "cloth", quantity: 1 },
+      ],
+    });
+  }
+
+  private async applyCampRewardAction(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    input: {
+      actionId: "camp-gatherer" | "camp-hunter";
+      rewards: Array<{ label: ResourceLabel; quantity: number }>;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, input.actionId, worldTurn, "You can only use this camp action once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "camp", "You must be at Camp to use this action");
+
+      const currentResources = player.inventory?.resources ?? [];
+      const totalBefore = this.getTotalResourceCount(currentResources);
+      const totalReward = input.rewards.reduce((sum, reward) => {
+        return sum + Math.max(0, Math.floor(Number(reward.quantity ?? 0)));
+      }, 0);
+      const capacity = this.getResourceCapacity(player);
+
+      if (totalBefore + totalReward > capacity) {
+        throw new Error("Not enough inventory capacity for this reward");
+      }
+
+      let nextResources = [...currentResources];
+      for (const reward of input.rewards) {
+        nextResources = this.addResource(nextResources, reward.label, reward.quantity);
+      }
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      this.turnService.advanceTurn(nextWorldState);
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          resources: nextResources,
+          resourceCapacity: capacity,
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, input.actionId, worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.campReward", {
+      actionId: input.actionId,
+      rewards: input.rewards.map((reward) => `${reward.label}+${reward.quantity}`).join(", "),
+      turnEnded: true,
+    });
+  }
+
   private async tryCreateLog(
     gameId: string,
     player: Pick<Player, "id" | "name">,
@@ -930,6 +1410,36 @@ export class ActionExecutorService {
 
   private hasStatus(statuses: PlayerStatus[], key: string): boolean {
     return statuses.some((status) => status.key === key && status.durationTurns > 0);
+  }
+
+  private getHpState(player: Player): {
+    current: number;
+    max: number;
+    missing: number;
+    healPerUnit: number;
+  } {
+    const current = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
+    const max = Math.max(
+      1,
+      Math.floor(Number(
+        typeof player.parameters.hp.max === "number"
+          ? player.parameters.hp.max
+          : player.parameters.hp.base,
+      )),
+    );
+
+    return {
+      current,
+      max,
+      missing: Math.max(0, max - current),
+      healPerUnit: Math.max(1, Math.floor(max * 0.05)),
+    };
+  }
+
+  private ensurePlayerOnLandmark(mapCell: MapCell, landmarkId: string, errorMessage: string): void {
+    if (mapCell.isSpecial !== true || mapCell.specialType !== "landmark" || mapCell.landmarkId !== landmarkId) {
+      throw new Error(errorMessage);
+    }
   }
 
   private decrementStatuses(statuses: PlayerStatus[]): PlayerStatus[] {
@@ -1044,5 +1554,9 @@ export class ActionExecutorService {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
+  }
+
+  private isResourceLabel(value: unknown): value is ResourceLabel {
+    return value === "food" || value === "timber" || value === "minerals" || value === "cloth";
   }
 }

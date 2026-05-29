@@ -5,3 +5,13 @@ export const DIALOGS_CONFIG = {
     backdropClass: 'dialog-backdrop',
     autoFocus: false
 };
+
+export const DOCTOR_HEAL_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    maxWidth: '500px',
+};
+
+export const RESOURCE_EXCHANGE_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    maxWidth: '620px',
+};

@@ -328,7 +328,7 @@ export class GameService {
     }
 
     const config = await this.getGameConfig();
-    const setupContext = this.runStartGameSetups(game, players, config);
+    const setupContext = await this.runStartGameSetups(game, players, config);
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const mapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
@@ -532,7 +532,7 @@ export class GameService {
     };
   }
 
-  private runStartGameSetups(game: Game, players: Player[], config: GameConfig): StartGameSetupContext {
+  private async runStartGameSetups(game: Game, players: Player[], config: GameConfig): Promise<StartGameSetupContext> {
     const context: StartGameSetupContext = {
       game,
       players,
@@ -557,16 +557,16 @@ export class GameService {
       spawns: [],
     };
 
-    const setupPipeline: Array<(setup: StartGameSetupContext) => void> = [
+    const setupPipeline: Array<(setup: StartGameSetupContext) => void | Promise<void>> = [
       this.setupBiomeDeck,
       this.setupTurnOrder,
       this.setupPlayerSpawns,
       this.setupLandmarks,
     ];
 
-    setupPipeline.forEach((setupStep) => {
-      setupStep.call(this, context);
-    });
+    for (const setupStep of setupPipeline) {
+      await setupStep.call(this, context);
+    }
 
     context.worldState.activePlayerId = context.turnOrder[0];
 
@@ -598,9 +598,9 @@ export class GameService {
     });
   }
 
-  private setupLandmarks(context: StartGameSetupContext): void {
+  private async setupLandmarks(context: StartGameSetupContext): Promise<void> {
     const excludedCoordinates = context.spawns.map((spawn) => ({ x: spawn.x, y: spawn.y }));
-    context.worldState.landmarkTargets = this.landmarksService.generateLandmarkTargets(
+    context.worldState.landmarkTargets = await this.landmarksService.generateLandmarkTargets(
       context.config.map.size,
       excludedCoordinates,
     );

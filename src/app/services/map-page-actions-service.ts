@@ -6,6 +6,7 @@ import { Player } from "../models/Player";
 import { TilesConfig } from "../models/TilesConfig";
 import { ResourceLabel } from "../models/Resource";
 import { WorldState } from "../models/WorldState";
+import { LandmarksService } from "./landmarks-service";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -25,7 +26,10 @@ interface BuildCommandActionsInput {
 export class MapPageActionsService {
   private readonly sanctuaryDonationCost = 5;
 
-  constructor(private actionRegistry: ActionRegistryService) {}
+  constructor(
+    private actionRegistry: ActionRegistryService,
+    private landmarksService: LandmarksService,
+  ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
     const actions: CommandPanelAction[] = [];
@@ -56,9 +60,12 @@ export class MapPageActionsService {
     const hasMoney = (player.inventory?.money ?? 0) >= this.sanctuaryDonationCost;
     const worldTurn = input.worldState?.currentTurn ?? 0;
     const isSanctuaryCell = cell.isSpecial === true && cell.specialType === "sanctuary" && !!cell.sanctuaryElement;
+    const isSafeLandmarkCell = cell.isSpecial === true && cell.specialType === "landmark" && cell.landmarkCategory === "safe";
     const actionIds = isSanctuaryCell
       ? this.getConfiguredSanctuaryActionIds(cell, input.tilesConfig)
-      : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
+      : isSafeLandmarkCell
+        ? this.getConfiguredSafeLandmarkActionIds(cell)
+        : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
     const biomeResources = cell.biome ? (input.biomeResourcesByBiome[cell.biome] ?? []) : [];
     const sanctuaryLabel = isSanctuaryCell && cell.sanctuaryElement
       ? this.sanctuaryElementToLabel(cell.sanctuaryElement)
@@ -75,6 +82,7 @@ export class MapPageActionsService {
           player,
           cell,
           worldTurn,
+          timeOfDay: input.worldState?.timeOfDay ?? "day",
           biome: cell.biome,
           biomeResourceLabels: biomeResources,
           hasPendingResourcePickup: !!player.pendingResourcePickup,
@@ -88,6 +96,14 @@ export class MapPageActionsService {
         } as CommandPanelAction;
       })
       .filter((action) => action !== null) as CommandPanelAction[];
+  }
+
+  private getConfiguredSafeLandmarkActionIds(cell: MapCell): string[] {
+    if (cell.specialType !== "landmark" || cell.landmarkCategory !== "safe" || !cell.landmarkId) {
+      return [];
+    }
+
+    return this.landmarksService.getSafePlaceActionIds(cell.landmarkId);
   }
 
   private getConfiguredBiomeActionIds(cell: MapCell, tilesConfig: TilesConfig | null): string[] {

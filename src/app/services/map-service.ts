@@ -38,6 +38,8 @@ export class MapService {
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
+    await this.landmarksService.loadConfig();
+
     const gameRef = doc(this.firebaseService.database, "games", gameId);
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
@@ -151,7 +153,7 @@ export class MapService {
             newCell.specialType = "landmark";
             newCell.landmarkId = landmarkTarget.landmarkId;
             newCell.landmarkCategory = landmarkTarget.category;
-            newCell.landmarkDisplayName = this.landmarksService.buildLandmarkDisplayName(landmarkTarget, drawnBiome);
+            newCell.landmarkDisplayName = await this.landmarksService.buildLandmarkDisplayName(landmarkTarget, drawnBiome);
 
             if (landmarkTarget.alignmentModifier) {
               newCell.landmarkAlignmentModifier = landmarkTarget.alignmentModifier;

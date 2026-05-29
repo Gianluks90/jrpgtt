@@ -28,6 +28,32 @@
     z-index: 2000;
 }
 
+.fast-travel-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2300;
+}
+
+.fast-travel-line {
+    position: absolute;
+    height: 3px;
+    border-radius: 0;
+    transform-origin: 0 50%;
+    background: var(--fast-travel-color, #ffffff);
+    opacity: 0.95;
+}
+
+.fast-travel-marker {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    background: var(--fast-travel-color, #ffffff);
+    border: 2px solid #111111;
+}
+
 .quadrant-influence-overlay {
     position: absolute;
     box-sizing: border-box;

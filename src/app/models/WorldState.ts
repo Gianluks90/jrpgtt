@@ -11,6 +11,14 @@ export interface PendingTeleportState {
     y: number;
 }
 
+export type PendingFastTravelStage = "booked" | "midpoint";
+
+export interface PendingFastTravelState {
+    origin: PendingTeleportState;
+    destination: PendingTeleportState;
+    stage: PendingFastTravelStage;
+}
+
 export interface WorldState {
     currentTurn: number;
     phase: 'lobby' | 'turn' | 'resolution';
@@ -22,6 +30,7 @@ export interface WorldState {
     activePlayerId?: string;
     movedThisTurnByPlayer?: Record<string, number>;
     pendingAutoMoveOnTurnStartByPlayer?: Record<string, boolean>;
+    pendingFastTravelByPlayer?: Record<string, PendingFastTravelState>;
     skippedTurnsByPlayer?: Record<string, number>;
     pendingTeleportsByPlayer?: Record<string, PendingTeleportState>;
     sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;

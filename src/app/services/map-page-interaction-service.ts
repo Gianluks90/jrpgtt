@@ -366,6 +366,7 @@ export class MapPageInteractionService {
           destinationY: dialogResult.destinationY,
         });
       }, errorMessage);
+
       return;
     }
 
@@ -490,13 +491,15 @@ export class MapPageInteractionService {
     }
   }
 
-  private async runNamedAction(actionId: string, task: () => Promise<void>, fallbackErrorMessage: string): Promise<void> {
+  private async runNamedAction(actionId: string, task: () => Promise<void>, fallbackErrorMessage: string): Promise<boolean> {
     this.pendingActionId.set(actionId);
     try {
       await task();
+      return true;
     } catch (error) {
       console.error(error);
       window.alert(error instanceof Error ? error.message : fallbackErrorMessage);
+      return false;
     } finally {
       this.pendingActionId.set(null);
     }

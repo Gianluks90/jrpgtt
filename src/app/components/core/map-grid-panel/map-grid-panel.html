@@ -29,6 +29,28 @@
         }
     </div>
 
+    <div class="fast-travel-layer" aria-hidden="true">
+        @if (fastTravelLineOverlay(); as line) {
+            <span
+                class="fast-travel-line"
+                [style.left.%]="line.left"
+                [style.top.%]="line.top"
+                [style.width.%]="line.width"
+                [style.--fast-travel-color]="line.color"
+                [style.transform]="'translateY(-50%) rotate(' + line.angleDeg + 'deg)'"
+            ></span>
+        }
+
+        @if (fastTravelMarkerOverlay(); as marker) {
+            <span
+                class="fast-travel-marker"
+                [style.left.%]="marker.left"
+                [style.top.%]="marker.top"
+                [style.--fast-travel-color]="marker.color"
+            ></span>
+        }
+    </div>
+
     @for (cell of cells(); track cell.id) {
         <map-cell
             [special]="cell.isSpecial"

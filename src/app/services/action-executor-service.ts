@@ -1239,11 +1239,18 @@ export class ActionExecutorService {
         ...worldState,
       };
 
-      this.playerTurnEffectsService.scheduleTeleport(nextWorldState, actor.id, {
-        x: destinationCell.x,
-        y: destinationCell.y,
-      });
-      this.playerTurnEffectsService.scheduleSkippedTurns(nextWorldState, actor.id, 1);
+      this.playerTurnEffectsService.scheduleStagedFastTravel(
+        nextWorldState,
+        actor.id,
+        {
+          x: originCell.x,
+          y: originCell.y,
+        },
+        {
+          x: destinationCell.x,
+          y: destinationCell.y,
+        },
+      );
       this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
@@ -1352,6 +1359,119 @@ export class ActionExecutorService {
       place: placeName,
       simulatedMove: true,
       turnEnded: true,
+    });
+  }
+
+  public async completeFastTravelMidpointTurn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      const pendingFastTravel = this.playerTurnEffectsService.getPendingFastTravel(worldState, actor.id);
+      if (!pendingFastTravel || pendingFastTravel.stage !== "booked") {
+        throw new Error("Fast travel midpoint stage is not available");
+      }
+
+      const player = playerSnap.data() as Player;
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+
+      const nextWorldState: WorldState = {
+        ...worldState,
+        movedThisTurnByPlayer: {
+          ...(worldState.movedThisTurnByPlayer ?? {}),
+          [actor.id]: worldState.currentTurn,
+        },
+      };
+
+      this.playerTurnEffectsService.moveFastTravelToMidpoint(nextWorldState, actor.id);
+      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+
+      transaction.set(playerRef, {
+        statuses: nextStatuses,
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+  }
+
+  public async completeFastTravelArrival(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      const pendingFastTravel = this.playerTurnEffectsService.consumeFastTravelArrival(worldState, actor.id);
+      if (!pendingFastTravel || pendingFastTravel.stage !== "midpoint") {
+        throw new Error("Fast travel arrival stage is not available");
+      }
+
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+
+      transaction.set(playerRef, {
+        location: {
+          x: pendingFastTravel.destination.x,
+          y: pendingFastTravel.destination.y,
+        },
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
     });
   }
 

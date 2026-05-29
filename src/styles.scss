@@ -16,6 +16,8 @@
 * {
     box-sizing: border-box;
     font-family: 'Press Start 2P', cursive;
+    scrollbar-width: none;
+    --webkit-scrollbar: none;
 }
 
 html,

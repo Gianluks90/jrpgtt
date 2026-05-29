@@ -23,6 +23,9 @@ import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/da
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
 import { PlayerComputedStats } from "../../models/PlayerComputedStats";
 import { PlayerStatsModifierService } from "../../services/player-stats-modifier-service";
+import { FastTravelVisualService } from "../../services/fast-travel-visual-service";
+import { FastTravelFlowService } from "../../services/fast-travel-flow-service";
+import { PendingFastTravelState } from "../../models/WorldState";
 
 @Component({
   selector: "app-map-page",
@@ -55,6 +58,8 @@ export class MapPage implements OnInit, OnDestroy {
   private mapPageActionsService = inject(MapPageActionsService);
   private mapPageInteractionService = inject(MapPageInteractionService);
   private playerStatsModifierService = inject(PlayerStatsModifierService);
+  private fastTravelVisualService = inject(FastTravelVisualService);
+  private fastTravelFlowService = inject(FastTravelFlowService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -67,6 +72,8 @@ export class MapPage implements OnInit, OnDestroy {
   public tilesConfig = this.mapPageState.tilesConfig;
   public biomeResourcesByBiome = this.mapPageState.biomeResourcesByBiome;
   public sanctuaryStylesByElement = this.mapPageState.sanctuaryStylesByElement;
+  public fastTravelAnimationState = this.fastTravelVisualService.state;
+  public isFastTravelTransitionRunning = this.fastTravelVisualService.isTransitionRunning;
   public mockPlayers = signal<Player[]>([]);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
   private lastPendingDialogKey = signal<string | null>(null);
@@ -104,9 +111,34 @@ export class MapPage implements OnInit, OnDestroy {
     return movedThisTurnByPlayer[uid] === worldState.currentTurn;
   });
 
+  public myPendingFastTravel = computed<PendingFastTravelState | null>(() => {
+    const worldState = this.worldState();
+    const playerId = this.myPlayer()?.id;
+    if (!worldState || !playerId) return null;
+
+    return worldState.pendingFastTravelByPlayer?.[playerId] ?? null;
+  });
+
+  public isMyTravelLockActive = computed<boolean>(() => {
+    const playerId = this.myPlayer()?.id;
+    if (!playerId) return false;
+
+    if (this.myPendingFastTravel()) {
+      return true;
+    }
+
+    const fastTravelState = this.fastTravelAnimationState();
+    if (!fastTravelState) {
+      return false;
+    }
+
+    return fastTravelState.playerId === playerId && this.isFastTravelTransitionRunning();
+  });
+
   public canEndTurn = computed<boolean>(() => {
     if (!this.isMyTurn()) return false;
     if (!this.hasMovedOnCurrentTurn()) return false;
+    if (this.isMyTravelLockActive()) return false;
     if (this.mapPageInteractionService.pendingActionId() !== null) return false;
     if (this.myPlayer()?.pendingResourcePickup) return false;
     return true;
@@ -153,7 +185,7 @@ export class MapPage implements OnInit, OnDestroy {
   });
 
   public commandActions = computed<CommandPanelAction[]>(() => {
-    return this.mapPageActionsService.buildCommandActions({
+    const actions = this.mapPageActionsService.buildCommandActions({
       player: this.myPlayer(),
       mapCellsById: this.mapCellsById(),
       tilesConfig: this.tilesConfig(),
@@ -164,6 +196,16 @@ export class MapPage implements OnInit, OnDestroy {
       canEndTurn: this.canEndTurn(),
       pendingActionId: this.mapPageInteractionService.pendingActionId(),
     });
+
+    if (!this.isMyTravelLockActive()) {
+      return actions;
+    }
+
+    return actions.map((action) => ({
+      ...action,
+      disabled: true,
+      pending: false,
+    }));
   });
 
   public activePlayer = computed<Player | null>(() => {
@@ -209,10 +251,21 @@ export class MapPage implements OnInit, OnDestroy {
         maxCapacity: this.resourceCapacity(),
       });
     }, { injector: this.injector });
+
+    effect(() => {
+      this.fastTravelFlowService.sync({
+        gameId: this.gameId,
+        worldState: this.worldState(),
+        players: this.players(),
+        currentUserId: this.currentUserId(),
+      });
+    }, { injector: this.injector });
+
     void this.syncMockPlayersForLayout();
   }
 
   public ngOnDestroy(): void {
+    this.fastTravelFlowService.reset();
     this.mapPageInteractionService.resetUiState();
     this.mapPageState.destroy();
   }
@@ -244,7 +297,7 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public async onCellClick(cell: MapGridPanelCell): Promise<void> {
-    if (this.isMoving()) return;
+    if (this.isMoving() || this.isMyTravelLockActive()) return;
 
     this.isMoving.set(true);
     try {
@@ -261,6 +314,8 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public async onCommandActionRequested(actionId: string): Promise<void> {
+    if (this.isMyTravelLockActive()) return;
+
     await this.mapPageInteractionService.handleCommandAction({
       actionId,
       gameId: this.gameId,

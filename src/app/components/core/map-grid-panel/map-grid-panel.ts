@@ -9,6 +9,10 @@ import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspecto
 import { LandmarksService } from "../../../services/landmarks-service";
 import { WorldZonesService } from "../../../services/world-zones-service";
 import { QuadrantId } from "../../../models/WorldZone";
+import {
+  FastTravelAnimationState,
+  FastTravelVisualService,
+} from "../../../services/fast-travel-visual-service";
 
 interface QuadrantInfluenceOverlay {
   id: QuadrantId;
@@ -17,6 +21,25 @@ interface QuadrantInfluenceOverlay {
   size: number;
   borderColor: string;
   glowColor: string;
+}
+
+interface FastTravelLineOverlay {
+  left: number;
+  top: number;
+  width: number;
+  angleDeg: number;
+  color: string;
+}
+
+interface FastTravelMarkerOverlay {
+  left: number;
+  top: number;
+  color: string;
+}
+
+interface PercentPoint {
+  x: number;
+  y: number;
 }
 
 export interface MapGridPanelCell {
@@ -38,6 +61,7 @@ export class MapGridPanel {
   private environmentService = inject(EnvironmentService);
   private landmarksService = inject(LandmarksService);
   private worldZonesService = inject(WorldZonesService);
+  private fastTravelVisualService = inject(FastTravelVisualService);
   private hoverActivationTimer: ReturnType<typeof setTimeout> | null = null;
   private hoverProgressTimer: ReturnType<typeof setInterval> | null = null;
   private pendingHoverActivationCellId: string | null = null;
@@ -57,10 +81,17 @@ export class MapGridPanel {
   public inspectedCellChanged = output<MapGridPanelCell | null>();
 
   private hoveredCellId = signal<string | null>(null);
+  public fastTravelAnimationState = this.fastTravelVisualService.state;
 
   public playersByCellId = computed<Record<string, Player[]>>(() => {
     const grouped: Record<string, Player[]> = {};
+    const hiddenPlayerId = this.fastTravelAnimationState()?.playerId ?? null;
+
     for (const player of this.players()) {
+      if (hiddenPlayerId && player.id === hiddenPlayerId) {
+        continue;
+      }
+
       const id = this.cellId(player.location.x, player.location.y);
       const bucket = grouped[id] ?? [];
       bucket.push(player);
@@ -126,6 +157,40 @@ export class MapGridPanel {
     }
 
     return Array.from(overlays.values());
+  });
+
+  public fastTravelLineOverlay = computed<FastTravelLineOverlay | null>(() => {
+    const state = this.fastTravelAnimationState();
+    if (!state) return null;
+
+    const start = this.cellCenterToPercentPoint(state.origin.x, state.origin.y);
+    const end = this.cellCenterToPercentPoint(state.destination.x, state.destination.y);
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const width = Math.hypot(dx, dy);
+    if (width <= 0) return null;
+
+    return {
+      left: start.x,
+      top: start.y,
+      width,
+      angleDeg: (Math.atan2(dy, dx) * 180) / Math.PI,
+      color: state.playerColor,
+    };
+  });
+
+  public fastTravelMarkerOverlay = computed<FastTravelMarkerOverlay | null>(() => {
+    const state = this.fastTravelAnimationState();
+    if (!state) return null;
+
+    const segment = this.segmentForPhase(state);
+    const point = this.interpolatePoint(segment.from, segment.to, state.progress);
+
+    return {
+      left: point.x,
+      top: point.y,
+      color: state.playerColor,
+    };
   });
 
   public isMovableCell(cell: MapGridPanelCell): boolean {
@@ -287,5 +352,53 @@ export class MapGridPanel {
     if (!this.hoverProgressTimer) return;
     clearInterval(this.hoverProgressTimer);
     this.hoverProgressTimer = null;
+  }
+
+  private segmentForPhase(state: FastTravelAnimationState): { from: PercentPoint; to: PercentPoint } {
+    const originCenter = this.cellCenterToPercentPoint(state.origin.x, state.origin.y);
+    const midpoint = this.cellCenterToPercentPoint(state.midpoint.x, state.midpoint.y);
+    const destinationCenter = this.cellCenterToPercentPoint(state.destination.x, state.destination.y);
+
+    if (state.phase === "booked") {
+      return {
+        from: originCenter,
+        to: originCenter,
+      };
+    }
+
+    if (state.phase === "to-midpoint") {
+      return {
+        from: originCenter,
+        to: midpoint,
+      };
+    }
+
+    if (state.phase === "midpoint") {
+      return {
+        from: midpoint,
+        to: midpoint,
+      };
+    }
+
+    return {
+      from: midpoint,
+      to: destinationCenter,
+    };
+  }
+
+  private cellCenterToPercentPoint(x: number, y: number): PercentPoint {
+    const size = Math.max(1, this.mapSize());
+    return {
+      x: ((x + 0.5) / size) * 100,
+      y: ((y + 0.5) / size) * 100,
+    };
+  }
+
+  private interpolatePoint(from: PercentPoint, to: PercentPoint, progress: number): PercentPoint {
+    const normalizedProgress = Math.max(0, Math.min(1, progress));
+    return {
+      x: from.x + (to.x - from.x) * normalizedProgress,
+      y: from.y + (to.y - from.y) * normalizedProgress,
+    };
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { PendingTeleportState, WorldState } from "../models/WorldState";
+import { PendingFastTravelState, PendingTeleportState, WorldState } from "../models/WorldState";
 
 export interface GridCoordinate {
   x: number;
@@ -34,6 +34,74 @@ export class PlayerTurnEffectsService {
     }
 
     return true;
+  }
+
+  public scheduleStagedFastTravel(
+    worldState: WorldState,
+    playerId: string,
+    origin: GridCoordinate,
+    destination: GridCoordinate,
+  ): void {
+    if (!playerId) return;
+
+    const pendingFastTravelByPlayer = { ...(worldState.pendingFastTravelByPlayer ?? {}) };
+    pendingFastTravelByPlayer[playerId] = {
+      origin: this.normalizeCoordinate(origin),
+      destination: this.normalizeCoordinate(destination),
+      stage: "booked",
+    };
+
+    worldState.pendingFastTravelByPlayer = pendingFastTravelByPlayer;
+  }
+
+  public getPendingFastTravel(worldState: WorldState, playerId: string): PendingFastTravelState | null {
+    if (!playerId) return null;
+
+    const pending = worldState.pendingFastTravelByPlayer?.[playerId];
+    if (!pending) {
+      return null;
+    }
+
+    return {
+      origin: this.normalizeCoordinate(pending.origin),
+      destination: this.normalizeCoordinate(pending.destination),
+      stage: pending.stage === "midpoint" ? "midpoint" : "booked",
+    };
+  }
+
+  public moveFastTravelToMidpoint(worldState: WorldState, playerId: string): PendingFastTravelState | null {
+    const pending = this.getPendingFastTravel(worldState, playerId);
+    if (!pending || pending.stage !== "booked") {
+      return null;
+    }
+
+    const pendingFastTravelByPlayer = { ...(worldState.pendingFastTravelByPlayer ?? {}) };
+    pendingFastTravelByPlayer[playerId] = {
+      ...pending,
+      stage: "midpoint",
+    };
+
+    worldState.pendingFastTravelByPlayer = pendingFastTravelByPlayer;
+
+    return pendingFastTravelByPlayer[playerId];
+  }
+
+  public consumeFastTravelArrival(worldState: WorldState, playerId: string): PendingFastTravelState | null {
+    const pending = this.getPendingFastTravel(worldState, playerId);
+    if (!pending || pending.stage !== "midpoint") {
+      return null;
+    }
+
+    const pendingFastTravelByPlayer = { ...(worldState.pendingFastTravelByPlayer ?? {}) };
+    delete pendingFastTravelByPlayer[playerId];
+
+    if (Object.keys(pendingFastTravelByPlayer).length === 0) {
+      delete worldState.pendingFastTravelByPlayer;
+    } else {
+      worldState.pendingFastTravelByPlayer = pendingFastTravelByPlayer;
+    }
+
+    return pending;
   }
 
   public scheduleSkippedTurns(worldState: WorldState, playerId: string, turns: number): void {
@@ -139,5 +207,12 @@ export class PlayerTurnEffectsService {
     }
 
     return Math.max(0, Math.floor(value));
+  }
+
+  private normalizeCoordinate(value: GridCoordinate): PendingTeleportState {
+    return {
+      x: Math.max(0, Math.floor(Number(value?.x ?? 0))),
+      y: Math.max(0, Math.floor(Number(value?.y ?? 0))),
+    };
   }
 }

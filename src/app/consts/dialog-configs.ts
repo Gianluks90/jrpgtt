@@ -20,3 +20,8 @@ export const FAST_TRAVEL_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     maxWidth: '680px',
 };
+
+export const ENCHANTRESS_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    maxWidth: '560px',
+};

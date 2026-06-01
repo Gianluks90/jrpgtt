@@ -67,6 +67,10 @@ export class EventLogService {
                 return `${playerName} prayed at ${sanctuary} and restored ${healedHp} HP with a lucky blessing.`;
             }
 
+            if (healedHp <= 0) {
+                return `${playerName} prayed at ${sanctuary}, but received no healing response.`;
+            }
+
             return `${playerName} prayed at ${sanctuary} and restored ${healedHp} HP.`;
         },
         "player.cellGather": ({ playerName, args }) => {
@@ -108,6 +112,17 @@ export class EventLogService {
             const source = this.getActionSourceLabel("safe-place-wait", "Safe Place Wait");
             const place = String(args["place"] ?? "safe place");
             return `${playerName} waited at ${place} using ${source}, simulated movement on the same cell and ended the turn.`;
+        },
+        "player.capitalEnchantress": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("capital-enchantress", "Capital Enchantress");
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            const rewardLabel = String(args["rewardLabel"] ?? "Arcane Fate");
+            const pendingMagicReward = Boolean(args["pendingMagicReward"]);
+            if (pendingMagicReward) {
+                return `${playerName} consulted ${source}, paid ${spentCoins} coins, drew ${rewardLabel}, and unlocked a future magic reward placeholder.`;
+            }
+
+            return `${playerName} consulted ${source}, paid ${spentCoins} coins and drew ${rewardLabel}.`;
         },
         "player.fastTravelBooked": ({ playerName, args }) => {
             const from = String(args["from"] ?? "a safe place");

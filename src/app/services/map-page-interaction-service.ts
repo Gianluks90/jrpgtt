@@ -4,6 +4,7 @@ import { firstValueFrom, take } from "rxjs";
 import {
   DIALOGS_CONFIG,
   DOCTOR_HEAL_DIALOG_CONFIG,
+  ENCHANTRESS_DIALOG_CONFIG,
   FAST_TRAVEL_DIALOG_CONFIG,
   RESOURCE_EXCHANGE_DIALOG_CONFIG,
 } from "../consts/dialog-configs";
@@ -35,6 +36,10 @@ import {
   ResourceExchangeDialogData,
   ResourceExchangeDialogResult,
 } from "../components/dialogs/action-dialogs/resource-exchange-dialog/resource-exchange-dialog";
+import {
+  EnchantressDialog,
+  EnchantressDialogData,
+} from "../components/dialogs/action-dialogs/enchantress-dialog/enchantress-dialog";
 import {
   FastTravelDialog,
   FastTravelDialogData,
@@ -304,6 +309,22 @@ export class MapPageInteractionService {
         isMyTurn: input.isMyTurn,
         actionId: input.actionId,
         errorMessage,
+      });
+      return;
+    }
+
+    if (handler === "safe-place-enchantress") {
+      if (!player) return;
+
+      await this.openEnchantressDialog({
+        playerMoney: player.inventory?.money ?? 0,
+        requiredCost: 5,
+        onPay: async () => {
+          return await this.actionExecutorService.capitalEnchantress(input.gameId, {
+            id: player.id,
+            name: player.name,
+          });
+        },
       });
       return;
     }
@@ -654,6 +675,15 @@ export class MapPageInteractionService {
 
     const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
     return this.asFastTravelDialogResult(response);
+  }
+
+  private async openEnchantressDialog(data: EnchantressDialogData): Promise<void> {
+    const dialogRef = this.dialog.open(EnchantressDialog, {
+      ...ENCHANTRESS_DIALOG_CONFIG,
+      data,
+    });
+
+    await firstValueFrom(dialogRef.closed.pipe(take(1)));
   }
 
   private async openGenericConfirmDialog(data: GenericConfirmDialogData): Promise<boolean> {

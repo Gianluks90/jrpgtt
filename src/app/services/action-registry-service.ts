@@ -164,6 +164,20 @@ export class ActionRegistryService {
       };
     }
 
+    if (actionId === "capital-enchantress") {
+      const enchantressCost = 5;
+      return {
+        id: "capital-enchantress",
+        label: this.actionCatalogService.getLabel(actionId, "Enchantress"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Consult the Capital Enchantress for 5 coins. Draw your fate from a luck check, then end your turn.",
+        ),
+        disabled: commonDisabled || currentMoney < enchantressCost,
+        pending: false,
+      };
+    }
+
     if (actionId === "capital-inn") {
       const isNight = timeOfDay === "night";
       return {

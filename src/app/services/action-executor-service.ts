@@ -20,11 +20,21 @@ import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-pl
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { StatusCatalogService } from "./status-catalog-service";
 
+export interface CapitalEnchantressOutcome {
+  rewardId: "minified" | "weakened" | "hexed" | "bravery" | "focus" | "jackpot";
+  rewardLabel: string;
+  clampedLuckTotal: number;
+  rolledTotal: number;
+  pendingMagicReward: boolean;
+  overflowLuckyStrikeCandidate: boolean;
+}
+
 @Injectable({
   providedIn: "root",
 })
 export class ActionExecutorService {
   private readonly sanctuaryDonationCost = 5;
+  private readonly capitalEnchantressCost = 5;
   private readonly poisonStatusKey = "poison";
   private readonly regenStatusKey = "regen";
   private readonly minifiedStatusKey = "minified";
@@ -513,8 +523,20 @@ export class ActionExecutorService {
       worldState: worldStateSnap.data() as WorldState,
       mapSize,
     });
-    const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
-    const healRatio = luckResult.success ? 0.15 : 0.05;
+    const luckyPrayerThreshold = 100;
+    const minimumPrayerThreshold = (
+      playerForLuck.attunedElement
+      && mapCellForLuck?.sanctuaryElement
+      && playerForLuck.attunedElement === mapCellForLuck.sanctuaryElement
+    )
+      ? 40
+      : 50;
+    const luckResult = this.luckService.checkLuck(
+      playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses),
+      { successThreshold: minimumPrayerThreshold },
+    );
+    const luckyPrayer = luckResult.total >= luckyPrayerThreshold;
+    const healRatio = luckyPrayer ? 0.10 : (luckResult.success ? 0.05 : 0);
 
     let sanctuaryElement: SanctuaryElement | null = null;
     let healedHp = 0;
@@ -572,9 +594,6 @@ export class ActionExecutorService {
       }
 
       sanctuaryElement = mapCell.sanctuaryElement;
-      if (!player.attunedElement || player.attunedElement !== mapCell.sanctuaryElement) {
-        throw new Error("Prayer requires matching sanctuary attunement");
-      }
 
       const hpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current)));
       const hpMax = Math.max(
@@ -588,9 +607,16 @@ export class ActionExecutorService {
         throw new Error("Your HP is already full");
       }
 
-      healedHp = Math.max(1, Math.floor(hpMax * healRatio));
-      const nextHpCurrent = Math.min(hpMax, hpCurrent + healedHp);
-      healedHp = Math.max(0, nextHpCurrent - hpCurrent);
+      let nextHpCurrent = hpCurrent;
+      if (healRatio > 0) {
+        healedHp = Math.max(1, Math.floor(hpMax * healRatio));
+        nextHpCurrent = Math.min(hpMax, hpCurrent + healedHp);
+        healedHp = Math.max(0, nextHpCurrent - hpCurrent);
+      }
+
+      const nextStatuses = this.decrementStatuses(currentStatuses);
+      const nextWorldState: WorldState = { ...worldState };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         parameters: {
@@ -600,9 +626,12 @@ export class ActionExecutorService {
             current: nextHpCurrent,
           },
         },
+        statuses: nextStatuses,
         lastLuckCheck: luckResult,
         actionsUsedThisTurn: this.markActionUsed(player, "pray-sanctuary", worldTurn),
       }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
 
       transaction.set(gameRef, {
         updatedAt: Timestamp.now(),
@@ -614,8 +643,10 @@ export class ActionExecutorService {
       sanctuary: sanctuaryElement,
       sanctuaryLabel: this.sanctuaryElementToLabel(sanctuaryElement ?? undefined),
       healedHp,
-      lucky: luckResult.success,
+      lucky: luckyPrayer,
+      minimumThreshold: minimumPrayerThreshold,
       healRatio,
+      turnEnded: true,
     });
   }
 
@@ -1241,6 +1272,169 @@ export class ActionExecutorService {
       healedHp,
       turnEnded: true,
     });
+  }
+
+  public async capitalEnchantress(gameId: string, actor: Pick<Player, "id" | "name">): Promise<CapitalEnchantressOutcome> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    await this.statusCatalogService.loadConfig();
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    const [playerSnap, worldStateSnap, gameMapSnap] = await Promise.all([
+      getDoc(playerRef),
+      getDoc(worldStateRef),
+      getDoc(gameMapRef),
+    ]);
+    if (!playerSnap.exists()) {
+      throw new Error("Player not found");
+    }
+    if (!worldStateSnap.exists()) {
+      throw new Error("World state not found");
+    }
+
+    const playerForLuck = playerSnap.data() as Player;
+    const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+    const mapCellRefForLuck = doc(
+      this.firebaseService.database,
+      "games",
+      gameId,
+      "mapCells",
+      this.cellId(playerForLuck.location.x, playerForLuck.location.y),
+    );
+    const mapCellSnapForLuck = await getDoc(mapCellRefForLuck);
+    const mapCellForLuck = mapCellSnapForLuck.exists() ? (mapCellSnapForLuck.data() as MapCell) : null;
+    const playerLuck = this.playerStatsModifierService.computeEffectiveLuck({
+      player: playerForLuck,
+      currentCell: mapCellForLuck,
+      worldState: worldStateSnap.data() as WorldState,
+      mapSize,
+    });
+    const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
+    const clampedLuckTotal = Math.max(1, Math.min(100, Math.floor(luckResult.total)));
+    const reward = this.resolveCapitalEnchantressReward(clampedLuckTotal);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateTxSnap, playerTxSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateTxSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerTxSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateTxSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerTxSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "capital-enchantress", worldTurn, "You can only consult the enchantress once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "capital", "You must be at Capital to consult the Enchantress");
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < this.capitalEnchantressCost) {
+        throw new Error("You need 5 coins to consult the Enchantress");
+      }
+
+      const decrementedStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      let nextStatuses = [...decrementedStatuses];
+      for (const applied of reward.appliedStatuses) {
+        const statusDefinition = this.statusCatalogService.getStatus(applied.key);
+        if (!statusDefinition) {
+          throw new Error(`Missing status definition for '${applied.key}'`);
+        }
+
+        nextStatuses = this.upsertStatus(nextStatuses, {
+          key: statusDefinition.key,
+          label: statusDefinition.label,
+          description: statusDefinition.description,
+          durationTurns: applied.durationTurns,
+          ...(statusDefinition.effectKey
+            ? { effectKey: statusDefinition.effectKey }
+            : {}),
+        });
+      }
+
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
+        },
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - this.capitalEnchantressCost,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        lastLuckCheck: luckResult,
+        actionsUsedThisTurn: this.markActionUsed(player, "capital-enchantress", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.capitalEnchantress", {
+      spentCoins: this.capitalEnchantressCost,
+      clampedLuckTotal,
+      rolledTotal: Math.floor(luckResult.total),
+      roll: luckResult.roll,
+      rewardId: reward.id,
+      rewardLabel: reward.label,
+      rewardStatuses: reward.appliedStatuses.map((status) => `${status.key}:${status.durationTurns}`).join(", "),
+      pendingMagicReward: reward.pendingMagicReward,
+      turnEnded: true,
+    });
+
+    return {
+      rewardId: reward.id,
+      rewardLabel: reward.label,
+      clampedLuckTotal,
+      rolledTotal: Math.floor(luckResult.total),
+      pendingMagicReward: reward.pendingMagicReward,
+      overflowLuckyStrikeCandidate: luckResult.total > 100,
+    };
   }
 
   public async fastTravelAtSafePlace(
@@ -2349,6 +2543,68 @@ export class ActionExecutorService {
 
     const index = Math.floor(Math.random() * values.length);
     return values[index];
+  }
+
+  private resolveCapitalEnchantressReward(total: number): {
+    id: "minified" | "weakened" | "hexed" | "bravery" | "focus" | "jackpot";
+    label: string;
+    appliedStatuses: Array<{ key: string; durationTurns: number }>;
+    pendingMagicReward: boolean;
+  } {
+    if (total <= 16) {
+      return {
+        id: "minified",
+        label: "Minified",
+        appliedStatuses: [{ key: "minified", durationTurns: 1 }],
+        pendingMagicReward: false,
+      };
+    }
+
+    if (total <= 32) {
+      return {
+        id: "weakened",
+        label: "Weakened",
+        appliedStatuses: [{ key: "weakened", durationTurns: 3 }],
+        pendingMagicReward: false,
+      };
+    }
+
+    if (total <= 48) {
+      return {
+        id: "hexed",
+        label: "Hexed",
+        appliedStatuses: [{ key: "hexed", durationTurns: 3 }],
+        pendingMagicReward: false,
+      };
+    }
+
+    if (total <= 64) {
+      return {
+        id: "bravery",
+        label: "Bravery",
+        appliedStatuses: [{ key: "bravery", durationTurns: 3 }],
+        pendingMagicReward: false,
+      };
+    }
+
+    if (total <= 80) {
+      return {
+        id: "focus",
+        label: "Focus",
+        appliedStatuses: [{ key: "focus", durationTurns: 3 }],
+        pendingMagicReward: false,
+      };
+    }
+
+    return {
+      id: "jackpot",
+      label: "Arcane Jackpot",
+      appliedStatuses: [
+        { key: "focus", durationTurns: 3 },
+        { key: "bravery", durationTurns: 3 },
+      ],
+      pendingMagicReward: true,
+    };
   }
 
   private async computeConnectedBiomeSize(

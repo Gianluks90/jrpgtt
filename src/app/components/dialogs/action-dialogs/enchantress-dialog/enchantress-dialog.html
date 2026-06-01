@@ -1,0 +1,61 @@
+<dialog-wrapper [title]="title">
+    <p class="info-text">Offer exactly <strong>{{ requiredCost }}</strong> coins to draw your fate.</p>
+    <p class="info-text">Your coins: <strong>{{ playerMoney }}</strong></p>
+
+    <div class="pay-row">
+        <div class="cost-chip">
+            Cost: <strong>{{ requiredCost }}</strong> coins
+        </div>
+        <text-button
+            text="Pay"
+            [disabled]="!canPay"
+            (clicked)="pay()"
+        ></text-button>
+    </div>
+
+    @if (playerMoney < requiredCost) {
+        <p class="error-text">You do not have enough coins to pay the Enchantress.</p>
+    }
+
+    @if (errorMessage) {
+        <p class="error-text">{{ errorMessage }}</p>
+    }
+
+    <div class="reward-table">
+        @for (row of rewardsTable; track row.id) {
+            <div
+                class="reward-row"
+                [class.reward-row--highlighted]="isHighlighted(row)"
+                [class.reward-row--pulse]="isPulsing(row)"
+            >
+                <span class="reward-range">{{ row.rangeLabel }}</span>
+                <span class="reward-effect">{{ row.effectLabel }}</span>
+            </div>
+        }
+    </div>
+
+    @if (isRolling || outcome) {
+        <p class="result-text">
+            Result:
+            <strong>{{ displayLuckTotal ?? 0 }}/100</strong>
+            @if (isRolling) {
+                <span class="rolling-label">- rolling...</span>
+            } @else if (outcome) {
+                <span> - <strong>{{ outcome.rewardLabel }}</strong></span>
+            }
+        </p>
+    }
+
+    <text-button
+        dialog-action
+        text="Continue"
+        [disabled]="!canContinue"
+        (clicked)="continue()"
+    ></text-button>
+    <text-button
+        dialog-action
+        text="Cancel"
+        [disabled]="!canCancel"
+        (clicked)="close()"
+    ></text-button>
+</dialog-wrapper>

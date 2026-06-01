@@ -6,7 +6,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "end-turn",
       ui: {
         label: "End turn",
-        descriptionTemplate: "{reason}",
+        descriptionTemplate: "Pass your turn. {reason}",
         i18n: {
           labelKey: "actions.endTurn.label",
           descriptionKey: "actions.endTurn.description",
@@ -28,7 +28,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "activate-sanctuary",
       ui: {
         label: "Activate",
-        descriptionTemplate: "Donate 5 coins to activate {sanctuaryLabel}, gain 2 XP and attune to its element.",
+        descriptionTemplate: "Offer 5 coins to awaken {sanctuaryLabel}. Gain 2 XP and attune to its element.",
         i18n: {
           labelKey: "actions.activateSanctuary.label",
           descriptionKey: "actions.activateSanctuary.description",
@@ -51,7 +51,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "donate-sanctuary",
       ui: {
         label: "Donate",
-        descriptionTemplate: "Donate 5 coins to shift your attunement to {sanctuaryLabel}.",
+        descriptionTemplate: "Offer 5 coins to {sanctuaryLabel} and shift your attunement.",
         i18n: {
           labelKey: "actions.donateSanctuary.label",
           descriptionKey: "actions.donateSanctuary.description",
@@ -74,7 +74,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "pray-sanctuary",
       ui: {
         label: "Pray",
-        descriptionTemplate: "Recover 5% HP, or 15% on lucky prayer.",
+        descriptionTemplate: "Pray. If you are heard, recover 5% HP, or 10% on a lucky omen, then end your turn.",
         i18n: {
           labelKey: "actions.praySanctuary.label",
           descriptionKey: "actions.praySanctuary.description",
@@ -95,7 +95,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "cell-gather",
       ui: {
         label: "Gather",
-        descriptionTemplate: "Spend 1 food to gather 1 biome resource and end your turn.",
+        descriptionTemplate: "Spend 1 food to forage this biome, gain 1 resource, then end your turn.",
         i18n: {
           labelKey: "actions.cellGather.label",
           descriptionKey: "actions.cellGather.description",
@@ -116,7 +116,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "consume-ration",
       ui: {
         label: "Consume ration",
-        descriptionTemplate: "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert damage.",
+        descriptionTemplate: "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert harm.",
         i18n: {
           labelKey: "actions.consumeRation.label",
           descriptionKey: "actions.consumeRation.description",
@@ -137,7 +137,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "safe-place-wait",
       ui: {
         label: "Wait",
-        descriptionTemplate: "Safe place: simulate movement on your current cell and end the turn without cost.",
+        descriptionTemplate: "Hold position at this safe place, then end your turn at no cost.",
         i18n: {
           labelKey: "actions.safePlaceWait.label",
           descriptionKey: "actions.safePlaceWait.description",
@@ -154,14 +154,14 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
         requiresMyTurn: true,
       },
       log: {
-        sourceLabel: "Safe Place Wait",
+        sourceLabel: "Safe place wait",
       },
     },
     {
       id: "fast-travel",
       ui: {
         label: "Fast travel",
-        descriptionTemplate: "Safe place: travel to a discovered safe place. Cost 1 coin per orthogonal cell (max 15), then end turn and skip your next turn.",
+        descriptionTemplate: "Travel to a discovered safe place. Pay 1 coin per orthogonal cell (max 15), then end your turn and skip your next one.",
         i18n: {
           labelKey: "actions.fastTravel.label",
           descriptionKey: "actions.fastTravel.description",
@@ -178,14 +178,14 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
         requiresMyTurn: true,
       },
       log: {
-        sourceLabel: "Fast Travel",
+        sourceLabel: "Fast travel",
       },
     },
     {
       id: "capital-doctor",
       ui: {
         label: "Doctor",
-        descriptionTemplate: "Capital: restore 5% HP per treatment. Cost {costPerUnit} coins each ({timeOfDay}), then end turn.",
+        descriptionTemplate: "Visit the Capital Doctor: each treatment restores 5% HP and costs {costPerUnit} coins ({timeOfDay}). Then end your turn.",
         i18n: {
           labelKey: "actions.capitalDoctor.label",
           descriptionKey: "actions.capitalDoctor.description",
@@ -206,10 +206,34 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       },
     },
     {
+      id: "capital-enchantress",
+      ui: {
+        label: "Enchantress",
+        descriptionTemplate: "Consult the Capital Enchantress for 5 coins. Draw your fate from a luck check, then end your turn.",
+        i18n: {
+          labelKey: "actions.capitalEnchantress.label",
+          descriptionKey: "actions.capitalEnchantress.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-enchantress",
+        errorMessage: "Error while consulting the enchantress",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Capital Enchantress",
+      },
+    },
+    {
       id: "city-healer",
       ui: {
         label: "Healer",
-        descriptionTemplate: "City: restore 5% HP per treatment. Cost {costPerUnit} coins each ({timeOfDay}), then end turn.",
+        descriptionTemplate: "Visit the City Healer: each treatment restores 5% HP and costs {costPerUnit} coins ({timeOfDay}). Then end your turn.",
         i18n: {
           labelKey: "actions.cityHealer.label",
           descriptionKey: "actions.cityHealer.description",
@@ -233,7 +257,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "capital-inn",
       ui: {
         label: "Inn",
-        descriptionTemplate: "Capital: restore 50% HP, spend 10 coins and end turn (day only).",
+        descriptionTemplate: "Rest at the Capital Inn: restore 50% HP, pay 10 coins, then end your turn (day only).",
         i18n: {
           labelKey: "actions.capitalInn.label",
           descriptionKey: "actions.capitalInn.description",
@@ -257,7 +281,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "village-craftsman",
       ui: {
         label: "Craftsman",
-        descriptionTemplate: "Village: exchange resources 1:1, then end turn.",
+        descriptionTemplate: "Trade resources 1:1 at the Village Craftsman, then end your turn.",
         i18n: {
           labelKey: "actions.villageCraftsman.label",
           descriptionKey: "actions.villageCraftsman.description",
@@ -281,7 +305,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "camp-gatherer",
       ui: {
         label: "Gatherer",
-        descriptionTemplate: "Camp: gain 1 timber and 1 minerals, then end turn.",
+        descriptionTemplate: "Call the Camp Gatherer: gain 1 timber and 1 minerals, then end your turn.",
         warningTemplate: "Warning: camp reward needs {requiredSlots} free slots, available {availableSlots}.",
         i18n: {
           labelKey: "actions.campGatherer.label",
@@ -307,7 +331,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "camp-hunter",
       ui: {
         label: "Hunter",
-        descriptionTemplate: "Camp: gain 1 food and 1 cloth, then end turn.",
+        descriptionTemplate: "Call the Camp Hunter: gain 1 food and 1 cloth, then end your turn.",
         warningTemplate: "Warning: camp reward needs {requiredSlots} free slots, available {availableSlots}.",
         i18n: {
           labelKey: "actions.campHunter.label",

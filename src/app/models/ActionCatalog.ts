@@ -6,6 +6,7 @@ export type ActionFlowHandler =
   | "biome-cell-gather"
   | "biome-consume-ration"
   | "safe-place-doctor"
+  | "safe-place-enchantress"
   | "safe-place-inn"
   | "safe-place-resource-exchange"
   | "safe-place-wait"

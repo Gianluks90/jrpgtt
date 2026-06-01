@@ -1,0 +1,107 @@
+.info-text {
+  margin: 4px 0;
+  font-size: 0.56rem;
+  line-height: 1.35;
+}
+
+.pay-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.cost-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: thick double var(--fg-color);
+  background: color-mix(in srgb, var(--bg-color) 92%, black 8%);
+  color: var(--fg-color);
+  font-size: 0.56rem;
+}
+
+.reward-table {
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.reward-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--fg-color) 35%, transparent);
+  background: color-mix(in srgb, var(--bg-color) 92%, black 8%);
+}
+
+.reward-row--highlighted {
+  border-color: #2fa35e;
+  background: color-mix(in srgb, #2fa35e 24%, var(--bg-color));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #2fa35e 65%, transparent) inset;
+}
+
+.reward-row--pulse {
+  animation: reward-flash 0.75s ease-out 1;
+}
+
+.reward-range {
+  font-weight: 700;
+  font-size: 0.54rem;
+}
+
+.reward-effect {
+  font-size: 0.54rem;
+}
+
+.result-text {
+  margin-top: 10px;
+  font-size: 0.56rem;
+}
+
+.rolling-label {
+  opacity: 0.9;
+  animation: rolling-blink 0.42s ease-in-out infinite;
+}
+
+.error-text {
+  margin: 6px 0;
+  font-size: 0.58rem;
+  color: #f08d8d;
+}
+
+@media screen and (max-width: 768px) {
+  .pay-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@keyframes reward-flash {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, #41d175 78%, transparent);
+  }
+  35% {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 4px color-mix(in srgb, #41d175 55%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, #41d175 0%, transparent);
+  }
+}
+
+@keyframes rolling-blink {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}

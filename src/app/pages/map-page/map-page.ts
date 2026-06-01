@@ -26,6 +26,7 @@ import { PlayerStatsModifierService } from "../../services/player-stats-modifier
 import { FastTravelVisualService } from "../../services/fast-travel-visual-service";
 import { FastTravelFlowService } from "../../services/fast-travel-flow-service";
 import { PendingFastTravelState } from "../../models/WorldState";
+import { WorldEventRegionTransitionService } from "../../services/world-event-region-transition-service";
 
 @Component({
   selector: "app-map-page",
@@ -60,6 +61,7 @@ export class MapPage implements OnInit, OnDestroy {
   private playerStatsModifierService = inject(PlayerStatsModifierService);
   private fastTravelVisualService = inject(FastTravelVisualService);
   private fastTravelFlowService = inject(FastTravelFlowService);
+  private worldEventRegionTransitionService = inject(WorldEventRegionTransitionService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -227,6 +229,14 @@ export class MapPage implements OnInit, OnDestroy {
     );
   });
 
+  public regionIToIIWarning = computed(() => {
+    return this.worldEventRegionTransitionService.shouldShowRegionIToIIBoundaryWarning({
+      player: this.myPlayer(),
+      worldState: this.worldState(),
+      mapSize: this.mapSize(),
+    });
+  });
+
   public ngOnInit(): void {
     if (!this.gameId) return;
     this.mapPageInteractionService.resetUiState();
@@ -308,6 +318,8 @@ export class MapPage implements OnInit, OnDestroy {
         myPlayer: this.myPlayer(),
         isMyTurn: this.isMyTurn(),
         movableCellIds: this.movableCellIds(),
+        worldState: this.worldState(),
+        mapSize: this.mapSize(),
       });
     } finally {
       this.isMoving.set(false);

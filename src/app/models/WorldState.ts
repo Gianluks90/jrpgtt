@@ -19,10 +19,16 @@ export interface PendingFastTravelState {
     stage: PendingFastTravelStage;
 }
 
+export interface WorldEventState {
+    title: string;
+    emitted: boolean;
+}
+
 export interface WorldState {
     currentTurn: number;
     phase: 'lobby' | 'turn' | 'resolution';
     timeOfDay?: TimeOfDay;
+    worldEvent?: WorldEventState;
     remainingDeck: BiomeType[];
     discardedDeck: BiomeType[];
     placedBiomeCount: BiomePlacementCount;

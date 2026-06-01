@@ -50,6 +50,11 @@ import { EventLog } from "../models/EventLog";
 import { isDoctorActionId, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { ActionCatalogService } from "./action-catalog-service";
 import { SafePlaceFastTravelService } from "./safe-place-fast-travel-service";
+import {
+  GenericConfirmDialog,
+  GenericConfirmDialogData,
+} from "../components/dialogs/generic-confirm-dialog/generic-confirm-dialog";
+import { WorldEventRegionTransitionService } from "./world-event-region-transition-service";
 
 interface HandleCommandActionInput {
   actionId: string;
@@ -76,6 +81,7 @@ export class MapPageInteractionService {
     private playerProgressionService: PlayerProgressionService,
     private actionCatalogService: ActionCatalogService,
     private safePlaceFastTravelService: SafePlaceFastTravelService,
+    private worldEventRegionTransitionService: WorldEventRegionTransitionService,
   ) {}
 
   public resetUiState(): void {
@@ -99,10 +105,29 @@ export class MapPageInteractionService {
     myPlayer: Player | null;
     isMyTurn: boolean;
     movableCellIds: Set<string>;
+    worldState: WorldState | null;
+    mapSize: number;
   }): Promise<void> {
     const { gameId, cell, myPlayer, isMyTurn, movableCellIds } = input;
     if (!myPlayer || !isMyTurn || this.pendingActionId() !== null) return;
     if (!movableCellIds.has(cell.id)) return;
+
+    const requiresCrossingConfirm = this.worldEventRegionTransitionService.shouldConfirmCrossingFromRegionIToII({
+      player: myPlayer,
+      targetX: cell.x,
+      mapSize: input.mapSize,
+      worldState: input.worldState,
+    });
+
+    if (requiresCrossingConfirm) {
+      const confirmed = await this.openGenericConfirmDialog({
+        title: "Entering Region II",
+        message: "Crossing this border may trigger a world event. Do you want to proceed?",
+        confirmText: "Proceed",
+        cancelText: "Stay",
+      });
+      if (!confirmed) return;
+    }
 
     try {
       await this.mapService.movePlayer(gameId, myPlayer.id, cell.x, cell.y);
@@ -629,6 +654,22 @@ export class MapPageInteractionService {
 
     const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
     return this.asFastTravelDialogResult(response);
+  }
+
+  private async openGenericConfirmDialog(data: GenericConfirmDialogData): Promise<boolean> {
+    const dialogRef = this.dialog.open(GenericConfirmDialog, {
+      ...DIALOGS_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    return this.isConfirmResult(response);
+  }
+
+  private isConfirmResult(response: unknown): response is DialogResponse {
+    if (typeof response !== "object" || response === null) return false;
+    if (!("result" in response)) return false;
+    return response.result === "confirm";
   }
 
   private isConfirmSanctuaryActionResponse(response: unknown): response is DialogResponse<SanctuaryActionDialogResult> {

@@ -530,6 +530,10 @@ export class GameService {
         currentTurn: 1,
         phase: "turn",
         timeOfDay: "day",
+        worldEvent: {
+          title: "Region I -> II",
+          emitted: false,
+        },
         remainingDeck: [],
         discardedDeck: [],
         placedBiomeCount: this.emptyBiomePlacementCount(),

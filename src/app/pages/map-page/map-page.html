@@ -43,6 +43,7 @@
                         [players]="players()"
                         [activePlayerId]="worldState()?.activePlayerId ?? null"
                         [movableCellIds]="movableCellIds()"
+                        [regionIToIIWarning]="regionIToIIWarning()"
                         [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
                         [environmentByCellId]="environmentByCellId()"
                         (cellClicked)="onCellClick($event)"

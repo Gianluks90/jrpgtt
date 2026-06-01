@@ -19,6 +19,7 @@ import { EventLogService } from "./event-log-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { LandmarksService } from "./landmarks-service";
 import { PlayerStatsModifierService } from "./player-stats-modifier-service";
+import { WorldEventRegionTransitionService } from "./world-event-region-transition-service";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -35,6 +36,7 @@ export class MapService {
     private eventLogService: EventLogService,
     private landmarksService: LandmarksService,
     private playerStatsModifierService: PlayerStatsModifierService,
+    private worldEventRegionTransitionService: WorldEventRegionTransitionService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
@@ -104,6 +106,7 @@ export class MapService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
+      this.worldEventRegionTransitionService.ensureRegionIToIIEventState(nextWorldState);
 
       if (!targetCellSnap.exists()) {
         movedToNewCell = true;
@@ -220,6 +223,18 @@ export class MapService {
         ...movedThisTurnByPlayer,
         [playerId]: worldState.currentTurn,
       };
+
+      if (this.worldEventRegionTransitionService.shouldEmitRegionIToIIEventOnMove({
+        worldState: nextWorldState,
+        sourceX: player.location.x,
+        targetX,
+        mapSize,
+      })) {
+        nextWorldState.worldEvent = {
+          ...(nextWorldState.worldEvent ?? { title: "Region I -> II", emitted: false }),
+          emitted: true,
+        };
+      }
 
       transaction.set(worldStateRef, nextWorldState);
 

@@ -13,6 +13,15 @@
         <span class="sector-label sector-label-first">I</span>
         <span class="sector-label sector-label-second">II</span>
         <span class="sector-label sector-label-third">III</span>
+
+        @if (regionBoundaryWarningOverlay(); as warning) {
+            <span
+                class="region-transition-warning-line"
+                [style.left.%]="warning.leftPercent"
+                [style.top.%]="warning.topPercent"
+                [style.--warning-cell-height]="warning.cellHeightPercent + '%'"
+            ></span>
+        }
     </div>
 
     <div class="quadrant-influence-layer" aria-hidden="true">

@@ -59,6 +59,10 @@ export class WorldStatePanel {
     const round = this.currentRound();
     const discovered = this.discoveredTilesLabel();
     const activeShrines = this.activeSpecialCellsLabel();
+    const worldEvent = this.worldState()?.worldEvent;
+    const worldEventLabel = worldEvent?.emitted === true
+      ? (worldEvent.title?.trim() || "-")
+      : "-";
     const activePlayer = this.activePlayerLabel();
 
     return [
@@ -66,6 +70,7 @@ export class WorldStatePanel {
       { label: "Round", value: String(round), isActivePlayer: false },
       { label: "Discovered", value: discovered, isActivePlayer: false },
       { label: "Active shrines", value: activeShrines, isActivePlayer: false },
+      { label: "World event", value: worldEventLabel, isActivePlayer: false },
       { label: "Active player", value: activePlayer, isActivePlayer: true },
     ];
   });

@@ -1,7 +1,7 @@
-<dialog-wrapper title="Confirm?">
+<dialog-wrapper [title]="title">
     <p class="info-text">
-        Are you sure you want to proceed? This action cannot be undone.
+        {{ message }}
     </p>
-    <text-button dialog-action text="Confirm" (clicked)="confirm()"></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="confirmText" (clicked)="confirm()"></text-button>
+    <text-button dialog-action [text]="cancelText" (clicked)="close()"></text-button>
 </dialog-wrapper>

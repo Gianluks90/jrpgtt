@@ -13,6 +13,7 @@ import {
   FastTravelAnimationState,
   FastTravelVisualService,
 } from "../../../services/fast-travel-visual-service";
+import { RegionBoundaryWarningState } from "../../../services/world-event-region-transition-service";
 
 interface QuadrantInfluenceOverlay {
   id: QuadrantId;
@@ -40,6 +41,12 @@ interface FastTravelMarkerOverlay {
 interface PercentPoint {
   x: number;
   y: number;
+}
+
+interface RegionBoundaryWarningOverlay {
+  leftPercent: number;
+  topPercent: number;
+  cellHeightPercent: number;
 }
 
 export interface MapGridPanelCell {
@@ -74,6 +81,7 @@ export class MapGridPanel {
   public players = input.required<Player[]>();
   public activePlayerId = input<string | null>(null);
   public movableCellIds = input.required<Set<string>>();
+  public regionIToIIWarning = input<RegionBoundaryWarningState | null>(null);
   public environmentByCellId = input.required<Record<string, string[]>>();
   public sanctuaryStylesByElement = input.required<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>();
 
@@ -190,6 +198,22 @@ export class MapGridPanel {
       left: point.x,
       top: point.y,
       color: state.playerColor,
+    };
+  });
+
+  public regionBoundaryWarningOverlay = computed<RegionBoundaryWarningOverlay | null>(() => {
+    const warning = this.regionIToIIWarning();
+    if (!warning) return null;
+
+    const size = Math.max(1, Math.floor(this.mapSize()));
+    const clampedRow = Math.min(Math.max(0, warning.playerRow), size - 1);
+    const boundaryColumn = Math.min(Math.max(0, warning.boundaryColumn), size);
+    const cellPercent = 100 / size;
+
+    return {
+      leftPercent: boundaryColumn * cellPercent,
+      topPercent: clampedRow * cellPercent,
+      cellHeightPercent: cellPercent,
     };
   });
 

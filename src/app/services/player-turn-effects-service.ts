@@ -129,6 +129,16 @@ export class PlayerTurnEffectsService {
     this.setSkippedTurns(worldState, playerId, current + normalizedTurns);
   }
 
+  public scheduleSkippedTurnsMax(worldState: WorldState, playerId: string, turns: number): void {
+    if (!playerId) return;
+
+    const normalizedTurns = this.normalizeTurns(turns);
+    if (normalizedTurns <= 0) return;
+
+    const current = this.getSkippedTurns(worldState, playerId);
+    this.setSkippedTurns(worldState, playerId, Math.max(current, normalizedTurns));
+  }
+
   public getSkippedTurns(worldState: WorldState, playerId: string): number {
     if (!playerId) return 0;
 

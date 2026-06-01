@@ -17,12 +17,17 @@ import { TurnService } from "./turn-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { WorldZonesService } from "./world-zones-service";
 import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
+import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
+import { StatusCatalogService } from "./status-catalog-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class ActionExecutorService {
   private readonly sanctuaryDonationCost = 5;
+  private readonly poisonStatusKey = "poison";
+  private readonly regenStatusKey = "regen";
+  private readonly minifiedStatusKey = "minified";
 
   constructor(
     private firebaseService: FirebaseService,
@@ -34,6 +39,8 @@ export class ActionExecutorService {
     private playerTurnEffectsService: PlayerTurnEffectsService,
     private safePlaceFastTravelService: SafePlaceFastTravelService,
     private tilesConfigService: TilesConfigService,
+    private biomeConditionCatalogService: BiomeConditionCatalogService,
+    private statusCatalogService: StatusCatalogService,
     private worldZonesService: WorldZonesService,
   ) { }
 
@@ -42,23 +49,20 @@ export class ActionExecutorService {
       throw new Error("Invalid action payload");
     }
 
-    const tilesConfig = await this.tilesConfigService.loadConfig();
+    const [tilesConfig] = await Promise.all([
+      this.tilesConfigService.loadConfig(),
+      this.biomeConditionCatalogService.loadConfig(),
+      this.statusCatalogService.loadConfig(),
+    ]);
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
 
-    let hostileDamage: {
-      biome: string;
-      damageHp: number;
-      environmentSize: number;
-    } | null = null;
-
-    let regeneratingWaters: {
-      biome: string;
-      healingHp: number;
-      environmentSize: number;
-    } | null = null;
+    let biomeConditionLogs: Array<{
+      code: string;
+      args: Record<string, unknown>;
+    }> = [];
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateSnap, playerSnap, gameMapSnap] = await Promise.all([
@@ -104,61 +108,111 @@ export class ActionExecutorService {
       const currentCell = mapCellSnap.exists() ? (mapCellSnap.data() as MapCell) : null;
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
-      const hasNutrition = this.hasStatus(currentStatuses, "nutrition");
-      const nextStatuses = this.decrementStatuses(currentStatuses);
+      const statusSnapshot = this.buildStatusEffectsSnapshot(currentStatuses);
+      const nextStatuses = this.decrementNormalizedStatuses(statusSnapshot.activeStatuses);
 
-      let nextHpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current)));
+      const hpMax = Math.max(
+        1,
+        Math.floor(Number(
+          typeof player.parameters.hp.max === "number" ? player.parameters.hp.max : player.parameters.hp.base,
+        )),
+      );
+      let nextHpCurrent = this.applyTurnEndHpPercentDelta(
+        Math.max(0, Math.floor(Number(player.parameters.hp.current))),
+        hpMax,
+        statusSnapshot.turnEndHpPercentDelta,
+        !statusSnapshot.disableHpRecovery,
+      );
       if (currentCell && currentCell.isSpecial !== true) {
         const biomeConfig = tilesConfig.biomes[currentCell.biome];
-        const isHostileEnvironment = (biomeConfig?.conditions ?? []).includes("hostile-environment");
-        const isRegeneratingWaters = (biomeConfig?.conditions ?? []).includes("regenerating-waters");
-        const environmentSize = await this.computeConnectedBiomeSize(transaction, gameId, currentCell, mapSize);
+        const biomeConditionIds = biomeConfig?.conditions ?? [];
 
-        if (isHostileEnvironment && !hasNutrition) {
-          const hpMax = Math.max(
-            1,
-            Math.floor(Number(
-              typeof player.parameters.hp.max === "number" ? player.parameters.hp.max : player.parameters.hp.base,
-            )),
-          );
-          const damageRatio = 0.03 * Math.max(1, environmentSize);
-          const damageHp = Math.max(1, Math.floor(hpMax * damageRatio));
-          nextHpCurrent = Math.max(0, nextHpCurrent - damageHp);
-          hostileDamage = {
-            biome: currentCell.biome,
-            damageHp,
-            environmentSize: Math.max(1, environmentSize),
-          };
-        }
+        if (biomeConditionIds.length > 0) {
+          const environmentSize = await this.computeConnectedBiomeSize(transaction, gameId, currentCell, mapSize);
+          const connectedEnvironmentSize = Math.max(1, environmentSize);
+          for (const conditionId of biomeConditionIds) {
+            const condition = this.biomeConditionCatalogService.getCondition(conditionId);
+            const effect = condition?.effect;
+            if (!effect) {
+              continue;
+            }
 
-        if (isRegeneratingWaters) {
-          const hpMax = Math.max(
-            1,
-            Math.floor(Number(
-              typeof player.parameters.hp.max === "number" ? player.parameters.hp.max : player.parameters.hp.base,
-            )),
-          );
-          const healingRatio = Math.min(0.15, 0.03 * Math.max(1, environmentSize));
-          const healingHp = Math.max(1, Math.floor(hpMax * healingRatio));
-          nextHpCurrent = Math.min(hpMax, nextHpCurrent + healingHp);
-          regeneratingWaters = {
-            biome: currentCell.biome,
-            healingHp,
-            environmentSize: Math.max(1, environmentSize),
-          };
+            if (effect.blockedByStatusKey && this.hasStatus(statusSnapshot.activeStatuses, effect.blockedByStatusKey)) {
+              continue;
+            }
+
+            const rawRatio = effect.basePercentPerConnectedCell * connectedEnvironmentSize;
+            const appliedRatio = typeof effect.maxPercent === "number"
+              ? Math.min(effect.maxPercent, rawRatio)
+              : rawRatio;
+            const minDeltaHp = Math.max(1, Math.floor(Number(effect.minDeltaHp ?? 1)));
+            const deltaHp = Math.max(minDeltaHp, Math.floor(hpMax * appliedRatio));
+
+            if (effect.type === "hp-heal-percent-per-connected-cell" && statusSnapshot.disableHpRecovery) {
+              continue;
+            }
+
+            if (effect.type === "hp-damage-percent-per-connected-cell") {
+              const previousHpCurrent = nextHpCurrent;
+              nextHpCurrent = Math.max(0, nextHpCurrent - deltaHp);
+              const damageHp = Math.max(0, previousHpCurrent - nextHpCurrent);
+              if (damageHp <= 0) {
+                continue;
+              }
+
+              biomeConditionLogs.push({
+                code: condition.logCode ?? "player.biomeConditionDamage",
+                args: {
+                  biome: currentCell.biome,
+                  conditionId,
+                  damageHp,
+                  environmentSize: connectedEnvironmentSize,
+                },
+              });
+              continue;
+            }
+
+            const previousHpCurrent = nextHpCurrent;
+            nextHpCurrent = Math.min(hpMax, nextHpCurrent + deltaHp);
+            const healingHp = Math.max(0, nextHpCurrent - previousHpCurrent);
+            if (healingHp <= 0) {
+              continue;
+            }
+
+            biomeConditionLogs.push({
+              code: condition.logCode ?? "player.biomeConditionHealing",
+              args: {
+                biome: currentCell.biome,
+                conditionId,
+                healingHp,
+                environmentSize: connectedEnvironmentSize,
+              },
+            });
+          }
         }
       }
 
       const nextWorldState: WorldState = {
         ...worldState,
       };
+      if (statusSnapshot.maxSkipTurns > 0) {
+        this.playerTurnEffectsService.scheduleSkippedTurnsMax(nextWorldState, actor.id, statusSnapshot.maxSkipTurns);
+      }
 
-      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState, {
+        [actor.id]: player,
+      });
       const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
 
-      transaction.set(playerRef, {
-        statuses: nextStatuses,
-        parameters: {
+      const nextPlayerPatch: Partial<Player> = {};
+      if (!this.areStatusesEquivalent(player.statuses, nextStatuses)) {
+        nextPlayerPatch.statuses = nextStatuses;
+      }
+
+      const currentMp = Math.max(0, Math.floor(Number(player.parameters.mp.current ?? 0)));
+      const currentHp = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
+      if (currentMp !== nextMpCurrent || currentHp !== nextHpCurrent) {
+        nextPlayerPatch.parameters = {
           ...player.parameters,
           mp: {
             ...player.parameters.mp,
@@ -168,8 +222,12 @@ export class ActionExecutorService {
             ...player.parameters.hp,
             current: nextHpCurrent,
           },
-        },
-      }, { merge: true });
+        };
+      }
+
+      if (Object.keys(nextPlayerPatch).length > 0) {
+        transaction.set(playerRef, nextPlayerPatch, { merge: true });
+      }
 
       transaction.set(worldStateRef, nextWorldState);
       transaction.set(gameRef, {
@@ -178,31 +236,8 @@ export class ActionExecutorService {
       }, { merge: true });
     });
 
-    const hostileDamageLog = hostileDamage as {
-      biome: string;
-      damageHp: number;
-      environmentSize: number;
-    } | null;
-
-    if (hostileDamageLog) {
-      await this.tryCreateLog(gameId, actor, "player.hostileEnvironmentDamage", {
-        biome: hostileDamageLog.biome,
-        damageHp: hostileDamageLog.damageHp,
-        environmentSize: hostileDamageLog.environmentSize,
-      });
-    }
-
-    const regeneratingWatersLog = regeneratingWaters as {
-      biome: string;
-      healingHp: number;
-      environmentSize: number;
-    } | null;
-    if (regeneratingWatersLog) {
-      await this.tryCreateLog(gameId, actor, "player.regeneratingWatersHealing", {
-        biome: regeneratingWatersLog.biome,
-        healingHp: regeneratingWatersLog.healingHp,
-        environmentSize: regeneratingWatersLog.environmentSize,
-      });
+    for (const conditionLog of biomeConditionLogs) {
+      await this.tryCreateLog(gameId, actor, conditionLog.code, conditionLog.args);
     }
 
     await this.tryCreateLog(gameId, actor, "player.endTurn", {
@@ -448,7 +483,7 @@ export class ActionExecutorService {
       worldState: worldStateSnap.data() as WorldState,
       mapSize,
     });
-    const luckResult = this.luckService.checkLuck(playerLuck);
+    const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
     const healRatio = luckResult.success ? 0.15 : 0.05;
 
     let sanctuaryElement: SanctuaryElement | null = null;
@@ -474,6 +509,11 @@ export class ActionExecutorService {
       this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using cell actions");
 
       const player = playerTxSnap.data() as Player;
+      const currentStatuses = this.normalizeStatuses(player.statuses);
+      const statusSnapshot = this.buildStatusEffectsSnapshot(currentStatuses);
+      if (statusSnapshot.disableHpRecovery) {
+        throw new Error("Recovery is disabled by your current status");
+      }
       const worldTurn = worldState.currentTurn ?? 0;
       this.ensureActionAvailable(player, "pray-sanctuary", worldTurn, "You can only pray once per turn.");
       const mapCellRef = doc(
@@ -554,7 +594,14 @@ export class ActionExecutorService {
       throw new Error("Invalid action payload");
     }
 
-    const tilesConfig = await this.tilesConfigService.loadConfig();
+    const [tilesConfig] = await Promise.all([
+      this.tilesConfigService.loadConfig(),
+      this.statusCatalogService.loadConfig(),
+    ]);
+    const nutritionStatus = this.statusCatalogService.getStatus("nutrition");
+    if (!nutritionStatus) {
+      throw new Error("Missing status definition for 'nutrition'");
+    }
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
@@ -797,7 +844,14 @@ export class ActionExecutorService {
       throw new Error("Invalid action payload");
     }
 
-    const tilesConfig = await this.tilesConfigService.loadConfig();
+    const [tilesConfig] = await Promise.all([
+      this.tilesConfigService.loadConfig(),
+      this.statusCatalogService.loadConfig(),
+    ]);
+    const nutritionStatus = this.statusCatalogService.getStatus("nutrition");
+    if (!nutritionStatus) {
+      throw new Error("Missing status definition for 'nutrition'");
+    }
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
@@ -856,10 +910,13 @@ export class ActionExecutorService {
 
       const nextResources = this.addResource(currentResources, "food", -1);
       const nextStatuses = this.upsertStatus(this.normalizeStatuses(player.statuses), {
-        key: "nutrition",
-        label: "Nutrition",
-        description: "Prevents hostile desert damage for this turn.",
-        durationTurns: 1,
+        key: nutritionStatus.key,
+        label: nutritionStatus.label,
+        description: nutritionStatus.description,
+        durationTurns: nutritionStatus.defaultDurationTurns,
+        ...(typeof nutritionStatus.effectKey === "string" && nutritionStatus.effectKey.trim().length > 0
+          ? { effectKey: nutritionStatus.effectKey }
+          : {}),
       });
 
       transaction.set(playerRef, {
@@ -880,8 +937,8 @@ export class ActionExecutorService {
     await this.tryCreateLog(gameId, actor, "player.consumeRation", {
       resource: "food",
       amount: 1,
-      status: "nutrition",
-      durationTurns: 1,
+      status: nutritionStatus.key,
+      durationTurns: nutritionStatus.defaultDurationTurns,
     });
   }
 
@@ -933,6 +990,10 @@ export class ActionExecutorService {
       this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
 
       const player = playerSnap.data() as Player;
+      const statusSnapshot = this.buildStatusEffectsSnapshot(this.normalizeStatuses(player.statuses));
+      if (statusSnapshot.disableHpRecovery) {
+        throw new Error("Recovery is disabled by your current status");
+      }
       const worldTurn = worldState.currentTurn ?? 0;
       this.ensureActionAvailable(player, payload.actionId, worldTurn, "You can only use this action once per turn.");
 
@@ -1065,6 +1126,10 @@ export class ActionExecutorService {
       this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
 
       const player = playerSnap.data() as Player;
+      const statusSnapshot = this.buildStatusEffectsSnapshot(this.normalizeStatuses(player.statuses));
+      if (statusSnapshot.disableHpRecovery) {
+        throw new Error("Recovery is disabled by your current status");
+      }
       const worldTurn = worldState.currentTurn ?? 0;
       this.ensureActionAvailable(player, "capital-inn", worldTurn, "You can only rest at inn once per turn.");
 
@@ -1726,31 +1791,147 @@ export class ActionExecutorService {
     transaction: Transaction,
     gameId: string,
     nextWorldState: WorldState,
+    preloadedPlayers: Record<string, Player> = {},
   ): Promise<void> {
     const turnAdvance = this.turnService.advanceTurn(nextWorldState);
 
-    const activePlayerId = nextWorldState.activePlayerId;
-    if (activePlayerId) {
-      const activePlayerRef = doc(
-        this.firebaseService.database,
-        "games",
-        gameId,
-        "players",
-        activePlayerId,
-      );
-      const activePlayerSnap = await transaction.get(activePlayerRef);
-      if (activePlayerSnap.exists()) {
-        const activePlayer = activePlayerSnap.data() as Player;
-        const recoveredMpCurrent = this.playerTurnEffectsService.calculateRecoveredMpCurrentOnTurnStart(
-          activePlayer.parameters.mp,
-        );
+    const playerIdsToLoad = new Set<string>(turnAdvance.skippedPlayerIds);
+    if (nextWorldState.activePlayerId) {
+      playerIdsToLoad.add(nextWorldState.activePlayerId);
+    }
 
-        if (recoveredMpCurrent !== activePlayer.parameters.mp.current) {
+    for (const preloadedPlayerId of Object.keys(preloadedPlayers)) {
+      playerIdsToLoad.delete(preloadedPlayerId);
+    }
+
+    const playerDocs = await Promise.all(
+      Array.from(playerIdsToLoad).map(async (playerId) => {
+        const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
+        const playerSnap = await transaction.get(playerRef);
+        return {
+          playerId,
+          playerRef,
+          playerSnap,
+        };
+      }),
+    );
+
+    const playerDocById = new Map(playerDocs.map((entry) => [entry.playerId, entry]));
+    const skippedPlayers = turnAdvance.skippedPlayerIds
+      .map((playerId) => {
+        const preloadedPlayer = preloadedPlayers[playerId];
+        if (preloadedPlayer) {
+          return {
+            playerId,
+            player: preloadedPlayer,
+            playerRef: doc(this.firebaseService.database, "games", gameId, "players", playerId),
+          };
+        }
+
+        const loaded = playerDocById.get(playerId);
+        if (!loaded || !loaded.playerSnap.exists()) {
+          return null;
+        }
+
+        return {
+          playerId,
+          player: loaded.playerSnap.data() as Player,
+          playerRef: loaded.playerRef,
+        };
+      })
+      .filter((entry): entry is { playerId: string; player: Player; playerRef: ReturnType<typeof doc> } => !!entry);
+
+    const activePlayerId = nextWorldState.activePlayerId;
+    const activePlayer = activePlayerId ? (preloadedPlayers[activePlayerId] ?? null) : null;
+    const loadedActivePlayerDoc = activePlayerId ? playerDocById.get(activePlayerId) : null;
+
+    const shouldLoadStatusCatalog = skippedPlayers.some((entry) => this.hasStatuses(entry.player.statuses))
+      || this.hasStatuses(activePlayer?.statuses)
+      || (loadedActivePlayerDoc?.playerSnap.exists() && this.hasStatuses((loadedActivePlayerDoc.playerSnap.data() as Player).statuses));
+
+    if (shouldLoadStatusCatalog) {
+      await this.statusCatalogService.loadConfig();
+    }
+
+    for (const skippedPlayerId of turnAdvance.skippedPlayerIds) {
+      const preloadedPlayer = preloadedPlayers[skippedPlayerId];
+      const skippedPlayerDoc = preloadedPlayer
+        ? {
+          playerRef: doc(this.firebaseService.database, "games", gameId, "players", skippedPlayerId),
+          player: preloadedPlayer,
+        }
+        : null;
+      const loadedSkippedPlayerDoc = playerDocById.get(skippedPlayerId);
+
+      const skippedPlayer = skippedPlayerDoc
+        ? skippedPlayerDoc.player
+        : (loadedSkippedPlayerDoc?.playerSnap.exists() ? (loadedSkippedPlayerDoc.playerSnap.data() as Player) : null);
+      const skippedPlayerRef = skippedPlayerDoc
+        ? skippedPlayerDoc.playerRef
+        : loadedSkippedPlayerDoc?.playerRef;
+
+      if (!skippedPlayer || !skippedPlayerRef) {
+        continue;
+      }
+
+      const statusSnapshot = this.buildStatusEffectsSnapshot(this.normalizeStatuses(skippedPlayer.statuses));
+      const nextStatuses = this.decrementNormalizedStatuses(statusSnapshot.activeStatuses);
+
+      const hpCurrent = Math.max(0, Math.floor(Number(skippedPlayer.parameters.hp.current)));
+      const hpMax = Math.max(
+        1,
+        Math.floor(Number(
+          typeof skippedPlayer.parameters.hp.max === "number"
+            ? skippedPlayer.parameters.hp.max
+            : skippedPlayer.parameters.hp.base,
+        )),
+      );
+      const nextHpCurrent = this.applyTurnEndHpPercentDelta(
+        hpCurrent,
+        hpMax,
+        statusSnapshot.turnEndHpPercentDelta,
+        !statusSnapshot.disableHpRecovery,
+      );
+
+      const currentHp = Math.max(0, Math.floor(Number(skippedPlayer.parameters.hp.current ?? 0)));
+      const skippedPlayerPatch: Partial<Player> = {};
+      if (!this.areStatusesEquivalent(skippedPlayer.statuses, nextStatuses)) {
+        skippedPlayerPatch.statuses = nextStatuses;
+      }
+
+      if (currentHp !== nextHpCurrent) {
+        skippedPlayerPatch.parameters = {
+          ...skippedPlayer.parameters,
+          hp: {
+            ...skippedPlayer.parameters.hp,
+            current: nextHpCurrent,
+          },
+        };
+      }
+
+      if (Object.keys(skippedPlayerPatch).length > 0) {
+        transaction.set(skippedPlayerRef, skippedPlayerPatch, { merge: true });
+      }
+    }
+
+    if (activePlayerId) {
+      const activePlayerDoc = playerDocById.get(activePlayerId);
+      const resolvedActivePlayer = activePlayer
+        ?? (activePlayerDoc?.playerSnap.exists() ? (activePlayerDoc.playerSnap.data() as Player) : null);
+      const activePlayerRef = activePlayer
+        ? doc(this.firebaseService.database, "games", gameId, "players", activePlayerId)
+        : activePlayerDoc?.playerRef;
+
+      if (resolvedActivePlayer && activePlayerRef) {
+        const recoveredMpCurrent = this.resolveMpRecoveredOnTurnStart(resolvedActivePlayer);
+        const currentMp = Math.max(0, Math.floor(Number(resolvedActivePlayer.parameters.mp.current ?? 0)));
+
+        if (recoveredMpCurrent !== currentMp) {
           transaction.set(activePlayerRef, {
             parameters: {
-              ...activePlayer.parameters,
+              ...resolvedActivePlayer.parameters,
               mp: {
-                ...activePlayer.parameters.mp,
+                ...resolvedActivePlayer.parameters.mp,
                 current: recoveredMpCurrent,
               },
             },
@@ -1820,7 +2001,20 @@ export class ActionExecutorService {
       return player.parameters.mp.current;
     }
 
+    return this.resolveMpRecoveredOnTurnStart(player);
+  }
+
+  private resolveMpRecoveredOnTurnStart(player: Player): number {
+    const statusSnapshot = this.buildStatusEffectsSnapshot(this.normalizeStatuses(player.statuses));
+    if (statusSnapshot.disableMpNaturalRegen || statusSnapshot.disableMpRecovery) {
+      return Math.max(0, Math.floor(Number(player.parameters.mp.current ?? 0)));
+    }
+
     return this.playerTurnEffectsService.calculateRecoveredMpCurrentOnTurnStart(player.parameters.mp);
+  }
+
+  private hasStatuses(statuses: Player["statuses"] | null | undefined): boolean {
+    return Array.isArray(statuses) && statuses.length > 0;
   }
 
   private normalizeStatuses(statuses: Player["statuses"]): PlayerStatus[] {
@@ -1832,13 +2026,27 @@ export class ActionExecutorService {
         if (typeof status.durationTurns !== "number") return false;
         return Number.isFinite(status.durationTurns) && status.durationTurns > 0;
       })
-      .map((status) => ({
-        key: status.key,
-        label: status.label,
-        description: status.description,
-        durationTurns: Math.max(1, Math.floor(status.durationTurns)),
-        effectKey: status.effectKey,
-      }));
+      .map((status) => {
+        const catalogStatus = this.statusCatalogService.getCachedStatus(status.key);
+        const normalizedStatus: PlayerStatus = {
+          key: status.key,
+          label: typeof status.label === "string" && status.label.trim().length > 0
+            ? status.label
+            : (catalogStatus?.label ?? status.key),
+          description: typeof status.description === "string"
+            ? status.description
+            : (catalogStatus?.description ?? ""),
+          durationTurns: Math.max(1, Math.floor(status.durationTurns)),
+        };
+
+        if (typeof status.effectKey === "string" && status.effectKey.trim().length > 0) {
+          normalizedStatus.effectKey = status.effectKey;
+        } else if (typeof catalogStatus?.effectKey === "string" && catalogStatus.effectKey.trim().length > 0) {
+          normalizedStatus.effectKey = catalogStatus.effectKey;
+        }
+
+        return normalizedStatus;
+      });
   }
 
   private hasStatus(statuses: PlayerStatus[], key: string): boolean {
@@ -1876,6 +2084,13 @@ export class ActionExecutorService {
   }
 
   private decrementStatuses(statuses: PlayerStatus[]): PlayerStatus[] {
+    const normalized = this.normalizeStatuses(statuses);
+    const cleaned = this.removeConflictingStatuses(this.applyMinifiedDominance(normalized));
+
+    return this.decrementNormalizedStatuses(cleaned);
+  }
+
+  private decrementNormalizedStatuses(statuses: PlayerStatus[]): PlayerStatus[] {
     return statuses
       .map((status) => ({
         ...status,
@@ -1884,10 +2099,139 @@ export class ActionExecutorService {
       .filter((status) => status.durationTurns > 0);
   }
 
+  private buildStatusEffectsSnapshot(statuses: PlayerStatus[]): {
+    activeStatuses: PlayerStatus[];
+    turnEndHpPercentDelta: number;
+    maxSkipTurns: number;
+    disableMpNaturalRegen: boolean;
+    disableMpRecovery: boolean;
+    disableHpRecovery: boolean;
+  } {
+    const activeStatuses = this.removeConflictingStatuses(this.applyMinifiedDominance(this.normalizeStatuses(statuses)));
+
+    let turnEndHpPercentDelta = 0;
+    let maxSkipTurns = 0;
+    let disableMpNaturalRegen = false;
+    let disableMpRecovery = false;
+    let disableHpRecovery = false;
+
+    for (const status of activeStatuses) {
+      const effects = this.statusCatalogService.getCachedStatus(status.key)?.effects;
+      if (!effects) continue;
+
+      if (typeof effects.turnEndHpPercentDelta === "number" && Number.isFinite(effects.turnEndHpPercentDelta)) {
+        turnEndHpPercentDelta += effects.turnEndHpPercentDelta;
+      }
+
+      if (typeof effects.skipTurns === "number" && Number.isFinite(effects.skipTurns) && effects.skipTurns > 0) {
+        maxSkipTurns = Math.max(maxSkipTurns, Math.floor(effects.skipTurns));
+      }
+
+      disableMpNaturalRegen = disableMpNaturalRegen || effects.disableMpNaturalRegen === true;
+      disableMpRecovery = disableMpRecovery || effects.disableMpRecovery === true;
+      disableHpRecovery = disableHpRecovery || effects.disableHpRecovery === true;
+    }
+
+    return {
+      activeStatuses,
+      turnEndHpPercentDelta,
+      maxSkipTurns,
+      disableMpNaturalRegen,
+      disableMpRecovery,
+      disableHpRecovery,
+    };
+  }
+
+  private applyMinifiedDominance(statuses: PlayerStatus[]): PlayerStatus[] {
+    const hasMinified = statuses.some((status) => status.key === this.minifiedStatusKey);
+    if (!hasMinified) {
+      return statuses;
+    }
+
+    return statuses.filter((status) => {
+      if (status.key === this.minifiedStatusKey) {
+        return true;
+      }
+
+      const skipTurns = this.statusCatalogService.getCachedStatus(status.key)?.effects?.skipTurns;
+      return typeof skipTurns === "number" && Number.isFinite(skipTurns) && skipTurns > 0;
+    });
+  }
+
+  private removeConflictingStatuses(statuses: PlayerStatus[]): PlayerStatus[] {
+    const hasPoison = statuses.some((status) => status.key === this.poisonStatusKey);
+    const hasRegen = statuses.some((status) => status.key === this.regenStatusKey);
+    if (!hasPoison || !hasRegen) {
+      return statuses;
+    }
+
+    return statuses.filter((status) => status.key !== this.poisonStatusKey && status.key !== this.regenStatusKey);
+  }
+
+  private applyTurnEndHpPercentDelta(
+    currentHp: number,
+    hpMax: number,
+    percentDelta: number,
+    allowPositiveRecovery: boolean,
+  ): number {
+    if (!Number.isFinite(percentDelta) || percentDelta === 0) {
+      return currentHp;
+    }
+
+    if (percentDelta > 0 && !allowPositiveRecovery) {
+      return currentHp;
+    }
+
+    const magnitude = Math.max(1, Math.floor(hpMax * Math.abs(percentDelta)));
+    if (percentDelta > 0) {
+      return Math.min(hpMax, currentHp + magnitude);
+    }
+
+    return Math.max(0, currentHp - magnitude);
+  }
+
+  private resolveLuckBonusMultiplier(statuses: Player["statuses"]): number {
+    const normalized = this.normalizeStatuses(statuses);
+    const activeStatuses = this.removeConflictingStatuses(this.applyMinifiedDominance(normalized));
+
+    let multiplier = 1;
+    for (const status of activeStatuses) {
+      const configured = this.statusCatalogService.getCachedStatus(status.key)?.effects?.luckBonusMultiplier;
+      if (typeof configured === "number" && Number.isFinite(configured) && configured > 0) {
+        multiplier = Math.max(multiplier, configured);
+      }
+    }
+
+    return multiplier;
+  }
+
   private upsertStatus(statuses: PlayerStatus[], nextStatus: PlayerStatus): PlayerStatus[] {
     const next = statuses.filter((status) => status.key !== nextStatus.key);
     next.push(nextStatus);
     return next;
+  }
+
+  private areStatusesEquivalent(currentStatuses: Player["statuses"], nextStatuses: PlayerStatus[]): boolean {
+    const currentNormalized = this.normalizeStatuses(currentStatuses);
+    if (currentNormalized.length !== nextStatuses.length) {
+      return false;
+    }
+
+    for (let i = 0; i < currentNormalized.length; i += 1) {
+      const current = currentNormalized[i];
+      const next = nextStatuses[i];
+      if (
+        current.key !== next.key
+        || current.durationTurns !== next.durationTurns
+        || current.label !== next.label
+        || current.description !== next.description
+        || current.effectKey !== next.effectKey
+      ) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private addResource(resources: ResourceStack[], label: ResourceLabel, delta: number): ResourceStack[] {
@@ -1947,9 +2291,11 @@ export class ActionExecutorService {
     const queue: Array<{ x: number; y: number }> = [{ x: startCell.x, y: startCell.y }];
     const visited = new Set<string>();
     let size = 0;
+    let queueIndex = 0;
 
-    while (queue.length > 0) {
-      const current = queue.shift();
+    while (queueIndex < queue.length) {
+      const current = queue[queueIndex];
+      queueIndex += 1;
       if (!current) continue;
 
       if (current.x < 0 || current.y < 0 || current.x >= safeSize || current.y >= safeSize) {

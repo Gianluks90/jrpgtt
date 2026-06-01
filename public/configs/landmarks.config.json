@@ -52,5 +52,17 @@
     "city": ["safe-place-wait", "fast-travel", "city-healer"],
     "village": ["safe-place-wait", "fast-travel", "village-craftsman"],
     "camp": ["safe-place-wait", "fast-travel", "camp-gatherer", "camp-hunter"]
+  },
+  "midPlaceActionsByLandmark": {
+    "graveyard": [],
+    "temple": [],
+    "castle": [],
+    "academy": []
+  },
+  "badPlaceActionsByLandmark": {
+    "cave": [],
+    "dungeon": [],
+    "manor": [],
+    "altar": []
   }
 }

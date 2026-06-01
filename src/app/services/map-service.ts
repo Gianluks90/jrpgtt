@@ -20,6 +20,7 @@ import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config"
 import { LandmarksService } from "./landmarks-service";
 import { PlayerStatsModifierService } from "./player-stats-modifier-service";
 import { WorldEventRegionTransitionService } from "./world-event-region-transition-service";
+import { StatusCatalogService } from "./status-catalog-service";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -37,10 +38,14 @@ export class MapService {
     private landmarksService: LandmarksService,
     private playerStatsModifierService: PlayerStatsModifierService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
+    private statusCatalogService: StatusCatalogService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
-    await this.landmarksService.loadConfig();
+    await Promise.all([
+      this.landmarksService.loadConfig(),
+      this.statusCatalogService.loadConfig(),
+    ]);
 
     const gameRef = doc(this.firebaseService.database, "games", gameId);
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
@@ -58,6 +63,7 @@ export class MapService {
     let movedLandmarkName = "";
     let landedSpecialType: "sanctuary" | "landmark" | null = null;
     let movedOnTurn = 0;
+    let movedPlayerStatuses: Player["statuses"] = [];
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
@@ -75,6 +81,7 @@ export class MapService {
       }
 
       const player = playerSnap.data() as Player;
+      movedPlayerStatuses = player.statuses ?? [];
       movedPlayerName = player.name;
       if (player.pendingResourcePickup) {
         throw new Error("Resolve pending resource pickup before moving");
@@ -286,7 +293,8 @@ export class MapService {
 
     // RACCOLTA RISORSA CASUALE
     if (landedBiome && !landedOnSpecialCell) {
-      const luckResult = this.luckService.checkLuck(movedPlayerLuck);
+      const fortuneMultiplier = this.resolveLuckBonusMultiplierFromStatuses(movedPlayerStatuses);
+      const luckResult = this.luckService.checkLuck(movedPlayerLuck * fortuneMultiplier);
       const tilesConfig = await this.tilesConfigService.loadConfig();
       const biomeEntry = tilesConfig.biomes[landedBiome];
       const possibleResources = biomeEntry?.resources ?? [];
@@ -362,6 +370,43 @@ export class MapService {
     if (biome === "water") return "Water";
     if (biome === "desert") return "Desert";
     return "Ruins";
+  }
+
+  private resolveLuckBonusMultiplierFromStatuses(statuses: Player["statuses"]): number {
+    const normalized = this.normalizeStatuses(statuses);
+    const hasMinified = normalized.some((status) => status.key === "minified");
+    if (hasMinified) {
+      return 1;
+    }
+
+    let multiplier = 1;
+    for (const status of normalized) {
+      const definition = this.statusCatalogService.getCachedStatus(status.key);
+      const configured = definition?.effects?.luckBonusMultiplier;
+      if (typeof configured === "number" && Number.isFinite(configured) && configured > 0) {
+        multiplier = Math.max(multiplier, configured);
+      }
+    }
+
+    return multiplier;
+  }
+
+  private normalizeStatuses(statuses: Player["statuses"]): Array<{ key: string; durationTurns: number }> {
+    if (!Array.isArray(statuses)) {
+      return [];
+    }
+
+    return statuses
+      .filter((status) => {
+        if (!status || typeof status !== "object") return false;
+        if (typeof status.key !== "string" || !status.key.trim()) return false;
+        if (typeof status.durationTurns !== "number" || !Number.isFinite(status.durationTurns)) return false;
+        return status.durationTurns > 0;
+      })
+      .map((status) => ({
+        key: String(status.key),
+        durationTurns: Math.max(1, Math.floor(Number(status.durationTurns))),
+      }));
   }
 
   private sanctuaryElementToLabel(element?: SanctuaryElement): string {

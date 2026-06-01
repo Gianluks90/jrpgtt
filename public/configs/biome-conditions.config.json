@@ -1,0 +1,28 @@
+{
+  "conditions": [
+    {
+      "id": "hostile-environment",
+      "label": "Hostile Environment",
+      "description": "Inflicts HP damage per connected biome cell unless protected by an active status.",
+      "logCode": "player.hostileEnvironmentDamage",
+      "effect": {
+        "type": "hp-damage-percent-per-connected-cell",
+        "basePercentPerConnectedCell": 0.03,
+        "minDeltaHp": 1,
+        "blockedByStatusKey": "nutrition"
+      }
+    },
+    {
+      "id": "regenerating-waters",
+      "label": "Regenerating Waters",
+      "description": "Restores HP per connected biome cell up to a capped ratio.",
+      "logCode": "player.regeneratingWatersHealing",
+      "effect": {
+        "type": "hp-heal-percent-per-connected-cell",
+        "basePercentPerConnectedCell": 0.03,
+        "maxPercent": 0.15,
+        "minDeltaHp": 1
+      }
+    }
+  ]
+}

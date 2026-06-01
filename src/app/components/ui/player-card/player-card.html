@@ -4,6 +4,46 @@
             <span class="player-name-wrap">
                 <span class="player-icon" [style.color]="player().color"></span>
                 <span class="player-name">{{ player().name }}</span>
+                @if (hasVisibleStatuses()) {
+                    <app-ui-tooltip
+                        [tooltipId]="'player-statuses-' + player().id"
+                        [title]="'Active status'"
+                        [disabled]="!hasVisibleStatuses()"
+                    >
+                        <span tooltipTrigger class="status-icons-wrap">
+                            @for (status of visibleStatusIcons(); track status.key) {
+                                <span
+                                    class="status-icon"
+                                    [style.--status-icon]="'url(' + status.iconUrl + ')'"
+                                    aria-hidden="true"
+                                ></span>
+                            }
+                            @if (hasOverflowStatuses()) {
+                                <span class="status-overflow" aria-label="More active statuses">...</span>
+                            }
+                        </span>
+
+                        <span tooltipContent>
+                            <span class="status-tooltip-content">
+                                <ul class="status-tooltip-list">
+                                    @for (status of activeStatuses(); track status.key) {
+                                        <li class="status-tooltip-item">
+                                            <span
+                                                class="status-icon"
+                                                [style.--status-icon]="'url(' + status.iconUrl + ')'"
+                                                aria-hidden="true"
+                                            ></span>
+                                            <span class="status-tooltip-text-wrap">
+                                                <span class="status-tooltip-text">{{ status.label }} - {{ statusTurnsLabel(status.durationTurns) }}</span>
+                                                <span class="status-tooltip-description">{{ status.description }}</span>
+                                            </span>
+                                        </li>
+                                    }
+                                </ul>
+                            </span>
+                        </span>
+                    </app-ui-tooltip>
+                }
             </span>
             <span class="player-meta">
                 <span class="player-level">Lv. {{ player().level }}</span>

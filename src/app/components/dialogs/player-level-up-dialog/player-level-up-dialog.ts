@@ -31,12 +31,12 @@ export class PlayerLevelUpDialog {
     {
       value: "strength",
       label: "Strength",
-      description: "Increase physical power. If base strength is above 3, HP increases by 5%.",
+      description: "Increase physical power and HP. HP increases by 5% for each point assigned.",
     },
     {
       value: "magic",
       label: "Magic",
-      description: "Improve magical aptitude.",
+      description: "Improve magical aptitude and MP. MP increases by 1 for each point assigned.",
     },
     {
       value: "luck",

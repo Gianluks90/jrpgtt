@@ -5,6 +5,7 @@ import { PlayerCharacteristicDelta, PlayerComputedStats } from "../models/Player
 import { WorldState } from "../models/WorldState";
 import { QuadrantId } from "../models/WorldZone";
 import { WorldZonesService } from "./world-zones-service";
+import { StatusCatalogService } from "./status-catalog-service";
 
 interface PlayerStatsContext {
   player: Player;
@@ -17,13 +18,17 @@ interface PlayerStatsContext {
   providedIn: "root",
 })
 export class PlayerStatsModifierService {
-  constructor(private worldZonesService: WorldZonesService) {}
+  constructor(
+    private worldZonesService: WorldZonesService,
+    private statusCatalogService: StatusCatalogService,
+  ) {}
 
   public computeStats(context: PlayerStatsContext): PlayerComputedStats {
     const player = context.player;
-    const baseStrength = this.normalize(player.parameters.strength.current);
-    const baseMagic = this.normalize(player.parameters.magic.current);
-    const baseLuck = this.normalize(player.parameters.luck.current);
+    const statusContext = this.resolveStatusContext(player);
+    const baseStrength = statusContext.primaryStatsOverride ?? this.normalize(player.parameters.strength.current);
+    const baseMagic = statusContext.primaryStatsOverride ?? this.normalize(player.parameters.magic.current);
+    const baseLuck = statusContext.primaryStatsOverride ?? this.normalize(player.parameters.luck.current);
 
     const appliedDeltas = this.collectDeltas(context);
     const delta = {
@@ -34,9 +39,9 @@ export class PlayerStatsModifierService {
 
     return {
       effective: {
-        strength: Math.max(0, baseStrength + delta.strength),
-        magic: Math.max(0, baseMagic + delta.magic),
-        luck: Math.max(0, baseLuck + delta.luck),
+        strength: statusContext.primaryStatsOverride ?? Math.max(0, baseStrength + delta.strength),
+        magic: statusContext.primaryStatsOverride ?? Math.max(0, baseMagic + delta.magic),
+        luck: statusContext.primaryStatsOverride ?? Math.max(0, baseLuck + delta.luck),
       },
       delta,
       appliedDeltas,
@@ -49,9 +54,101 @@ export class PlayerStatsModifierService {
 
   private collectDeltas(context: PlayerStatsContext): PlayerCharacteristicDelta[] {
     const deltas: PlayerCharacteristicDelta[] = [];
+    this.applyStatusDeltas(context, deltas);
     this.applyLandmarkAlignmentDelta(context, deltas);
     this.applySanctuaryQuadrantAttunementDelta(context, deltas);
     return deltas;
+  }
+
+  private applyStatusDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
+    const statusContext = this.resolveStatusContext(context.player);
+    if (typeof statusContext.primaryStatsOverride === "number") {
+      return;
+    }
+
+    const modifiers = statusContext.statModifiers;
+    if (modifiers.strength !== 0) {
+      deltas.push({
+        characteristic: "strength",
+        amount: modifiers.strength,
+        source: "status",
+        reason: "Status modifier",
+      });
+    }
+
+    if (modifiers.magic !== 0) {
+      deltas.push({
+        characteristic: "magic",
+        amount: modifiers.magic,
+        source: "status",
+        reason: "Status modifier",
+      });
+    }
+
+    if (modifiers.luck !== 0) {
+      deltas.push({
+        characteristic: "luck",
+        amount: modifiers.luck,
+        source: "status",
+        reason: "Status modifier",
+      });
+    }
+  }
+
+  private resolveStatusContext(player: Player): {
+    primaryStatsOverride: number | null;
+    statModifiers: { strength: number; magic: number; luck: number };
+  } {
+    const statuses = this.normalizeStatuses(player.statuses);
+    const hasMinified = statuses.some((status) => status.key === "minified");
+    if (hasMinified) {
+      return {
+        primaryStatsOverride: 1,
+        statModifiers: { strength: 0, magic: 0, luck: 0 },
+      };
+    }
+
+    const modifiers = { strength: 0, magic: 0, luck: 0 };
+    for (const status of statuses) {
+      const definition = this.statusCatalogService.getCachedStatus(status.key);
+      const statModifiers = definition?.effects?.statModifiers;
+      if (!statModifiers) continue;
+
+      modifiers.strength += this.normalizeDelta(statModifiers.strength);
+      modifiers.magic += this.normalizeDelta(statModifiers.magic);
+      modifiers.luck += this.normalizeDelta(statModifiers.luck);
+    }
+
+    return {
+      primaryStatsOverride: null,
+      statModifiers: modifiers,
+    };
+  }
+
+  private normalizeStatuses(statuses: Player["statuses"]): Array<{ key: string; durationTurns: number }> {
+    if (!Array.isArray(statuses)) {
+      return [];
+    }
+
+    return statuses
+      .filter((status) => {
+        if (!status || typeof status !== "object") return false;
+        if (typeof status.key !== "string" || !status.key.trim()) return false;
+        if (typeof status.durationTurns !== "number" || !Number.isFinite(status.durationTurns)) return false;
+        return status.durationTurns > 0;
+      })
+      .map((status) => ({
+        key: String(status.key),
+        durationTurns: Math.max(1, Math.floor(Number(status.durationTurns))),
+      }));
+  }
+
+  private normalizeDelta(value: unknown): number {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return 0;
+    }
+
+    return Math.floor(value);
   }
 
   private applyLandmarkAlignmentDelta(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {

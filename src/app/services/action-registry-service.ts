@@ -7,6 +7,7 @@ import { TimeOfDay } from "../models/WorldState";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { getDoctorCostPerUnit, isDoctorActionId } from "../consts/safe-place-actions";
 import { ActionCatalogService } from "./action-catalog-service";
+import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 
 export interface ActionCardContext {
   isBusy: boolean;
@@ -25,7 +26,10 @@ export interface ActionCardContext {
 
 @Injectable({ providedIn: "root" })
 export class ActionRegistryService {
-  constructor(private actionCatalogService: ActionCatalogService) {}
+  constructor(
+    private actionCatalogService: ActionCatalogService,
+    private biomeConditionCatalogService: BiomeConditionCatalogService,
+  ) {}
 
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
     const { isBusy, hasMoney, isMyTurn, hasMovedThisTurn, sanctuaryLabel, player, cell, timeOfDay } = context;
@@ -100,12 +104,15 @@ export class ActionRegistryService {
 
     if (actionId === "consume-ration") {
       const foodQty = (player.inventory?.resources ?? []).find((resource) => resource.label === "food")?.quantity ?? 0;
-      const hasNutrition = (player.statuses ?? []).some((status) => status.key === "nutrition" && status.durationTurns > 0);
+      const hostileEnvironmentCondition = this.biomeConditionCatalogService.getCachedCondition("hostile-environment");
+      const protectionStatusKey = hostileEnvironmentCondition?.effect?.blockedByStatusKey;
+      const hasProtectionStatus = typeof protectionStatusKey === "string"
+        && (player.statuses ?? []).some((status) => status.key === protectionStatusKey && status.durationTurns > 0);
       return {
         id: "consume-ration",
         label: this.actionCatalogService.getLabel(actionId, "Consume ration"),
         description: this.actionCatalogService.getDescription(actionId, "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert damage."),
-        disabled: commonDisabled || foodQty < 1 || hasNutrition,
+        disabled: commonDisabled || foodQty < 1 || hasProtectionStatus,
         pending: false,
       };
     }

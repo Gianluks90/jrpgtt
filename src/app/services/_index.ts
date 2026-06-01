@@ -1,6 +1,7 @@
 export * from "./action-executor-service";
 export * from "./action-catalog-service";
 export * from "./auth-service";
+export * from "./biome-condition-catalog-service";
 export * from "./breakpoint-service";
 export * from "./environment-service";
 export * from "./firebase-service";
@@ -14,6 +15,7 @@ export * from "./player-turn-effects-service";
 export * from "./safe-place-fast-travel-service";
 export * from "./sidebar-service";
 export * from "./sound-service";
+export * from "./status-catalog-service";
 export * from "./tiles-config-service";
 export * from "./turn-service";
 export * from "./user-service";

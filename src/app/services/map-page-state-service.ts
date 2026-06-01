@@ -15,6 +15,8 @@ import { ActionCatalogService } from "./action-catalog-service";
 import { FirebaseService } from "./firebase-service";
 import { LandmarksConfigService } from "./landmarks-config-service";
 import { TilesConfigService } from "./tiles-config-service";
+import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
+import { StatusCatalogService } from "./status-catalog-service";
 
 @Injectable({
   providedIn: "root",
@@ -113,6 +115,8 @@ export class MapPageStateService {
     private tilesConfigService: TilesConfigService,
     private landmarksConfigService: LandmarksConfigService,
     private actionCatalogService: ActionCatalogService,
+    private biomeConditionCatalogService: BiomeConditionCatalogService,
+    private statusCatalogService: StatusCatalogService,
   ) { }
 
   public init(gameId: string): void {
@@ -125,6 +129,8 @@ export class MapPageStateService {
     void this.loadBiomeResourcesConfig();
     void this.loadLandmarksConfig();
     void this.loadActionCatalog();
+    void this.loadBiomeConditionsCatalog();
+    void this.loadStatusesCatalog();
 
     const auth = getAuth();
     if (typeof auth.authStateReady === "function") {
@@ -277,6 +283,22 @@ export class MapPageStateService {
   private async loadActionCatalog(): Promise<void> {
     try {
       await this.actionCatalogService.loadConfig();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async loadBiomeConditionsCatalog(): Promise<void> {
+    try {
+      await this.biomeConditionCatalogService.loadConfig();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async loadStatusesCatalog(): Promise<void> {
+    try {
+      await this.statusCatalogService.loadConfig();
     } catch (error) {
       console.error(error);
     }

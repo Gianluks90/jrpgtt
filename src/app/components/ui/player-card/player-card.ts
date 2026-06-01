@@ -2,11 +2,20 @@ import { Component, computed, input } from "@angular/core";
 import { PlayerComputedStats } from "../../../models/PlayerComputedStats";
 import { Player } from "../../../models/Player";
 import { UiTooltip } from "../tooltip/tooltip";
+import { StatusCatalogService } from "../../../services/status-catalog-service";
 
 interface ActiveEffectRow {
   key: string;
   isBonus: boolean;
   label: string;
+  iconUrl: string;
+}
+
+interface ActiveStatusRow {
+  key: string;
+  label: string;
+  description: string;
+  durationTurns: number;
   iconUrl: string;
 }
 
@@ -17,6 +26,8 @@ interface ActiveEffectRow {
   styleUrl: "./player-card.scss",
 })
 export class PlayerCard {
+  constructor(private statusCatalogService: StatusCatalogService) {}
+
   public player = input.required<Player>();
   public computedStats = input<PlayerComputedStats | null>(null);
   public highlighted = input(false);
@@ -72,6 +83,50 @@ export class PlayerCard {
   public hasActiveEffects = computed<boolean>(() => {
     return this.activeEffects().length > 0;
   });
+
+  public activeStatuses = computed<ActiveStatusRow[]>(() => {
+    const statuses = this.player().statuses ?? [];
+    return statuses
+      .filter((status) => {
+        if (!status || typeof status !== "object") return false;
+        if (typeof status.key !== "string" || !status.key.trim()) return false;
+        if (typeof status.durationTurns !== "number" || !Number.isFinite(status.durationTurns)) return false;
+        return status.durationTurns > 0;
+      })
+      .map((status) => {
+        const key = String(status.key);
+        const catalogStatus = this.statusCatalogService.getCachedStatus(key);
+        const iconUrl = catalogStatus?.iconUrl ?? "";
+        const label = String(status.label ?? catalogStatus?.label ?? key);
+        const description = String(status.description ?? catalogStatus?.description ?? "");
+
+        return {
+          key,
+          label,
+          description,
+          durationTurns: Math.max(1, Math.floor(Number(status.durationTurns))),
+          iconUrl,
+        };
+      })
+      .filter((status) => status.iconUrl.trim().length > 0);
+  });
+
+  public visibleStatusIcons = computed<ActiveStatusRow[]>(() => {
+    return this.activeStatuses().slice(0, 2);
+  });
+
+  public hasOverflowStatuses = computed<boolean>(() => {
+    return this.activeStatuses().length > 2;
+  });
+
+  public hasVisibleStatuses = computed<boolean>(() => {
+    return this.activeStatuses().length > 0;
+  });
+
+  public statusTurnsLabel(durationTurns: number): string {
+    const turns = Math.max(1, Math.floor(Number(durationTurns ?? 1)));
+    return turns === 1 ? "1 turn left" : `${turns} turns left`;
+  }
 
   public deltaLabel(delta: number): string {
     if (delta > 0) return `+${delta}`;

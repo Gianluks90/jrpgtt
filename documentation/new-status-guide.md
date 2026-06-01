@@ -29,6 +29,10 @@ consume-ration -> status nutrition -> immunity al danno hostile-environment
 # Flusso completo di uno status
 
 ```txt
+public/configs/statuses.config.json
+↓
+StatusCatalogService (load + validazione)
+↓
 ActionExecutorService (grant/refresh status)
 ↓
 Firestore Transaction (player.statuses)
@@ -72,6 +76,8 @@ Campi chiave:
 
 | File | Ruolo |
 |---|---|
+| `public/configs/statuses.config.json` | catalogo JSON di label/description/default duration/effectKey |
+| `src/app/services/status-catalog-service.ts` | load + validazione + lookup status |
 | `src/app/models/Player.ts` | tipi `PlayerStatus` e `player.statuses` |
 | `src/app/services/action-executor-service.ts` | grant/read/decrement status |
 | `src/app/services/action-registry-service.ts` | UX conditionale basata su status (non autoritativa) |
@@ -141,18 +147,24 @@ Effetto: riduce o annulla danno da freezing-wind
 
 ---
 
-# STEP 2 - Applica lo status in executor
+# STEP 2 - Definisci catalogo JSON e applica lo status in executor
 
-Dentro un'azione (o regola) usa `upsertStatus(...)`.
+Prima aggiungi/aggiorna la definizione in `public/configs/statuses.config.json`.
+Poi dentro un'azione (o regola) usa `StatusCatalogService` + `upsertStatus(...)`.
 
 Template:
 
 ```ts
+await this.statusCatalogService.loadConfig();
+const warmth = this.statusCatalogService.getStatus("warmth");
+if (!warmth) throw new Error("Missing status definition for 'warmth'");
+
 const nextStatuses = this.upsertStatus(this.normalizeStatuses(player.statuses), {
-  key: "warmth",
-  label: "Warmth",
-  description: "Protects from freezing wind damage.",
-  durationTurns: 2,
+  key: warmth.key,
+  label: warmth.label,
+  description: warmth.description,
+  durationTurns: warmth.defaultDurationTurns,
+  effectKey: warmth.effectKey,
 });
 
 transaction.set(playerRef, {
@@ -240,7 +252,7 @@ Status attuale: `nutrition`.
 Flow reale:
 
 1) `consume-ration` spende 1 food;
-2) applica status `nutrition` con `durationTurns: 1` via `upsertStatus`;
+2) carica definizione `nutrition` da `statuses.config.json` e applica via `upsertStatus`;
 3) in `endTurn`, `hostile-environment` controlla `hasStatus("nutrition")`;
 4) gli status vengono decrementati con `decrementStatuses`.
 
@@ -248,10 +260,10 @@ Snippet semplificato:
 
 ```ts
 const nextStatuses = this.upsertStatus(this.normalizeStatuses(player.statuses), {
-  key: "nutrition",
-  label: "Nutrition",
-  description: "Prevents hostile desert damage for this turn.",
-  durationTurns: 1,
+  key: nutritionStatus.key,
+  label: nutritionStatus.label,
+  description: nutritionStatus.description,
+  durationTurns: nutritionStatus.defaultDurationTurns,
 });
 ```
 

@@ -31,6 +31,10 @@ hostile-environment -> check in endTurn -> damage HP (se manca nutrition)
 Quando una condition e attiva su un biome:
 
 ```txt
+public/configs/biome-conditions.config.json
+↓
+BiomeConditionCatalogService (load + validazione)
+↓
 tiles.config.json
 ↓
 TilesConfigService (validazione runtime)
@@ -59,6 +63,8 @@ Una condition deve essere applicata lato gameplay in `ActionExecutorService`.
 | File | Ruolo |
 |---|---|
 | `public/configs/tiles.config.json` | dichiara le conditions per biome |
+| `public/configs/biome-conditions.config.json` | catalogo JSON delle condizioni (effetti, blocchi, log) |
+| `src/app/services/biome-condition-catalog-service.ts` | load + validazione + lookup condizioni |
 | `src/app/models/TilesConfig.ts` | tipo `conditions: string[]` |
 | `src/app/services/tiles-config-service.ts` | validazione runtime config |
 | `src/app/services/map-page-state-service.ts` | caricamento config in pagina |
@@ -129,26 +135,21 @@ Scegli il trigger corretto:
 - action specifica per effetti on-use;
 - movimento se l'effetto deve scattare entrando in una cella.
 
-Template standard (autoritativo):
+Template standard (autoritativo, config-driven):
 
 ```ts
 const biomeConfig = tilesConfig.biomes[currentCell.biome];
-const hasCondition = (biomeConfig?.conditions ?? []).includes("freezing-wind");
+for (const conditionId of biomeConfig?.conditions ?? []) {
+  const condition = this.biomeConditionCatalogService.getCondition(conditionId);
+  const effect = condition?.effect;
+  if (!effect) continue;
 
-if (hasCondition && !hasProtectionStatus) {
-  // COMPUTE
-  const damageHp = ...;
+  if (effect.blockedByStatusKey && this.hasStatus(currentStatuses, effect.blockedByStatusKey)) {
+    continue;
+  }
 
-  // APPLY (dentro transaction)
-  transaction.set(playerRef, {
-    parameters: {
-      ...player.parameters,
-      hp: {
-        ...player.parameters.hp,
-        current: nextHpCurrent,
-      },
-    },
-  }, { merge: true });
+  // COMPUTE da parametri JSON
+  // APPLY dentro transaction
 }
 ```
 
@@ -234,14 +235,17 @@ Effetto:
 Pattern reale semplificato:
 
 ```ts
-const isHostileEnvironment = (biomeConfig?.conditions ?? []).includes("hostile-environment");
-const currentStatuses = this.normalizeStatuses(player.statuses);
-const hasNutrition = this.hasStatus(currentStatuses, "nutrition");
+for (const conditionId of biomeConfig?.conditions ?? []) {
+  const condition = this.biomeConditionCatalogService.getCondition(conditionId);
+  const effect = condition?.effect;
+  if (!effect) continue;
 
-if (isHostileEnvironment && !hasNutrition) {
-  const environmentSize = await this.computeConnectedBiomeSize(...);
-  const damageHp = ...;
-  nextHpCurrent = Math.max(0, nextHpCurrent - damageHp);
+  if (effect.blockedByStatusKey && this.hasStatus(currentStatuses, effect.blockedByStatusKey)) {
+    continue;
+  }
+
+  // delta HP da basePercentPerConnectedCell (+ maxPercent/minDeltaHp)
+  // poi update hp e log
 }
 ```
 

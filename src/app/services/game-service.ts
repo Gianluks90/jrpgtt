@@ -386,6 +386,10 @@ export class GameService {
     const palette = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93", "#f15bb5", "#00bbf9"];
     const colorIndex = this.hashString(playerId) % palette.length;
 
+
+    // Parametri di default
+    // @ts-ignore
+    const { buildPlayerParameters } = require('../consts/player-defaults');
     return {
       id: playerId,
       name: '? ? ?',
@@ -394,25 +398,7 @@ export class GameService {
         x: 0,
         y: 0,
       },
-      parameters: {
-        hp: {
-          base: PLAYER_SETUP_BASE_HP,
-          current: PLAYER_SETUP_BASE_HP,
-          max: PLAYER_SETUP_BASE_HP
-        },
-        strength: {
-          base: 3,
-          current: 3,
-        },
-        magic: {
-          base: 3,
-          current: 3,
-        },
-        luck: {
-          base: 1,
-          current: 1,
-        },
-      },
+      parameters: buildPlayerParameters(3, 3, 1),
       level: 1,
       experience: 2,
       pendingLevelUpChoices: 0,

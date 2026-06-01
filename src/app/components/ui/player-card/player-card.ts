@@ -89,4 +89,13 @@ export class PlayerCard {
     if (characteristic === "magic") return "MAG";
     return "LCK";
   }
+
+  public mpPercent = computed<number>(() => {
+    const currentPlayer = this.player();
+    const current = currentPlayer.parameters.mp.current;
+    const max = currentPlayer.parameters.mp.max ?? currentPlayer.parameters.mp.base;
+    if (max <= 0) return 0;
+    const raw = (current / max) * 100;
+    return Math.max(0, Math.min(100, raw));
+  });
 }

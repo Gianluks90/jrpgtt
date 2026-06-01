@@ -149,10 +149,21 @@ export class ActionExecutorService {
         }
       }
 
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
       transaction.set(playerRef, {
         statuses: nextStatuses,
         parameters: {
           ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
           hp: {
             ...player.parameters.hp,
             current: nextHpCurrent,
@@ -160,11 +171,6 @@ export class ActionExecutorService {
         },
       }, { merge: true });
 
-      const nextWorldState: WorldState = {
-        ...worldState,
-      };
-
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
       transaction.set(worldStateRef, nextWorldState);
       transaction.set(gameRef, {
         updatedAt: Timestamp.now(),
@@ -625,7 +631,7 @@ export class ActionExecutorService {
       const currentStatuses = this.normalizeStatuses(player.statuses);
       const nextStatuses = this.decrementStatuses(currentStatuses);
       const nextWorldState: WorldState = { ...worldState };
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -980,11 +986,16 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
 
       transaction.set(playerRef, {
         parameters: {
           ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
           hp: {
             ...player.parameters.hp,
             current: nextHpCurrent,
@@ -1090,11 +1101,16 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
 
       transaction.set(playerRef, {
         parameters: {
           ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
           hp: {
             ...player.parameters.hp,
             current: nextHpCurrent,
@@ -1251,7 +1267,7 @@ export class ActionExecutorService {
           y: destinationCell.y,
         },
       );
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -1340,7 +1356,7 @@ export class ActionExecutorService {
 
       this.playerTurnEffectsService.scheduleAutoMoveOnTurnStart(nextWorldState, actor.id);
 
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         statuses: nextStatuses,
@@ -1407,7 +1423,7 @@ export class ActionExecutorService {
       };
 
       this.playerTurnEffectsService.moveFastTravelToMidpoint(nextWorldState, actor.id);
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         statuses: nextStatuses,
@@ -1558,7 +1574,7 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -1680,7 +1696,7 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
-      this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
 
       transaction.set(playerRef, {
         inventory: {
@@ -1706,12 +1722,42 @@ export class ActionExecutorService {
     });
   }
 
-  private applyTurnAdvanceAndDeferredEffects(
+  private async applyTurnAdvanceAndDeferredEffects(
     transaction: Transaction,
     gameId: string,
     nextWorldState: WorldState,
-  ): void {
+  ): Promise<void> {
     const turnAdvance = this.turnService.advanceTurn(nextWorldState);
+
+    const activePlayerId = nextWorldState.activePlayerId;
+    if (activePlayerId) {
+      const activePlayerRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "players",
+        activePlayerId,
+      );
+      const activePlayerSnap = await transaction.get(activePlayerRef);
+      if (activePlayerSnap.exists()) {
+        const activePlayer = activePlayerSnap.data() as Player;
+        const recoveredMpCurrent = this.playerTurnEffectsService.calculateRecoveredMpCurrentOnTurnStart(
+          activePlayer.parameters.mp,
+        );
+
+        if (recoveredMpCurrent !== activePlayer.parameters.mp.current) {
+          transaction.set(activePlayerRef, {
+            parameters: {
+              ...activePlayer.parameters,
+              mp: {
+                ...activePlayer.parameters.mp,
+                current: recoveredMpCurrent,
+              },
+            },
+          }, { merge: true });
+        }
+      }
+    }
 
     for (const arrival of turnAdvance.teleportArrivals) {
       const destinationX = Math.max(0, Math.floor(Number(arrival.destination.x ?? 0)));
@@ -1767,6 +1813,14 @@ export class ActionExecutorService {
       ...actionsUsed,
       [actionId]: worldTurn,
     };
+  }
+
+  private resolveNextMpCurrentAfterTurnAdvance(player: Player, actorId: string, nextWorldState: WorldState): number {
+    if (nextWorldState.activePlayerId !== actorId) {
+      return player.parameters.mp.current;
+    }
+
+    return this.playerTurnEffectsService.calculateRecoveredMpCurrentOnTurnStart(player.parameters.mp);
   }
 
   private normalizeStatuses(statuses: Player["statuses"]): PlayerStatus[] {

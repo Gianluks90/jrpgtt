@@ -5,6 +5,9 @@ import { DialogResponse } from "../../../models/DialogResponse";
 import { PlayerAlignment } from "../../../models/Player";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
+import { buildPlayerParameters } from '../../../consts/player-defaults';
+
+import { PlayerParameter } from '../../../models/Player';
 
 export interface GamePlayerSetupDialogData {
   name: string;
@@ -101,6 +104,7 @@ export class GamePlayerSetupDialog {
     if (!this.canConfirm()) return;
 
     const data = this.form.getRawValue();
+
     this.dialogRef.close({
       result: "confirm",
       data: {

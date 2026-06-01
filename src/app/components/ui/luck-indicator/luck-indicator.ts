@@ -1,5 +1,6 @@
 import { Component, Injector, OnDestroy, computed, effect, inject, input, signal } from "@angular/core";
 import { LuckCheckResult } from "../../../models/LuckCheckResult";
+import { SoundService } from "../../../services/sound-service";
 
 @Component({
   selector: "app-luck-indicator",
@@ -9,6 +10,7 @@ import { LuckCheckResult } from "../../../models/LuckCheckResult";
 })
 export class LuckIndicator implements OnDestroy {
   private injector = inject(Injector);
+  private soundService = inject(SoundService);
 
   public result = input<LuckCheckResult | null>(null);
   public isRolling = signal(false);
@@ -120,6 +122,9 @@ export class LuckIndicator implements OnDestroy {
       this.clearTimers();
       this.displayedResult.set(finalResult);
       this.isRolling.set(false);
+      if (finalResult.success) {
+        this.soundService.play("luck-success");
+      }
     }, revealDelay);
   }
 

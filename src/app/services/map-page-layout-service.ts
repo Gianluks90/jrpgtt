@@ -41,6 +41,7 @@ export class MapPageLayoutService {
       location?: { x?: unknown; y?: unknown };
       parameters?: {
         hp?: { base?: unknown; current?: unknown; max?: unknown };
+        mp?: { base?: unknown; current?: unknown; max?: unknown };
         strength?: { base?: unknown; current?: unknown; max?: unknown };
         magic?: { base?: unknown; current?: unknown; max?: unknown };
         luck?: { base?: unknown; current?: unknown; max?: unknown };
@@ -50,6 +51,12 @@ export class MapPageLayoutService {
     const hpBase = this.toNumber(candidate.parameters?.hp?.base, 20);
     const hpCurrent = this.toNumber(candidate.parameters?.hp?.current, hpBase);
     const hpMax = this.toNumber(candidate.parameters?.hp?.max, hpBase);
+
+    // Calcolo MP
+    const magicBase = this.toNumber(candidate.parameters?.magic?.base, 4);
+    const mpBase = this.calculateMpBase(magicBase);
+    const mpCurrent = typeof candidate.parameters?.mp?.current === "number" ? candidate.parameters.mp.current : mpBase;
+    const mpMax = typeof candidate.parameters?.mp?.max === "number" ? candidate.parameters.mp.max : mpBase;
 
     return {
       id: typeof candidate.id === "string" ? candidate.id : `mock-player-${index + 1}`,
@@ -68,15 +75,20 @@ export class MapPageLayoutService {
           current: hpCurrent,
           max: hpMax,
         },
+        mp: {
+          base: mpBase,
+          current: mpCurrent,
+          max: mpMax,
+        },
         strength: {
           base: this.toNumber(candidate.parameters?.strength?.base, 4),
           current: this.toNumber(candidate.parameters?.strength?.current, 4),
           max: this.toNumber(candidate.parameters?.strength?.max, 4),
         },
         magic: {
-          base: this.toNumber(candidate.parameters?.magic?.base, 4),
-          current: this.toNumber(candidate.parameters?.magic?.current, 4),
-          max: this.toNumber(candidate.parameters?.magic?.max, 4),
+          base: magicBase,
+          current: this.toNumber(candidate.parameters?.magic?.current, magicBase),
+          max: this.toNumber(candidate.parameters?.magic?.max, magicBase),
         },
         luck: {
           base: this.toNumber(candidate.parameters?.luck?.base, 4),
@@ -95,6 +107,17 @@ export class MapPageLayoutService {
       pendingResourcePickup: null,
       joinedAt: Timestamp.now(),
     };
+  }
+
+  /**
+   * Calcola il valore base degli MP in base al valore di Magic
+   */
+  private calculateMpBase(magic: number): number {
+    // Importa costanti
+    // @ts-ignore
+    const { MP_BASE_VALUE, MP_MAGIC_BASE, MP_MAGIC_INCREMENT_PERCENT } = require('../consts/mp-config');
+    const extraPoints = Math.max(0, magic - MP_MAGIC_BASE);
+    return Math.round(MP_BASE_VALUE * Math.pow(1 + MP_MAGIC_INCREMENT_PERCENT, extraPoints));
   }
 
   private toNumber(value: unknown, fallback: number): number {

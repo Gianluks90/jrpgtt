@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SoundService } from './services/sound-service';
 
 @Component({
   selector: 'app-root',
@@ -9,4 +10,8 @@ import { RouterOutlet } from '@angular/router';
 })
 export class App {
   protected readonly title = signal('jrpgtt');
+
+  constructor(private soundService: SoundService) {
+    this.soundService.initialize();
+  }
 }

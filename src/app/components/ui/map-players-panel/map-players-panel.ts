@@ -13,7 +13,7 @@ import { PlayerCard } from "../player-card/player-card";
 export class MapPlayersPanel {
   public myPlayer = input<Player | null>(null);
   public myPlayerComputedStats = input<PlayerComputedStats | null>(null);
-  public mockPlayers = input<Player[]>([]);
+  public players = input<Player[]>([]);
   public activePlayerId = input<string | null>(null);
   public pendingLevelUpChoices = input(0);
   public canOpenLevelUpDialog = input(false);
@@ -26,9 +26,10 @@ export class MapPlayersPanel {
 
   public sidebarPlayers = computed<Player[]>(() => {
     const me = this.myPlayer();
-    const mocks = this.mockPlayers();
-    if (!me) return mocks;
-    return [me, ...mocks];
+    const allPlayers = this.players();
+    if (!me) return allPlayers;
+    // Mostra prima "me" se presente, poi gli altri
+    return [me, ...allPlayers.filter(p => p.id !== me.id)];
   });
 
   public mainPlayer = computed<Player | null>(() => {

@@ -217,6 +217,7 @@ export class MapPage implements OnInit, OnDestroy {
   public movableCellIds = computed<Set<string>>(() => {
     const current = this.myPlayer();
     if (!current || !this.isMyTurn()) return new Set<string>();
+    if (this.hasMovedOnCurrentTurn()) return new Set<string>();
 
     return this.environmentService.getMovableCellIdsForPlayer(
       current,

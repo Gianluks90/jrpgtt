@@ -4,6 +4,7 @@ import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { Player, PlayerAlignment } from "../models/Player";
 import { FirebaseService } from "./firebase-service";
 import { PLAYER_SETUP_BASE_HP } from "../consts/player-defaults";
+import { calculateMpBase } from '../consts/mp-config';
 
 export interface PlayerSetupData {
   name: string;
@@ -110,6 +111,13 @@ export class PlayerService {
     const updatedTotal = strength + magic + luck + experience;
     const hpBonusSteps = Math.max(0, strength - 3);
     const hpWithStrengthBonus = this.applyStrengthSetupHpBonus(hpBonusSteps);
+    // Calcolo coerente mp
+    const mpBase = calculateMpBase(magic);
+    const mp: Player["parameters"]["mp"] = {
+      base: mpBase,
+      current: mpBase,
+      max: mpBase,
+    };
 
     if (!name) {
       throw new Error("Player name is required");
@@ -133,6 +141,7 @@ export class PlayerService {
       parameters: {
         ...player.parameters,
         hp: hpWithStrengthBonus,
+        mp,
         strength: {
           ...player.parameters.strength,
           base: strength,
@@ -171,4 +180,5 @@ export class PlayerService {
       max: nextMax,
     };
   }
+
 }

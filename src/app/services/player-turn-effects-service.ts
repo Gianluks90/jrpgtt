@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { MP_RECOVERY_PERCENT } from "../consts/mp-config";
 import { PendingFastTravelState, PendingTeleportState, WorldState } from "../models/WorldState";
 
 export interface GridCoordinate {
@@ -10,6 +11,20 @@ export interface GridCoordinate {
   providedIn: "root",
 })
 export class PlayerTurnEffectsService {
+
+  public calculateRecoveredMpCurrentOnTurnStart(mp: { current: number; max?: number; base: number }): number {
+    const base = this.normalizePoints(mp.base);
+    const max = typeof mp.max === "number" ? this.normalizePoints(mp.max) : base;
+    const current = Math.min(max, this.normalizePoints(mp.current));
+
+    if (max <= 0 || current >= max) {
+      return current;
+    }
+
+    const recoveryAmount = Math.max(1, Math.floor((max * MP_RECOVERY_PERCENT) / 100));
+    return Math.min(max, current + recoveryAmount);
+  }
+  
   public scheduleAutoMoveOnTurnStart(worldState: WorldState, playerId: string): void {
     if (!playerId) return;
 
@@ -214,5 +229,13 @@ export class PlayerTurnEffectsService {
       x: Math.max(0, Math.floor(Number(value?.x ?? 0))),
       y: Math.max(0, Math.floor(Number(value?.y ?? 0))),
     };
+  }
+
+  private normalizePoints(value: number): number {
+    if (!Number.isFinite(value)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor(value));
   }
 }

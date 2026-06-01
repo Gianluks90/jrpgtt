@@ -13,6 +13,7 @@ export * from "./player-progression-service";
 export * from "./player-turn-effects-service";
 export * from "./safe-place-fast-travel-service";
 export * from "./sidebar-service";
+export * from "./sound-service";
 export * from "./tiles-config-service";
 export * from "./turn-service";
 export * from "./user-service";

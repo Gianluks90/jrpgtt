@@ -5,6 +5,7 @@ import { firstValueFrom, take } from "rxjs";
 import { DIALOGS_CONFIG } from "../consts/dialog-configs";
 import { DialogResponse } from "../models/DialogResponse";
 import { Player, PlayerParameter, PlayerParameters } from "../models/Player";
+import { calculateMpBase } from '../consts/mp-config';
 import {
   LevelUpCharacteristic,
   PlayerLevelUpDialog,
@@ -176,6 +177,19 @@ export class PlayerProgressionService {
       };
     }
 
+    if (characteristic === "magic" && nextBase > 3) {
+      const mp = parameters.mp;
+      const mpBase = calculateMpBase(nextBase);
+      const mpCurrent = Math.max(0, mp.current) + (mpBase - mp.base);
+      const mpMax = typeof mp.max === "number" ? Math.max(0, mp.max + (mpBase - mp.base)) : mpBase;
+      parameters.mp = {
+        ...mp,
+        base: mpBase,
+        current: mpCurrent,
+        max: mpMax,
+      };
+    }
+
     return {
       ...player,
       parameters,
@@ -185,6 +199,7 @@ export class PlayerProgressionService {
   private cloneParameters(parameters: PlayerParameters): PlayerParameters {
     return {
       hp: this.cloneParameter(parameters.hp),
+      mp: this.cloneParameter(parameters.mp),
       strength: this.cloneParameter(parameters.strength),
       magic: this.cloneParameter(parameters.magic),
       luck: this.cloneParameter(parameters.luck),

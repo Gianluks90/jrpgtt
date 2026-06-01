@@ -48,6 +48,7 @@ export interface PlayerLocation {
 
 export interface PlayerParameters {
     hp: PlayerParameter;
+    mp: PlayerParameter;
     strength: PlayerParameter;
     magic: PlayerParameter;
     luck: PlayerParameter;

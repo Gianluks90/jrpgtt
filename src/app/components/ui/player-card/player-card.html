@@ -5,44 +5,36 @@
                 <span class="player-icon" [style.color]="player().color"></span>
                 <span class="player-name">{{ player().name }}</span>
                 @if (hasVisibleStatuses()) {
-                    <app-ui-tooltip
-                        [tooltipId]="'player-statuses-' + player().id"
-                        [title]="'Active status'"
-                        [disabled]="!hasVisibleStatuses()"
-                    >
-                        <span tooltipTrigger class="status-icons-wrap">
-                            @for (status of visibleStatusIcons(); track status.key) {
-                                <span
-                                    class="status-icon"
-                                    [style.--status-icon]="'url(' + status.iconUrl + ')'"
-                                    aria-hidden="true"
-                                ></span>
-                            }
-                            @if (hasOverflowStatuses()) {
-                                <span class="status-overflow" aria-label="More active statuses">...</span>
-                            }
-                        </span>
+                <app-ui-tooltip [tooltipId]="'player-statuses-' + player().id" [title]="'Active status'"
+                    [disabled]="!hasVisibleStatuses()">
+                    <span tooltipTrigger class="status-icons-wrap">
+                        @for (status of visibleStatusIcons(); track status.key) {
+                        <span class="status-icon" [style.--status-icon]="'url(' + status.iconUrl + ')'"
+                            aria-hidden="true"></span>
+                        }
+                        @if (hasOverflowStatuses()) {
+                        <span class="status-overflow" aria-label="More active statuses">...</span>
+                        }
+                    </span>
 
-                        <span tooltipContent>
-                            <span class="status-tooltip-content">
-                                <ul class="status-tooltip-list">
-                                    @for (status of activeStatuses(); track status.key) {
-                                        <li class="status-tooltip-item">
-                                            <span
-                                                class="status-icon"
-                                                [style.--status-icon]="'url(' + status.iconUrl + ')'"
-                                                aria-hidden="true"
-                                            ></span>
-                                            <span class="status-tooltip-text-wrap">
-                                                <span class="status-tooltip-text">{{ status.label }} - {{ statusTurnsLabel(status.durationTurns) }}</span>
-                                                <span class="status-tooltip-description">{{ status.description }}</span>
-                                            </span>
-                                        </li>
-                                    }
-                                </ul>
-                            </span>
+                    <span tooltipContent>
+                        <span class="status-tooltip-content">
+                            <ul class="status-tooltip-list">
+                                @for (status of activeStatuses(); track status.key) {
+                                <li class="status-tooltip-item">
+                                    <span class="status-icon" [style.--status-icon]="'url(' + status.iconUrl + ')'"
+                                        aria-hidden="true"></span>
+                                    <span class="status-tooltip-text-wrap">
+                                        <span class="status-tooltip-text">{{ status.label }} - {{
+                                            statusTurnsLabel(status.durationTurns) }}</span>
+                                        <span class="status-tooltip-description">{{ status.description }}</span>
+                                    </span>
+                                </li>
+                                }
+                            </ul>
                         </span>
-                    </app-ui-tooltip>
+                    </span>
+                </app-ui-tooltip>
                 }
             </span>
             <span class="player-meta">
@@ -53,65 +45,71 @@
     </div>
 
     <div class="player-content">
-        <app-ui-tooltip
-            [tooltipId]="'player-effects-' + player().id"
-            [title]="'Active effects'"
-        >
+        <app-ui-tooltip [tooltipId]="'player-effects-' + player().id" [title]="'Active effects'">
             <div tooltipTrigger class="stats-grid stats-grid-tooltip-trigger">
                 <div class="stat-box">
                     <span class="stat-label">STR</span>
                     <span class="stat-value" [class]="deltaClass(strengthDelta())">{{ strengthValue() }}</span>
                     @if (strengthDelta() !== 0) {
-                        <span class="stat-delta" [class]="deltaClass(strengthDelta())">({{ deltaLabel(strengthDelta()) }})</span>
+                    <span class="stat-delta" [class]="deltaClass(strengthDelta())">({{ deltaLabel(strengthDelta())
+                        }})</span>
                     }
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">MAG</span>
                     <span class="stat-value" [class]="deltaClass(magicDelta())">{{ magicValue() }}</span>
                     @if (magicDelta() !== 0) {
-                        <span class="stat-delta" [class]="deltaClass(magicDelta())">({{ deltaLabel(magicDelta()) }})</span>
+                    <span class="stat-delta" [class]="deltaClass(magicDelta())">({{ deltaLabel(magicDelta()) }})</span>
                     }
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">LCK</span>
                     <span class="stat-value" [class]="deltaClass(luckDelta())">{{ luckValue() }}</span>
                     @if (luckDelta() !== 0) {
-                        <span class="stat-delta" [class]="deltaClass(luckDelta())">({{ deltaLabel(luckDelta()) }})</span>
+                    <span class="stat-delta" [class]="deltaClass(luckDelta())">({{ deltaLabel(luckDelta()) }})</span>
                     }
                 </div>
             </div>
 
             <span tooltipContent>
                 @if (hasActiveEffects()) {
-                    <ul class="effects-list">
-                        @for (effect of activeEffects(); track effect.key) {
-                            <li class="effects-item">
-                                <span class="effect-icon" [class.effect-icon-bonus]="effect.isBonus" [class.effect-icon-malus]="!effect.isBonus" [style.--effect-icon]="'url(' + effect.iconUrl + ')'" aria-hidden="true"></span>
-                                <span class="effect-text">{{ effect.label }}</span>
-                            </li>
-                        }
-                    </ul>
+                <ul class="effects-list">
+                    @for (effect of activeEffects(); track effect.key) {
+                    <li class="effects-item">
+                        <span class="effect-icon" [class.effect-icon-bonus]="effect.isBonus"
+                            [class.effect-icon-malus]="!effect.isBonus"
+                            [style.--effect-icon]="'url(' + effect.iconUrl + ')'" aria-hidden="true"></span>
+                        <span class="effect-text">{{ effect.label }}</span>
+                    </li>
+                    }
+                </ul>
                 } @else {
-                    <span class="effects-empty">No active bonuses or maluses.</span>
+                <span class="effects-empty">No active bonuses or maluses.</span>
                 }
             </span>
         </app-ui-tooltip>
     </div>
 
-    <div class="hp-section">
-        <div class="player-row hp-label-row">
-            <span>HP</span>
-            <span>{{ player().parameters.hp.current }}/{{ player().parameters.hp.max ?? player().parameters.hp.base }}</span>
+    <div class="bars-section">
+        <div class="hp-section">
+            <div class="player-row hp-label-row">
+                <span>HP</span>
+                <span>{{ player().parameters.hp.current }}/{{ player().parameters.hp.max ?? player().parameters.hp.base
+                    }}</span>
+            </div>
+            <div class="hp-bar" [class.hp-full]="hpPercent() === 100">
+                <div class="hp-fill" [style.width.%]="hpPercent()"></div>
+            </div>
         </div>
-        <div class="hp-bar" [class.hp-full]="hpPercent() === 100">
-            <div class="hp-fill" [style.width.%]="hpPercent()"></div>
-        </div>
-        <div class="player-row mp-label-row">
-            <span>MP</span>
-            <span>{{ player().parameters.mp.current }}/{{ player().parameters.mp.max ?? player().parameters.mp.base }}</span>
-        </div>
-        <div class="mp-bar" [class.mp-full]="mpPercent() === 100">
-            <div class="mp-fill" [style.width.%]="mpPercent()"></div>
+        <div class="mp-section">
+            <div class="player-row mp-label-row">
+                <span>MP</span>
+                <span>{{ player().parameters.mp.current }}/{{ player().parameters.mp.max ?? player().parameters.mp.base
+                    }}</span>
+            </div>
+            <div class="mp-bar" [class.mp-full]="mpPercent() === 100">
+                <div class="mp-fill" [style.width.%]="mpPercent()"></div>
+            </div>
         </div>
     </div>
 </div>

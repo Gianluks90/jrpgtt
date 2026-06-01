@@ -302,11 +302,17 @@
     color: inherit;
 }
 
-.hp-section {
+.bars-section {
     margin-top: auto;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    gap: 8px;
+
+    &>.hp-section, &>.mp-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
 }
 
 @media (max-width: 520px) {

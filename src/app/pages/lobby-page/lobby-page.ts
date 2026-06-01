@@ -12,14 +12,13 @@ import { take } from "rxjs";
 import { Router } from "@angular/router";
 import { GameSettingsDialog, GameSettingsDialogData } from "../../components/dialogs/game-settings-dialog/game-settings-dialog";
 import { PlayerService, PlayerSetupData } from "../../services/player-service";
-import { Player } from "../../models/Player";
-import { GamePlayerSetupDialog, GamePlayerSetupDialogData } from "../../components/dialogs/game-player-setup-dialog/game-player-setup-dialog";
-import { BreakpointService } from "../../services/breakpoint-service";
-import { ActionMenu } from "../../components/ui/action-menu/action-menu";
+import { Player, PlayerAlignment } from "../../models/Player";
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
+import { IconButton } from "../../components/ui/icon-button/icon-button";
 
 @Component({
   selector: "app-lobby-page",
-  imports: [TextButton, ActionMenu],
+  imports: [TextButton, ReactiveFormsModule, IconButton],
   templateUrl: "./lobby-page.html",
   styleUrl: "./lobby-page.scss",
 })
@@ -28,30 +27,74 @@ export class LobbyPage implements OnInit, OnDestroy {
   public playerService = inject(PlayerService);
   public dialog = inject(Dialog);
   public router = inject(Router);
-  public breakpointService = inject(BreakpointService);
+  public fb = inject(FormBuilder);
   private injector = inject(Injector);
+
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
   public myPlayer: WritableSignal<Player | null> = this.playerService.myPlayer;
-  public isMobile = this.breakpointService.isMobile;
+  public lobbyPlayers = this.playerService.lobbyPlayers;
+  public readonly alignments: PlayerAlignment[] = ["good", "neutral", "evil"];
+  public readonly playerSetupForm: FormGroup = this.fb.group({
+    name: [
+      "",
+      [
+        Validators.required,
+        Validators.maxLength(8),
+      ],
+    ],
+    alignment: ["neutral", [Validators.required]],
+  });
+
+  public minParameterValue: Record<"strength" | "magic" | "luck", number> = {
+    strength: 0,
+    magic: 0,
+    luck: 0,
+  };
+  public strength = signal(0);
+  public magic = signal(0);
+  public luck = signal(0);
+  public experiencePool = signal(0);
+  public isSubmittingSetup = signal(false);
+  private setupSeedKey = "";
+
   public isOwner = computed(() => {
     const currentUserId = getAuth().currentUser?.uid;
     const game = this.myGame();
     if (!currentUserId || !game) return false;
     return game.ownerId === currentUserId;
   });
+
+  public readyPlayersCount = computed(() => {
+    return this.lobbyPlayers().filter((player) => player.isReady).length;
+  });
+
+  public isPlayerReady = computed(() => {
+    return !!this.myPlayer()?.isReady;
+  });
+
   public canStartGame = computed(() => {
     const game = this.myGame();
     if (!game) return false;
-    return this.isOwner() && game.status === "waiting" && game.playerIds.length === game.maxPlayers;
+
+    const players = this.lobbyPlayers();
+    const allJoined = game.playerIds.length === game.maxPlayers;
+    const allPlayersLoaded = players.length === game.maxPlayers;
+    const allReady = allPlayersLoaded && players.every((player) => player.isReady);
+
+    return this.isOwner() && game.status === "waiting" && allJoined && allReady;
   });
-  public canOpenPlayerSetup = computed(() => {
+
+  public canConfirmPlayerSetup = computed(() => {
     const player = this.myPlayer();
-    return !!player && !player.isReady;
+    return !!player && !player.isReady && this.playerSetupForm.valid && this.experiencePool() === 0 && !this.isSubmittingSetup();
   });
+
   public copyFeedback = signal<"idle" | "copied">("idle");
   private copyFeedbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   public async ngOnInit(): Promise<void> {
+    this.playerSetupForm.disable({ emitEvent: false });
+
     const currentUserId = await this.resolveCurrentUserId();
     if (!currentUserId) return;
 
@@ -61,10 +104,28 @@ export class LobbyPage implements OnInit, OnDestroy {
       const game = this.myGame();
       if (!game) {
         this.playerService.stopMyPlayerSnapshot();
+        this.playerService.stopLobbyPlayersSnapshot();
         return;
       }
 
       this.playerService.startMyPlayerSnapshot(game.id, currentUserId);
+      this.playerService.startLobbyPlayersSnapshot(game.id);
+    }, { injector: this.injector });
+
+    effect(() => {
+      const player = this.myPlayer();
+      if (!player) {
+        this.playerSetupForm.disable({ emitEvent: false });
+        this.resetSetupDraft();
+        this.setupSeedKey = "";
+        return;
+      }
+
+      const nextSeed = this.buildSetupSeed(player);
+      if (nextSeed === this.setupSeedKey) return;
+
+      this.setupSeedKey = nextSeed;
+      this.applyPlayerSetupDraft(player);
     }, { injector: this.injector });
 
     effect(() => {
@@ -98,6 +159,7 @@ export class LobbyPage implements OnInit, OnDestroy {
 
   public ngOnDestroy(): void {
     this.playerService.stopMyPlayerSnapshot();
+    this.playerService.stopLobbyPlayersSnapshot();
     this.clearCopyFeedbackTimeout();
   }
 
@@ -207,35 +269,59 @@ export class LobbyPage implements OnInit, OnDestroy {
     });
   }
 
-  public openPlayerSetupDialog(): void {
+  public canIncreaseParameter(): boolean {
+    if (this.isPlayerReady()) return false;
+    return this.experiencePool() > 0;
+  }
+
+  public canDecreaseParameter(parameter: "strength" | "magic" | "luck"): boolean {
+    if (this.isPlayerReady()) return false;
+
+    const currentValue = this.getParameterValue(parameter);
+    return currentValue > this.minParameterValue[parameter];
+  }
+
+  public increaseParameter(parameter: "strength" | "magic" | "luck"): void {
+    if (!this.canIncreaseParameter()) return;
+
+    this.setParameterValue(parameter, this.getParameterValue(parameter) + 1);
+    this.experiencePool.set(this.experiencePool() - 1);
+  }
+
+  public decreaseParameter(parameter: "strength" | "magic" | "luck"): void {
+    if (!this.canDecreaseParameter(parameter)) return;
+
+    this.setParameterValue(parameter, this.getParameterValue(parameter) - 1);
+    this.experiencePool.set(this.experiencePool() + 1);
+  }
+
+  public async onConfirmPlayerSetup(): Promise<void> {
     const game = this.myGame();
     const player = this.myPlayer();
-    if (!game || !player || !this.canOpenPlayerSetup()) return;
+    if (!game || !player || !this.canConfirmPlayerSetup()) return;
 
-    this.dialog.open(GamePlayerSetupDialog, {
-      ...DIALOGS_CONFIG,
-      data: {
-        name: player.name,
-        alignment: player.alignment ?? "neutral",
-        parameters: {
-          strength: player.parameters.strength.base,
-          magic: player.parameters.magic.base,
-          luck: player.parameters.luck.base,
-        },
-        experience: player.experience,
-      } as GamePlayerSetupDialogData,
-    }).closed.pipe(take(1)).subscribe(async (result) => {
-      if (!this.isConfirmWithData<GamePlayerSetupDialogData>(result)) return;
-      const data = result.data;
-      if (!data) return;
+    const formData = this.playerSetupForm.getRawValue();
+    const setupData: PlayerSetupData = {
+      name: String(formData.name ?? "").trim().toUpperCase(),
+      alignment: formData.alignment as PlayerAlignment,
+      parameters: {
+        strength: this.strength(),
+        magic: this.magic(),
+        luck: this.luck(),
+      },
+      experience: this.experiencePool(),
+    };
 
-      try {
-        await this.playerService.updatePlayerSetup(game.id, player.id, data as PlayerSetupData, player);
-      } catch (error) {
-        console.error(error);
-        window.alert(error instanceof Error ? error.message : "Error updating player setup");
-      }
-    });
+    this.isSubmittingSetup.set(true);
+
+    try {
+      await this.playerService.updatePlayerSetup(game.id, player.id, setupData, player);
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Error updating player setup");
+    } finally {
+      this.isSubmittingSetup.set(false);
+    }
   }
 
   private isConfirmWithData<TData>(response: unknown): response is DialogResponse<TData> {
@@ -251,6 +337,82 @@ export class LobbyPage implements OnInit, OnDestroy {
     if (this.copyFeedbackTimeoutId === null) return;
     clearTimeout(this.copyFeedbackTimeoutId);
     this.copyFeedbackTimeoutId = null;
+  }
+
+  private getParameterValue(parameter: "strength" | "magic" | "luck"): number {
+    if (parameter === "strength") return this.strength();
+    if (parameter === "magic") return this.magic();
+    return this.luck();
+  }
+
+  private setParameterValue(parameter: "strength" | "magic" | "luck", value: number): void {
+    if (parameter === "strength") {
+      this.strength.set(value);
+      return;
+    }
+
+    if (parameter === "magic") {
+      this.magic.set(value);
+      return;
+    }
+
+    this.luck.set(value);
+  }
+
+  private applyPlayerSetupDraft(player: Player): void {
+    this.minParameterValue = {
+      strength: player.parameters.strength.base,
+      magic: player.parameters.magic.base,
+      luck: player.parameters.luck.base,
+    };
+
+    this.strength.set(player.parameters.strength.base);
+    this.magic.set(player.parameters.magic.base);
+    this.luck.set(player.parameters.luck.base);
+    this.experiencePool.set(player.experience);
+
+    this.playerSetupForm.patchValue({
+      name: player.name,
+      alignment: player.alignment ?? "neutral",
+    }, { emitEvent: false });
+
+    if (player.isReady) {
+      this.playerSetupForm.disable({ emitEvent: false });
+      return;
+    }
+
+    this.playerSetupForm.enable({ emitEvent: false });
+  }
+
+  private buildSetupSeed(player: Player): string {
+    return [
+      player.id,
+      player.name,
+      player.alignment ?? "neutral",
+      player.parameters.strength.base,
+      player.parameters.magic.base,
+      player.parameters.luck.base,
+      player.experience,
+      player.isReady ? "1" : "0",
+    ].join("|");
+  }
+
+  private resetSetupDraft(): void {
+    this.minParameterValue = {
+      strength: 0,
+      magic: 0,
+      luck: 0,
+    };
+
+    this.strength.set(0);
+    this.magic.set(0);
+    this.luck.set(0);
+    this.experiencePool.set(0);
+
+    this.playerSetupForm.patchValue({
+      name: "",
+      alignment: "neutral",
+    }, { emitEvent: false });
   }
 
 }

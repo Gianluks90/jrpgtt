@@ -95,7 +95,7 @@ export class GameService {
     } as Game;
   }
 
-  public async createGame(ownerId: string, gameData: Pick<Game, "name" | "maxPlayers">): Promise<void> {
+  public async createGame(ownerId: string, gameData: Pick<Game, "name" | "maxPlayers">): Promise<string> {
     const existingGame = await this.getExistingGameForPlayer(ownerId);
     if (existingGame) {
       throw new Error("You are already in a game");
@@ -123,6 +123,7 @@ export class GameService {
     batch.set(ownerPlayerRef, ownerPlayer);
 
     await batch.commit();
+    return gameRef.id;
   }
 
   private generateJoinCode(): string {
@@ -140,7 +141,7 @@ export class GameService {
     playerId: string,
     joinCode: string,
     preloadedGame?: Game,
-  ): Promise<void> {
+  ): Promise<string> {
     const existingGame = await this.getExistingGameForPlayer(playerId);
     if (existingGame) {
       throw new Error("You are already in a game");
@@ -173,9 +174,10 @@ export class GameService {
     }, { merge: true });
     batch.set(playerRef, player);
     await batch.commit();
+    return gameId;
   }
 
-  public async joinGameByCode(playerId: string, joinCode: string): Promise<void> {
+  public async joinGameByCode(playerId: string, joinCode: string): Promise<string> {
     const normalizedJoinCode = joinCode.trim().toUpperCase();
     if (!normalizedJoinCode) {
       throw new Error("Invalid join code");
@@ -196,7 +198,7 @@ export class GameService {
       ...gameDoc.data(),
     } as Game;
 
-    await this.joinGame(gameId, playerId, normalizedJoinCode, game);
+    return this.joinGame(gameId, playerId, normalizedJoinCode, game);
   }
 
   private async getGameById(gameId: string): Promise<Game> {

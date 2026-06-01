@@ -1,6 +1,6 @@
 import { Injectable, signal } from "@angular/core";
 import { Unsubscribe } from "firebase/auth";
-import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { Player, PlayerAlignment } from "../models/Player";
 import { FirebaseService } from "./firebase-service";
 import { PLAYER_SETUP_BASE_HP } from "../consts/player-defaults";
@@ -24,10 +24,13 @@ export class PlayerService {
   private readonly setupBaseHp = PLAYER_SETUP_BASE_HP;
 
   public myPlayer = signal<Player | null>(null);
+  public lobbyPlayers = signal<Player[]>([]);
 
   private playerUnsubscribe: Unsubscribe | null = null;
   private snapshotGameId: string | null = null;
   private snapshotPlayerId: string | null = null;
+  private lobbyPlayersUnsubscribe: Unsubscribe | null = null;
+  private lobbyPlayersGameId: string | null = null;
 
   constructor(private firebaseService: FirebaseService) { }
 
@@ -66,8 +69,37 @@ export class PlayerService {
     this.snapshotPlayerId = null;
   }
 
+  public startLobbyPlayersSnapshot(gameId: string): void {
+    if (this.lobbyPlayersUnsubscribe && this.lobbyPlayersGameId === gameId) {
+      return;
+    }
+
+    this.stopLobbyPlayersSnapshot();
+    this.lobbyPlayersGameId = gameId;
+
+    const playersRef = collection(this.firebaseService.database, "games", gameId, "players");
+    this.lobbyPlayersUnsubscribe = onSnapshot(playersRef, (snapshot) => {
+      const players = snapshot.docs.map((playerDoc) => {
+        return {
+          id: playerDoc.id,
+          ...playerDoc.data(),
+        } as Player;
+      });
+
+      this.lobbyPlayers.set(players);
+    });
+  }
+
+  public stopLobbyPlayersSnapshot(): void {
+    this.lobbyPlayersUnsubscribe?.();
+    this.lobbyPlayersUnsubscribe = null;
+    this.lobbyPlayersGameId = null;
+    this.lobbyPlayers.set([]);
+  }
+
   public clearPlayerSession(): void {
     this.stopMyPlayerSnapshot();
+    this.stopLobbyPlayersSnapshot();
     this.myPlayer.set(null);
   }
 

@@ -106,7 +106,8 @@ export class HomePage implements OnInit {
       if (!name || !Number.isFinite(maxPlayers)) return;
 
       try {
-        await this.gameService.createGame(currentUserId, { name, maxPlayers });
+        const gameId = await this.gameService.createGame(currentUserId, { name, maxPlayers });
+        await this.router.navigate(["/game", gameId, "lobby"]);
       } catch (error) {
         console.error(error);
         window.alert(error instanceof Error ? error.message : "Error creating game");
@@ -129,7 +130,8 @@ export class HomePage implements OnInit {
       if (!joinCode) return;
 
       try {
-        await this.gameService.joinGameByCode(currentUserId, joinCode);
+        const gameId = await this.gameService.joinGameByCode(currentUserId, joinCode);
+        await this.router.navigate(["/game", gameId, "lobby"]);
       } catch (error) {
         console.error(error);
         window.alert(error instanceof Error ? error.message : "Error joining game");

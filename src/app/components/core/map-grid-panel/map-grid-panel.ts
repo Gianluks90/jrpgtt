@@ -3,7 +3,7 @@ import { Player } from "../../../models/Player";
 import { MapCell, SanctuaryElement } from "../../../models/MapCell";
 import { MapCellComponent } from "../../ui/map-cell/map-cell";
 import { EnvironmentService, type EdgeDirection } from "../../../services/environment-service";
-import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesConfig";
 import { isSpecialCellCoordinate } from "../../../consts/special-cells";
 import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspector";
 import { LandmarksService } from "../../../services/landmarks-service";
@@ -82,6 +82,7 @@ export class MapGridPanel {
   public activePlayerId = input<string | null>(null);
   public movableCellIds = input.required<Set<string>>();
   public regionIToIIWarning = input<RegionBoundaryWarningState | null>(null);
+  public tilesConfig = input<TilesConfig | null>(null);
   public environmentByCellId = input.required<Record<string, string[]>>();
   public sanctuaryStylesByElement = input.required<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>();
 
@@ -228,6 +229,17 @@ export class MapGridPanel {
   public isRevealedCell(cell: MapGridPanelCell): boolean {
     const mapCell = cell.mapCell;
     return !!mapCell?.biome && !!mapCell?.discoveredBy;
+  }
+
+  public isImpassableCell(cell: MapGridPanelCell): boolean {
+    if (!this.isRevealedCell(cell)) return false;
+    if (cell.isSpecial || !cell.mapCell) return false;
+
+    const config = this.tilesConfig();
+    if (!config) return false;
+
+    const conditionIds = config.biomes[cell.mapCell.biome]?.conditions ?? [];
+    return conditionIds.includes("impassable");
   }
 
   public dangerOverlayLevel(cell: MapGridPanelCell): 0 | 1 | 2 {

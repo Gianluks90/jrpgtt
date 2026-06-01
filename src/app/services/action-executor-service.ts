@@ -63,6 +63,7 @@ export class ActionExecutorService {
       code: string;
       args: Record<string, unknown>;
     }> = [];
+    let biomeConditionExperienceGained = 0;
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateSnap, playerSnap, gameMapSnap] = await Promise.all([
@@ -137,7 +138,28 @@ export class ActionExecutorService {
               continue;
             }
 
+            if (effect.type === "experience-flat-on-turn-end") {
+              const gainAmount = Math.max(0, Math.floor(Number(effect.flatAmount ?? 0)));
+              if (gainAmount > 0) {
+                biomeConditionExperienceGained += gainAmount;
+                biomeConditionLogs.push({
+                  code: condition.logCode ?? "player.biomeConditionGainExperience",
+                  args: {
+                    biome: currentCell.biome,
+                    conditionId,
+                    amount: gainAmount,
+                    environmentSize: connectedEnvironmentSize,
+                  },
+                });
+              }
+              continue;
+            }
+
             if (effect.blockedByStatusKey && this.hasStatus(statusSnapshot.activeStatuses, effect.blockedByStatusKey)) {
+              continue;
+            }
+
+            if (typeof effect.basePercentPerConnectedCell !== "number" || !Number.isFinite(effect.basePercentPerConnectedCell)) {
               continue;
             }
 
@@ -238,6 +260,14 @@ export class ActionExecutorService {
 
     for (const conditionLog of biomeConditionLogs) {
       await this.tryCreateLog(gameId, actor, conditionLog.code, conditionLog.args);
+    }
+
+    if (biomeConditionExperienceGained > 0) {
+      await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, actor.id, biomeConditionExperienceGained);
+      await this.tryCreateLog(gameId, actor, "player.gainExperience", {
+        amount: biomeConditionExperienceGained,
+        source: "biome-condition",
+      });
     }
 
     await this.tryCreateLog(gameId, actor, "player.endTurn", {
@@ -597,6 +627,7 @@ export class ActionExecutorService {
     const [tilesConfig] = await Promise.all([
       this.tilesConfigService.loadConfig(),
       this.statusCatalogService.loadConfig(),
+      this.biomeConditionCatalogService.loadConfig(),
     ]);
     const nutritionStatus = this.statusCatalogService.getStatus("nutrition");
     if (!nutritionStatus) {
@@ -607,6 +638,7 @@ export class ActionExecutorService {
     const gameRef = doc(this.firebaseService.database, "games", gameId);
 
     let gatheredResource: ResourceLabel | null = null;
+    let gatheredQuantity = 0;
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateSnap, playerTxSnap] = await Promise.all([
         transaction.get(worldStateRef),
@@ -672,8 +704,13 @@ export class ActionExecutorService {
       }
 
       gatheredResource = this.pickRandom(biomeConfig.resources);
+      gatheredQuantity = this.resolveResourceGainQuantityForCell({
+        mapCell,
+        tilesConfig,
+        resourceLabel: gatheredResource,
+      });
       let nextResources = this.addResource(currentResources, "food", -1);
-      nextResources = this.addResource(nextResources, gatheredResource, 1);
+      nextResources = this.addResource(nextResources, gatheredResource, gatheredQuantity);
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
       const nextStatuses = this.decrementStatuses(currentStatuses);
@@ -700,6 +737,7 @@ export class ActionExecutorService {
 
     await this.tryCreateLog(gameId, actor, "player.cellGather", {
       resource: gatheredResource,
+      quantity: Math.max(1, Math.floor(gatheredQuantity || 1)),
       spentFood: 1,
       turnEnded: true,
     });
@@ -2255,6 +2293,38 @@ export class ActionExecutorService {
       quantity: nextQty,
     };
     return nextResources;
+  }
+
+  private resolveResourceGainQuantityForCell(input: {
+    mapCell: MapCell;
+    tilesConfig: Awaited<ReturnType<TilesConfigService["loadConfig"]>>;
+    resourceLabel: ResourceLabel;
+  }): number {
+    const { mapCell, tilesConfig, resourceLabel } = input;
+    if (mapCell.isSpecial === true) {
+      return 1;
+    }
+
+    let multiplier = 1;
+    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    conditionIds.forEach((conditionId) => {
+      const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
+      if (!effect || effect.type !== "resource-gain-multiplier") {
+        return;
+      }
+
+      if (Array.isArray(effect.resourceLabels) && effect.resourceLabels.length > 0 && !effect.resourceLabels.includes(resourceLabel)) {
+        return;
+      }
+
+      if (typeof effect.multiplier !== "number" || !Number.isFinite(effect.multiplier) || effect.multiplier <= 0) {
+        return;
+      }
+
+      multiplier = Math.max(multiplier, effect.multiplier);
+    });
+
+    return Math.max(1, Math.floor(multiplier));
   }
 
   private getTotalResourceCount(resources: ResourceStack[]): number {

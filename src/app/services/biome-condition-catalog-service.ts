@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { BiomeConditionDefinition, BiomeConditionsCatalogConfig, BiomeConditionEffectDefinition } from "../models/BiomeConditionCatalog";
+import { ResourceLabel } from "../models/Resource";
 
 @Injectable({
   providedIn: "root",
@@ -124,22 +125,59 @@ export class BiomeConditionCatalogService {
       maxPercent?: unknown;
       minDeltaHp?: unknown;
       blockedByStatusKey?: unknown;
+      multiplier?: unknown;
+      flatAmount?: unknown;
+      maxLevel?: unknown;
+      resourceLabels?: unknown;
     };
 
     if (!this.isEffectType(typed.type)) {
       throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.type`);
     }
 
-    if (typeof typed.basePercentPerConnectedCell !== "number" || !Number.isFinite(typed.basePercentPerConnectedCell) || typed.basePercentPerConnectedCell <= 0) {
-      throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.basePercentPerConnectedCell`);
+    if (typed.type === "hp-damage-percent-per-connected-cell" || typed.type === "hp-heal-percent-per-connected-cell") {
+      if (typeof typed.basePercentPerConnectedCell !== "number" || !Number.isFinite(typed.basePercentPerConnectedCell) || typed.basePercentPerConnectedCell <= 0) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.basePercentPerConnectedCell`);
+      }
+
+      if (typeof typed.maxPercent !== "undefined" && (typeof typed.maxPercent !== "number" || !Number.isFinite(typed.maxPercent) || typed.maxPercent <= 0)) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.maxPercent`);
+      }
+
+      if (typeof typed.minDeltaHp !== "undefined" && (typeof typed.minDeltaHp !== "number" || !Number.isFinite(typed.minDeltaHp) || typed.minDeltaHp <= 0)) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.minDeltaHp`);
+      }
     }
 
-    if (typeof typed.maxPercent !== "undefined" && (typeof typed.maxPercent !== "number" || !Number.isFinite(typed.maxPercent) || typed.maxPercent <= 0)) {
-      throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.maxPercent`);
+    if (typed.type === "resource-gain-multiplier" || typed.type === "luck-check-multiplier") {
+      if (typeof typed.multiplier !== "number" || !Number.isFinite(typed.multiplier) || typed.multiplier <= 0) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.multiplier`);
+      }
     }
 
-    if (typeof typed.minDeltaHp !== "undefined" && (typeof typed.minDeltaHp !== "number" || !Number.isFinite(typed.minDeltaHp) || typed.minDeltaHp <= 0)) {
-      throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.minDeltaHp`);
+    if (typed.type === "experience-flat-on-turn-end") {
+      if (typeof typed.flatAmount !== "number" || !Number.isFinite(typed.flatAmount) || typed.flatAmount <= 0) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.flatAmount`);
+      }
+    }
+
+    if (typed.type === "enemy-level-bonus-by-region-value") {
+      if (typeof typed.maxLevel !== "undefined" && (typeof typed.maxLevel !== "number" || !Number.isFinite(typed.maxLevel) || typed.maxLevel < 1)) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.maxLevel`);
+      }
+    }
+
+    if (typeof typed.resourceLabels !== "undefined") {
+      if (!Array.isArray(typed.resourceLabels)) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.resourceLabels`);
+      }
+
+      const allowedResourceLabels = new Set<ResourceLabel>(["timber", "food", "minerals", "cloth"]);
+      typed.resourceLabels.forEach((resourceLabel) => {
+        if (typeof resourceLabel !== "string" || !allowedResourceLabels.has(resourceLabel as ResourceLabel)) {
+          throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.resourceLabels entry '${String(resourceLabel)}'`);
+        }
+      });
     }
 
     if (typeof typed.blockedByStatusKey !== "undefined" && (typeof typed.blockedByStatusKey !== "string" || !typed.blockedByStatusKey.trim())) {
@@ -148,10 +186,14 @@ export class BiomeConditionCatalogService {
 
     return {
       type: typed.type,
-      basePercentPerConnectedCell: typed.basePercentPerConnectedCell,
-      maxPercent: typed.maxPercent,
-      minDeltaHp: typed.minDeltaHp,
+      basePercentPerConnectedCell: typeof typed.basePercentPerConnectedCell === "number" ? typed.basePercentPerConnectedCell : undefined,
+      maxPercent: typeof typed.maxPercent === "number" ? typed.maxPercent : undefined,
+      minDeltaHp: typeof typed.minDeltaHp === "number" ? typed.minDeltaHp : undefined,
       blockedByStatusKey: typed.blockedByStatusKey,
+      multiplier: typeof typed.multiplier === "number" ? typed.multiplier : undefined,
+      flatAmount: typeof typed.flatAmount === "number" ? typed.flatAmount : undefined,
+      maxLevel: typeof typed.maxLevel === "number" ? typed.maxLevel : undefined,
+      resourceLabels: typed.resourceLabels as ResourceLabel[] | undefined,
     };
   }
 
@@ -171,6 +213,12 @@ export class BiomeConditionCatalogService {
 
   private isEffectType(value: unknown): value is BiomeConditionEffectDefinition["type"] {
     return value === "hp-damage-percent-per-connected-cell"
-      || value === "hp-heal-percent-per-connected-cell";
+      || value === "hp-heal-percent-per-connected-cell"
+      || value === "resource-gain-multiplier"
+      || value === "movement-enable-diagonal-adjacency"
+      || value === "movement-block-entry"
+      || value === "experience-flat-on-turn-end"
+      || value === "luck-check-multiplier"
+      || value === "enemy-level-bonus-by-region-value";
   }
 }

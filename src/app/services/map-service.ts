@@ -21,6 +21,8 @@ import { LandmarksService } from "./landmarks-service";
 import { PlayerStatsModifierService } from "./player-stats-modifier-service";
 import { WorldEventRegionTransitionService } from "./world-event-region-transition-service";
 import { StatusCatalogService } from "./status-catalog-service";
+import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
+import { TilesConfig } from "../models/TilesConfig";
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -39,13 +41,17 @@ export class MapService {
     private playerStatsModifierService: PlayerStatsModifierService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
     private statusCatalogService: StatusCatalogService,
+    private biomeConditionCatalogService: BiomeConditionCatalogService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
     await Promise.all([
       this.landmarksService.loadConfig(),
       this.statusCatalogService.loadConfig(),
+      this.biomeConditionCatalogService.loadConfig(),
     ]);
+
+    const tilesConfig = await this.tilesConfigService.loadConfig();
 
     const gameRef = doc(this.firebaseService.database, "games", gameId);
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
@@ -105,9 +111,16 @@ export class MapService {
       }
 
       const targetCellId = this.cellId(targetX, targetY);
-      const isAllowed = await this.canMoveToTarget(transaction, gameId, player, targetCellId, mapSize);
+      const isAllowed = await this.canMoveToTarget(transaction, gameId, player, targetCellId, mapSize, tilesConfig);
       if (!isAllowed) {
         throw new Error("Invalid movement for current environment");
+      }
+
+      if (targetCellSnap.exists()) {
+        const targetCell = targetCellSnap.data() as MapCell;
+        if (this.isBlockedByMovementEntryConditions(targetCell, tilesConfig)) {
+          throw new Error("Target cell is impassable");
+        }
       }
 
       const nextWorldState: WorldState = {
@@ -293,16 +306,30 @@ export class MapService {
 
     // RACCOLTA RISORSA CASUALE
     if (landedBiome && !landedOnSpecialCell) {
-      const fortuneMultiplier = this.resolveLuckBonusMultiplierFromStatuses(movedPlayerStatuses);
+      const landedCell = {
+        x: targetX,
+        y: targetY,
+        biome: landedBiome,
+        revealedAtTurn: movedOnTurn,
+        discoveredBy: playerId,
+      } as MapCell;
+      const conditionLuckMultiplier = this.resolveConditionLuckMultiplier(landedCell, tilesConfig);
+      const fortuneMultiplier = this.resolveLuckBonusMultiplierFromStatuses(movedPlayerStatuses) * conditionLuckMultiplier;
       const luckResult = this.luckService.checkLuck(movedPlayerLuck * fortuneMultiplier);
-      const tilesConfig = await this.tilesConfigService.loadConfig();
       const biomeEntry = tilesConfig.biomes[landedBiome];
       const possibleResources = biomeEntry?.resources ?? [];
       const gainedResource = luckResult.success && possibleResources.length > 0
         ? this.pickRandomResource(possibleResources)
         : null;
+      const gainedResourceQuantity = gainedResource
+        ? this.resolveResourceGainQuantity({
+          mapCell: landedCell,
+          tilesConfig,
+          resourceLabel: gainedResource,
+        })
+        : 0;
 
-      await this.applyExplorationOutcome(gameId, playerId, gainedResource, luckResult, movedOnTurn);
+      await this.applyExplorationOutcome(gameId, playerId, gainedResource, gainedResourceQuantity, luckResult, movedOnTurn);
     }
 
     let gainedExperience = 0;
@@ -505,6 +532,7 @@ export class MapService {
     gameId: string,
     playerId: string,
     resourceLabel: ResourceLabel | null,
+    resourceQuantity: number,
     luckResult: LuckCheckResult,
     worldTurn: number,
   ): Promise<void> {
@@ -522,6 +550,7 @@ export class MapService {
     let pendingResourcePickup = player.pendingResourcePickup ?? null;
 
     if (resourceLabel) {
+      const safeQuantity = Math.max(1, Math.floor(resourceQuantity));
       if (totalResourceCount >= capacity) {
         pendingResourcePickup = {
           resource: resourceLabel,
@@ -529,7 +558,7 @@ export class MapService {
           requestedAtTurn: Math.max(0, Math.floor(worldTurn)),
         };
       } else {
-        this.addSingleResource(resources, resourceLabel);
+        this.addResourceQuantity(resources, resourceLabel, safeQuantity);
         pendingResourcePickup = null;
       }
     }
@@ -553,19 +582,20 @@ export class MapService {
     }, 0);
   }
 
-  private addSingleResource(resources: Player["inventory"]["resources"], resourceLabel: ResourceLabel): void {
+  private addResourceQuantity(resources: Player["inventory"]["resources"], resourceLabel: ResourceLabel, quantity: number): void {
+    const safeQuantity = Math.max(1, Math.floor(quantity));
     const idx = resources.findIndex((resource) => resource.label === resourceLabel);
     if (idx >= 0) {
       resources[idx] = {
         ...resources[idx],
-        quantity: Math.max(0, Math.floor(Number(resources[idx].quantity ?? 0))) + 1,
+        quantity: Math.max(0, Math.floor(Number(resources[idx].quantity ?? 0))) + safeQuantity,
       };
       return;
     }
 
     resources.push({
       label: resourceLabel,
-      quantity: 1,
+      quantity: safeQuantity,
     });
   }
 
@@ -610,16 +640,18 @@ export class MapService {
     player: Player,
     targetCellId: string,
     mapSize: number,
+    tilesConfig: TilesConfig,
   ): Promise<boolean> {
     const source = player.location;
-    if (this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId)) {
-      return true;
-    }
-
     const sourceCellId = this.cellId(source.x, source.y);
     const sourceCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", sourceCellId);
     const sourceCellSnap = await transaction.get(sourceCellRef);
     const sourceCell = sourceCellSnap.exists() ? sourceCellSnap.data() as MapCell : null;
+
+    const includeDiagonalAdjacency = this.hasDiagonalMovementCondition(sourceCell, tilesConfig);
+    if (this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId, includeDiagonalAdjacency)) {
+      return true;
+    }
 
     if (!sourceCell) {
       return false;
@@ -635,6 +667,7 @@ export class MapService {
       sourceCell,
       targetCellId,
       mapSize,
+      includeDiagonalAdjacency,
     );
   }
 
@@ -644,6 +677,7 @@ export class MapService {
     sourceCell: MapCell,
     targetCellId: string,
     mapSize: number,
+    includeDiagonalAdjacency: boolean,
   ): Promise<boolean> {
     const startId = this.cellId(sourceCell.x, sourceCell.y);
     const visited = new Set<string>([startId]);
@@ -657,7 +691,7 @@ export class MapService {
       environmentSize += 1;
 
       const currentId = this.cellId(current.x, current.y);
-      if (currentId === targetCellId || this.environmentService.isAdjacentCellId(current.x, current.y, targetCellId)) {
+      if (currentId === targetCellId || this.environmentService.isAdjacentCellId(current.x, current.y, targetCellId, includeDiagonalAdjacency)) {
         canReachTarget = true;
       }
 
@@ -685,6 +719,83 @@ export class MapService {
     }
 
     return canReachTarget && environmentSize >= 2;
+  }
+
+  private hasDiagonalMovementCondition(mapCell: MapCell | null, tilesConfig: TilesConfig): boolean {
+    if (!mapCell || mapCell.isSpecial === true) {
+      return false;
+    }
+
+    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    return conditionIds.some((conditionId) => {
+      return this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect?.type === "movement-enable-diagonal-adjacency";
+    });
+  }
+
+  private isBlockedByMovementEntryConditions(mapCell: MapCell | null, tilesConfig: TilesConfig): boolean {
+    if (!mapCell || mapCell.isSpecial === true) {
+      return false;
+    }
+
+    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    return conditionIds.some((conditionId) => {
+      return this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect?.type === "movement-block-entry";
+    });
+  }
+
+  private resolveConditionLuckMultiplier(mapCell: MapCell | null, tilesConfig: TilesConfig): number {
+    if (!mapCell || mapCell.isSpecial === true) {
+      return 1;
+    }
+
+    let multiplier = 1;
+    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    conditionIds.forEach((conditionId) => {
+      const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
+      if (!effect || effect.type !== "luck-check-multiplier") {
+        return;
+      }
+
+      if (typeof effect.multiplier !== "number" || !Number.isFinite(effect.multiplier) || effect.multiplier <= 0) {
+        return;
+      }
+
+      multiplier = Math.max(multiplier, effect.multiplier);
+    });
+
+    return multiplier;
+  }
+
+  private resolveResourceGainQuantity(input: {
+    mapCell: MapCell | null;
+    tilesConfig: TilesConfig;
+    resourceLabel: ResourceLabel;
+  }): number {
+    const { mapCell, tilesConfig, resourceLabel } = input;
+    if (!mapCell || mapCell.isSpecial === true) {
+      return 1;
+    }
+
+    let multiplier = 1;
+    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    conditionIds.forEach((conditionId) => {
+      const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
+      if (!effect || effect.type !== "resource-gain-multiplier") {
+        return;
+      }
+
+      if (Array.isArray(effect.resourceLabels) && effect.resourceLabels.length > 0 && !effect.resourceLabels.includes(resourceLabel)) {
+        return;
+      }
+
+      if (typeof effect.multiplier !== "number" || !Number.isFinite(effect.multiplier) || effect.multiplier <= 0) {
+        return;
+      }
+
+      multiplier = Math.max(multiplier, effect.multiplier);
+    });
+
+    return Math.max(1, Math.floor(multiplier));
   }
 
   private isInsideBounds(x: number, y: number, size: number): boolean {

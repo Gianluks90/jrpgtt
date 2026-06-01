@@ -22,11 +22,13 @@ import { MapPageInteractionService } from "../../services/map-page-interaction-s
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
 import { PlayerComputedStats } from "../../models/PlayerComputedStats";
+import { MapCell } from "../../models/MapCell";
 import { PlayerStatsModifierService } from "../../services/player-stats-modifier-service";
 import { FastTravelVisualService } from "../../services/fast-travel-visual-service";
 import { FastTravelFlowService } from "../../services/fast-travel-flow-service";
 import { PendingFastTravelState } from "../../models/WorldState";
 import { WorldEventRegionTransitionService } from "../../services/world-event-region-transition-service";
+import { BiomeConditionCatalogService } from "../../services/biome-condition-catalog-service";
 
 @Component({
   selector: "app-map-page",
@@ -62,6 +64,7 @@ export class MapPage implements OnInit, OnDestroy {
   private fastTravelVisualService = inject(FastTravelVisualService);
   private fastTravelFlowService = inject(FastTravelFlowService);
   private worldEventRegionTransitionService = inject(WorldEventRegionTransitionService);
+  private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -221,12 +224,29 @@ export class MapPage implements OnInit, OnDestroy {
     if (!current || !this.isMyTurn()) return new Set<string>();
     if (this.hasMovedOnCurrentTurn()) return new Set<string>();
 
-    return this.environmentService.getMovableCellIdsForPlayer(
+    const currentCellId = `${current.location.x}_${current.location.y}`;
+    const currentCell = this.mapCellsById()[currentCellId] ?? null;
+    const allowDiagonalFromCurrent = this.cellHasConditionEffect(currentCell, "movement-enable-diagonal-adjacency", ["open-ground"]);
+
+    const targets = this.environmentService.getMovableCellIdsForPlayer(
       current,
       this.mapCellsById(),
       this.mapSize(),
       this.environmentByCellId(),
+      allowDiagonalFromCurrent,
     );
+
+    const filteredTargets = new Set<string>();
+    targets.forEach((targetCellId) => {
+      const targetCell = this.mapCellsById()[targetCellId] ?? null;
+      if (this.cellHasConditionEffect(targetCell, "movement-block-entry", ["impassable"])) {
+        return;
+      }
+
+      filteredTargets.add(targetCellId);
+    });
+
+    return filteredTargets;
   });
 
   public regionIToIIWarning = computed(() => {
@@ -241,6 +261,7 @@ export class MapPage implements OnInit, OnDestroy {
     if (!this.gameId) return;
     this.mapPageInteractionService.resetUiState();
     this.mapPageState.init(this.gameId);
+    void this.biomeConditionCatalogService.loadConfig();
     effect(() => {
       const player = this.myPlayer();
       const pendingPickup = player?.pendingResourcePickup ?? null;
@@ -345,6 +366,31 @@ export class MapPage implements OnInit, OnDestroy {
       gameId: this.gameId,
       player: this.myPlayer(),
       canOpen: this.canOpenLevelUpDialog(),
+    });
+  }
+
+  private cellHasConditionEffect(
+    mapCell: MapCell | null,
+    effectType: string,
+    fallbackConditionIds: string[] = [],
+  ): boolean {
+    if (!mapCell || mapCell.isSpecial === true) {
+      return false;
+    }
+
+    const tilesConfig = this.tilesConfig();
+    if (!tilesConfig) {
+      return false;
+    }
+
+    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    return conditionIds.some((conditionId) => {
+      const definition = this.biomeConditionCatalogService.getCachedCondition(conditionId);
+      if (definition?.effect?.type === effectType) {
+        return true;
+      }
+
+      return fallbackConditionIds.includes(conditionId);
     });
   }
 

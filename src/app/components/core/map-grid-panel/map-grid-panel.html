@@ -69,6 +69,7 @@
             [specialType]="specialTypeForCell(cell)"
             [revealed]="isRevealedCell(cell)"
             [movable]="isMovableCell(cell)"
+            [impassable]="isImpassableCell(cell)"
             [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
             [dangerOverlayLevel]="dangerOverlayLevel(cell)"
             [biome]="cell.mapCell?.biome ?? null"

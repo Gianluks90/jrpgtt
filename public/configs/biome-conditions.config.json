@@ -23,6 +23,69 @@
         "maxPercent": 0.15,
         "minDeltaHp": 1
       }
+    },
+    {
+      "id": "abundant-resources",
+      "label": "Abundant Resources",
+      "description": "Doubles resources gained from exploration and gather actions on the cell.",
+      "effect": {
+        "type": "resource-gain-multiplier",
+        "multiplier": 2
+      }
+    },
+    {
+      "id": "open-ground",
+      "label": "Open Ground",
+      "description": "Allows diagonal movement from this cell.",
+      "effect": {
+        "type": "movement-enable-diagonal-adjacency"
+      }
+    },
+    {
+      "id": "impassable",
+      "label": "Impassable",
+      "description": "Blocks entry into this cell.",
+      "effect": {
+        "type": "movement-block-entry"
+      }
+    },
+    {
+      "id": "vein-of-plenty",
+      "label": "Vein of Plenty",
+      "description": "Doubles minerals gained on this cell.",
+      "effect": {
+        "type": "resource-gain-multiplier",
+        "multiplier": 2,
+        "resourceLabels": ["minerals"]
+      }
+    },
+    {
+      "id": "ancient-knowledge",
+      "label": "Ancient Knowledge",
+      "description": "Grants bonus experience when ending the turn on this cell.",
+      "logCode": "player.biomeConditionGainExperience",
+      "effect": {
+        "type": "experience-flat-on-turn-end",
+        "flatAmount": 2
+      }
+    },
+    {
+      "id": "cursed-ground",
+      "label": "Cursed Ground",
+      "description": "Reduces luck checks performed on this cell.",
+      "effect": {
+        "type": "luck-check-multiplier",
+        "multiplier": 0.8
+      }
+    },
+    {
+      "id": "enemy-level-bonus-by-region-value",
+      "label": "Enemy Level Bonus By Region",
+      "description": "Scaffolding condition for world event enemy level bonus resolution.",
+      "effect": {
+        "type": "enemy-level-bonus-by-region-value",
+        "maxLevel": 10
+      }
     }
   ]
 }

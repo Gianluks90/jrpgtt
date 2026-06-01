@@ -77,15 +77,23 @@ export class EnvironmentService {
     mapCellsById: Record<string, MapCell>,
     mapSize: number,
     environmentByCellId: Record<string, string[]>,
+    allowDiagonalFromCurrent = false,
   ): Set<string> {
     const currentCellId = this.cellId(player.location.x, player.location.y);
     const environment = environmentByCellId[currentCellId];
 
     if (!environment || environment.length < 2) {
-      return this.buildAdjacentTargetIds(player.location.x, player.location.y, mapSize);
+      return this.buildAdjacentTargetIds(player.location.x, player.location.y, mapSize, allowDiagonalFromCurrent);
     }
 
-    return this.buildMovementTargetIdsFromEnvironmentIds(environment, mapCellsById, mapSize);
+    const targets = this.buildMovementTargetIdsFromEnvironmentIds(environment, mapCellsById, mapSize);
+    if (allowDiagonalFromCurrent) {
+      this.buildAdjacentTargetIds(player.location.x, player.location.y, mapSize, true).forEach((targetId) => {
+        targets.add(targetId);
+      });
+    }
+
+    return targets;
   }
 
   public buildMovementTargetIdsFromEnvironmentCells(environmentCells: MapCell[], mapSize: number): Set<string> {
@@ -119,17 +127,29 @@ export class EnvironmentService {
     return "2px";
   }
 
-  public isAdjacentCellId(fromX: number, fromY: number, targetCellId: string): boolean {
-    return this.getNeighborCoords(fromX, fromY)
+  public isAdjacentCellId(fromX: number, fromY: number, targetCellId: string, includeDiagonals = false): boolean {
+    return this.getNeighborCoords(fromX, fromY, includeDiagonals)
       .some((neighbor) => this.cellId(neighbor.x, neighbor.y) === targetCellId);
   }
 
-  public getNeighborCoords(x: number, y: number): Array<{ x: number; y: number }> {
-    return [
+  public getNeighborCoords(x: number, y: number, includeDiagonals = false): Array<{ x: number; y: number }> {
+    const orthogonalNeighbors = [
       { x: x + 1, y },
       { x: x - 1, y },
       { x, y: y + 1 },
       { x, y: y - 1 },
+    ];
+
+    if (!includeDiagonals) {
+      return orthogonalNeighbors;
+    }
+
+    return [
+      ...orthogonalNeighbors,
+      { x: x + 1, y: y + 1 },
+      { x: x + 1, y: y - 1 },
+      { x: x - 1, y: y + 1 },
+      { x: x - 1, y: y - 1 },
     ];
   }
 
@@ -153,9 +173,9 @@ export class EnvironmentService {
     return targets;
   }
 
-  private buildAdjacentTargetIds(x: number, y: number, mapSize: number): Set<string> {
+  private buildAdjacentTargetIds(x: number, y: number, mapSize: number, includeDiagonals = false): Set<string> {
     const ids = new Set<string>();
-    this.getNeighborCoords(x, y)
+    this.getNeighborCoords(x, y, includeDiagonals)
       .filter((candidate) => this.isInsideBounds(candidate.x, candidate.y, mapSize))
       .forEach((candidate) => {
         ids.add(this.cellId(candidate.x, candidate.y));

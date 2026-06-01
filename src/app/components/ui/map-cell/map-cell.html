@@ -6,6 +6,7 @@
     [class.revealed-cell]="revealed()"
     [class.unrevealed-cell]="!revealed()"
     [class.movable-cell]="movable()"
+    [class.impassable-cell]="impassable()"
     [class.environment-hover-cell]="hoveredEnvironment()"
     [class]="biome() && !isSanctuaryCell() ? 'biome-' + biome() : ''"
     [style.--env-top-width]="envTopWidth()"
@@ -29,6 +30,10 @@
             class="danger-overlay"
             [class.danger-overlay-strong]="dangerOverlayLevel() === 2"
         ></div>
+    }
+
+    @if (revealed() && impassable()) {
+        <div class="impassable-cross" aria-hidden="true"></div>
     }
 
     @if (revealed() && isLandmarkCell() && landmarkIconUrl()) {

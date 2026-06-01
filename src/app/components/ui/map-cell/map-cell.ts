@@ -14,6 +14,7 @@ export class MapCellComponent {
   public special = input(false);
   public specialType = input<SpecialTileType | null>(null);
   public movable = input(false);
+  public impassable = input(false);
   public hoveredEnvironment = input(false);
   public dangerOverlayLevel = input<0 | 1 | 2>(0, { alias: "dangerOverlayLevel" });
   public biome = input<BiomeType | null>(null);

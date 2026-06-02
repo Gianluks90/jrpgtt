@@ -9,6 +9,7 @@ export type SafePlaceActionId =
   | "capital-enchantress"
   | "capital-inn"
   | "city-healer"
+  | "city-mystic"
   | "village-craftsman"
   | "camp-gatherer"
   | "camp-hunter";
@@ -17,7 +18,7 @@ export type SafePlaceDoctorActionId = "capital-doctor" | "city-healer";
 
 export const SAFE_PLACE_ACTIONS_BY_LANDMARK: Record<SafePlaceLandmarkId, SafePlaceActionId[]> = {
   capital: ["safe-place-wait", "fast-travel", "capital-doctor", "capital-enchantress", "capital-inn"],
-  city: ["safe-place-wait", "fast-travel", "city-healer"],
+  city: ["safe-place-wait", "fast-travel", "city-healer", "city-mystic"],
   village: ["safe-place-wait", "fast-travel", "village-craftsman"],
   camp: ["safe-place-wait", "fast-travel", "camp-gatherer", "camp-hunter"],
 };
@@ -29,6 +30,7 @@ export const SAFE_PLACE_ACTION_LANDMARK: Record<SafePlaceActionId, SafePlaceLand
   "capital-enchantress": "capital",
   "capital-inn": "capital",
   "city-healer": "city",
+  "city-mystic": "city",
   "village-craftsman": "village",
   "camp-gatherer": "camp",
   "camp-hunter": "camp",
@@ -44,6 +46,7 @@ export function isSafePlaceActionId(actionId: string): actionId is SafePlaceActi
     || actionId === "capital-enchantress"
     || actionId === "capital-inn"
     || actionId === "city-healer"
+    || actionId === "city-mystic"
     || actionId === "village-craftsman"
     || actionId === "camp-gatherer"
     || actionId === "camp-hunter"

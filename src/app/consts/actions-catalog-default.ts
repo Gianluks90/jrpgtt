@@ -254,6 +254,30 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       },
     },
     {
+      id: "city-mystic",
+      ui: {
+        label: "Mystic",
+        descriptionTemplate: "Consult the City Mystic for 5 coins. Draw your fate from a luck check, then end your turn.",
+        i18n: {
+          labelKey: "actions.cityMystic.label",
+          descriptionKey: "actions.cityMystic.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-mystic",
+        errorMessage: "Error while consulting the mystic",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "City Mystic",
+      },
+    },
+    {
       id: "capital-inn",
       ui: {
         label: "Inn",

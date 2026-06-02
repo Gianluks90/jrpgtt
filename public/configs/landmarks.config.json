@@ -49,7 +49,7 @@
   },
   "safePlaceActionsByLandmark": {
     "capital": ["safe-place-wait", "fast-travel", "capital-doctor", "capital-enchantress", "capital-inn"],
-    "city": ["safe-place-wait", "fast-travel", "city-healer"],
+    "city": ["safe-place-wait", "fast-travel", "city-healer", "city-mystic"],
     "village": ["safe-place-wait", "fast-travel", "village-craftsman"],
     "camp": ["safe-place-wait", "fast-travel", "camp-gatherer", "camp-hunter"]
   },

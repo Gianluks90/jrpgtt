@@ -44,6 +44,10 @@ export class EventLogService {
             const landmarkName = String(args["landmarkName"] ?? "a landmark");
             return `${playerName} discovered ${landmarkName}.`;
         },
+        "player.reachLandmark": ({ playerName, args }) => {
+            const landmarkName = String(args["landmarkName"] ?? "a landmark");
+            return `${playerName} reached ${landmarkName}.`;
+        },
         "player.gainExperience": ({ playerName, args }) => {
             const amount = Number(args["amount"] ?? 0);
             return `${playerName} gained ${amount} XP.`;
@@ -123,6 +127,20 @@ export class EventLogService {
             }
 
             return `${playerName} consulted ${source}, paid ${spentCoins} coins and drew ${rewardLabel}.`;
+        },
+        "player.cityMystic": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("city-mystic", "City Mystic");
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            const rewardLabel = String(args["rewardLabel"] ?? "Fate");
+            const alignment = typeof args["alignment"] === "string" ? String(args["alignment"]).toUpperCase() : "";
+            const gainedExperience = Number(args["gainedExperience"] ?? 0);
+            const grantedLevelUp = Boolean(args["grantedLevelUp"]);
+            const extras: string[] = [];
+            if (alignment) extras.push(`alignment: ${alignment}`);
+            if (gainedExperience > 0) extras.push(`XP +${gainedExperience}`);
+            if (grantedLevelUp) extras.push("+1 level up");
+            const suffix = extras.length > 0 ? ` (${extras.join(", ")})` : "";
+            return `${playerName} consulted ${source}, paid ${spentCoins} coins and drew ${rewardLabel}${suffix}.`;
         },
         "player.fastTravelBooked": ({ playerName, args }) => {
             const from = String(args["from"] ?? "a safe place");

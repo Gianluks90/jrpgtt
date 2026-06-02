@@ -1,0 +1,52 @@
+{
+  "rewards": [
+    {
+      "id": "alignment-evil",
+      "minTotal": 1,
+      "maxTotal": 16,
+      "label": "Mind Shift: Evil",
+      "previewLabel": "Your alignment becomes Evil",
+      "alignment": "evil"
+    },
+    {
+      "id": "alignment-neutral",
+      "minTotal": 17,
+      "maxTotal": 32,
+      "label": "Mind Shift: Neutral",
+      "previewLabel": "Your alignment becomes Neutral",
+      "alignment": "neutral"
+    },
+    {
+      "id": "ignored",
+      "minTotal": 33,
+      "maxTotal": 64,
+      "label": "Ignored",
+      "previewLabel": "The Mystic ignores you",
+      "alignment": null
+    },
+    {
+      "id": "xp-1",
+      "minTotal": 65,
+      "maxTotal": 80,
+      "label": "Glimpse of Insight",
+      "previewLabel": "Gain 1 XP",
+      "experienceGain": 1
+    },
+    {
+      "id": "xp-2",
+      "minTotal": 81,
+      "maxTotal": 99,
+      "label": "Deep Insight",
+      "previewLabel": "Gain 2 XP",
+      "experienceGain": 2
+    },
+    {
+      "id": "level-up",
+      "minTotal": 100,
+      "maxTotal": 100,
+      "label": "Awakening",
+      "previewLabel": "Exact 100: Gain 1 level up",
+      "grantLevelUp": true
+    }
+  ]
+}

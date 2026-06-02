@@ -41,6 +41,10 @@ import {
   EnchantressDialogData,
 } from "../components/dialogs/action-dialogs/enchantress-dialog/enchantress-dialog";
 import {
+  MysticDialog,
+  MysticDialogData,
+} from "../components/dialogs/action-dialogs/mystic-dialog/mystic-dialog";
+import {
   FastTravelDialog,
   FastTravelDialogData,
   FastTravelDialogResult,
@@ -54,6 +58,8 @@ import { DialogResponse } from "../models/DialogResponse";
 import { EventLog } from "../models/EventLog";
 import { isDoctorActionId, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { ActionCatalogService } from "./action-catalog-service";
+import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
+import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
 import { SafePlaceFastTravelService } from "./safe-place-fast-travel-service";
 import {
   GenericConfirmDialog,
@@ -85,6 +91,8 @@ export class MapPageInteractionService {
     private actionExecutorService: ActionExecutorService,
     private playerProgressionService: PlayerProgressionService,
     private actionCatalogService: ActionCatalogService,
+    private enchantressRewardsConfigService: EnchantressRewardsConfigService,
+    private mysticRewardsConfigService: MysticRewardsConfigService,
     private safePlaceFastTravelService: SafePlaceFastTravelService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
   ) {}
@@ -316,11 +324,33 @@ export class MapPageInteractionService {
     if (handler === "safe-place-enchantress") {
       if (!player) return;
 
+      const rewardsTable = await this.enchantressRewardsConfigService.buildDialogRows();
+
       await this.openEnchantressDialog({
         playerMoney: player.inventory?.money ?? 0,
         requiredCost: 5,
+        rewardsTable,
         onPay: async () => {
           return await this.actionExecutorService.capitalEnchantress(input.gameId, {
+            id: player.id,
+            name: player.name,
+          });
+        },
+      });
+      return;
+    }
+
+    if (handler === "safe-place-mystic") {
+      if (!player) return;
+
+      const rewardsTable = await this.mysticRewardsConfigService.buildDialogRows();
+
+      await this.openMysticDialog({
+        playerMoney: player.inventory?.money ?? 0,
+        requiredCost: 5,
+        rewardsTable,
+        onPay: async () => {
+          return await this.actionExecutorService.cityMystic(input.gameId, {
             id: player.id,
             name: player.name,
           });
@@ -679,6 +709,15 @@ export class MapPageInteractionService {
 
   private async openEnchantressDialog(data: EnchantressDialogData): Promise<void> {
     const dialogRef = this.dialog.open(EnchantressDialog, {
+      ...ENCHANTRESS_DIALOG_CONFIG,
+      data,
+    });
+
+    await firstValueFrom(dialogRef.closed.pipe(take(1)));
+  }
+
+  private async openMysticDialog(data: MysticDialogData): Promise<void> {
+    const dialogRef = this.dialog.open(MysticDialog, {
       ...ENCHANTRESS_DIALOG_CONFIG,
       data,
     });

@@ -7,6 +7,7 @@ export type ActionFlowHandler =
   | "biome-consume-ration"
   | "safe-place-doctor"
   | "safe-place-enchantress"
+  | "safe-place-mystic"
   | "safe-place-inn"
   | "safe-place-resource-exchange"
   | "safe-place-wait"

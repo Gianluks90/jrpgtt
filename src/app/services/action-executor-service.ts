@@ -18,15 +18,27 @@ import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config"
 import { WorldZonesService } from "./world-zones-service";
 import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
+import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
+import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
 import { StatusCatalogService } from "./status-catalog-service";
 
 export interface CapitalEnchantressOutcome {
-  rewardId: "minified" | "weakened" | "hexed" | "bravery" | "focus" | "jackpot";
+  rewardId: string;
   rewardLabel: string;
   clampedLuckTotal: number;
   rolledTotal: number;
   pendingMagicReward: boolean;
   overflowLuckyStrikeCandidate: boolean;
+}
+
+export interface CityMysticOutcome {
+  rewardId: string;
+  rewardLabel: string;
+  displayTotal: number;
+  rolledTotal: number;
+  alignment: Player["alignment"] | null;
+  gainedExperience: number;
+  grantedLevelUp: boolean;
 }
 
 @Injectable({
@@ -35,6 +47,7 @@ export interface CapitalEnchantressOutcome {
 export class ActionExecutorService {
   private readonly sanctuaryDonationCost = 5;
   private readonly capitalEnchantressCost = 5;
+  private readonly cityMysticCost = 5;
   private readonly poisonStatusKey = "poison";
   private readonly regenStatusKey = "regen";
   private readonly minifiedStatusKey = "minified";
@@ -50,6 +63,8 @@ export class ActionExecutorService {
     private safePlaceFastTravelService: SafePlaceFastTravelService,
     private tilesConfigService: TilesConfigService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
+    private enchantressRewardsConfigService: EnchantressRewardsConfigService,
+    private mysticRewardsConfigService: MysticRewardsConfigService,
     private statusCatalogService: StatusCatalogService,
     private worldZonesService: WorldZonesService,
   ) { }
@@ -1279,7 +1294,10 @@ export class ActionExecutorService {
       throw new Error("Invalid action payload");
     }
 
-    await this.statusCatalogService.loadConfig();
+    await Promise.all([
+      this.statusCatalogService.loadConfig(),
+      this.enchantressRewardsConfigService.loadConfig(),
+    ]);
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
@@ -1317,7 +1335,7 @@ export class ActionExecutorService {
     });
     const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
     const clampedLuckTotal = Math.max(1, Math.min(100, Math.floor(luckResult.total)));
-    const reward = this.resolveCapitalEnchantressReward(clampedLuckTotal);
+    const reward = await this.enchantressRewardsConfigService.resolveRewardByTotal(clampedLuckTotal);
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateTxSnap, playerTxSnap] = await Promise.all([
@@ -1366,7 +1384,7 @@ export class ActionExecutorService {
 
       const decrementedStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
       let nextStatuses = [...decrementedStatuses];
-      for (const applied of reward.appliedStatuses) {
+      for (const applied of reward.statuses) {
         const statusDefinition = this.statusCatalogService.getStatus(applied.key);
         if (!statusDefinition) {
           throw new Error(`Missing status definition for '${applied.key}'`);
@@ -1422,8 +1440,8 @@ export class ActionExecutorService {
       roll: luckResult.roll,
       rewardId: reward.id,
       rewardLabel: reward.label,
-      rewardStatuses: reward.appliedStatuses.map((status) => `${status.key}:${status.durationTurns}`).join(", "),
-      pendingMagicReward: reward.pendingMagicReward,
+      rewardStatuses: reward.statuses.map((status) => `${status.key}:${status.durationTurns}`).join(", "),
+      pendingMagicReward: reward.pendingMagicReward === true,
       turnEnded: true,
     });
 
@@ -1432,8 +1450,177 @@ export class ActionExecutorService {
       rewardLabel: reward.label,
       clampedLuckTotal,
       rolledTotal: Math.floor(luckResult.total),
-      pendingMagicReward: reward.pendingMagicReward,
+      pendingMagicReward: reward.pendingMagicReward === true,
       overflowLuckyStrikeCandidate: luckResult.total > 100,
+    };
+  }
+
+  public async cityMystic(gameId: string, actor: Pick<Player, "id" | "name">): Promise<CityMysticOutcome> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    await this.mysticRewardsConfigService.loadConfig();
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    const [playerSnap, worldStateSnap, gameMapSnap] = await Promise.all([
+      getDoc(playerRef),
+      getDoc(worldStateRef),
+      getDoc(gameMapRef),
+    ]);
+    if (!playerSnap.exists()) {
+      throw new Error("Player not found");
+    }
+    if (!worldStateSnap.exists()) {
+      throw new Error("World state not found");
+    }
+
+    const playerForLuck = playerSnap.data() as Player;
+    const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+    const mapCellRefForLuck = doc(
+      this.firebaseService.database,
+      "games",
+      gameId,
+      "mapCells",
+      this.cellId(playerForLuck.location.x, playerForLuck.location.y),
+    );
+    const mapCellSnapForLuck = await getDoc(mapCellRefForLuck);
+    const mapCellForLuck = mapCellSnapForLuck.exists() ? (mapCellSnapForLuck.data() as MapCell) : null;
+    const playerLuck = this.playerStatsModifierService.computeEffectiveLuck({
+      player: playerForLuck,
+      currentCell: mapCellForLuck,
+      worldState: worldStateSnap.data() as WorldState,
+      mapSize,
+    });
+    const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
+    const rolledTotal = Math.floor(luckResult.total);
+    const displayTotal = Math.max(1, Math.min(100, rolledTotal));
+    // Exact 100 triggers the level-up jackpot, while totals above 100 remain in the 1-99 reward table.
+    const rewardTotal = rolledTotal === 100 ? 100 : Math.max(1, Math.min(99, rolledTotal));
+    const reward = await this.mysticRewardsConfigService.resolveRewardByTotal(rewardTotal);
+
+    const gainedExperience = Math.max(0, Math.floor(Number(reward.experienceGain ?? 0)));
+    const grantedLevelUp = reward.grantLevelUp === true;
+    const alignment = typeof reward.alignment === "string" ? reward.alignment : null;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateTxSnap, playerTxSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateTxSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerTxSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateTxSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerTxSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "city-mystic", worldTurn, "You can only consult the mystic once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "city", "You must be at City to consult the Mystic");
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < this.cityMysticCost) {
+        throw new Error("You need 5 coins to consult the Mystic");
+      }
+
+      const progression = this.applyExperienceAndResolveLevelUps({
+        currentLevel: player.level,
+        currentExperience: player.experience,
+        gainedExperience,
+      });
+
+      const nextLevel = progression.level + (grantedLevelUp ? 1 : 0);
+      const nextPendingChoices = Math.max(0, Math.floor(Number(player.pendingLevelUpChoices ?? 0)))
+        + progression.pendingLevelUpChoices
+        + (grantedLevelUp ? 1 : 0);
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
+        },
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - this.cityMysticCost,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        experience: progression.experience,
+        level: nextLevel,
+        pendingLevelUpChoices: nextPendingChoices,
+        lastLuckCheck: luckResult,
+        actionsUsedThisTurn: this.markActionUsed(player, "city-mystic", worldTurn),
+        ...(alignment ? { alignment } : {}),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.cityMystic", {
+      spentCoins: this.cityMysticCost,
+      displayTotal,
+      rolledTotal,
+      roll: luckResult.roll,
+      rewardId: reward.id,
+      rewardLabel: reward.label,
+      gainedExperience,
+      grantedLevelUp,
+      turnEnded: true,
+      ...(alignment ? { alignment } : {}),
+    });
+
+    return {
+      rewardId: reward.id,
+      rewardLabel: reward.label,
+      displayTotal,
+      rolledTotal,
+      alignment,
+      gainedExperience,
+      grantedLevelUp,
     };
   }
 
@@ -2437,6 +2624,33 @@ export class ActionExecutorService {
     return multiplier;
   }
 
+  private applyExperienceAndResolveLevelUps(input: {
+    currentLevel: number;
+    currentExperience: number;
+    gainedExperience: number;
+  }): {
+    level: number;
+    experience: number;
+    pendingLevelUpChoices: number;
+  } {
+    let level = Math.max(1, Math.floor(Number(input.currentLevel ?? 1)));
+    let experience = Math.max(0, Math.floor(Number(input.currentExperience ?? 0)))
+      + Math.max(0, Math.floor(Number(input.gainedExperience ?? 0)));
+    let pendingLevelUpChoices = 0;
+
+    while (experience >= level) {
+      experience -= level;
+      level += 1;
+      pendingLevelUpChoices += 1;
+    }
+
+    return {
+      level,
+      experience,
+      pendingLevelUpChoices,
+    };
+  }
+
   private upsertStatus(statuses: PlayerStatus[], nextStatus: PlayerStatus): PlayerStatus[] {
     const next = statuses.filter((status) => status.key !== nextStatus.key);
     next.push(nextStatus);
@@ -2543,68 +2757,6 @@ export class ActionExecutorService {
 
     const index = Math.floor(Math.random() * values.length);
     return values[index];
-  }
-
-  private resolveCapitalEnchantressReward(total: number): {
-    id: "minified" | "weakened" | "hexed" | "bravery" | "focus" | "jackpot";
-    label: string;
-    appliedStatuses: Array<{ key: string; durationTurns: number }>;
-    pendingMagicReward: boolean;
-  } {
-    if (total <= 16) {
-      return {
-        id: "minified",
-        label: "Minified",
-        appliedStatuses: [{ key: "minified", durationTurns: 1 }],
-        pendingMagicReward: false,
-      };
-    }
-
-    if (total <= 32) {
-      return {
-        id: "weakened",
-        label: "Weakened",
-        appliedStatuses: [{ key: "weakened", durationTurns: 3 }],
-        pendingMagicReward: false,
-      };
-    }
-
-    if (total <= 48) {
-      return {
-        id: "hexed",
-        label: "Hexed",
-        appliedStatuses: [{ key: "hexed", durationTurns: 3 }],
-        pendingMagicReward: false,
-      };
-    }
-
-    if (total <= 64) {
-      return {
-        id: "bravery",
-        label: "Bravery",
-        appliedStatuses: [{ key: "bravery", durationTurns: 3 }],
-        pendingMagicReward: false,
-      };
-    }
-
-    if (total <= 80) {
-      return {
-        id: "focus",
-        label: "Focus",
-        appliedStatuses: [{ key: "focus", durationTurns: 3 }],
-        pendingMagicReward: false,
-      };
-    }
-
-    return {
-      id: "jackpot",
-      label: "Arcane Jackpot",
-      appliedStatuses: [
-        { key: "focus", durationTurns: 3 },
-        { key: "bravery", durationTurns: 3 },
-      ],
-      pendingMagicReward: true,
-    };
   }
 
   private async computeConnectedBiomeSize(

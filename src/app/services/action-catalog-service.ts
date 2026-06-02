@@ -359,6 +359,7 @@ export class ActionCatalogService {
       || value === "biome-consume-ration"
       || value === "safe-place-doctor"
       || value === "safe-place-enchantress"
+      || value === "safe-place-mystic"
       || value === "safe-place-inn"
       || value === "safe-place-resource-exchange"
       || value === "safe-place-wait"

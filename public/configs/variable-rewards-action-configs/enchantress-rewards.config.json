@@ -1,0 +1,87 @@
+{
+  "rewards": [
+    {
+      "id": "minified",
+      "minTotal": 1,
+      "maxTotal": 16,
+      "label": "Minified",
+      "previewLabel": "Minified for 1 turn",
+      "statuses": [
+        {
+          "key": "minified",
+          "durationTurns": 1
+        }
+      ]
+    },
+    {
+      "id": "weakened",
+      "minTotal": 17,
+      "maxTotal": 32,
+      "label": "Weakened",
+      "previewLabel": "Weakened for 3 turns",
+      "statuses": [
+        {
+          "key": "weakened",
+          "durationTurns": 3
+        }
+      ]
+    },
+    {
+      "id": "hexed",
+      "minTotal": 33,
+      "maxTotal": 48,
+      "label": "Hexed",
+      "previewLabel": "Hexed for 3 turns",
+      "statuses": [
+        {
+          "key": "hexed",
+          "durationTurns": 3
+        }
+      ]
+    },
+    {
+      "id": "bravery",
+      "minTotal": 49,
+      "maxTotal": 64,
+      "label": "Bravery",
+      "previewLabel": "Bravery for 3 turns",
+      "statuses": [
+        {
+          "key": "bravery",
+          "durationTurns": 3
+        }
+      ]
+    },
+    {
+      "id": "focus",
+      "minTotal": 65,
+      "maxTotal": 80,
+      "label": "Focus",
+      "previewLabel": "Focus for 3 turns",
+      "statuses": [
+        {
+          "key": "focus",
+          "durationTurns": 3
+        }
+      ]
+    },
+    {
+      "id": "jackpot",
+      "minTotal": 81,
+      "maxTotal": 100,
+      "label": "Arcane Jackpot",
+      "previewLabel": "Magic placeholder: Bravery + Focus for 3 turns",
+      "pendingMagicReward": true,
+      "statuses": [
+        {
+          "key": "focus",
+          "durationTurns": 3
+        },
+        {
+          "key": "bravery",
+          "durationTurns": 3
+        }
+      ]
+    }
+  ]
+}

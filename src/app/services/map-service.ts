@@ -282,7 +282,7 @@ export class MapService {
         sanctuaryLabel: this.sanctuaryElementToLabel(movedSanctuaryElement),
       });
     } else if (landedSpecialType === "landmark") {
-      await this.tryCreateLog(gameId, movingPlayer, "player.discoverLandmark", {
+      await this.tryCreateLog(gameId, movingPlayer, movedToNewCell ? "player.discoverLandmark" : "player.reachLandmark", {
         landmarkName: movedLandmarkName || "Unknown Landmark",
       });
     } else if (movedToNewCell && landedBiome) {

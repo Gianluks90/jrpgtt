@@ -178,6 +178,20 @@ export class ActionRegistryService {
       };
     }
 
+    if (actionId === "city-mystic") {
+      const mysticCost = 5;
+      return {
+        id: "city-mystic",
+        label: this.actionCatalogService.getLabel(actionId, "Mystic"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Consult the City Mystic for 5 coins. Draw your fate from a luck check, then end your turn.",
+        ),
+        disabled: commonDisabled || currentMoney < mysticCost,
+        pending: false,
+      };
+    }
+
     if (actionId === "capital-inn") {
       const isNight = timeOfDay === "night";
       return {

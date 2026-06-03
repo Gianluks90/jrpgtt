@@ -493,6 +493,34 @@ export class MapPageInteractionService {
       return;
     }
 
+    if (handler === "landmark-rest") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.landmarkRest(input.gameId, {
+          id: player.id,
+          name: player.name,
+        }, {
+          actionId: input.actionId,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "landmark-trainer") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.landmarkTrainer(input.gameId, {
+          id: player.id,
+          name: player.name,
+        }, {
+          actionId: input.actionId,
+        });
+      }, errorMessage);
+      return;
+    }
+
     if (handler === "safe-place-resource-exchange") {
       if (!player) return;
 

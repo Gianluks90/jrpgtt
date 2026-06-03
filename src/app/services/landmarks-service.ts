@@ -162,17 +162,26 @@ export class LandmarksService {
   }
 
   public getSafePlaceActionIds(landmarkId: string | undefined): string[] {
-    if (!landmarkId) {
+    return this.getLandmarkActionIds(landmarkId, "safe");
+  }
+
+  public getLandmarkActionIds(landmarkId: string | undefined, category: LandmarkCategory | undefined): string[] {
+    if (!landmarkId || !category) {
       return [];
     }
 
     const cached = this.landmarksConfigService.getCachedConfig();
-    const configuredActions = cached?.safePlaceActionsByLandmark?.[landmarkId];
+    const configuredActions = category === "safe"
+      ? cached?.safePlaceActionsByLandmark?.[landmarkId]
+      : category === "mid"
+        ? cached?.midPlaceActionsByLandmark?.[landmarkId]
+        : cached?.badPlaceActionsByLandmark?.[landmarkId];
+
     if (Array.isArray(configuredActions)) {
       return configuredActions.filter((actionId) => typeof actionId === "string" && actionId.trim().length > 0);
     }
 
-    if (this.isSafeLandmarkId(landmarkId)) {
+    if (category === "safe" && this.isSafeLandmarkId(landmarkId)) {
       return [...SAFE_PLACE_ACTIONS_BY_LANDMARK[landmarkId]];
     }
 

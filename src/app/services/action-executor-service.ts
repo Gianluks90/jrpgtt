@@ -1341,11 +1341,60 @@ export class ActionExecutorService {
   }
 
   public async capitalInn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    await this.landmarkRest(gameId, actor, {
+      actionId: "capital-inn",
+    });
+  }
+
+  public async landmarkRest(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      actionId: string;
+    },
+  ): Promise<void> {
     if (!gameId || !actor.id) {
       throw new Error("Invalid action payload");
     }
 
-    const innCost = 10;
+    const restConfigByActionId: Record<string, {
+      landmarkId: string;
+      dayOnly: boolean;
+      cost: number;
+      logCode: string;
+      invalidTimeMessage: string;
+      landmarkMessage: string;
+      notEnoughCoinsMessage: string;
+      actionAlreadyUsedMessage: string;
+    }> = {
+      "capital-inn": {
+        landmarkId: "capital",
+        dayOnly: true,
+        cost: 10,
+        logCode: "player.capitalInn",
+        invalidTimeMessage: "Inn is available only during daytime",
+        landmarkMessage: "You must be at Capital to use the Inn",
+        notEnoughCoinsMessage: "You need 10 coins to rest at inn",
+        actionAlreadyUsedMessage: "You can only rest at inn once per turn.",
+      },
+      "castle-rest": {
+        landmarkId: "castle",
+        dayOnly: false,
+        cost: 10,
+        logCode: "player.capitalInn",
+        invalidTimeMessage: "Castle rest is not available now",
+        landmarkMessage: "You must be at Castle to use Rest",
+        notEnoughCoinsMessage: "You need 10 coins to rest at castle",
+        actionAlreadyUsedMessage: "You can only rest at castle once per turn.",
+      },
+    };
+
+    const actionId = String(payload.actionId ?? "").trim();
+    const restConfig = restConfigByActionId[actionId];
+    if (!restConfig) {
+      throw new Error(`Unsupported rest action '${actionId}'`);
+    }
+
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
@@ -1370,8 +1419,8 @@ export class ActionExecutorService {
         throw new Error("It is not your turn");
       }
 
-      if ((worldState.timeOfDay ?? "day") === "night") {
-        throw new Error("Inn is available only during daytime");
+      if (restConfig.dayOnly && (worldState.timeOfDay ?? "day") === "night") {
+        throw new Error(restConfig.invalidTimeMessage);
       }
 
       this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
@@ -1382,7 +1431,7 @@ export class ActionExecutorService {
         throw new Error("Recovery is disabled by your current status");
       }
       const worldTurn = worldState.currentTurn ?? 0;
-      this.ensureActionAvailable(player, "capital-inn", worldTurn, "You can only rest at inn once per turn.");
+      this.ensureActionAvailable(player, actionId, worldTurn, restConfig.actionAlreadyUsedMessage);
 
       const mapCellRef = doc(
         this.firebaseService.database,
@@ -1397,7 +1446,7 @@ export class ActionExecutorService {
       }
 
       const mapCell = mapCellSnap.data() as MapCell;
-      this.ensurePlayerOnLandmark(mapCell, "capital", "You must be at Capital to use the Inn");
+      this.ensurePlayerOnLandmark(mapCell, restConfig.landmarkId, restConfig.landmarkMessage);
 
       const hp = this.getHpState(player);
       if (hp.missing <= 0) {
@@ -1405,8 +1454,8 @@ export class ActionExecutorService {
       }
 
       const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
-      if (currentMoney < innCost) {
-        throw new Error("You need 10 coins to rest at inn");
+      if (currentMoney < restConfig.cost) {
+        throw new Error(restConfig.notEnoughCoinsMessage);
       }
 
       const requestedHeal = Math.max(1, Math.floor(hp.max * 0.5));
@@ -1434,11 +1483,11 @@ export class ActionExecutorService {
         },
         inventory: {
           ...(player.inventory ?? { items: [], resources: [], money: 0 }),
-          money: currentMoney - innCost,
+          money: currentMoney - restConfig.cost,
           resourceCapacity: this.getResourceCapacity(player),
         },
         statuses: nextStatuses,
-        actionsUsedThisTurn: this.markActionUsed(player, "capital-inn", worldTurn),
+        actionsUsedThisTurn: this.markActionUsed(player, actionId, worldTurn),
       }, { merge: true });
 
       transaction.set(worldStateRef, nextWorldState);
@@ -1449,9 +1498,162 @@ export class ActionExecutorService {
       }, { merge: true });
     });
 
-    await this.tryCreateLog(gameId, actor, "player.capitalInn", {
-      spentCoins: innCost,
+    await this.tryCreateLog(gameId, actor, restConfig.logCode, {
+      actionId,
+      spentCoins: restConfig.cost,
       healedHp,
+      turnEnded: true,
+    });
+  }
+
+  public async landmarkTrainer(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      actionId: string;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const trainerConfigByActionId: Record<string, {
+      landmarkId: string;
+      parameter: "strength" | "magic";
+      actionUsedMessage: string;
+      landmarkMessage: string;
+      notEnoughCoinsMessage: string;
+    }> = {
+      "castle-trainer": {
+        landmarkId: "castle",
+        parameter: "strength",
+        actionUsedMessage: "You can only train strength once per turn.",
+        landmarkMessage: "You must be at Castle to train Strength",
+        notEnoughCoinsMessage: "Not enough coins to train Strength at Castle",
+      },
+      "academy-trainer": {
+        landmarkId: "academy",
+        parameter: "magic",
+        actionUsedMessage: "You can only train magic once per turn.",
+        landmarkMessage: "You must be at Academy to train Magic",
+        notEnoughCoinsMessage: "Not enough coins to train Magic at Academy",
+      },
+    };
+
+    const actionId = String(payload.actionId ?? "").trim();
+    const trainerConfig = trainerConfigByActionId[actionId];
+    if (!trainerConfig) {
+      throw new Error(`Unsupported trainer action '${actionId}'`);
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let spentCoins = 0;
+    let newStatValue = 0;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, actionId, worldTurn, trainerConfig.actionUsedMessage);
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, trainerConfig.landmarkId, trainerConfig.landmarkMessage);
+
+      const normalizedLevel = Math.max(1, Math.floor(Number(player.level ?? 1)));
+      spentCoins = normalizedLevel * 3;
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < spentCoins) {
+        throw new Error(trainerConfig.notEnoughCoinsMessage);
+      }
+
+      const targetParameter = player.parameters[trainerConfig.parameter];
+      const nextParameter = {
+        ...targetParameter,
+        base: Math.max(0, Math.floor(Number(targetParameter.base ?? 0))) + 1,
+        current: Math.max(0, Math.floor(Number(targetParameter.current ?? 0))) + 1,
+        ...(typeof targetParameter.max === "number"
+          ? { max: Math.max(0, Math.floor(Number(targetParameter.max))) + 1 }
+          : {}),
+      };
+
+      newStatValue = nextParameter.base;
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      this.playerTurnEffectsService.scheduleSkippedTurns(nextWorldState, actor.id, 1);
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
+          [trainerConfig.parameter]: nextParameter,
+        },
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - spentCoins,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, actionId, worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.landmarkTraining", {
+      actionId,
+      parameter: trainerConfig.parameter,
+      increasedBy: 1,
+      newValue: newStatValue,
+      spentCoins,
+      skippedTurns: 1,
       turnEnded: true,
     });
   }

@@ -6,6 +6,8 @@ export type ActionFlowHandler =
   | "biome-cell-gather"
   | "biome-chop-tree"
   | "biome-consume-ration"
+  | "landmark-rest"
+  | "landmark-trainer"
   | "safe-place-doctor"
   | "safe-place-enchantress"
   | "safe-place-mystic"

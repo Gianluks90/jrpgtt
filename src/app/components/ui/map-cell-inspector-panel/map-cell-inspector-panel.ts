@@ -313,8 +313,8 @@ export class MapCellInspectorPanel {
       return cell.active === true ? sanctuaryConfig.actions.active : sanctuaryConfig.actions.inactive;
     }
 
-    if (cell.isSpecial === true && cell.specialType === "landmark" && cell.landmarkCategory === "safe" && cell.landmarkId) {
-      return this.landmarksService.getSafePlaceActionIds(cell.landmarkId);
+    if (cell.isSpecial === true && cell.specialType === "landmark" && cell.landmarkCategory && cell.landmarkId) {
+      return this.landmarksService.getLandmarkActionIds(cell.landmarkId, cell.landmarkCategory);
     }
 
     if (cell.isSpecial === true || !cell.biome || !tilesConfig) {

@@ -346,6 +346,103 @@
       }
     },
     {
+      "id": "castle-rest",
+      "ui": {
+        "label": "Rest",
+        "descriptionTemplate": "Rest at the Castle: restore 50% HP, pay 10 coins, then end your turn (day and night).",
+        "i18n": {
+          "labelKey": "actions.castleRest.label",
+          "descriptionKey": "actions.castleRest.description"
+        }
+      },
+      "flow": {
+        "handler": "landmark-rest",
+        "errorMessage": "Error while resting at castle",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Castle Rest"
+      }
+    },
+    {
+      "id": "castle-trainer",
+      "ui": {
+        "label": "Trainer",
+        "descriptionTemplate": "Train Strength at the Castle. Cost {trainingCost} coins (3 x level), gain +1 permanent STR, end your turn and skip your next one.",
+        "i18n": {
+          "labelKey": "actions.castleTrainer.label",
+          "descriptionKey": "actions.castleTrainer.description"
+        }
+      },
+      "flow": {
+        "handler": "landmark-trainer",
+        "errorMessage": "Error while training strength at castle",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Castle Trainer"
+      }
+    },
+    {
+      "id": "academy-trainer",
+      "ui": {
+        "label": "Trainer",
+        "descriptionTemplate": "Train Magic at the Academy. Cost {trainingCost} coins (3 x level), gain +1 permanent MAG, end your turn and skip your next one.",
+        "i18n": {
+          "labelKey": "actions.academyTrainer.label",
+          "descriptionKey": "actions.academyTrainer.description"
+        }
+      },
+      "flow": {
+        "handler": "landmark-trainer",
+        "errorMessage": "Error while training magic at academy",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Academy Trainer"
+      }
+    },
+    {
+      "id": "academy-merchant",
+      "ui": {
+        "label": "Arcane Merchant",
+        "descriptionTemplate": "Visit the Academy Merchant. Buy magical stock and sell only magical items. Buying ends your turn.",
+        "i18n": {
+          "labelKey": "actions.academyMerchant.label",
+          "descriptionKey": "actions.academyMerchant.description"
+        }
+      },
+      "flow": {
+        "handler": "safe-place-merchant",
+        "errorMessage": "Error while trading with academy merchant",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy"],
+        "dialog": {
+          "type": "merchant-trade",
+          "stockConfigUrl": "/configs/merchant-stock/academy-merchant.stock.json"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Academy Merchant"
+      }
+    },
+    {
       "id": "village-craftsman",
       "ui": {
         "label": "Craftsman",

@@ -366,6 +366,8 @@ export class ActionCatalogService {
       || value === "biome-cell-gather"
       || value === "biome-chop-tree"
       || value === "biome-consume-ration"
+      || value === "landmark-rest"
+      || value === "landmark-trainer"
       || value === "safe-place-doctor"
       || value === "safe-place-enchantress"
       || value === "safe-place-mystic"

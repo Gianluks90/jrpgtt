@@ -67,11 +67,11 @@ export class MapPageActionsService {
     const hasMoney = (player.inventory?.money ?? 0) >= this.sanctuaryDonationCost;
     const worldTurn = input.worldState?.currentTurn ?? 0;
     const isSanctuaryCell = cell.isSpecial === true && cell.specialType === "sanctuary" && !!cell.sanctuaryElement;
-    const isSafeLandmarkCell = cell.isSpecial === true && cell.specialType === "landmark" && cell.landmarkCategory === "safe";
+    const isLandmarkCell = cell.isSpecial === true && cell.specialType === "landmark";
     const configuredActionIds = isSanctuaryCell
       ? this.getConfiguredSanctuaryActionIds(cell, input.tilesConfig)
-      : isSafeLandmarkCell
-        ? this.getConfiguredSafeLandmarkActionIds(cell)
+      : isLandmarkCell
+        ? this.getConfiguredLandmarkActionIds(cell)
         : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
     const inventoryActionIds = this.getInventoryActionIds(player);
     const actionIds = [...new Set([...configuredActionIds, ...inventoryActionIds])];
@@ -107,12 +107,12 @@ export class MapPageActionsService {
       .filter((action) => action !== null) as CommandPanelAction[];
   }
 
-  private getConfiguredSafeLandmarkActionIds(cell: MapCell): string[] {
-    if (cell.specialType !== "landmark" || cell.landmarkCategory !== "safe" || !cell.landmarkId) {
+  private getConfiguredLandmarkActionIds(cell: MapCell): string[] {
+    if (cell.specialType !== "landmark" || !cell.landmarkCategory || !cell.landmarkId) {
       return [];
     }
 
-    return this.landmarksService.getSafePlaceActionIds(cell.landmarkId);
+    return this.landmarksService.getLandmarkActionIds(cell.landmarkId, cell.landmarkCategory);
   }
 
   private getConfiguredBiomeActionIds(cell: MapCell, tilesConfig: TilesConfig | null): string[] {

@@ -100,8 +100,19 @@ export class EventLogService {
         "player.capitalInn": ({ playerName, args }) => {
             const healedHp = Number(args["healedHp"] ?? 0);
             const spentCoins = Number(args["spentCoins"] ?? 0);
-            const source = this.getActionSourceLabel("capital-inn", "Capital Inn");
+            const actionId = String(args["actionId"] ?? "capital-inn");
+            const fallbackSource = actionId === "castle-rest" ? "Castle Rest" : "Capital Inn";
+            const source = this.getActionSourceLabel(actionId, fallbackSource);
             return `${playerName} rested at the ${source}, restored ${healedHp} HP, spent ${spentCoins} coins and ended the turn.`;
+        },
+        "player.landmarkTraining": ({ playerName, args }) => {
+            const actionId = String(args["actionId"] ?? "castle-trainer");
+            const parameter = String(args["parameter"] ?? "strength");
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            const increasedBy = Number(args["increasedBy"] ?? 1);
+            const newValue = Number(args["newValue"] ?? 0);
+            const source = this.getActionSourceLabel(actionId, actionId === "academy-trainer" ? "Academy Trainer" : "Castle Trainer");
+            return `${playerName} trained at ${source}, gained +${increasedBy} ${parameter} (now ${newValue}), spent ${spentCoins} coins, ended the turn and will skip the next turn.`;
         },
         "player.villageCraftsmanExchange": ({ playerName, args }) => {
             const giveLabel = String(args["giveLabel"] ?? "resource");

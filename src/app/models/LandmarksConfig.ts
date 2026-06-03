@@ -15,4 +15,6 @@ export interface LandmarksConfig {
   safeBiomeSuffixes: Record<BiomeType, SafeLandmarkBiomeSuffix>;
   alignmentPrefixes: Record<LandmarkAlignmentModifier, string>;
   safePlaceActionsByLandmark: Record<string, string[]>;
+  midPlaceActionsByLandmark: Record<string, string[]>;
+  badPlaceActionsByLandmark: Record<string, string[]>;
 }

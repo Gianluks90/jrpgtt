@@ -48,6 +48,8 @@ export class LandmarksConfigService {
       safeBiomeSuffixes?: unknown;
       alignmentPrefixes?: unknown;
       safePlaceActionsByLandmark?: unknown;
+      midPlaceActionsByLandmark?: unknown;
+      badPlaceActionsByLandmark?: unknown;
     };
 
     const categories = this.parseCategories(typedRoot.categories);
@@ -57,6 +59,14 @@ export class LandmarksConfigService {
     const safeBiomeSuffixes = this.parseSafeBiomeSuffixes(typedRoot.safeBiomeSuffixes);
     const alignmentPrefixes = this.parseAlignmentPrefixes(typedRoot.alignmentPrefixes);
     const safePlaceActionsByLandmark = this.parseSafePlaceActionsByLandmark(typedRoot.safePlaceActionsByLandmark);
+    const midPlaceActionsByLandmark = this.parseLandmarkActionsByLandmark(
+      typedRoot.midPlaceActionsByLandmark,
+      "midPlaceActionsByLandmark",
+    );
+    const badPlaceActionsByLandmark = this.parseLandmarkActionsByLandmark(
+      typedRoot.badPlaceActionsByLandmark,
+      "badPlaceActionsByLandmark",
+    );
 
     return {
       categories,
@@ -66,6 +76,8 @@ export class LandmarksConfigService {
       safeBiomeSuffixes,
       alignmentPrefixes,
       safePlaceActionsByLandmark,
+      midPlaceActionsByLandmark,
+      badPlaceActionsByLandmark,
     };
   }
 
@@ -238,20 +250,27 @@ export class LandmarksConfigService {
   }
 
   private parseSafePlaceActionsByLandmark(raw: unknown): LandmarksConfig["safePlaceActionsByLandmark"] {
+    return this.parseLandmarkActionsByLandmark(raw, "safePlaceActionsByLandmark");
+  }
+
+  private parseLandmarkActionsByLandmark(
+    raw: unknown,
+    sectionName: "safePlaceActionsByLandmark" | "midPlaceActionsByLandmark" | "badPlaceActionsByLandmark",
+  ): Record<string, string[]> {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-      throw new Error("Invalid landmarks configuration: safePlaceActionsByLandmark map is missing");
+      throw new Error(`Invalid landmarks configuration: ${sectionName} map is missing`);
     }
 
-    const parsed: LandmarksConfig["safePlaceActionsByLandmark"] = {};
+    const parsed: Record<string, string[]> = {};
 
     for (const [landmarkId, actionIds] of Object.entries(raw as Record<string, unknown>)) {
       if (!Array.isArray(actionIds)) {
-        throw new Error(`Invalid landmarks configuration: safePlaceActionsByLandmark '${landmarkId}' must be an array`);
+        throw new Error(`Invalid landmarks configuration: ${sectionName} '${landmarkId}' must be an array`);
       }
 
       parsed[landmarkId] = actionIds.map((actionId) => {
         if (typeof actionId !== "string" || !actionId.trim()) {
-          throw new Error(`Invalid landmarks configuration: '${landmarkId}' contains invalid action id`);
+          throw new Error(`Invalid landmarks configuration: ${sectionName} '${landmarkId}' contains invalid action id`);
         }
 
         return actionId;

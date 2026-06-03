@@ -1,7 +1,7 @@
 import { BiomeType } from "./MapCell";
 import { PlayerAlignment } from "./Player";
 
-export type ItemCategory = string;
+export type ItemCategory = "magic" | (string & {});
 export type ItemEffectScope = "always" | "fight-only" | "day-only" | "night-only";
 export type ItemParameterKey = "strength" | "magic" | "luck";
 

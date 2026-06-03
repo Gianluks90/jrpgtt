@@ -230,6 +230,20 @@ export class ActionRegistryService {
       };
     }
 
+    if (actionId === "academy-merchant") {
+      return {
+        id: "academy-merchant",
+        label: this.actionCatalogService.getLabel(actionId, "Arcane Merchant"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Visit the Academy Merchant. Buy magical stock and sell only magical items. Buying ends your turn.",
+        ),
+        moneyCost: null,
+        disabled: commonDisabled,
+        pending: false,
+      };
+    }
+
     if (actionId === "capital-inn") {
       const isNight = timeOfDay === "night";
       const innCost = 10;
@@ -239,6 +253,53 @@ export class ActionRegistryService {
         description: this.actionCatalogService.getDescription(actionId, "Capital: restore 50% HP, spend 10 coins and end turn (day only)."),
         moneyCost: innCost,
         disabled: commonDisabled || hp.missing <= 0 || currentMoney < innCost || isNight,
+        pending: false,
+      };
+    }
+
+    if (actionId === "castle-rest") {
+      const restCost = 10;
+      return {
+        id: "castle-rest",
+        label: this.actionCatalogService.getLabel(actionId, "Rest"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Castle: restore 50% HP, spend 10 coins and end turn (day and night).",
+        ),
+        moneyCost: restCost,
+        disabled: commonDisabled || hp.missing <= 0 || currentMoney < restCost,
+        pending: false,
+      };
+    }
+
+    if (actionId === "castle-trainer") {
+      const trainingCost = Math.max(1, Math.floor(Number(player.level ?? 1))) * 3;
+      return {
+        id: "castle-trainer",
+        label: this.actionCatalogService.getLabel(actionId, "Trainer"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Train Strength at the Castle. Cost {trainingCost} coins (3 x level), gain +1 permanent STR, end your turn and skip your next one.",
+          { trainingCost },
+        ),
+        moneyCost: trainingCost,
+        disabled: commonDisabled || currentMoney < trainingCost,
+        pending: false,
+      };
+    }
+
+    if (actionId === "academy-trainer") {
+      const trainingCost = Math.max(1, Math.floor(Number(player.level ?? 1))) * 3;
+      return {
+        id: "academy-trainer",
+        label: this.actionCatalogService.getLabel(actionId, "Trainer"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Train Magic at the Academy. Cost {trainingCost} coins (3 x level), gain +1 permanent MAG, end your turn and skip your next one.",
+          { trainingCost },
+        ),
+        moneyCost: trainingCost,
+        disabled: commonDisabled || currentMoney < trainingCost,
         pending: false,
       };
     }

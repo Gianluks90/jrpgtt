@@ -25,26 +25,21 @@
   padding: 4px 12px;
 }
 
-.panel-scroll-body {
-  min-height: 0;
+.main-player-card-wrap {
   margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.mini-player-list-scroll {
+  min-height: 0;
+  margin-top: 8px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   flex: 1;
-}
-
-.player-list-column {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.main-player-card-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .level-up-trigger {

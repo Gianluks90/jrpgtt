@@ -1,4 +1,9 @@
 <dialog-wrapper [title]="title">
+    <div dialog-header-extra class="header-money">
+        <span>{{ playerMoney }}</span>
+        <span class="coin-icon" aria-hidden="true"></span>
+    </div>
+
     <p class="info-text">
         {{ providerLabel }} restores 5% HP per treatment.
         Cost per treatment: <strong>{{ costPerUnit }}</strong> coins
@@ -7,7 +12,6 @@
         }
     </p>
     <p class="info-text">Current HP: <strong>{{ hpCurrent }}/{{ hpMax }}</strong></p>
-    <p class="info-text">Your coins: <strong>{{ playerMoney }}</strong></p>
 
     <form [formGroup]="form">
         <div class="form-field">
@@ -37,7 +41,13 @@
     }
 
     @if (selectedUnits > 0) {
-        <p class="info-text">Expected heal: <strong>+{{ expectedHeal }} HP</strong> | Total cost: <strong>{{ totalCost }}</strong></p>
+        <p class="info-text expected-row">
+            <span>Expected heal: <strong>+{{ expectedHeal }} HP</strong></span>
+            <span class="spend-tag">
+                <span>-{{ totalCost }}</span>
+                <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
+            </span>
+        </p>
     }
 
     <text-button

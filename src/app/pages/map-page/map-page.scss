@@ -50,6 +50,17 @@
             min-height: 0;
             height: 100%;
         }
+
+        &.stage-sidebar-single-player {
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            align-content: start;
+
+            app-map-players-panel {
+                height: auto;
+                max-height: 50%;
+                align-self: start;
+            }
+        }
     }
 
     .sidebar-luck-meter {
@@ -90,7 +101,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 26px;
+        margin: 38px 0;
     }
 
     .map-floating-biomes-counter {
@@ -109,8 +120,7 @@
         app-resource-counter,
         app-money-counter,
         app-alignment-indicator,
-        app-attunement-indicator,
-        app-day-night-cycle-panel {
+        app-attunement-indicator {
             display: block;
             width: 100%;
             height: auto;
@@ -126,40 +136,113 @@
         ::ng-deep .resource-counter-panel,
         ::ng-deep .money-counter-panel,
         ::ng-deep .alignment-indicator-panel,
-        ::ng-deep .attunement-indicator-panel,
-        ::ng-deep .day-night-panel {
+        ::ng-deep .attunement-indicator-panel {
             width: 100%;
             min-width: 0;
         }
     }
 
-    .active-cell-block {
+    .map-inline-hud {
         position: absolute;
-        top: calc(100% + 24px);
         left: 50%;
         transform: translateX(-50%);
-        min-height: 28px;
-        display: flex;
-        flex-direction: column;
+        display: inline-flex;
+        align-items: stretch;
+        max-width: min(90vw, 620px);
+    }
+
+    .map-inline-hud-content {
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(0, 0, 0, 0.78);
+        display: inline-flex;
         align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        min-height: 30px;
+        min-width: 0;
+    }
+
+    .map-inline-hud-tail {
+        flex: 0 0 30px;
+        width: 30px;
+        height: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .map-time-block {
+        bottom: calc(100% + 36px);
+    }
+
+    .map-inline-hud-prefix {
+        font-size: 0.45rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.78;
+        white-space: nowrap;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-panel {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        min-height: 0;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-title {
+        display: none;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-body {
+        background: transparent;
+        padding: 0;
+        gap: 5px;
+        min-height: 0;
+        min-width: 72px;
         justify-content: center;
-        gap: 4px;
-        padding: 8px;
-        background: rgba(0, 0, 0, 0.72);
-        min-width: 50%;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-icon-horizon,
+    .map-inline-day-night::ng-deep .day-night-icon {
+        width: 15px;
+        height: 15px;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-icon-horizon,
+    .map-inline-day-night::ng-deep .day-night-label-horizon {
+        align-items: center;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-label-horizon {
+        justify-content: flex-start;
+    }
+
+    .map-inline-day-night::ng-deep .day-night-label {
+        font-size: 0.54rem;
+        line-height: 1;
+    }
+
+    .active-cell-block {
+        top: calc(100% + 36px);
+        max-width: min(90vw, 680px);
+    }
+
+    .active-cell-content {
+        border-right: 0;
     }
 
     .active-cell-info-button {
-        position: absolute;
-        top: -10px;
-        right: 12px;
-        padding: 2px;
-        background: var(--bg-color);
+        display: inline-flex;
+        width: 30px;
+        height: 30px;
+        padding: 0;
     }
 
     .active-cell-info-button::ng-deep .icon-button {
-        width: 24px;
-        height: 24px;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: transparent;
         border-width: 1px;
     }
 
@@ -170,18 +253,21 @@
 
     .active-cell-context {
         margin: 0;
-        font-size: 0.42rem;
-        line-height: 1;
+        font-size: 0.45rem;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.06em;
         opacity: 0.78;
+        white-space: nowrap;
     }
 
     .active-cell-name {
         margin: 0;
-        font-size: 0.54rem;
+        font-size: 0.58rem;
         font-weight: 700;
         line-height: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .inventory-list {

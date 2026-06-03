@@ -104,6 +104,10 @@ export class MapPage implements OnInit, OnDestroy {
     return this.players().find((player) => player.id === uid) ?? null;
   });
 
+  public isSinglePlayerSidebar = computed<boolean>(() => {
+    return this.players().length <= 1;
+  });
+
   public isMyTurn = computed<boolean>(() => {
     const uid = this.currentUserId();
     const activePlayerId = this.worldState()?.activePlayerId;

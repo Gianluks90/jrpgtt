@@ -56,8 +56,8 @@
   "midPlaceActionsByLandmark": {
     "graveyard": [],
     "temple": [],
-    "castle": [],
-    "academy": []
+    "castle": ["castle-rest", "castle-trainer"],
+    "academy": ["academy-merchant", "academy-trainer"]
   },
   "badPlaceActionsByLandmark": {
     "cave": [],

@@ -1,6 +1,10 @@
 <dialog-wrapper title="Fast travel">
+    <div dialog-header-extra class="header-money">
+        <span>{{ playerMoney }}</span>
+        <span class="coin-icon" aria-hidden="true"></span>
+    </div>
+
     <p class="info-text">Stai partendo da <strong>{{ originName }}</strong>.</p>
-    <p class="info-text">Available coins: <strong>{{ playerMoney }}</strong>.</p>
     <p class="info-text">Route cost is 1 coin per orthogonal cell, capped at 15.</p>
 
     @if (routes.length === 0) {
@@ -14,9 +18,15 @@
                     [class.selected]="selectedRouteCellId === route.cellId"
                     (click)="selectRoute(route.cellId)"
                 >
-                    <span class="route-title">{{ route.destinationName }}</span>
+                    <span class="route-top-row">
+                        <span class="route-title">{{ route.destinationName }}</span>
+                        <span class="route-cost-tag">
+                            <span>-{{ route.cost }}</span>
+                            <span class="coin-icon route-cost-icon" aria-hidden="true"></span>
+                        </span>
+                    </span>
+                    <span class="route-divider" aria-hidden="true"></span>
                     <span class="route-meta">Coordinates: {{ route.x + 1 }}, {{ route.y + 1 }}</span>
-                    <span class="route-meta">Cost: <strong>{{ route.cost }}</strong> coins</span>
                     @if (isTooExpensive(route)) {
                         <span class="route-warning">Not enough coins for this route.</span>
                     }

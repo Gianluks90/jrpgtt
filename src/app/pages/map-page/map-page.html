@@ -13,7 +13,7 @@
         </div>
 
         <div class="map-stage">
-            <aside class="stage-sidebar">
+            <aside class="stage-sidebar" [class.stage-sidebar-single-player]="isSinglePlayerSidebar()">
                 <app-map-players-panel
                     [myPlayer]="myPlayer()"
                     [myPlayerComputedStats]="myPlayerComputedStats()"
@@ -37,6 +37,13 @@
 
             <div class="map-wrapper">
                 <div class="map-center-shell">
+                    <section class="map-inline-hud map-time-block" aria-label="World time">
+                        <div class="map-inline-hud-content map-time-content">
+                            <span class="map-inline-hud-prefix">World time</span>
+                            <app-day-night-cycle-panel class="map-inline-day-night" [worldState]="worldState()"></app-day-night-cycle-panel>
+                        </div>
+                    </section>
+
                     <app-map-grid-panel
                         [mapSize]="mapSize()"
                         [mapCellsById]="mapCellsById()"
@@ -52,27 +59,22 @@
                     ></app-map-grid-panel>
                     <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
 
-                    <section class="hud active-cell-block">
+                    <section class="map-inline-hud active-cell-block">
+                        <div class="map-inline-hud-content active-cell-content">
+                            <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
+                            <p class="active-cell-name">{{ locationInfoCellName() }}</p>
+                        </div>
                         <icon-button
-                            class="active-cell-info-button"
+                            class="map-inline-hud-tail active-cell-info-button"
                             iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                             ariaLabel="Open location info"
                             (clicked)="openLocationInfoDialog()"
                         ></icon-button>
-                        <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
-                        <p class="active-cell-name">{{ locationInfoCellName() }}</p>
                     </section>
                 </div>
             </div>
 
             <aside class="stage-right-utilities">
-                <app-resource-counter
-                    [resources]="myPlayer()?.inventory?.resources || []"
-                    [currentCount]="resourceCount()"
-                    [maxCount]="resourceCapacity()"
-                    (panelClicked)="onResourcePanelClicked()"
-                ></app-resource-counter>
-                <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
                 <app-alignment-indicator [alignment]="myPlayer()?.alignment ?? 'neutral'"></app-alignment-indicator>
                 <app-attunement-indicator [element]="myPlayer()?.attunedElement ?? null"></app-attunement-indicator>
 
@@ -124,8 +126,14 @@
                         }
                     </div>
                 </section>
+                <app-resource-counter
+                    [resources]="myPlayer()?.inventory?.resources || []"
+                    [currentCount]="resourceCount()"
+                    [maxCount]="resourceCapacity()"
+                    (panelClicked)="onResourcePanelClicked()"
+                ></app-resource-counter>
+                <app-money-counter [money]="myPlayer()?.inventory?.money || 0"></app-money-counter>
 
-                <app-day-night-cycle-panel [worldState]="worldState()"></app-day-night-cycle-panel>
             </aside>
         </div>
 

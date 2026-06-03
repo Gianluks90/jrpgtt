@@ -1,11 +1,16 @@
 <dialog-wrapper [title]="title">
+    <div dialog-header-extra class="header-money">
+        <span>{{ playerMoney }}</span>
+        <span class="coin-icon" aria-hidden="true"></span>
+    </div>
+
     <p class="info-text">Offer exactly <strong>{{ requiredCost }}</strong> coins to draw your fate.</p>
-    <p class="info-text">Your coins: <strong>{{ playerMoney }}</strong></p>
 
     <div class="pay-row">
-        <div class="cost-chip">
-            Cost: <strong>{{ requiredCost }}</strong> coins
-        </div>
+        <span class="spend-tag">
+            <span>-{{ requiredCost }}</span>
+            <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
+        </span>
         <text-button
             text="Pay"
             [disabled]="!canPay"

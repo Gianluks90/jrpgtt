@@ -1,3 +1,10 @@
+.header-money {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .routes-list {
   display: flex;
   flex-direction: column;
@@ -32,6 +39,37 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
+}
+
+.route-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.route-cost-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 18px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--bad-color) 65%, transparent);
+  background: color-mix(in srgb, var(--bad-color) 18%, transparent);
+  color: color-mix(in srgb, var(--bad-color) 88%, white);
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+.route-cost-icon {
+  --coin-icon-size: 11px;
+}
+
+.route-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .route-meta {

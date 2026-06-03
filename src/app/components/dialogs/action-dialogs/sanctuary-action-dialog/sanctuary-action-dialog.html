@@ -1,7 +1,11 @@
 <dialog-wrapper [title]="title">
+    <div dialog-header-extra class="header-money">
+        <span>{{ playerMoney }}</span>
+        <span class="coin-icon" aria-hidden="true"></span>
+    </div>
+
     <p class="info-text">{{ description }}</p>
     <p class="info-text sanctuary-element">Sanctuary element: <strong>{{ sanctuaryLabel }}</strong></p>
-    <p class="info-text">Your coins: <strong>{{ playerMoney }}</strong></p>
 
     <form [formGroup]="form">
         <div class="form-field">
@@ -15,7 +19,13 @@
                 [max]="donationCost"
                 [placeholder]="'Type ' + donationCost"
             />
-            <p class="info-text">You must donate exactly {{ donationCost }} coins.</p>
+            <p class="info-text donate-cost-row">
+                <span>You must donate exactly:</span>
+                <span class="spend-tag">
+                    <span>-{{ donationCost }}</span>
+                    <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
+                </span>
+            </p>
         </div>
     </form>
 

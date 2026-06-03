@@ -4,6 +4,13 @@
   line-height: 1.35;
 }
 
+.header-money {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .pay-row {
   display: flex;
   align-items: center;
@@ -11,15 +18,22 @@
   margin: 8px 0 4px;
 }
 
-.cost-chip {
+.spend-tag {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 6px 12px;
-  border: thick double var(--fg-color);
-  background: color-mix(in srgb, var(--bg-color) 92%, black 8%);
-  color: var(--fg-color);
-  font-size: 0.56rem;
+  justify-content: center;
+  gap: 4px;
+  min-height: 18px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--bad-color) 65%, transparent);
+  background: color-mix(in srgb, var(--bad-color) 18%, transparent);
+  color: color-mix(in srgb, var(--bad-color) 88%, white);
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+.spend-tag-icon {
+  --coin-icon-size: 11px;
 }
 
 .reward-table {

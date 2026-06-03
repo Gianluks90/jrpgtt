@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { GameMap } from "../models/GameMap";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
+import { InventoryItemEntry } from "../models/Inventory";
 import { Player, PlayerStatus } from "../models/Player";
 import { ResourceLabel, ResourceStack } from "../models/Resource";
 import { WorldState } from "../models/WorldState";
@@ -15,12 +16,18 @@ import { SafePlaceFastTravelService } from "./safe-place-fast-travel-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { TurnService } from "./turn-service";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { DEFAULT_ITEM_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { WorldZonesService } from "./world-zones-service";
 import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
+import { ItemCatalogService } from "./item-catalog-service";
+import { ItemOwnershipService } from "./item-ownership-service";
+import { MerchantCatalogService } from "./merchant-catalog-service";
+import { MerchantTradeOffersService } from "./merchant-trade-offers-service";
 import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
 import { StatusCatalogService } from "./status-catalog-service";
+import { ItemEffectCatalogService } from "./item-effect-catalog-service";
 
 export interface CapitalEnchantressOutcome {
   rewardId: string;
@@ -39,6 +46,35 @@ export interface CityMysticOutcome {
   alignment: Player["alignment"] | null;
   gainedExperience: number;
   grantedLevelUp: boolean;
+}
+
+export interface MerchantTradeOutcome {
+  operation: "buy" | "sell";
+  itemId: string;
+  itemName: string;
+  coinsDelta: number;
+  turnEnded: boolean;
+}
+
+export interface MerchantCheckoutOperation {
+  operation: "buy" | "sell";
+  itemId: string;
+  quantity: number;
+}
+
+export interface MerchantCheckoutLineOutcome {
+  operation: "buy" | "sell";
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  unitCoinsDelta: number;
+  totalCoinsDelta: number;
+}
+
+export interface MerchantCheckoutOutcome {
+  lines: MerchantCheckoutLineOutcome[];
+  netCoinsDelta: number;
+  turnEnded: boolean;
 }
 
 @Injectable({
@@ -64,8 +100,13 @@ export class ActionExecutorService {
     private tilesConfigService: TilesConfigService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
+    private itemCatalogService: ItemCatalogService,
+    private itemOwnershipService: ItemOwnershipService,
+    private merchantCatalogService: MerchantCatalogService,
+    private merchantTradeOffersService: MerchantTradeOffersService,
     private mysticRewardsConfigService: MysticRewardsConfigService,
     private statusCatalogService: StatusCatalogService,
+    private itemEffectCatalogService: ItemEffectCatalogService,
     private worldZonesService: WorldZonesService,
   ) { }
 
@@ -78,6 +119,8 @@ export class ActionExecutorService {
       this.tilesConfigService.loadConfig(),
       this.biomeConditionCatalogService.loadConfig(),
       this.statusCatalogService.loadConfig(),
+      this.itemCatalogService.loadConfig(),
+      this.itemEffectCatalogService.loadConfig(),
     ]);
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
@@ -88,6 +131,7 @@ export class ActionExecutorService {
       code: string;
       args: Record<string, unknown>;
     }> = [];
+    let endTurnItemLogs: string[] = [];
     let biomeConditionExperienceGained = 0;
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
@@ -132,6 +176,13 @@ export class ActionExecutorService {
       );
       const mapCellSnap = await transaction.get(mapCellRef);
       const currentCell = mapCellSnap.exists() ? (mapCellSnap.data() as MapCell) : null;
+      const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
+      const itemTurnEffects = this.applyConfiguredItemTurnEffects(
+        normalizedItems,
+        currentCell && currentCell.isSpecial !== true ? currentCell.biome : null,
+      );
+      const nextInventoryItems = itemTurnEffects.items;
+      endTurnItemLogs = [...itemTurnEffects.logs];
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
       const statusSnapshot = this.buildStatusEffectsSnapshot(currentStatuses);
@@ -200,6 +251,10 @@ export class ActionExecutorService {
             }
 
             if (effect.type === "hp-damage-percent-per-connected-cell") {
+              if (itemTurnEffects.preventedBiomeConditionIds.has(conditionId)) {
+                continue;
+              }
+
               const previousHpCurrent = nextHpCurrent;
               nextHpCurrent = Math.max(0, nextHpCurrent - deltaHp);
               const damageHp = Math.max(0, previousHpCurrent - nextHpCurrent);
@@ -272,6 +327,13 @@ export class ActionExecutorService {
         };
       }
 
+      if (!this.areInventoryItemsEquivalent(normalizedItems, nextInventoryItems)) {
+        nextPlayerPatch.inventory = {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          items: nextInventoryItems,
+        };
+      }
+
       if (Object.keys(nextPlayerPatch).length > 0) {
         transaction.set(playerRef, nextPlayerPatch, { merge: true });
       }
@@ -285,6 +347,12 @@ export class ActionExecutorService {
 
     for (const conditionLog of biomeConditionLogs) {
       await this.tryCreateLog(gameId, actor, conditionLog.code, conditionLog.args);
+    }
+
+    for (const text of endTurnItemLogs) {
+      await this.tryCreateLog(gameId, actor, "system.info", {
+        text: `${actor.name} ${text}`,
+      });
     }
 
     if (biomeConditionExperienceGained > 0) {
@@ -785,6 +853,105 @@ export class ActionExecutorService {
       resource: gatheredResource,
       quantity: Math.max(1, Math.floor(gatheredQuantity || 1)),
       spentFood: 1,
+      turnEnded: true,
+    });
+  }
+
+  public async chopTree(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    await Promise.all([
+      this.tilesConfigService.loadConfig(),
+      this.itemCatalogService.loadConfig(),
+    ]);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerTxSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerTxSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before chopping wood");
+
+      const player = playerTxSnap.data() as Player;
+      if (player.pendingResourcePickup) {
+        throw new Error("Resolve pending resource pickup before chopping wood");
+      }
+
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "chop-tree", worldTurn, "You can only chop wood once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      if (mapCell.isSpecial === true || mapCell.biome !== "forest") {
+        throw new Error("You can chop wood only in forests");
+      }
+
+      const inventoryItems = this.normalizeInventoryItems(player.inventory?.items);
+      const hasChopAction = inventoryItems.some((entry) => {
+        const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+        return Array.isArray(item?.actions) && item.actions.includes("chop-tree");
+      });
+      if (!hasChopAction) {
+        throw new Error("You need an axe to chop wood");
+      }
+
+      const currentResources = player.inventory?.resources ?? [];
+      const nextResources = this.addResource(currentResources, "timber", 1);
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = { ...worldState };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          resources: nextResources,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "chop-tree", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.chopTree", {
+      resource: "timber",
+      quantity: 1,
       turnEnded: true,
     });
   }
@@ -1460,7 +1627,10 @@ export class ActionExecutorService {
       throw new Error("Invalid action payload");
     }
 
-    await this.mysticRewardsConfigService.loadConfig();
+    await Promise.all([
+      this.mysticRewardsConfigService.loadConfig(),
+      this.itemOwnershipService.loadConfig(),
+    ]);
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
@@ -1506,6 +1676,7 @@ export class ActionExecutorService {
     const gainedExperience = Math.max(0, Math.floor(Number(reward.experienceGain ?? 0)));
     const grantedLevelUp = reward.grantLevelUp === true;
     const alignment = typeof reward.alignment === "string" ? reward.alignment : null;
+    let droppedItemsCount = 0;
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateTxSnap, playerTxSnap] = await Promise.all([
@@ -1552,6 +1723,19 @@ export class ActionExecutorService {
         throw new Error("You need 5 coins to consult the Mystic");
       }
 
+      const currentAlignment = player.alignment;
+      const nextAlignment = alignment ?? currentAlignment;
+      const ownershipResolution = this.itemOwnershipService.enforceAlignmentConstraints({
+        items: player.inventory?.items ?? [],
+        alignment: nextAlignment,
+      });
+      droppedItemsCount = ownershipResolution.droppedItems.length;
+
+      const nextDroppedItems = [
+        ...(mapCell.droppedItems ?? []),
+        ...ownershipResolution.droppedItems,
+      ];
+
       const progression = this.applyExperienceAndResolveLevelUps({
         currentLevel: player.level,
         currentExperience: player.experience,
@@ -1580,6 +1764,7 @@ export class ActionExecutorService {
         },
         inventory: {
           ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          items: ownershipResolution.keptItems,
           money: currentMoney - this.cityMysticCost,
           resourceCapacity: this.getResourceCapacity(player),
         },
@@ -1591,6 +1776,12 @@ export class ActionExecutorService {
         actionsUsedThisTurn: this.markActionUsed(player, "city-mystic", worldTurn),
         ...(alignment ? { alignment } : {}),
       }, { merge: true });
+
+      if (ownershipResolution.droppedItems.length > 0) {
+        transaction.set(mapCellRef, {
+          droppedItems: nextDroppedItems,
+        }, { merge: true });
+      }
 
       transaction.set(worldStateRef, nextWorldState);
 
@@ -1609,6 +1800,7 @@ export class ActionExecutorService {
       rewardLabel: reward.label,
       gainedExperience,
       grantedLevelUp,
+      droppedItemsCount,
       turnEnded: true,
       ...(alignment ? { alignment } : {}),
     });
@@ -1621,6 +1813,260 @@ export class ActionExecutorService {
       alignment,
       gainedExperience,
       grantedLevelUp,
+    };
+  }
+
+  public async safePlaceMerchantTrade(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      actionId: string;
+      merchantId: string;
+      operation: "buy" | "sell";
+      itemId: string;
+    },
+  ): Promise<MerchantTradeOutcome> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const itemId = String(payload.itemId ?? "").trim();
+    if (!itemId) {
+      throw new Error("Invalid merchant trade item");
+    }
+
+    const merchantId = String(payload.merchantId ?? "").trim();
+    if (!merchantId) {
+      throw new Error("Invalid merchant trade merchant");
+    }
+
+    if (payload.operation !== "buy" && payload.operation !== "sell") {
+      throw new Error("Invalid merchant trade operation");
+    }
+
+    await Promise.all([
+      this.itemCatalogService.loadConfig(),
+      this.merchantCatalogService.loadConfig(),
+    ]);
+
+    const merchant = this.merchantCatalogService.getCachedMerchantById(merchantId);
+    if (!merchant) {
+      throw new Error("Merchant not found");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let outcomeItemName = itemId;
+    let outcomeCoinsDelta = 0;
+    let outcomeTurnEnded = false;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      if (mapCell.specialType !== "landmark" || !mapCell.landmarkId) {
+        throw new Error("You must be at a merchant landmark");
+      }
+
+      if (mapCell.landmarkId !== merchant.landmarkId) {
+        throw new Error("Merchant is not available at this landmark");
+      }
+
+      const stockEntry = this.merchantCatalogService.getStockEntry(merchant, itemId);
+      const stockMap = {
+        ...this.merchantCatalogService.asDefaultStockMap(merchant),
+        ...(mapCell.merchantStockByItemId ?? {}),
+      };
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
+      const item = this.itemCatalogService.getCachedItemById(itemId);
+      outcomeItemName = item?.name ?? itemId;
+
+      if (payload.operation === "buy") {
+        this.ensureActionAvailable(player, payload.actionId, worldTurn, "You can only buy once per turn.");
+
+        if (!stockEntry) {
+          throw new Error("Item not sold by this merchant");
+        }
+
+        const availableStock = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0)));
+        if (availableStock <= 0) {
+          throw new Error("Selected item is out of stock");
+        }
+
+        if (!item) {
+          throw new Error("Item definition not found");
+        }
+
+        const allowedAlignments = item.constraints?.allowedAlignments;
+        if (Array.isArray(allowedAlignments) && allowedAlignments.length > 0) {
+          const effectiveAlignment = player.alignment ?? "neutral";
+          if (!allowedAlignments.includes(effectiveAlignment)) {
+            throw new Error("Your alignment does not allow this item");
+          }
+        }
+
+        const purchaseValue = typeof stockEntry.purchaseValue === "number"
+          ? Math.max(0, Math.floor(stockEntry.purchaseValue))
+          : Math.max(0, Math.floor(item.purchaseValue));
+        if (currentMoney < purchaseValue) {
+          throw new Error("Not enough coins to buy this item");
+        }
+
+        if (item.occupiesSpace) {
+          const occupiedSlots = this.getOccupiedItemSlots(normalizedItems);
+          const capacity = this.getItemCapacity(player);
+          if (occupiedSlots >= capacity) {
+            throw new Error("Not enough item inventory space");
+          }
+        }
+
+        const nextItems = [...normalizedItems, this.createInventoryItemEntry(itemId)];
+        stockMap[itemId] = availableStock - 1;
+        outcomeCoinsDelta = -purchaseValue;
+        outcomeTurnEnded = true;
+
+        const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+        const nextWorldState: WorldState = {
+          ...worldState,
+        };
+        await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+        const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+        transaction.set(playerRef, {
+          parameters: {
+            ...player.parameters,
+            mp: {
+              ...player.parameters.mp,
+              current: nextMpCurrent,
+            },
+          },
+          inventory: {
+            ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+            items: nextItems,
+            money: currentMoney - purchaseValue,
+            resourceCapacity: this.getResourceCapacity(player),
+            itemCapacity: this.getItemCapacity(player),
+          },
+          statuses: nextStatuses,
+          actionsUsedThisTurn: this.markActionUsed(player, payload.actionId, worldTurn),
+        }, { merge: true });
+
+        transaction.set(mapCellRef, {
+          merchantStockByItemId: stockMap,
+        }, { merge: true });
+
+        transaction.set(worldStateRef, nextWorldState);
+
+        transaction.set(gameRef, {
+          updatedAt: Timestamp.now(),
+          lastActivityAt: Timestamp.now(),
+        }, { merge: true });
+
+        return;
+      }
+
+      const sellItemIndex = normalizedItems.findIndex((entry) => entry.itemId === itemId);
+      if (sellItemIndex < 0) {
+        throw new Error("You do not own this item");
+      }
+
+      if (!item) {
+        throw new Error("Item definition not found");
+      }
+
+      if (Array.isArray(merchant.acceptedCategories) && merchant.acceptedCategories.length > 0) {
+        if (!merchant.acceptedCategories.includes(item.category)) {
+          throw new Error("This merchant does not buy this item category");
+        }
+      }
+
+      const gainedCoins = this.itemCatalogService.getSellValue(item);
+      const nextItems = normalizedItems.filter((_entry, index) => index !== sellItemIndex);
+      stockMap[itemId] = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0))) + 1;
+      outcomeCoinsDelta = gainedCoins;
+      outcomeTurnEnded = false;
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          items: nextItems,
+          money: currentMoney + gainedCoins,
+          resourceCapacity: this.getResourceCapacity(player),
+          itemCapacity: this.getItemCapacity(player),
+        },
+      }, { merge: true });
+
+      transaction.set(mapCellRef, {
+        merchantStockByItemId: stockMap,
+      }, { merge: true });
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    if (payload.operation === "buy") {
+      await this.tryCreateLog(gameId, actor, "player.merchantBuy", {
+        actionId: payload.actionId,
+        merchantId,
+        itemId,
+        itemName: outcomeItemName,
+        spentCoins: Math.abs(outcomeCoinsDelta),
+        turnEnded: true,
+      });
+    } else {
+      await this.tryCreateLog(gameId, actor, "player.merchantSell", {
+        actionId: payload.actionId,
+        merchantId,
+        itemId,
+        itemName: outcomeItemName,
+        gainedCoins: Math.max(0, outcomeCoinsDelta),
+      });
+    }
+
+    return {
+      operation: payload.operation,
+      itemId,
+      itemName: outcomeItemName,
+      coinsDelta: outcomeCoinsDelta,
+      turnEnded: outcomeTurnEnded,
     };
   }
 
@@ -2392,6 +2838,352 @@ export class ActionExecutorService {
     }
   }
 
+  public async safePlaceMerchantCheckout(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      actionId: string;
+      merchantId: string;
+      stockConfigUrl?: string;
+      operations: MerchantCheckoutOperation[];
+    },
+  ): Promise<MerchantCheckoutOutcome> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const merchantId = String(payload.merchantId ?? "").trim();
+    if (!merchantId) {
+      throw new Error("Invalid merchant trade merchant");
+    }
+
+    const operations = Array.isArray(payload.operations) ? payload.operations : [];
+    if (operations.length === 0) {
+      throw new Error("Merchant cart is empty");
+    }
+
+    await Promise.all([
+      this.itemCatalogService.loadConfig(),
+      this.merchantCatalogService.loadConfig(),
+    ]);
+
+    const merchant = this.merchantCatalogService.getCachedMerchantById(merchantId);
+    if (!merchant) {
+      throw new Error("Merchant not found");
+    }
+
+    const stockEntries = await this.merchantTradeOffersService.resolveStockEntries({
+      merchant,
+      stockConfigUrl: payload.stockConfigUrl,
+    });
+
+    const buyQuantitiesByItemId = new Map<string, number>();
+    const sellQuantitiesByItemId = new Map<string, number>();
+    operations.forEach((operation, index) => {
+      if (!operation || typeof operation !== "object") {
+        throw new Error(`Invalid merchant cart line at index ${index}`);
+      }
+
+      const itemId = String(operation.itemId ?? "").trim();
+      if (!itemId) {
+        throw new Error(`Invalid merchant cart item at index ${index}`);
+      }
+
+      const quantity = Math.floor(Number(operation.quantity ?? 0));
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new Error(`Invalid merchant cart quantity for item '${itemId}'`);
+      }
+
+      if (operation.operation === "buy") {
+        buyQuantitiesByItemId.set(itemId, (buyQuantitiesByItemId.get(itemId) ?? 0) + quantity);
+        return;
+      }
+
+      if (operation.operation === "sell") {
+        sellQuantitiesByItemId.set(itemId, (sellQuantitiesByItemId.get(itemId) ?? 0) + quantity);
+        return;
+      }
+
+      throw new Error(`Invalid merchant cart operation for item '${itemId}'`);
+    });
+
+    if (buyQuantitiesByItemId.size === 0 && sellQuantitiesByItemId.size === 0) {
+      throw new Error("Merchant cart is empty");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    const lineOutcomes: MerchantCheckoutLineOutcome[] = [];
+    let turnEnded = false;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      if (buyQuantitiesByItemId.size > 0) {
+        this.ensureActionAvailable(player, payload.actionId, worldTurn, "You can only buy once per turn.");
+      }
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      if (mapCell.specialType !== "landmark" || !mapCell.landmarkId) {
+        throw new Error("You must be at a merchant landmark");
+      }
+
+      if (mapCell.landmarkId !== merchant.landmarkId) {
+        throw new Error("Merchant is not available at this landmark");
+      }
+
+      const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
+      const ownedCountByItemId = normalizedItems.reduce<Record<string, number>>((acc, entry) => {
+        acc[entry.itemId] = (acc[entry.itemId] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      const stockMap = {
+        ...this.merchantTradeOffersService.buildStockMap({
+          stockEntries,
+          persistedStockByItemId: mapCell.merchantStockByItemId ?? {},
+        }),
+      };
+
+      const initialMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      let runningMoney = initialMoney;
+
+      sellQuantitiesByItemId.forEach((quantity, itemId) => {
+        const owned = Math.max(0, Math.floor(Number(ownedCountByItemId[itemId] ?? 0)));
+        if (owned < quantity) {
+          throw new Error(`You do not own enough '${itemId}' to sell`);
+        }
+
+        const item = this.itemCatalogService.getCachedItemById(itemId);
+        if (!item) {
+          throw new Error("Item definition not found");
+        }
+
+        if (Array.isArray(merchant.acceptedCategories) && merchant.acceptedCategories.length > 0) {
+          if (!merchant.acceptedCategories.includes(item.category)) {
+            throw new Error("This merchant does not buy this item category");
+          }
+        }
+
+        const gainedCoinsPerUnit = this.itemCatalogService.getSellValue(item);
+        const gainedCoinsTotal = gainedCoinsPerUnit * quantity;
+
+        runningMoney += gainedCoinsTotal;
+        ownedCountByItemId[itemId] = owned - quantity;
+        stockMap[itemId] = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0))) + quantity;
+
+        lineOutcomes.push({
+          operation: "sell",
+          itemId,
+          itemName: item.name,
+          quantity,
+          unitCoinsDelta: gainedCoinsPerUnit,
+          totalCoinsDelta: gainedCoinsTotal,
+        });
+      });
+
+      buyQuantitiesByItemId.forEach((quantity, itemId) => {
+        const stockEntry = this.merchantTradeOffersService.getStockEntry(stockEntries, itemId);
+        if (!stockEntry) {
+          throw new Error("Item not sold by this merchant");
+        }
+
+        const item = this.itemCatalogService.getCachedItemById(itemId);
+        if (!item) {
+          throw new Error("Item definition not found");
+        }
+
+        const availableStock = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0)));
+        if (availableStock < quantity) {
+          throw new Error("Selected item is out of stock");
+        }
+
+        const allowedAlignments = item.constraints?.allowedAlignments;
+        if (Array.isArray(allowedAlignments) && allowedAlignments.length > 0) {
+          const effectiveAlignment = player.alignment ?? "neutral";
+          if (!allowedAlignments.includes(effectiveAlignment)) {
+            throw new Error("Your alignment does not allow this item");
+          }
+        }
+
+        const purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
+          ? Math.max(0, Math.floor(stockEntry.purchaseValue))
+          : Math.max(0, Math.floor(item.purchaseValue));
+        const purchaseValueTotal = purchaseValuePerUnit * quantity;
+        if (runningMoney < purchaseValueTotal) {
+          throw new Error("Not enough coins to buy selected cart items");
+        }
+
+        runningMoney -= purchaseValueTotal;
+        stockMap[itemId] = availableStock - quantity;
+        ownedCountByItemId[itemId] = Math.max(0, Math.floor(Number(ownedCountByItemId[itemId] ?? 0))) + quantity;
+
+        lineOutcomes.push({
+          operation: "buy",
+          itemId,
+          itemName: item.name,
+          quantity,
+          unitCoinsDelta: -purchaseValuePerUnit,
+          totalCoinsDelta: -purchaseValueTotal,
+        });
+      });
+
+      const itemCapacity = this.getItemCapacity(player);
+      let occupiedSlots = this.getOccupiedItemSlots(normalizedItems);
+
+      sellQuantitiesByItemId.forEach((quantity, itemId) => {
+        const item = this.itemCatalogService.getCachedItemById(itemId);
+        if (!item || !item.occupiesSpace) return;
+        occupiedSlots = Math.max(0, occupiedSlots - quantity);
+      });
+
+      buyQuantitiesByItemId.forEach((quantity, itemId) => {
+        const item = this.itemCatalogService.getCachedItemById(itemId);
+        if (!item || !item.occupiesSpace) return;
+        occupiedSlots += quantity;
+      });
+
+      if (occupiedSlots > itemCapacity) {
+        throw new Error("Not enough item inventory space");
+      }
+
+      const nextItems = [...normalizedItems];
+      sellQuantitiesByItemId.forEach((quantity, itemId) => {
+        let toRemove = quantity;
+        while (toRemove > 0) {
+          const index = nextItems.findIndex((entry) => entry.itemId === itemId);
+          if (index < 0) {
+            throw new Error(`Cannot sell '${itemId}' because it is missing from inventory`);
+          }
+
+          nextItems.splice(index, 1);
+          toRemove -= 1;
+        }
+      });
+
+      buyQuantitiesByItemId.forEach((quantity, itemId) => {
+        for (let i = 0; i < quantity; i += 1) {
+          nextItems.push(this.createInventoryItemEntry(itemId));
+        }
+      });
+
+      turnEnded = buyQuantitiesByItemId.size > 0;
+      if (turnEnded) {
+        const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+        const nextWorldState: WorldState = {
+          ...worldState,
+        };
+        await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+        const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+        transaction.set(playerRef, {
+          parameters: {
+            ...player.parameters,
+            mp: {
+              ...player.parameters.mp,
+              current: nextMpCurrent,
+            },
+          },
+          inventory: {
+            ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+            items: nextItems,
+            money: runningMoney,
+            resourceCapacity: this.getResourceCapacity(player),
+            itemCapacity,
+          },
+          statuses: nextStatuses,
+          actionsUsedThisTurn: this.markActionUsed(player, payload.actionId, worldTurn),
+        }, { merge: true });
+
+        transaction.set(worldStateRef, nextWorldState);
+      } else {
+        transaction.set(playerRef, {
+          inventory: {
+            ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+            items: nextItems,
+            money: runningMoney,
+            resourceCapacity: this.getResourceCapacity(player),
+            itemCapacity,
+          },
+        }, { merge: true });
+      }
+
+      transaction.set(mapCellRef, {
+        merchantStockByItemId: stockMap,
+      }, { merge: true });
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    for (const line of lineOutcomes) {
+      if (line.operation === "buy") {
+        await this.tryCreateLog(gameId, actor, "player.merchantBuy", {
+          actionId: payload.actionId,
+          merchantId,
+          itemId: line.itemId,
+          itemName: line.itemName,
+          quantity: line.quantity,
+          spentCoins: Math.abs(line.totalCoinsDelta),
+          turnEnded: true,
+        });
+        continue;
+      }
+
+      await this.tryCreateLog(gameId, actor, "player.merchantSell", {
+        actionId: payload.actionId,
+        merchantId,
+        itemId: line.itemId,
+        itemName: line.itemName,
+        quantity: line.quantity,
+        gainedCoins: Math.max(0, line.totalCoinsDelta),
+      });
+    }
+
+    const netCoinsDelta = lineOutcomes.reduce((total, line) => total + line.totalCoinsDelta, 0);
+    return {
+      lines: lineOutcomes,
+      netCoinsDelta,
+      turnEnded,
+    };
+  }
+
   private ensureActionAvailable(player: Player, actionId: string, worldTurn: number, message: string): void {
     const actionsUsed = player.actionsUsedThisTurn ?? {};
     if (actionsUsed[actionId] === worldTurn) {
@@ -2748,6 +3540,211 @@ export class ActionExecutorService {
     }
 
     return DEFAULT_RESOURCE_INVENTORY_CAPACITY;
+  }
+
+  private getItemCapacity(player: Player): number {
+    const configuredCapacity = player.inventory?.itemCapacity;
+    if (typeof configuredCapacity === "number" && Number.isFinite(configuredCapacity)) {
+      return Math.max(1, Math.floor(configuredCapacity));
+    }
+
+    return DEFAULT_ITEM_INVENTORY_CAPACITY;
+  }
+
+  private getOccupiedItemSlots(items: InventoryItemEntry[]): number {
+    return items.reduce((count, entry) => {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      if (!item) return count;
+      return count + (item.occupiesSpace ? 1 : 0);
+    }, 0);
+  }
+
+  private normalizeInventoryItems(rawItems: unknown): InventoryItemEntry[] {
+    if (!Array.isArray(rawItems)) {
+      return [];
+    }
+
+    const items: InventoryItemEntry[] = [];
+    rawItems.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        items.push({ itemId: entry.trim() });
+        return;
+      }
+
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const itemId = (entry as { itemId?: unknown }).itemId;
+      if (typeof itemId !== "string" || !itemId.trim()) {
+        return;
+      }
+
+      const rawCurrentCharges = (entry as { currentCharges?: unknown }).currentCharges;
+      const currentCharges = typeof rawCurrentCharges === "number" && Number.isFinite(rawCurrentCharges)
+        ? Math.max(0, Math.floor(rawCurrentCharges))
+        : undefined;
+
+      items.push({
+        itemId: itemId.trim(),
+        ...(typeof currentCharges === "number" ? { currentCharges } : {}),
+      });
+    });
+
+    return items;
+  }
+
+  private createInventoryItemEntry(itemId: string): InventoryItemEntry {
+    const item = this.itemCatalogService.getCachedItemById(itemId);
+    const maxCharges = this.resolveMaxCharges(item?.maxCharges);
+    if (typeof maxCharges === "number") {
+      return {
+        itemId,
+        currentCharges: maxCharges,
+      };
+    }
+
+    return { itemId };
+  }
+
+  private resolveMaxCharges(rawMaxCharges?: unknown): number | null {
+    const parsed = Number(rawMaxCharges);
+    if (Number.isFinite(parsed) && Math.floor(parsed) === parsed && parsed > 0) {
+      return parsed;
+    }
+
+    return null;
+  }
+
+  private applyConfiguredItemTurnEffects(
+    items: InventoryItemEntry[],
+    biome: MapCell["biome"] | null,
+  ): {
+    items: InventoryItemEntry[];
+    preventedBiomeConditionIds: Set<string>;
+    logs: string[];
+  } {
+    const nextItems = items.map((entry) => ({ ...entry }));
+    const preventedBiomeConditionIds = new Set<string>();
+    const logs: string[] = [];
+
+    if (!biome) {
+      return {
+        items: nextItems,
+        preventedBiomeConditionIds,
+        logs,
+      };
+    }
+
+    for (let index = 0; index < nextItems.length; index += 1) {
+      const inventoryEntry = nextItems[index];
+      if (!inventoryEntry) continue;
+
+      const itemDefinition = this.itemCatalogService.getCachedItemById(inventoryEntry.itemId);
+      if (!itemDefinition?.effects?.length) {
+        continue;
+      }
+
+      for (const effectId of itemDefinition.effects) {
+        const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+        if (!effect || effect.biome !== biome) {
+          continue;
+        }
+
+        if (effect.type === "prevent-biome-condition-damage-by-charge") {
+          if (preventedBiomeConditionIds.has(effect.conditionId)) {
+            continue;
+          }
+
+          const maxCharges = this.resolveMaxCharges(itemDefinition.maxCharges);
+          if (typeof maxCharges !== "number") {
+            continue;
+          }
+
+          const currentCharges = this.resolveCurrentCharges(nextItems[index], maxCharges);
+          if (currentCharges < effect.consumeCharges) {
+            continue;
+          }
+
+          const nextCharges = currentCharges - effect.consumeCharges;
+          nextItems[index] = {
+            ...nextItems[index],
+            currentCharges: nextCharges,
+          };
+          preventedBiomeConditionIds.add(effect.conditionId);
+          logs.push(`used ${itemDefinition.name} (${nextCharges}/${maxCharges}) to prevent ${effect.conditionId}.`);
+          continue;
+        }
+
+        const maxCharges = this.resolveMaxCharges(itemDefinition.maxCharges);
+        if (typeof maxCharges !== "number") {
+          continue;
+        }
+
+        const currentCharges = this.resolveCurrentCharges(nextItems[index], maxCharges);
+        if (currentCharges >= maxCharges) {
+          continue;
+        }
+
+        const nextCharges = Math.min(maxCharges, currentCharges + effect.rechargeCharges);
+        if (nextCharges === currentCharges) {
+          continue;
+        }
+
+        nextItems[index] = {
+          ...nextItems[index],
+          currentCharges: nextCharges,
+        };
+        logs.push(`recharged ${itemDefinition.name} (${nextCharges}/${maxCharges}) in ${biome}.`);
+      }
+    }
+
+    return {
+      items: nextItems,
+      preventedBiomeConditionIds,
+      logs,
+    };
+  }
+
+  private resolveCurrentCharges(entry: InventoryItemEntry | null | undefined, maxCharges: number): number {
+    if (!entry) return maxCharges;
+    const parsed = Number(entry.currentCharges);
+    if (!Number.isFinite(parsed)) {
+      return maxCharges;
+    }
+
+    return Math.max(0, Math.min(maxCharges, Math.floor(parsed)));
+  }
+
+  private areInventoryItemsEquivalent(left: InventoryItemEntry[], right: InventoryItemEntry[]): boolean {
+    if (left.length !== right.length) {
+      return false;
+    }
+
+    for (let index = 0; index < left.length; index += 1) {
+      const leftEntry = left[index];
+      const rightEntry = right[index];
+      if (!leftEntry || !rightEntry) {
+        return false;
+      }
+
+      if (leftEntry.itemId !== rightEntry.itemId) {
+        return false;
+      }
+
+      const leftCharges = typeof leftEntry.currentCharges === "number"
+        ? Math.max(0, Math.floor(leftEntry.currentCharges))
+        : null;
+      const rightCharges = typeof rightEntry.currentCharges === "number"
+        ? Math.max(0, Math.floor(rightEntry.currentCharges))
+        : null;
+
+      if (leftCharges !== rightCharges) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private pickRandom<T>(values: T[]): T {

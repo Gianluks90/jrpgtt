@@ -1,0 +1,11 @@
+{
+  "merchants": [
+    {
+      "id": "city-merchant",
+      "landmarkId": "city",
+      "label": "City Merchant",
+      "acceptedCategories": ["weapon", "valuable", "trinket"],
+      "stock": []
+    }
+  ]
+}

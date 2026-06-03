@@ -1,0 +1,20 @@
+{
+  "merchantId": "city-merchant",
+  "stock": [
+    {
+      "itemId": "common-sword",
+      "stock": 4,
+      "purchaseValue": 3
+    },
+    {
+      "itemId": "common-axe",
+      "stock": 4,
+      "purchaseValue": 5
+    },
+    {
+      "itemId": "water-bottle",
+      "stock": 3,
+      "purchaseValue": 4
+    }
+  ]
+}

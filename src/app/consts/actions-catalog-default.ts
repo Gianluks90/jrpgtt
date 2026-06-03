@@ -113,6 +113,27 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       },
     },
     {
+      id: "chop-tree",
+      ui: {
+        label: "Chop wood",
+        descriptionTemplate: "Use your axe in a forest to gain 1 timber, then end your turn.",
+        i18n: {
+          labelKey: "actions.chopTree.label",
+          descriptionKey: "actions.chopTree.description",
+        },
+      },
+      flow: {
+        handler: "biome-chop-tree",
+        errorMessage: "Error while chopping a tree",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
       id: "consume-ration",
       ui: {
         label: "Consume ration",
@@ -275,6 +296,31 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       },
       log: {
         sourceLabel: "City Mystic",
+      },
+    },
+    {
+      id: "city-merchant",
+      ui: {
+        label: "Merchant",
+        descriptionTemplate: "Visit the City Merchant. Buy or sell items from a configurable stock. Buying ends your turn.",
+        i18n: {
+          labelKey: "actions.cityMerchant.label",
+          descriptionKey: "actions.cityMerchant.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-merchant",
+        errorMessage: "Error while trading with the city merchant",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy"],
+        dialog: {
+          type: "merchant-trade",
+          stockConfigUrl: "/configs/merchant-stock/city-merchant.stock.json",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "City Merchant",
       },
     },
     {

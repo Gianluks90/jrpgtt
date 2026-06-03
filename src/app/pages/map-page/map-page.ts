@@ -12,7 +12,6 @@ import { AlignmentIndicator } from "../../components/ui/alignment-indicator/alig
 import { BiomesCounter } from "../../components/ui/biomes-counter/biomes-counter";
 import { CommandPanelAction, CommandsPanel } from "../../components/ui/commands-panel/commands-panel";
 import { MapPlayersPanel } from "../../components/ui/map-players-panel/map-players-panel";
-import { MapCellInspectorPanel } from "../../components/ui/map-cell-inspector-panel/map-cell-inspector-panel";
 import { MapLogPanel } from "../../components/ui/map-log-panel/map-log-panel";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
 import { MapPageStateService } from "../../services/map-page-state-service";
@@ -21,14 +20,17 @@ import { MapPageActionsService } from "../../services/map-page-actions-service";
 import { MapPageInteractionService } from "../../services/map-page-interaction-service";
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
+import { ItemDefinition } from "../../models/ItemCatalog";
 import { PlayerComputedStats } from "../../models/PlayerComputedStats";
 import { MapCell } from "../../models/MapCell";
+import { InventoryItemEntry } from "../../models/Inventory";
 import { PlayerStatsModifierService } from "../../services/player-stats-modifier-service";
 import { FastTravelVisualService } from "../../services/fast-travel-visual-service";
 import { FastTravelFlowService } from "../../services/fast-travel-flow-service";
 import { PendingFastTravelState } from "../../models/WorldState";
 import { WorldEventRegionTransitionService } from "../../services/world-event-region-transition-service";
 import { BiomeConditionCatalogService } from "../../services/biome-condition-catalog-service";
+import { ItemCatalogService } from "../../services/item-catalog-service";
 
 @Component({
   selector: "app-map-page",
@@ -45,7 +47,6 @@ import { BiomeConditionCatalogService } from "../../services/biome-condition-cat
     DayNightCyclePanel,
     BiomesCounter,
     CommandsPanel,
-    MapCellInspectorPanel,
     MapLogPanel,
   ],
   templateUrl: "./map-page.html",
@@ -65,6 +66,7 @@ export class MapPage implements OnInit, OnDestroy {
   private fastTravelFlowService = inject(FastTravelFlowService);
   private worldEventRegionTransitionService = inject(WorldEventRegionTransitionService);
   private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
+  private itemCatalogService = inject(ItemCatalogService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -81,6 +83,8 @@ export class MapPage implements OnInit, OnDestroy {
   public isFastTravelTransitionRunning = this.fastTravelVisualService.isTransitionRunning;
   public mockPlayers = signal<Player[]>([]);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
+    private static readonly locationInfoResetDelayMs = 10000;
+    private locationInfoResetTimer: ReturnType<typeof setTimeout> | null = null;
   private lastPendingDialogKey = signal<string | null>(null);
   public latestLogMessage = computed<string>(() => {
     return this.mapPageState.latestEventLogSummary();
@@ -219,6 +223,74 @@ export class MapPage implements OnInit, OnDestroy {
     return this.players().find((player) => player.id === activePlayerId) ?? null;
   });
 
+  public locationInfoCellName = computed<string>(() => {
+    const hoveredCell = this.inspectedCell();
+    if (hoveredCell) {
+      return this.resolveCellNameFromCoordinates(hoveredCell.x, hoveredCell.y);
+    }
+
+    const activePlayer = this.activePlayer();
+    if (!activePlayer) return "-";
+    return this.resolveCellNameFromCoordinates(activePlayer.location.x, activePlayer.location.y);
+  });
+
+  public locationInfoContextLabel = computed<string>(() => {
+    if (this.inspectedCell()) {
+      return "Observing cell";
+    }
+
+    return "Active player in";
+  });
+
+  public visibleInventoryItems = computed<Array<{
+    itemId: string;
+    name: string;
+    sellValue: number | null;
+    description: string;
+    occupiesSpace: boolean;
+    uses: {
+      current: number;
+      max: number;
+      slots: boolean[];
+    } | null;
+    labels: Array<{
+      text: string;
+      tone: "neutral" | "positive" | "negative";
+    }>;
+  }>>(() => {
+    const items = this.normalizeInventoryItems(this.myPlayer()?.inventory?.items);
+    return items.map((entry) => {
+      const definition = this.itemCatalogService.getCachedItemById(entry.itemId);
+      const sellValue = definition ? this.itemCatalogService.getSellValue(definition) : 0;
+      const labels = definition ? this.buildInventoryLabels(definition) : [];
+      const uses = definition ? this.buildInventoryUses(entry, definition) : null;
+      return {
+        itemId: entry.itemId,
+        name: definition?.name ?? entry.itemId,
+        sellValue: sellValue > 0 ? sellValue : null,
+        description: definition?.description?.trim() || "No description available.",
+        occupiesSpace: definition?.occupiesSpace === true,
+        uses,
+        labels,
+      };
+    });
+  });
+
+  public visibleInventoryOccupiedSlots = computed<number>(() => {
+    return this.visibleInventoryItems().reduce((total, item) => {
+      return total + (item.occupiesSpace ? 1 : 0);
+    }, 0);
+  });
+
+  public visibleInventoryCapacity = computed<number>(() => {
+    const configured = this.myPlayer()?.inventory?.itemCapacity;
+    if (typeof configured === "number" && Number.isFinite(configured)) {
+      return Math.max(1, Math.floor(configured));
+    }
+
+    return 4;
+  });
+
   public movableCellIds = computed<Set<string>>(() => {
     const current = this.myPlayer();
     if (!current || !this.isMyTurn()) return new Set<string>();
@@ -262,6 +334,7 @@ export class MapPage implements OnInit, OnDestroy {
     this.mapPageInteractionService.resetUiState();
     this.mapPageState.init(this.gameId);
     void this.biomeConditionCatalogService.loadConfig();
+    void this.itemCatalogService.loadConfig();
     effect(() => {
       const player = this.myPlayer();
       const pendingPickup = player?.pendingResourcePickup ?? null;
@@ -297,6 +370,7 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public ngOnDestroy(): void {
+    this.clearLocationInfoResetTimer();
     this.fastTravelFlowService.reset();
     this.mapPageInteractionService.resetUiState();
     this.mapPageState.destroy();
@@ -311,7 +385,13 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public onInspectionCellChanged(cell: MapGridPanelCell | null): void {
-    this.inspectedCell.set(cell);
+    if (cell) {
+      this.inspectedCell.set(cell);
+      this.clearLocationInfoResetTimer();
+      return;
+    }
+
+    this.scheduleLocationInfoReset();
   }
 
   public async onResourcePanelClicked(): Promise<void> {
@@ -392,6 +472,178 @@ export class MapPage implements OnInit, OnDestroy {
 
       return fallbackConditionIds.includes(conditionId);
     });
+  }
+
+  private normalizeInventoryItems(rawItems: unknown): InventoryItemEntry[] {
+    if (!Array.isArray(rawItems)) {
+      return [];
+    }
+
+    const items: InventoryItemEntry[] = [];
+    rawItems.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        items.push({ itemId: entry.trim() });
+        return;
+      }
+
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const itemId = (entry as { itemId?: unknown }).itemId;
+      if (typeof itemId !== "string" || !itemId.trim()) {
+        return;
+      }
+
+      const rawCurrentCharges = (entry as { currentCharges?: unknown }).currentCharges;
+      const currentCharges = typeof rawCurrentCharges === "number" && Number.isFinite(rawCurrentCharges)
+        ? Math.max(0, Math.floor(rawCurrentCharges))
+        : undefined;
+
+      items.push({
+        itemId: itemId.trim(),
+        ...(typeof currentCharges === "number" ? { currentCharges } : {}),
+      });
+    });
+
+    return items;
+  }
+
+  private biomeToLabel(biome: MapCell["biome"]): string {
+    if (biome === "plains") return "Plains";
+    if (biome === "forest") return "Forest";
+    if (biome === "mountain") return "Mountain";
+    if (biome === "water") return "Water";
+    if (biome === "desert") return "Desert";
+    return "Ruins";
+  }
+
+  private buildInventoryLabels(item: ItemDefinition): Array<{
+    text: string;
+    tone: "neutral" | "positive" | "negative";
+  }> {
+    const labels: Array<{
+      text: string;
+      tone: "neutral" | "positive" | "negative";
+    }> = [];
+
+    if (item.occupiesSpace !== true) {
+      labels.push({
+        text: "little",
+        tone: "neutral",
+      });
+    }
+
+    const scopeLabels = this.buildModifierScopeLabels(item.parameterModifiers ?? []);
+    scopeLabels.forEach((scopeLabel) => {
+      labels.push({
+        text: scopeLabel,
+        tone: "neutral",
+      });
+    });
+
+    const parameterModifiers = item.parameterModifiers ?? [];
+    parameterModifiers.forEach((modifier) => {
+      const sign = modifier.amount >= 0 ? "+" : "";
+      const parameterLabel = modifier.parameter === "strength"
+        ? "STR"
+        : modifier.parameter === "magic"
+          ? "MAG"
+          : "LCK";
+      labels.push({
+        text: `${sign}${modifier.amount} ${parameterLabel}`,
+        tone: modifier.amount >= 0 ? "positive" : "negative",
+      });
+    });
+
+    return labels;
+  }
+
+  private buildInventoryUses(entry: InventoryItemEntry, item: ItemDefinition): {
+    current: number;
+    max: number;
+    slots: boolean[];
+  } | null {
+    const maxCharges = typeof item.maxCharges === "number" && Number.isFinite(item.maxCharges)
+      ? Math.max(1, Math.floor(item.maxCharges))
+      : null;
+    if (!maxCharges) {
+      return null;
+    }
+
+    const rawCurrentCharges = Number(entry.currentCharges);
+    const currentCharges = Number.isFinite(rawCurrentCharges)
+      ? Math.max(0, Math.min(maxCharges, Math.floor(rawCurrentCharges)))
+      : maxCharges;
+
+    return {
+      current: currentCharges,
+      max: maxCharges,
+      slots: Array.from({ length: maxCharges }, (_value, index) => index < currentCharges),
+    };
+  }
+
+  private buildModifierScopeLabels(modifiers: NonNullable<ItemDefinition["parameterModifiers"]>): string[] {
+    const labels = new Set<string>();
+
+    modifiers.forEach((modifier) => {
+      const scopes = modifier.scopes ?? [];
+      scopes.forEach((scope) => {
+        if (scope === "always") return;
+        if (scope === "fight-only") {
+          labels.add("fight only");
+          return;
+        }
+        if (scope === "day-only") {
+          labels.add("day only");
+          return;
+        }
+        labels.add("night only");
+      });
+    });
+
+    return Array.from(labels);
+  }
+
+  private capitalize(value: string): string {
+    if (!value) return value;
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  private resolveCellNameFromCoordinates(x: number, y: number): string {
+    const cellId = `${x}_${y}`;
+    const cell = this.mapCellsById()[cellId] ?? null;
+    if (!cell) return "Unknown cell";
+
+    if (cell.isSpecial === true) {
+      if (cell.specialType === "landmark") {
+        return cell.landmarkDisplayName ?? "Unknown Landmark";
+      }
+
+      if (cell.specialType === "sanctuary") {
+        if (cell.sanctuaryElement === "water") return "Water Shrine";
+        if (cell.sanctuaryElement === "fire") return "Fire Shrine";
+        if (cell.sanctuaryElement === "wind") return "Wind Shrine";
+        if (cell.sanctuaryElement === "earth") return "Earth Shrine";
+        return "Elemental Shrine";
+      }
+    }
+
+    return this.biomeToLabel(cell.biome);
+  }
+
+  private scheduleLocationInfoReset(): void {
+    this.clearLocationInfoResetTimer();
+    this.locationInfoResetTimer = setTimeout(() => {
+      this.inspectedCell.set(null);
+      this.locationInfoResetTimer = null;
+    }, MapPage.locationInfoResetDelayMs);
+  }
+
+  private clearLocationInfoResetTimer(): void {
+    if (!this.locationInfoResetTimer) return;
+    clearTimeout(this.locationInfoResetTimer);
+    this.locationInfoResetTimer = null;
   }
 
 }

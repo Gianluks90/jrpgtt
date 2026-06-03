@@ -81,6 +81,11 @@ export class EventLogService {
             const resource = String(args["resource"] ?? "resource");
             return `${playerName} spent 1 food and gathered ${resource}.`;
         },
+        "player.chopTree": ({ playerName, args }) => {
+            const resource = String(args["resource"] ?? "timber");
+            const quantity = Math.max(1, Math.floor(Number(args["quantity"] ?? 1)));
+            return `${playerName} chopped wood and gained ${quantity} ${resource}.`;
+        },
         "player.consumeRation": ({ playerName }) => {
             return `${playerName} consumed a ration and gained Nutrition.`;
         },
@@ -141,6 +146,22 @@ export class EventLogService {
             if (grantedLevelUp) extras.push("+1 level up");
             const suffix = extras.length > 0 ? ` (${extras.join(", ")})` : "";
             return `${playerName} consulted ${source}, paid ${spentCoins} coins and drew ${rewardLabel}${suffix}.`;
+        },
+        "player.merchantBuy": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel(String(args["actionId"] ?? "city-merchant"), "Merchant");
+            const itemName = String(args["itemName"] ?? "item");
+            const quantity = Math.max(1, Math.floor(Number(args["quantity"] ?? 1)));
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            const quantityLabel = quantity > 1 ? ` x${quantity}` : "";
+            return `${playerName} bought ${itemName}${quantityLabel} from ${source} for ${spentCoins} coins and ended the turn.`;
+        },
+        "player.merchantSell": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel(String(args["actionId"] ?? "city-merchant"), "Merchant");
+            const itemName = String(args["itemName"] ?? "item");
+            const quantity = Math.max(1, Math.floor(Number(args["quantity"] ?? 1)));
+            const gainedCoins = Number(args["gainedCoins"] ?? 0);
+            const quantityLabel = quantity > 1 ? ` x${quantity}` : "";
+            return `${playerName} sold ${itemName}${quantityLabel} to ${source} for ${gainedCoins} coins.`;
         },
         "player.fastTravelBooked": ({ playerName, args }) => {
             const from = String(args["from"] ?? "a safe place");

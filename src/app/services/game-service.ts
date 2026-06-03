@@ -8,7 +8,8 @@ import { BiomeType, MapCell } from "../models/MapCell";
 import { GameConfig } from "../models/GameConfig";
 import { BiomePlacementCount, WorldState } from "../models/WorldState";
 import { PLAYER_SETUP_BASE_HP, PLAYER_STARTING_MONEY } from "../consts/player-defaults";
-import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { DEFAULT_ITEM_INVENTORY_CAPACITY, DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { InventoryItemEntry } from "../models/Inventory";
 import { LandmarksService } from "./landmarks-service";
 import { WorldZonesService } from "./world-zones-service";
 
@@ -356,7 +357,7 @@ export class GameService {
           y: spawn.y,
         },
         inventory: {
-          items: inventory?.items ?? [],
+          items: this.normalizeInventoryItems(inventory?.items),
           resources: (inventory?.resources?.length ?? 0) > 0 ? inventory?.resources : [{ label: "food", quantity: 3 }],
           money: typeof inventory?.money === "number"
             ? Math.max(PLAYER_STARTING_MONEY, Math.floor(inventory.money))
@@ -364,6 +365,9 @@ export class GameService {
           resourceCapacity: typeof inventory?.resourceCapacity === "number"
             ? Math.max(1, Math.floor(inventory.resourceCapacity))
             : DEFAULT_RESOURCE_INVENTORY_CAPACITY,
+          itemCapacity: typeof inventory?.itemCapacity === "number"
+            ? Math.max(1, Math.floor(inventory.itemCapacity))
+            : DEFAULT_ITEM_INVENTORY_CAPACITY,
         },
       }, { merge: true });
 
@@ -409,6 +413,7 @@ export class GameService {
         resources: [{ label: "food", quantity: 3 }],
         money: PLAYER_STARTING_MONEY,
         resourceCapacity: DEFAULT_RESOURCE_INVENTORY_CAPACITY,
+        itemCapacity: DEFAULT_ITEM_INVENTORY_CAPACITY,
       },
       actionsUsedThisTurn: {},
       statuses: [],
@@ -507,6 +512,41 @@ export class GameService {
     };
 
     return drawn;
+  }
+
+  private normalizeInventoryItems(rawItems: unknown): InventoryItemEntry[] {
+    if (!Array.isArray(rawItems)) {
+      return [];
+    }
+
+    const nextItems: InventoryItemEntry[] = [];
+    rawItems.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        nextItems.push({ itemId: entry.trim() });
+        return;
+      }
+
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const itemId = (entry as { itemId?: unknown }).itemId;
+      if (typeof itemId !== "string" || !itemId.trim()) {
+        return;
+      }
+
+      const rawCurrentCharges = (entry as { currentCharges?: unknown }).currentCharges;
+      const currentCharges = typeof rawCurrentCharges === "number" && Number.isFinite(rawCurrentCharges)
+        ? Math.max(0, Math.floor(rawCurrentCharges))
+        : undefined;
+
+      nextItems.push({
+        itemId: itemId.trim(),
+        ...(typeof currentCharges === "number" ? { currentCharges } : {}),
+      });
+    });
+
+    return nextItems;
   }
 
   private emptyBiomePlacementCount(): BiomePlacementCount {

@@ -32,6 +32,13 @@
   gap: 6px;
 }
 
+.command-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .command-card:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.7);
@@ -47,6 +54,27 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 700;
+}
+
+.command-card-money {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 18px;
+  padding: 1px 5px;
+  border: 1px solid rgba(218, 165, 32, 0.65);
+  background: rgba(218, 165, 32, 0.12);
+}
+
+.command-card-money-value {
+  font-size: 0.5rem;
+  line-height: 1;
+  color: var(--coin-color);
+}
+
+.command-card-money-icon {
+  --coin-icon-size: 11px;
 }
 
 .command-card-divider {

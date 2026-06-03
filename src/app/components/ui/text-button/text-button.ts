@@ -11,6 +11,7 @@ export class TextButton {
   public iconUrl = input<string>();
   public disabled = input(false);
   public fullWidth = input(false);
+  public compact = input(false);
   public clicked = output<void>();
 
   public handleClick() {

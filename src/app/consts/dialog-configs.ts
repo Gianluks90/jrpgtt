@@ -25,3 +25,8 @@ export const ENCHANTRESS_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     maxWidth: '560px',
 };
+
+export const MERCHANT_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    maxWidth: '760px',
+};

@@ -29,6 +29,22 @@
     height: 0;
 }
 
+.dialog-wrapper-header-extra {
+    position: absolute;
+    top: -25px;
+    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 4px 8px;
+    background-color: var(--bg-color);
+    color: var(--fg-color);
+    font-size: 0.52rem;
+    line-height: 1;
+    border: 1px solid color-mix(in srgb, var(--fg-color) 40%, transparent);
+}
+
 .dialog-wrapper-actions {
     display: flex;
     justify-content: flex-end;

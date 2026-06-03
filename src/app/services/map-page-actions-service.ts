@@ -8,6 +8,7 @@ import { ResourceLabel } from "../models/Resource";
 import { WorldState } from "../models/WorldState";
 import { LandmarksService } from "./landmarks-service";
 import { ActionCatalogService } from "./action-catalog-service";
+import { ItemCatalogService } from "./item-catalog-service";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -31,6 +32,7 @@ export class MapPageActionsService {
     private actionRegistry: ActionRegistryService,
     private landmarksService: LandmarksService,
     private actionCatalogService: ActionCatalogService,
+    private itemCatalogService: ItemCatalogService,
   ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
@@ -66,11 +68,13 @@ export class MapPageActionsService {
     const worldTurn = input.worldState?.currentTurn ?? 0;
     const isSanctuaryCell = cell.isSpecial === true && cell.specialType === "sanctuary" && !!cell.sanctuaryElement;
     const isSafeLandmarkCell = cell.isSpecial === true && cell.specialType === "landmark" && cell.landmarkCategory === "safe";
-    const actionIds = isSanctuaryCell
+    const configuredActionIds = isSanctuaryCell
       ? this.getConfiguredSanctuaryActionIds(cell, input.tilesConfig)
       : isSafeLandmarkCell
         ? this.getConfiguredSafeLandmarkActionIds(cell)
         : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
+    const inventoryActionIds = this.getInventoryActionIds(player);
+    const actionIds = [...new Set([...configuredActionIds, ...inventoryActionIds])];
     const biomeResources = cell.biome ? (input.biomeResourcesByBiome[cell.biome] ?? []) : [];
     const sanctuaryLabel = isSanctuaryCell && cell.sanctuaryElement
       ? this.sanctuaryElementToLabel(cell.sanctuaryElement)
@@ -142,6 +146,26 @@ export class MapPageActionsService {
     }
 
     return cell.active === true ? sanctuaryConfig.actions.active : sanctuaryConfig.actions.inactive;
+  }
+
+  private getInventoryActionIds(player: Player): string[] {
+    const inventoryItems = player.inventory?.items ?? [];
+    const actionIds: string[] = [];
+
+    inventoryItems.forEach((entry) => {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      if (!item?.actions?.length) {
+        return;
+      }
+
+      item.actions.forEach((actionId) => {
+        if (typeof actionId === "string" && actionId.trim().length > 0) {
+          actionIds.push(actionId);
+        }
+      });
+    });
+
+    return actionIds;
   }
 
   private sanctuaryElementToLabel(element: SanctuaryElement): string {

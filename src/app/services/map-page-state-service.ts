@@ -3,7 +3,9 @@ import { getAuth, onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getBiomeResourcesMap } from "../consts/biome-resources";
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
+import { DEFAULT_ITEM_INVENTORY_CAPACITY } from "../consts/inventory-config";
 import { BiomeType, MapCell, SanctuaryElement } from "../models/MapCell";
+import { InventoryItemEntry } from "../models/Inventory";
 import { Player } from "../models/Player";
 import { ResourceLabel } from "../models/Resource";
 import { SanctuaryTilesConfigEntry, TilesConfig } from "../models/TilesConfig";
@@ -192,12 +194,25 @@ export class MapPageStateService {
             statuses: Array.isArray(rawPlayer.statuses) ? rawPlayer.statuses : [],
           } as Player;
 
+          const normalizedItems = this.normalizeInventoryItems(rawPlayer.inventory?.items);
+          const normalizedItemCapacity = typeof rawPlayer.inventory?.itemCapacity === "number"
+            ? Math.max(1, Math.floor(rawPlayer.inventory.itemCapacity))
+            : DEFAULT_ITEM_INVENTORY_CAPACITY;
+
+          nextPlayer.inventory = {
+            ...(nextPlayer.inventory ?? { items: [], resources: [], money: PLAYER_STARTING_MONEY }),
+            items: normalizedItems,
+            itemCapacity: normalizedItemCapacity,
+          };
+
+
           if (
             rawPlayer.id === currentUserId &&
             (
               typeof rawPlayer.level !== "number" ||
               !rawPlayer.inventory ||
-              typeof rawPlayer.inventory.money !== "number"
+              typeof rawPlayer.inventory.money !== "number" ||
+              typeof rawPlayer.inventory.itemCapacity !== "number"
             ) &&
             !this.inventoryBackfillRequested.has(rawPlayer.id)
           ) {
@@ -206,9 +221,10 @@ export class MapPageStateService {
             void setDoc(legacyPlayerRef, {
               level: typeof rawPlayer.level === "number" ? rawPlayer.level : 1,
               inventory: {
-                items: rawPlayer.inventory?.items ?? [],
+                items: normalizedItems,
                 resources: rawPlayer.inventory?.resources ?? [],
                 money: typeof rawPlayer.inventory?.money === "number" ? rawPlayer.inventory.money : PLAYER_STARTING_MONEY,
+                itemCapacity: normalizedItemCapacity,
               },
             }, { merge: true }).catch((error) => {
               console.error(error);
@@ -345,5 +361,39 @@ export class MapPageStateService {
 
     const maxPrefixLength = Math.max(0, EVENT_LOG_CONFIG.footer.maxSummaryLength - 3);
     return `${text.slice(0, maxPrefixLength).trimEnd()}...`;
+  }
+  private normalizeInventoryItems(rawItems: unknown): InventoryItemEntry[] {
+    if (!Array.isArray(rawItems)) {
+      return [];
+    }
+
+    const nextItems: InventoryItemEntry[] = [];
+    rawItems.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        nextItems.push({ itemId: entry.trim() });
+        return;
+      }
+
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const itemId = (entry as { itemId?: unknown }).itemId;
+      if (typeof itemId !== "string" || !itemId.trim()) {
+        return;
+      }
+
+      const rawCurrentCharges = (entry as { currentCharges?: unknown }).currentCharges;
+      const currentCharges = typeof rawCurrentCharges === "number" && Number.isFinite(rawCurrentCharges)
+        ? Math.max(0, Math.floor(rawCurrentCharges))
+        : undefined;
+
+      nextItems.push({
+        itemId: itemId.trim(),
+        ...(typeof currentCharges === "number" ? { currentCharges } : {}),
+      });
+    });
+
+    return nextItems;
   }
 }

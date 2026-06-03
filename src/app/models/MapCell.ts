@@ -1,4 +1,5 @@
 import { LandmarkAlignmentModifier, LandmarkCategory, LandmarkTarget } from "./Landmark";
+import { InventoryItemEntry } from "./Inventory";
 
 export interface MapCell {
     x: number;
@@ -14,6 +15,8 @@ export interface MapCell {
     landmarkCategory?: LandmarkCategory;
     landmarkAlignmentModifier?: LandmarkAlignmentModifier;
     landmarkDisplayName?: string;
+    droppedItems?: InventoryItemEntry[];
+    merchantStockByItemId?: Record<string, number>;
 }
 
 export type BiomeType =

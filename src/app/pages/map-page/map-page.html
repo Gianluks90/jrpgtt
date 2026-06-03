@@ -51,6 +51,11 @@
                         (inspectedCellChanged)="onInspectionCellChanged($event)"
                     ></app-map-grid-panel>
                     <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
+
+                    <section class="hud active-cell-block">
+                        <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
+                        <p class="active-cell-name">{{ locationInfoCellName() }}</p>
+                    </section>
                 </div>
             </div>
 
@@ -65,16 +70,54 @@
                 <app-alignment-indicator [alignment]="myPlayer()?.alignment ?? 'neutral'"></app-alignment-indicator>
                 <app-attunement-indicator [element]="myPlayer()?.attunedElement ?? null"></app-attunement-indicator>
 
-                <app-map-cell-inspector-panel
-                    [inspectedCell]="inspectedCell()"
-                    [activePlayer]="activePlayer()"
-                    [players]="players()"
-                    [mapCellsById]="mapCellsById()"
-                    [mapSize]="mapSize()"
-                    [environmentByCellId]="environmentByCellId()"
-                    [biomeResourcesByBiome]="biomeResourcesByBiome()"
-                    [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
-                ></app-map-cell-inspector-panel>
+                <section class="hud player-inventory-block">
+                    <p class="hud-title">Inventory ({{ visibleInventoryOccupiedSlots() }}/{{ visibleInventoryCapacity() }})</p>
+
+                    <div class="inventory-list">
+                        @if (visibleInventoryItems().length === 0) {
+                            <p class="inventory-empty">No items in inventory.</p>
+                        } @else {
+                            @for (item of visibleInventoryItems(); track item.itemId + $index) {
+                                <div class="inventory-item-row">
+                                    <div class="inventory-item-header">
+                                        <p class="inventory-item-title">{{ item.name }}</p>
+                                        @if (item.sellValue !== null) {
+                                            <span class="inventory-item-sell-value">
+                                                <span>{{ item.sellValue }}</span>
+                                                <span class="coin-icon inventory-item-sell-icon" aria-hidden="true"></span>
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="inventory-item-line"></div>
+
+                                    <p class="inventory-item-description">{{ item.description }}</p>
+
+                                    @if (item.uses) {
+                                        <div class="inventory-item-uses">
+                                            <p class="inventory-item-uses-title">Uses</p>
+                                            <div class="inventory-item-uses-row">
+                                                <div class="inventory-item-uses-slots">
+                                                    @for (slotFilled of item.uses.slots; track $index) {
+                                                        <span class="inventory-item-uses-slot" [class.inventory-item-uses-slot-filled]="slotFilled"></span>
+                                                    }
+                                                </div>
+                                                <span class="inventory-item-uses-counter">{{ item.uses.current }}/{{ item.uses.max }}</span>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    @if (item.labels.length > 0) {
+                                        <div class="inventory-item-keywords">
+                                            @for (label of item.labels; track label.text + $index) {
+                                                <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </section>
 
                 <app-day-night-cycle-panel [worldState]="worldState()"></app-day-night-cycle-panel>
             </aside>

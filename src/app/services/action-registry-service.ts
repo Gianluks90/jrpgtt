@@ -8,6 +8,7 @@ import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../consts/inventory-config"
 import { getDoctorCostPerUnit, isDoctorActionId } from "../consts/safe-place-actions";
 import { ActionCatalogService } from "./action-catalog-service";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
+import { ItemCatalogService } from "./item-catalog-service";
 
 export interface ActionCardContext {
   isBusy: boolean;
@@ -29,6 +30,7 @@ export class ActionRegistryService {
   constructor(
     private actionCatalogService: ActionCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
+    private itemCatalogService: ItemCatalogService,
   ) {}
 
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
@@ -51,6 +53,7 @@ export class ActionRegistryService {
             sanctuaryLabel: sanctuaryLabel ?? "the shrine",
           },
         ),
+        moneyCost: 5,
         disabled: commonDisabled || !hasMoney,
         pending: false,
       };
@@ -68,6 +71,7 @@ export class ActionRegistryService {
             sanctuaryLabel: sanctuaryLabel ?? "the shrine",
           },
         ),
+        moneyCost: 5,
         disabled: commonDisabled || !hasMoney || !canDonate,
         pending: false,
       };
@@ -98,6 +102,22 @@ export class ActionRegistryService {
         label: this.actionCatalogService.getLabel(actionId, "Gather"),
         description: this.actionCatalogService.getDescription(actionId, "Spend 1 food to gather 1 biome resource and end your turn."),
         disabled: commonDisabled || availableResources.length === 0 || foodQty < 1 || context.hasPendingResourcePickup === true,
+        pending: false,
+      };
+    }
+
+    if (actionId === "chop-tree") {
+      const hasAxeAction = this.hasInventoryAction(player, "chop-tree");
+      const isForestBiome = context.biome === "forest";
+      if (!hasAxeAction || !isForestBiome) {
+        return null;
+      }
+
+      return {
+        id: "chop-tree",
+        label: this.actionCatalogService.getLabel(actionId, "Chop wood"),
+        description: this.actionCatalogService.getDescription(actionId, "Use your axe in a forest to gain 1 timber and end your turn."),
+        disabled: commonDisabled,
         pending: false,
       };
     }
@@ -138,6 +158,7 @@ export class ActionRegistryService {
           actionId,
           "Safe place: travel to a discovered safe place. Cost 1 coin per orthogonal cell (max 15), then end turn and skip your next turn.",
         ),
+        moneyCost: null,
         disabled: commonDisabled,
         pending: false,
       };
@@ -159,6 +180,7 @@ export class ActionRegistryService {
             timeOfDay,
           },
         ),
+        moneyCost: null,
         disabled: commonDisabled || hp.missing <= 0 || currentMoney < costPerUnit,
         pending: false,
       };
@@ -173,6 +195,7 @@ export class ActionRegistryService {
           actionId,
           "Consult the Capital Enchantress for 5 coins. Draw your fate from a luck check, then end your turn.",
         ),
+        moneyCost: enchantressCost,
         disabled: commonDisabled || currentMoney < enchantressCost,
         pending: false,
       };
@@ -187,18 +210,35 @@ export class ActionRegistryService {
           actionId,
           "Consult the City Mystic for 5 coins. Draw your fate from a luck check, then end your turn.",
         ),
+        moneyCost: mysticCost,
         disabled: commonDisabled || currentMoney < mysticCost,
+        pending: false,
+      };
+    }
+
+    if (actionId === "city-merchant") {
+      return {
+        id: "city-merchant",
+        label: this.actionCatalogService.getLabel(actionId, "Merchant"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Visit the City Merchant. Buy or sell items from a configurable stock. Buying ends your turn.",
+        ),
+        moneyCost: null,
+        disabled: commonDisabled,
         pending: false,
       };
     }
 
     if (actionId === "capital-inn") {
       const isNight = timeOfDay === "night";
+      const innCost = 10;
       return {
         id: "capital-inn",
         label: this.actionCatalogService.getLabel(actionId, "Inn"),
         description: this.actionCatalogService.getDescription(actionId, "Capital: restore 50% HP, spend 10 coins and end turn (day only)."),
-        disabled: commonDisabled || hp.missing <= 0 || currentMoney < 10 || isNight,
+        moneyCost: innCost,
+        disabled: commonDisabled || hp.missing <= 0 || currentMoney < innCost || isNight,
         pending: false,
       };
     }
@@ -293,6 +333,14 @@ export class ActionRegistryService {
       : DEFAULT_RESOURCE_INVENTORY_CAPACITY;
 
     return Math.max(0, capacity - total);
+  }
+
+  private hasInventoryAction(player: Player, actionId: string): boolean {
+    const inventoryItems = player.inventory?.items ?? [];
+    return inventoryItems.some((entry) => {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      return Array.isArray(item?.actions) && item.actions.includes(actionId);
+    });
   }
 
   private isCommonValidatorDisabled(

@@ -304,6 +304,7 @@ export class ActionCatalogService {
       type?: unknown;
       sanctuaryMode?: unknown;
       requiredActive?: unknown;
+      stockConfigUrl?: unknown;
     };
 
     if (!this.isDialogType(typed.type)) {
@@ -318,10 +319,17 @@ export class ActionCatalogService {
       throw new Error(`Invalid action catalog configuration: action '${actionId}' has invalid flow.dialog.requiredActive`);
     }
 
+    if (typeof typed.stockConfigUrl !== "undefined") {
+      if (typeof typed.stockConfigUrl !== "string" || !typed.stockConfigUrl.trim()) {
+        throw new Error(`Invalid action catalog configuration: action '${actionId}' has invalid flow.dialog.stockConfigUrl`);
+      }
+    }
+
     return {
       type: typed.type,
       sanctuaryMode: typed.sanctuaryMode,
       requiredActive: typed.requiredActive,
+      stockConfigUrl: typed.stockConfigUrl,
     };
   }
 
@@ -356,10 +364,12 @@ export class ActionCatalogService {
       || value === "sanctuary-donate"
       || value === "sanctuary-pray"
       || value === "biome-cell-gather"
+      || value === "biome-chop-tree"
       || value === "biome-consume-ration"
       || value === "safe-place-doctor"
       || value === "safe-place-enchantress"
       || value === "safe-place-mystic"
+      || value === "safe-place-merchant"
       || value === "safe-place-inn"
       || value === "safe-place-resource-exchange"
       || value === "safe-place-wait"
@@ -384,7 +394,8 @@ export class ActionCatalogService {
       || value === "sanctuary-action"
       || value === "doctor-heal"
       || value === "resource-exchange"
-      || value === "safe-place-fast-travel";
+        || value === "safe-place-fast-travel"
+        || value === "merchant-trade";
   }
 
   private isSanctuaryDialogMode(value: unknown): value is ActionSanctuaryDialogMode {

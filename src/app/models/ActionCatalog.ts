@@ -4,10 +4,12 @@ export type ActionFlowHandler =
   | "sanctuary-donate"
   | "sanctuary-pray"
   | "biome-cell-gather"
+  | "biome-chop-tree"
   | "biome-consume-ration"
   | "safe-place-doctor"
   | "safe-place-enchantress"
   | "safe-place-mystic"
+  | "safe-place-merchant"
   | "safe-place-inn"
   | "safe-place-resource-exchange"
   | "safe-place-wait"
@@ -17,7 +19,7 @@ export type ActionFlowHandler =
 
 export type ActionFlowTrigger = "command-panel";
 
-export type ActionDialogType = "none" | "sanctuary-action" | "doctor-heal" | "resource-exchange" | "safe-place-fast-travel";
+export type ActionDialogType = "none" | "sanctuary-action" | "doctor-heal" | "resource-exchange" | "safe-place-fast-travel" | "merchant-trade";
 
 export type ActionSanctuaryDialogMode = "activate" | "donate";
 
@@ -48,6 +50,7 @@ export interface ActionFlowDialogDefinition {
   type: ActionDialogType;
   sanctuaryMode?: ActionSanctuaryDialogMode;
   requiredActive?: boolean;
+  stockConfigUrl?: string;
 }
 
 export interface ActionCatalogFlowDefinition {

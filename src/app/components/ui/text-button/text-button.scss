@@ -10,6 +10,19 @@
     gap: 12px;
     width: 200px;
 
+    &.compact {
+        width: auto;
+        min-width: 78px;
+        padding: 4px 8px;
+        gap: 6px;
+        font-size: 0.52rem;
+
+        .button-icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
     &.full-width {
         width: 100%;
     }

@@ -6,6 +6,7 @@ import {
   DOCTOR_HEAL_DIALOG_CONFIG,
   ENCHANTRESS_DIALOG_CONFIG,
   FAST_TRAVEL_DIALOG_CONFIG,
+  MERCHANT_DIALOG_CONFIG,
   RESOURCE_EXCHANGE_DIALOG_CONFIG,
 } from "../consts/dialog-configs";
 import { GameEventsLogDialog } from "../components/dialogs/game-events-log-dialog/game-events-log-dialog";
@@ -45,6 +46,10 @@ import {
   MysticDialogData,
 } from "../components/dialogs/action-dialogs/mystic-dialog/mystic-dialog";
 import {
+  MerchantDialog,
+  MerchantDialogData,
+} from "../components/dialogs/action-dialogs/merchant-dialog/merchant-dialog";
+import {
   FastTravelDialog,
   FastTravelDialogData,
   FastTravelDialogResult,
@@ -59,6 +64,9 @@ import { EventLog } from "../models/EventLog";
 import { isDoctorActionId, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { ActionCatalogService } from "./action-catalog-service";
 import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
+import { ItemCatalogService } from "./item-catalog-service";
+import { MerchantCatalogService } from "./merchant-catalog-service";
+import { MerchantTradeOffersService } from "./merchant-trade-offers-service";
 import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
 import { SafePlaceFastTravelService } from "./safe-place-fast-travel-service";
 import {
@@ -92,6 +100,9 @@ export class MapPageInteractionService {
     private playerProgressionService: PlayerProgressionService,
     private actionCatalogService: ActionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
+    private itemCatalogService: ItemCatalogService,
+    private merchantCatalogService: MerchantCatalogService,
+    private merchantTradeOffersService: MerchantTradeOffersService,
     private mysticRewardsConfigService: MysticRewardsConfigService,
     private safePlaceFastTravelService: SafePlaceFastTravelService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
@@ -284,6 +295,18 @@ export class MapPageInteractionService {
       return;
     }
 
+    if (handler === "biome-chop-tree") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.chopTree(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
     if (handler === "biome-consume-ration") {
       if (!player) return;
 
@@ -353,6 +376,74 @@ export class MapPageInteractionService {
           return await this.actionExecutorService.cityMystic(input.gameId, {
             id: player.id,
             name: player.name,
+          });
+        },
+      });
+      return;
+    }
+
+    if (handler === "safe-place-merchant") {
+      if (!player) return;
+
+      const dialogType = flow.dialog?.type ?? "merchant-trade";
+      if (dialogType !== "merchant-trade") {
+        window.alert(`Action '${input.actionId}' has an invalid merchant dialog configuration.`);
+        return;
+      }
+
+      const currentCell = input.mapCellsById[this.cellId(player.location.x, player.location.y)] ?? null;
+      if (!currentCell || currentCell.specialType !== "landmark" || !currentCell.landmarkId) {
+        return;
+      }
+
+      await Promise.all([
+        this.itemCatalogService.loadConfig(),
+        this.merchantCatalogService.loadConfig(),
+      ]);
+      const merchant = await this.merchantCatalogService.getMerchantByLandmarkId(currentCell.landmarkId);
+      if (!merchant) {
+        window.alert("No merchant configured for this landmark.");
+        return;
+      }
+
+      const stockConfigUrl = flow.dialog?.stockConfigUrl;
+      const stockEntries = await this.merchantTradeOffersService.resolveStockEntries({
+        merchant,
+        stockConfigUrl,
+      });
+
+      const stockMap = {
+        ...this.merchantTradeOffersService.buildStockMap({
+          stockEntries,
+          persistedStockByItemId: currentCell.merchantStockByItemId ?? {},
+        }),
+      };
+
+      const buyOffers = this.merchantTradeOffersService.buildBuyOffers({
+        stockEntries,
+        stockMap,
+        playerAlignment: player.alignment,
+      });
+
+      const sellOffers = this.merchantTradeOffersService.buildSellOffers({
+        merchant,
+        inventoryItems: this.normalizeInventoryItems(player.inventory?.items),
+      });
+
+      await this.openMerchantDialog({
+        merchantLabel: merchant.label,
+        playerMoney: player.inventory?.money ?? 0,
+        buyOffers,
+        sellOffers,
+        onConfirm: async (operations) => {
+          return await this.actionExecutorService.safePlaceMerchantCheckout(input.gameId, {
+            id: player.id,
+            name: player.name,
+          }, {
+            actionId: input.actionId,
+            merchantId: merchant.id,
+            stockConfigUrl,
+            operations,
           });
         },
       });
@@ -725,6 +816,15 @@ export class MapPageInteractionService {
     await firstValueFrom(dialogRef.closed.pipe(take(1)));
   }
 
+  private async openMerchantDialog(data: MerchantDialogData): Promise<void> {
+    const dialogRef = this.dialog.open(MerchantDialog, {
+      ...MERCHANT_DIALOG_CONFIG,
+      data,
+    });
+
+    await firstValueFrom(dialogRef.closed.pipe(take(1)));
+  }
+
   private async openGenericConfirmDialog(data: GenericConfirmDialogData): Promise<boolean> {
     const dialogRef = this.dialog.open(GenericConfirmDialog, {
       ...DIALOGS_CONFIG,
@@ -893,6 +993,33 @@ export class MapPageInteractionService {
     }
 
     return null;
+  }
+
+  private normalizeInventoryItems(rawItems: unknown): Array<{ itemId: string }> {
+    if (!Array.isArray(rawItems)) {
+      return [];
+    }
+
+    const items: Array<{ itemId: string }> = [];
+    rawItems.forEach((entry) => {
+      if (typeof entry === "string" && entry.trim()) {
+        items.push({ itemId: entry.trim() });
+        return;
+      }
+
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const itemId = (entry as { itemId?: unknown }).itemId;
+      if (typeof itemId !== "string" || !itemId.trim()) {
+        return;
+      }
+
+      items.push({ itemId: itemId.trim() });
+    });
+
+    return items;
   }
 
   private isResourceLabel(value: unknown): value is ResourceLabel {

@@ -1,0 +1,21 @@
+{
+  "effects": [
+    {
+      "id": "water-bottle-desert-protection",
+      "label": "Desert protection",
+      "description": "Consumes 1 charge at end of turn in desert to prevent hostile environment damage.",
+      "type": "prevent-biome-condition-damage-by-charge",
+      "biome": "desert",
+      "conditionId": "hostile-environment",
+      "consumeCharges": 1
+    },
+    {
+      "id": "water-bottle-water-recharge",
+      "label": "Water recharge",
+      "description": "Recharges 1 charge at end of turn in water.",
+      "type": "recharge-charges-in-biome",
+      "biome": "water",
+      "rechargeCharges": 1
+    }
+  ]
+}

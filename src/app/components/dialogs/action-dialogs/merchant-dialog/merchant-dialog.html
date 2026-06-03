@@ -1,0 +1,10 @@
+<app-merchant-trade-panel
+    [merchantLabel]="merchantLabel"
+    [playerMoney]="playerMoney"
+    [buyOffers]="buyOffers"
+    [sellOffers]="sellOffers"
+    [loading]="loading"
+    [errorMessage]="errorMessage"
+    (confirmRequested)="onConfirmRequested($event)"
+    (closeRequested)="onCloseRequested()"
+></app-merchant-trade-panel>

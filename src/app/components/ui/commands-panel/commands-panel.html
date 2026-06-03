@@ -7,11 +7,21 @@
 				[disabled]="action.disabled || action.pending"
 				(click)="onActionClick(action)"
 			>
-				<span class="command-card-title">
-					@if (action.pending) {
-						Executing...
-					} @else {
-						{{ action.label }}
+				<span class="command-card-header">
+					<span class="command-card-title">
+						@if (action.pending) {
+							Executing...
+						} @else {
+							{{ action.label }}
+						}
+					</span>
+					@if (action.moneyCost !== undefined) {
+						<span class="command-card-money">
+							@if (action.moneyCost !== null) {
+								<span class="command-card-money-value">{{ action.moneyCost }}</span>
+							}
+							<span class="coin-icon command-card-money-icon" aria-hidden="true"></span>
+						</span>
 					}
 				</span>
 				<span class="command-card-divider" aria-hidden="true"></span>

@@ -1,6 +1,9 @@
 <div class="dialog-wrapper-container">
     <div class="dialog-wrapper-header">
         <h1>{{title()}}</h1>
+        <div class="dialog-wrapper-header-extra">
+            <ng-content select="[dialog-header-extra]"></ng-content>
+        </div>
     </div>
     <div class="dialog-wrapper-content">
         <ng-content></ng-content>

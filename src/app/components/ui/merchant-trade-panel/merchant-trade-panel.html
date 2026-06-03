@@ -1,0 +1,134 @@
+<dialog-wrapper [title]="merchantLabel()">
+    <div dialog-header-extra class="header-money">
+        <span>{{ headerMoneyText() }}</span>
+        <span class="coin-icon" aria-hidden="true"></span>
+    </div>
+
+    <p class="info-text">Buy or sell items, then confirm your cart.</p>
+    <p class="info-text">Buying ends your turn. Selling does not.</p>
+
+    @if (errorMessage()) {
+        <p class="error-text">{{ errorMessage() }}</p>
+    }
+
+    <div class="columns">
+        <section class="column">
+            <h4>Buy</h4>
+            @if (buyOffers().length === 0) {
+                <p class="empty-text">No stock available.</p>
+            } @else {
+                @for (offer of buyOffers(); track offer.itemId) {
+                    <div class="inventory-item-row">
+                        <div class="inventory-item-header">
+                            <p class="inventory-item-title">{{ offer.name }}</p>
+                            <span class="inventory-item-value-tag">
+                                <span>-{{ offer.purchaseValue }}</span>
+                                <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
+                            </span>
+                        </div>
+                        <div class="inventory-item-line"></div>
+                        @if (offer.identityKeywords.length > 0) {
+                            <div class="inventory-item-keywords">
+                                @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
+                                    <span class="inventory-item-keyword">{{ keyword }}</span>
+                                }
+                            </div>
+                        }
+                        <p class="inventory-item-description">{{ offer.description }}</p>
+                        <div class="inventory-item-meta">
+                            <span>Category: {{ offer.category }}</span>
+                            <span>Stock: {{ getRemainingStock(offer.itemId) }}</span>
+                        </div>
+                        <text-button
+                            text="Buy"
+                            [compact]="true"
+                            [disabled]="loading() || !offer.canBuy || getRemainingStock(offer.itemId) <= 0 || projectedMoney() < offer.purchaseValue"
+                            (clicked)="queueBuy(offer.itemId)"
+                        ></text-button>
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="column">
+            <h4>Sell</h4>
+            @if (sellOffers().length === 0) {
+                <p class="empty-text">No sellable items in inventory.</p>
+            } @else {
+                @for (offer of sellOffers(); track offer.itemId) {
+                    <div class="inventory-item-row">
+                        <div class="inventory-item-header">
+                            <p class="inventory-item-title">{{ offer.name }}</p>
+                            <span class="inventory-item-value-tag gain">
+                                <span>+{{ offer.sellValue }}</span>
+                                <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
+                            </span>
+                        </div>
+                        <div class="inventory-item-line"></div>
+                        @if (offer.identityKeywords.length > 0) {
+                            <div class="inventory-item-keywords">
+                                @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
+                                    <span class="inventory-item-keyword">{{ keyword }}</span>
+                                }
+                            </div>
+                        }
+                        <p class="inventory-item-description">{{ offer.description }}</p>
+                        <div class="inventory-item-meta">
+                            <span>Category: {{ offer.category }}</span>
+                            <span>Owned: {{ getRemainingOwnedQuantity(offer.itemId) }}</span>
+                        </div>
+                        <text-button
+                            text="Sell"
+                            [compact]="true"
+                            [disabled]="loading() || getRemainingOwnedQuantity(offer.itemId) <= 0"
+                            (clicked)="queueSell(offer.itemId)"
+                        ></text-button>
+                    </div>
+                }
+            }
+        </section>
+    </div>
+
+    <div class="cart-toolbar">
+        <text-button
+            [compact]="true"
+            [text]="showCart() ? 'Hide cart' : 'View cart'"
+            [disabled]="loading() || cartCount() === 0"
+            (clicked)="toggleCart()"
+        ></text-button>
+        <p class="cart-summary">Items in cart: {{ cartCount() }}</p>
+    </div>
+
+    @if (showCart()) {
+        <section class="cart-panel">
+            @for (line of cartLines(); track line.operation + ':' + line.itemId) {
+                <div class="cart-line">
+                    <span>{{ line.itemName }} x{{ line.quantity }}</span>
+                    <span class="cart-line-value" [class.gain]="line.totalValue > 0">
+                        <span>{{ line.totalValue > 0 ? '+' : '' }}{{ line.totalValue }}</span>
+                        <span class="coin-icon" aria-hidden="true"></span>
+                    </span>
+                    <text-button
+                        [compact]="true"
+                        text="Undo"
+                        [disabled]="loading()"
+                        (clicked)="removeCartLine(line)"
+                    ></text-button>
+                </div>
+            }
+        </section>
+    }
+
+    <text-button
+        dialog-action
+        [text]="confirmText()"
+        [disabled]="!canConfirm()"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button
+        dialog-action
+        text="Close"
+        [disabled]="loading()"
+        (clicked)="close()"
+    ></text-button>
+</dialog-wrapper>

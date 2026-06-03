@@ -1,4 +1,4 @@
-<button class="text-button" [class.full-width]="fullWidth()" (click)="handleClick()" [disabled]="disabled()">
+<button class="text-button" [class.full-width]="fullWidth()" [class.compact]="compact()" (click)="handleClick()" [disabled]="disabled()">
     @if (iconUrl()) {
         <span class="button-icon" [style.mask]="'url(' + iconUrl() + ') no-repeat center / contain'"></span>
     }

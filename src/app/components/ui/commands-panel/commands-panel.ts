@@ -5,6 +5,7 @@ export interface CommandPanelAction {
   label: string;
   description?: string;
   warning?: string;
+  moneyCost?: number | null;
   disabled?: boolean;
   pending?: boolean;
 }

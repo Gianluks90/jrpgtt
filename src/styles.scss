@@ -9,7 +9,13 @@
     --overlay-border: thick double white;
 
     --ok-color: #8ac926;
+    --good-color: goldenrod;
+    --neutral-color: #6de7d6;
+    --bad-color: crimson;
     --magic-color: blue;
+    --coin-color: goldenrod;
+    --coin-icon-url: url("/icons/toll_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg");
+
     --warning-color: goldenrod;
     --error-color: crimson;
 }
@@ -84,6 +90,23 @@ form {
 
 .flashing-text {
     animation: flashing 1s infinite;
+}
+
+.coin-icon {
+    --coin-icon-size: 14px;
+    display: inline-block;
+    width: var(--coin-icon-size);
+    height: var(--coin-icon-size);
+    background-color: var(--coin-color);
+    -webkit-mask-image: var(--coin-icon-url);
+    mask-image: var(--coin-icon-url);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    flex: 0 0 auto;
 }
 
 @keyframes flashing {

@@ -1,0 +1,17 @@
+<dialog-wrapper [title]="title">
+  <div class="location-info-dialog-content">
+    <app-map-cell-inspector-panel
+      [inspectedCell]="inspectedCell"
+      [activePlayer]="activePlayer"
+      [players]="players"
+      [mapCellsById]="mapCellsById"
+      [mapSize]="mapSize"
+      [tilesConfig]="tilesConfig"
+      [environmentByCellId]="environmentByCellId"
+      [biomeResourcesByBiome]="biomeResourcesByBiome"
+      [sanctuaryStylesByElement]="sanctuaryStylesByElement"
+    ></app-map-cell-inspector-panel>
+  </div>
+
+  <text-button dialog-action text="Close" (clicked)="close()"></text-button>
+</dialog-wrapper>

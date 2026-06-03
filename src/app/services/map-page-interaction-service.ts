@@ -13,7 +13,7 @@ import { GameEventsLogDialog } from "../components/dialogs/game-events-log-dialo
 import { MapService } from "./map-service";
 import { ActionExecutorService } from "./action-executor-service";
 import { PlayerProgressionService } from "./player-progression-service";
-import { MapCell, SanctuaryElement } from "../models/MapCell";
+import { BiomeType, MapCell, SanctuaryElement } from "../models/MapCell";
 import { Player } from "../models/Player";
 import { WorldState } from "../models/WorldState";
 import { MapGridPanelCell } from "../components/core/map-grid-panel/map-grid-panel";
@@ -74,6 +74,8 @@ import {
   GenericConfirmDialogData,
 } from "../components/dialogs/generic-confirm-dialog/generic-confirm-dialog";
 import { WorldEventRegionTransitionService } from "./world-event-region-transition-service";
+import { LocationInfoDialog } from "../components/dialogs/location-info-dialog/location-info-dialog";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "../models/TilesConfig";
 
 interface HandleCommandActionInput {
   actionId: string;
@@ -119,6 +121,35 @@ export class MapPageInteractionService {
       ...DIALOGS_CONFIG,
       data: {
         logs,
+      },
+    }).closed.pipe(take(1)).subscribe();
+  }
+
+  public openLocationInfoDialog(input: {
+    title: string;
+    inspectedCell: MapGridPanelCell | null;
+    activePlayer: Player | null;
+    players: Player[];
+    mapCellsById: Record<string, MapCell>;
+    mapSize: number;
+    tilesConfig: TilesConfig | null;
+    environmentByCellId: Record<string, string[]>;
+    biomeResourcesByBiome: Partial<Record<BiomeType, ResourceLabel[]>>;
+    sanctuaryStylesByElement: Partial<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>;
+  }): void {
+    this.dialog.open(LocationInfoDialog, {
+      ...DIALOGS_CONFIG,
+      data: {
+        title: input.title,
+        inspectedCell: input.inspectedCell,
+        activePlayer: input.activePlayer,
+        players: input.players,
+        mapCellsById: input.mapCellsById,
+        mapSize: input.mapSize,
+        tilesConfig: input.tilesConfig,
+        environmentByCellId: input.environmentByCellId,
+        biomeResourcesByBiome: input.biomeResourcesByBiome,
+        sanctuaryStylesByElement: input.sanctuaryStylesByElement,
       },
     }).closed.pipe(take(1)).subscribe();
   }

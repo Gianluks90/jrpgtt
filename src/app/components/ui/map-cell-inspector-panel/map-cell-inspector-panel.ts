@@ -3,9 +3,10 @@ import { isSpecialCellCoordinate } from "../../../consts/special-cells";
 import { MapCell, SanctuaryElement, BiomeType } from "../../../models/MapCell";
 import { Player } from "../../../models/Player";
 import { ResourceLabel } from "../../../models/Resource";
-import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesConfig";
 import { MapGridPanelCell } from "../../core/map-grid-panel/map-grid-panel";
 import { LandmarksService } from "../../../services/landmarks-service";
+import { ActionCatalogService } from "../../../services/action-catalog-service";
 
 @Component({
   selector: "app-map-cell-inspector-panel",
@@ -15,11 +16,13 @@ import { LandmarksService } from "../../../services/landmarks-service";
 })
 export class MapCellInspectorPanel {
   private landmarksService = inject(LandmarksService);
+  private actionCatalogService = inject(ActionCatalogService);
   public inspectedCell = input<MapGridPanelCell | null>(null);
   public activePlayer = input<Player | null>(null);
   public players = input<Player[]>([]);
   public mapCellsById = input<Record<string, MapCell>>({});
   public mapSize = input(10);
+  public tilesConfig = input<TilesConfig | null>(null);
   public environmentByCellId = input<Record<string, string[]>>({});
   public biomeResourcesByBiome = input<Partial<Record<BiomeType, ResourceLabel[]>>>({});
   public sanctuaryStylesByElement = input<Partial<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>>({});
@@ -110,6 +113,23 @@ export class MapCellInspectorPanel {
     return (this.environmentByCellId()[cellId]?.length ?? 0) >= 2;
   });
 
+  public currentCellEnvironmentSize = computed<number>(() => {
+    if (this.currentCell()?.isSpecial === true) return 0;
+
+    const cellId = this.currentCellId();
+    if (!cellId) return 0;
+    return this.environmentByCellId()[cellId]?.length ?? 0;
+  });
+
+  public currentCellEnvironmentLabel = computed<string>(() => {
+    const size = this.currentCellEnvironmentSize();
+    if (size < 2) {
+      return "No";
+    }
+
+    return `Yes (${size} cells)`;
+  });
+
   public currentCellSectorLabel = computed<string>(() => {
     const cell = this.locationInfoCell();
     if (!cell) return "-";
@@ -133,6 +153,22 @@ export class MapCellInspectorPanel {
     const minLevel = Math.max(1, centerLevel - 1);
     const maxLevel = Math.min(10, centerLevel + 1);
     return `${minLevel}-${maxLevel}`;
+  });
+
+  public currentCellActions = computed<Array<{ id: string; label: string; description: string }>>(() => {
+    const cell = this.currentCell();
+    if (!cell) {
+      return [];
+    }
+
+    const actionIds = this.getConfiguredCellActionIds(cell);
+    return actionIds.map((actionId) => {
+      return {
+        id: actionId,
+        label: this.actionCatalogService.getLabel(actionId, this.humanizeActionId(actionId)),
+        description: this.actionCatalogService.getDescription(actionId, "No description available."),
+      };
+    });
   });
 
   public currentCellIsSpecial = computed<boolean>(() => {
@@ -255,5 +291,44 @@ export class MapCellInspectorPanel {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
+  }
+
+  private getConfiguredCellActionIds(cell: MapCell): string[] {
+    const tilesConfig = this.tilesConfig();
+
+    if (cell.isSpecial === true && cell.specialType === "sanctuary" && cell.sanctuaryElement) {
+      const fallbackActionIds = cell.active === true
+        ? ["donate-sanctuary", "pray-sanctuary"]
+        : ["activate-sanctuary"];
+
+      if (!tilesConfig) {
+        return fallbackActionIds;
+      }
+
+      const sanctuaryConfig = tilesConfig.specialTiles.sanctuaries[cell.sanctuaryElement];
+      if (!sanctuaryConfig?.actions) {
+        return fallbackActionIds;
+      }
+
+      return cell.active === true ? sanctuaryConfig.actions.active : sanctuaryConfig.actions.inactive;
+    }
+
+    if (cell.isSpecial === true && cell.specialType === "landmark" && cell.landmarkCategory === "safe" && cell.landmarkId) {
+      return this.landmarksService.getSafePlaceActionIds(cell.landmarkId);
+    }
+
+    if (cell.isSpecial === true || !cell.biome || !tilesConfig) {
+      return [];
+    }
+
+    return tilesConfig.biomes[cell.biome]?.actions ?? [];
+  }
+
+  private humanizeActionId(actionId: string): string {
+    return actionId
+      .split("-")
+      .filter((part) => part.trim().length > 0)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
   }
 }

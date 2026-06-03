@@ -6,33 +6,25 @@
 }
 
 .cell-inspector-panel {
-  border: var(--overlay-border);
-  background: rgba(0, 0, 0, 0.78);
-  padding: 10px 8px 8px;
+  background: transparent;
+  padding: 0;
   position: relative;
   min-height: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 0.65rem;
-  position: absolute;
-  left: 12px;
-  top: -10px;
-  background: var(--bg-color);
-  padding: 4px 12px;
+  overflow: hidden;
 }
 
 .cell-inspector-body {
   min-height: 0;
+  height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 2px;
 }
 
 .inspector-biome-row {
@@ -144,4 +136,50 @@
   text-transform: none;
   color: #ffffff;
   opacity: 0.92;
+}
+
+.inspector-actions-empty {
+  margin: 0 0 4px;
+  padding: 0 8px;
+  font-size: 0.6rem;
+  color: #ffffff;
+  opacity: 0.7;
+}
+
+.inspector-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inspector-action-card {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inspector-action-title {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+}
+
+.inspector-action-divider {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.inspector-action-description {
+  margin: 0;
+  font-size: 0.54rem;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.72);
 }

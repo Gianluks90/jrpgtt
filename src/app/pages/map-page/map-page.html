@@ -53,6 +53,12 @@
                     <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
 
                     <section class="hud active-cell-block">
+                        <icon-button
+                            class="active-cell-info-button"
+                            iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            ariaLabel="Open location info"
+                            (clicked)="openLocationInfoDialog()"
+                        ></icon-button>
                         <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
                         <p class="active-cell-name">{{ locationInfoCellName() }}</p>
                     </section>

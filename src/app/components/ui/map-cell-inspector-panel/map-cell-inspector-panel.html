@@ -1,6 +1,4 @@
 <div class="cell-inspector-panel">
-  <p class="panel-title">Cell inspector</p>
-
   <div class="cell-inspector-body">
     <p class="inspector-section-title">Info</p>
 
@@ -19,7 +17,7 @@
 
     <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
     <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
-    <p class="summary-item"><span>Environment</span><strong>{{ currentCellIsEnvironment() ? 'yes' : 'no' }}</strong></p>
+    <p class="summary-item"><span>Environment</span><strong>{{ currentCellEnvironmentLabel() }}</strong></p>
     <p class="summary-item"><span>Enemies level</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
 
     @if (currentCellIsSpecial()) {
@@ -32,5 +30,20 @@
 
     <p class="inspector-section-title">Resources</p>
     <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
+
+    <p class="inspector-section-title">Actions</p>
+    @if (currentCellActions().length === 0) {
+      <p class="inspector-actions-empty">No actions available here.</p>
+    } @else {
+      <div class="inspector-actions-list">
+        @for (action of currentCellActions(); track action.id) {
+          <div class="inspector-action-card">
+            <p class="inspector-action-title">{{ action.label }}</p>
+            <span class="inspector-action-divider"></span>
+            <p class="inspector-action-description">{{ action.description }}</p>
+          </div>
+        }
+      </div>
+    }
   </div>
 </div>

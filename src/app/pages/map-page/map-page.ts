@@ -384,6 +384,21 @@ export class MapPage implements OnInit, OnDestroy {
     this.mapPageInteractionService.openLogsDialog(this.eventLogs());
   }
 
+  public openLocationInfoDialog(): void {
+    this.mapPageInteractionService.openLocationInfoDialog({
+      title: this.locationInfoCellName(),
+      inspectedCell: this.inspectedCell(),
+      activePlayer: this.activePlayer(),
+      players: this.players(),
+      mapCellsById: this.mapCellsById(),
+      mapSize: this.mapSize(),
+      tilesConfig: this.tilesConfig(),
+      environmentByCellId: this.environmentByCellId(),
+      biomeResourcesByBiome: this.biomeResourcesByBiome(),
+      sanctuaryStylesByElement: this.sanctuaryStylesByElement(),
+    });
+  }
+
   public onInspectionCellChanged(cell: MapGridPanelCell | null): void {
     if (cell) {
       this.inspectedCell.set(cell);

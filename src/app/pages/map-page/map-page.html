@@ -78,53 +78,130 @@
                 <app-alignment-indicator [alignment]="myPlayer()?.alignment ?? 'neutral'"></app-alignment-indicator>
                 <app-attunement-indicator [element]="myPlayer()?.attunedElement ?? null"></app-attunement-indicator>
 
-                <section class="hud player-inventory-block">
+                <section
+                    class="hud utility-panel player-inventory-block"
+                    [class.utility-panel-expanded]="isInventoryExpanded()"
+                    [class.utility-panel-collapsed]="!isInventoryExpanded()"
+                    (click)="onInventoryPanelToggle()"
+                >
                     <p class="hud-title">Inventory ({{ visibleInventoryOccupiedSlots() }}/{{ visibleInventoryCapacity() }})</p>
 
-                    <div class="inventory-list">
-                        @if (visibleInventoryItems().length === 0) {
-                            <p class="inventory-empty">No items in inventory.</p>
-                        } @else {
-                            @for (item of visibleInventoryItems(); track item.itemId + $index) {
-                                <div class="inventory-item-row">
-                                    <div class="inventory-item-header">
-                                        <p class="inventory-item-title">{{ item.name }}</p>
-                                        @if (item.sellValue !== null) {
-                                            <span class="inventory-item-sell-value">
-                                                <span>{{ item.sellValue }}</span>
-                                                <span class="coin-icon inventory-item-sell-icon" aria-hidden="true"></span>
-                                            </span>
-                                        }
-                                    </div>
-                                    <div class="inventory-item-line"></div>
-
-                                    <p class="inventory-item-description">{{ item.description }}</p>
-
-                                    @if (item.uses) {
-                                        <div class="inventory-item-uses">
-                                            <p class="inventory-item-uses-title">Uses</p>
-                                            <div class="inventory-item-uses-row">
-                                                <div class="inventory-item-uses-slots">
-                                                    @for (slotFilled of item.uses.slots; track $index) {
-                                                        <span class="inventory-item-uses-slot" [class.inventory-item-uses-slot-filled]="slotFilled"></span>
-                                                    }
-                                                </div>
-                                                <span class="inventory-item-uses-counter">{{ item.uses.current }}/{{ item.uses.max }}</span>
-                                            </div>
-                                        </div>
-                                    }
-
-                                    @if (item.labels.length > 0) {
-                                        <div class="inventory-item-keywords">
-                                            @for (label of item.labels; track label.text + $index) {
-                                                <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
+                    @if (isInventoryExpanded()) {
+                        <div class="inventory-list" [class.inventory-list-empty]="visibleInventoryItems().length === 0">
+                            @if (visibleInventoryItems().length === 0) {
+                                <p class="inventory-empty inventory-empty-centered">No items.</p>
+                            } @else {
+                                @for (item of visibleInventoryItems(); track item.itemId + $index) {
+                                    <div class="inventory-item-row">
+                                        <div class="inventory-item-header">
+                                            <p class="inventory-item-title">{{ item.name }}</p>
+                                            @if (item.sellValue !== null) {
+                                                <span class="inventory-item-sell-value">
+                                                    <span>{{ item.sellValue }}</span>
+                                                    <span class="coin-icon inventory-item-sell-icon" aria-hidden="true"></span>
+                                                </span>
                                             }
                                         </div>
-                                    }
-                                </div>
+                                        <div class="inventory-item-line"></div>
+
+                                        <p class="inventory-item-description">{{ item.description }}</p>
+
+                                        @if (item.uses) {
+                                            <div class="inventory-item-uses">
+                                                <p class="inventory-item-uses-title">Uses</p>
+                                                <div class="inventory-item-uses-row">
+                                                    <div class="inventory-item-uses-slots">
+                                                        @for (slotFilled of item.uses.slots; track $index) {
+                                                            <span class="inventory-item-uses-slot" [class.inventory-item-uses-slot-filled]="slotFilled"></span>
+                                                        }
+                                                    </div>
+                                                    <span class="inventory-item-uses-counter">{{ item.uses.current }}/{{ item.uses.max }}</span>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        @if (item.labels.length > 0) {
+                                            <div class="inventory-item-keywords">
+                                                @for (label of item.labels; track label.text + $index) {
+                                                    <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             }
-                        }
-                    </div>
+                        </div>
+                    } @else {
+                        <div class="utility-panel-collapsed-content">
+                            <p class="utility-panel-collapsed-label">{{ collapsedInventorySummary() }}</p>
+                            <icon-button
+                                class="utility-panel-expand-icon"
+                                iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                                ariaLabel="Expand inventory"
+                                (clicked)="onInventoryPanelToggle()"
+                            ></icon-button>
+                        </div>
+                    }
+                </section>
+
+                <section
+                    class="hud utility-panel player-allies-block"
+                    [class.utility-panel-expanded]="isAlliesExpanded()"
+                    [class.utility-panel-collapsed]="!isAlliesExpanded()"
+                    (click)="onAlliesPanelToggle()"
+                >
+                    <p class="hud-title">Allies ({{ visibleAllies().length }})</p>
+
+                    @if (isAlliesExpanded()) {
+                        <div class="inventory-list" [class.inventory-list-empty]="visibleAllies().length === 0">
+                            @if (visibleAllies().length === 0) {
+                                <p class="inventory-empty inventory-empty-centered">No allies.</p>
+                            } @else {
+                                @for (ally of visibleAllies(); track ally.allyId + $index) {
+                                    <div class="inventory-item-row">
+                                        <div class="inventory-item-header">
+                                            <p class="inventory-item-title">{{ ally.name }}</p>
+                                        </div>
+                                        <div class="inventory-item-line"></div>
+
+                                        <div class="ally-hp-section">
+                                            <div class="ally-hp-label-row">
+                                                <span>HP</span>
+                                                <span>{{ ally.hpCurrent }}/{{ ally.hpMax }}</span>
+                                            </div>
+                                            <div class="ally-hp-bar" [class.ally-hp-bar-full]="ally.hpPercent === 100">
+                                                <div class="ally-hp-fill" [style.width.%]="ally.hpPercent"></div>
+                                            </div>
+                                        </div>
+
+                                        <p class="inventory-item-description">{{ ally.description }}</p>
+
+                                        @if (ally.labels.length > 0) {
+                                            <div class="inventory-item-keywords">
+                                                @for (label of ally.labels; track label.text + $index) {
+                                                    <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            }
+
+                            @if (discardedAlliesCount() > 0) {
+                                <p class="inventory-empty">Discarded allies: {{ discardedAlliesCount() }}</p>
+                            }
+                        </div>
+                    } @else {
+                        <div class="utility-panel-collapsed-content">
+                            <p class="utility-panel-collapsed-label">{{ collapsedAlliesSummary() }}</p>
+                            <icon-button
+                                class="utility-panel-expand-icon"
+                                iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                                ariaLabel="Expand allies"
+                                (clicked)="onAlliesPanelToggle()"
+                            ></icon-button>
+                        </div>
+                    }
                 </section>
                 <app-resource-counter
                     [resources]="myPlayer()?.inventory?.resources || []"

@@ -1,11 +1,13 @@
 import { Injectable } from "@angular/core";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
+import { PlayerAllyEntry } from "../models/Ally";
 import { Player, PlayerAlignment } from "../models/Player";
 import { PlayerCharacteristicDelta, PlayerComputedStats } from "../models/PlayerComputedStats";
 import { WorldState } from "../models/WorldState";
 import { QuadrantId } from "../models/WorldZone";
 import { WorldZonesService } from "./world-zones-service";
 import { StatusCatalogService } from "./status-catalog-service";
+import { AllyCatalogService } from "./ally-catalog-service";
 
 interface PlayerStatsContext {
   player: Player;
@@ -21,6 +23,7 @@ export class PlayerStatsModifierService {
   constructor(
     private worldZonesService: WorldZonesService,
     private statusCatalogService: StatusCatalogService,
+    private allyCatalogService: AllyCatalogService,
   ) {}
 
   public computeStats(context: PlayerStatsContext): PlayerComputedStats {
@@ -55,9 +58,71 @@ export class PlayerStatsModifierService {
   private collectDeltas(context: PlayerStatsContext): PlayerCharacteristicDelta[] {
     const deltas: PlayerCharacteristicDelta[] = [];
     this.applyStatusDeltas(context, deltas);
+    this.applyAllyDeltas(context, deltas);
     this.applyLandmarkAlignmentDelta(context, deltas);
     this.applySanctuaryQuadrantAttunementDelta(context, deltas);
     return deltas;
+  }
+
+  private applyAllyDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
+    const allies = this.normalizeAllies(context.player.allies);
+    if (allies.length === 0) {
+      return;
+    }
+
+    allies.forEach((allyEntry) => {
+      const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+      if (!allyDefinition) {
+        return;
+      }
+
+      (allyDefinition.parameterModifiers ?? []).forEach((modifier) => {
+        if (!this.isScopeActive(modifier.scopes, context.worldState?.timeOfDay)) {
+          return;
+        }
+
+        deltas.push({
+          characteristic: modifier.parameter,
+          amount: this.normalizeDelta(modifier.amount),
+          source: "status",
+          reason: `${allyDefinition.name} modifier`,
+        });
+      });
+
+      (allyDefinition.statusKeysWhileActive ?? []).forEach((statusKey) => {
+        const statModifiers = this.statusCatalogService.getCachedStatus(statusKey)?.effects?.statModifiers;
+        if (!statModifiers) {
+          return;
+        }
+
+        if (this.normalizeDelta(statModifiers.strength) !== 0) {
+          deltas.push({
+            characteristic: "strength",
+            amount: this.normalizeDelta(statModifiers.strength),
+            source: "status",
+            reason: `${allyDefinition.name} status (${statusKey})`,
+          });
+        }
+
+        if (this.normalizeDelta(statModifiers.magic) !== 0) {
+          deltas.push({
+            characteristic: "magic",
+            amount: this.normalizeDelta(statModifiers.magic),
+            source: "status",
+            reason: `${allyDefinition.name} status (${statusKey})`,
+          });
+        }
+
+        if (this.normalizeDelta(statModifiers.luck) !== 0) {
+          deltas.push({
+            characteristic: "luck",
+            amount: this.normalizeDelta(statModifiers.luck),
+            source: "status",
+            reason: `${allyDefinition.name} status (${statusKey})`,
+          });
+        }
+      });
+    });
   }
 
   private applyStatusDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
@@ -141,6 +206,46 @@ export class PlayerStatsModifierService {
         key: String(status.key),
         durationTurns: Math.max(1, Math.floor(Number(status.durationTurns))),
       }));
+  }
+
+  private normalizeAllies(allies: Player["allies"]): PlayerAllyEntry[] {
+    if (!Array.isArray(allies)) {
+      return [];
+    }
+
+    return allies
+      .filter((entry) => {
+        if (!entry || typeof entry !== "object") return false;
+        if (typeof entry.allyId !== "string" || !entry.allyId.trim()) return false;
+        if (entry.state === "discarded") return false;
+        if (typeof entry.hpCurrent !== "number" || !Number.isFinite(entry.hpCurrent)) return false;
+        return Math.floor(entry.hpCurrent) > 0;
+      })
+      .map((entry) => ({
+        allyId: entry.allyId,
+        hpCurrent: Math.max(0, Math.floor(Number(entry.hpCurrent))),
+        state: entry.state,
+      }));
+  }
+
+  private isScopeActive(scopes: Array<"always" | "fight-only" | "day-only" | "night-only">, timeOfDay: WorldState["timeOfDay"]): boolean {
+    if (!Array.isArray(scopes) || scopes.length === 0) {
+      return false;
+    }
+
+    if (scopes.includes("always")) {
+      return true;
+    }
+
+    if (timeOfDay === "day" && scopes.includes("day-only")) {
+      return true;
+    }
+
+    if (timeOfDay === "night" && scopes.includes("night-only")) {
+      return true;
+    }
+
+    return false;
   }
 
   private normalizeDelta(value: unknown): number {

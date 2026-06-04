@@ -1,7 +1,10 @@
 import { ItemCategory } from "./ItemCatalog";
 
+export type MerchantTradableKind = "item" | "ally";
+
 export interface MerchantStockEntry {
-  itemId: string;
+  kind: MerchantTradableKind;
+  tradableId: string;
   stock: number;
   purchaseValue?: number;
 }
@@ -19,7 +22,8 @@ export interface MerchantCatalogConfig {
 }
 
 export interface MerchantDialogOfferRow {
-  itemId: string;
+  tradableKind: MerchantTradableKind;
+  tradableId: string;
   name: string;
   description: string;
   category: string;

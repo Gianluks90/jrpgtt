@@ -6,7 +6,8 @@ import { TextButton } from "../text-button/text-button";
 
 interface MerchantCartLine {
   operation: "buy" | "sell";
-  itemId: string;
+  tradableKind: "item" | "ally";
+  tradableId: string;
   itemName: string;
   quantity: number;
   totalValue: number;
@@ -41,12 +42,13 @@ export class MerchantTradePanel {
 
     pendingBuyByItemId.forEach((quantity, itemId) => {
       if (quantity <= 0) return;
-      const offer = this.buyOffers().find((entry) => entry.itemId === itemId);
+      const offer = this.buyOffers().find((entry) => this.buildBuyKey(entry.tradableKind, entry.tradableId) === itemId);
       if (!offer) return;
 
       lines.push({
         operation: "buy",
-        itemId,
+        tradableKind: offer.tradableKind,
+        tradableId: offer.tradableId,
         itemName: offer.name,
         quantity,
         totalValue: -offer.purchaseValue * quantity,
@@ -60,7 +62,8 @@ export class MerchantTradePanel {
 
       lines.push({
         operation: "sell",
-        itemId,
+        tradableKind: "item",
+        tradableId: itemId,
         itemName: offer.name,
         quantity,
         totalValue: offer.sellValue * quantity,
@@ -94,14 +97,15 @@ export class MerchantTradePanel {
     return `Coins ${this.projectedMoney()}`;
   });
 
-  public queueBuy(itemId: string): void {
+  public queueBuy(tradableKind: "item" | "ally", tradableId: string): void {
     if (this.loading()) return;
 
-    const offer = this.buyOffers().find((entry) => entry.itemId === itemId);
+    const buyKey = this.buildBuyKey(tradableKind, tradableId);
+    const offer = this.buyOffers().find((entry) => this.buildBuyKey(entry.tradableKind, entry.tradableId) === buyKey);
     if (!offer) return;
     if (!offer.canBuy) return;
 
-    if (this.getRemainingStock(itemId) <= 0) {
+    if (this.getRemainingStock(tradableKind, tradableId) <= 0) {
       return;
     }
 
@@ -110,7 +114,7 @@ export class MerchantTradePanel {
     }
 
     const nextMap = new Map(this.pendingBuyByItemId());
-    nextMap.set(itemId, this.getPendingBuyQuantity(itemId) + 1);
+    nextMap.set(buyKey, this.getPendingBuyQuantity(buyKey) + 1);
     this.pendingBuyByItemId.set(nextMap);
   }
 
@@ -130,23 +134,24 @@ export class MerchantTradePanel {
     if (this.loading()) return;
 
     if (line.operation === "buy") {
-      const nextQuantity = this.getPendingBuyQuantity(line.itemId) - line.quantity;
+      const buyKey = this.buildBuyKey(line.tradableKind, line.tradableId);
+      const nextQuantity = this.getPendingBuyQuantity(buyKey) - line.quantity;
       const nextMap = new Map(this.pendingBuyByItemId());
       if (nextQuantity > 0) {
-        nextMap.set(line.itemId, nextQuantity);
+        nextMap.set(buyKey, nextQuantity);
       } else {
-        nextMap.delete(line.itemId);
+        nextMap.delete(buyKey);
       }
       this.pendingBuyByItemId.set(nextMap);
       return;
     }
 
-    const nextQuantity = this.getPendingSellQuantity(line.itemId) - line.quantity;
+    const nextQuantity = this.getPendingSellQuantity(line.tradableId) - line.quantity;
     const nextMap = new Map(this.pendingSellByItemId());
     if (nextQuantity > 0) {
-      nextMap.set(line.itemId, nextQuantity);
+      nextMap.set(line.tradableId, nextQuantity);
     } else {
-      nextMap.delete(line.itemId);
+      nextMap.delete(line.tradableId);
     }
     this.pendingSellByItemId.set(nextMap);
   }
@@ -155,18 +160,19 @@ export class MerchantTradePanel {
     this.showCart.set(!this.showCart());
   }
 
-  public getRemainingStock(itemId: string): number {
-    const offer = this.buyOffers().find((entry) => entry.itemId === itemId);
+  public getRemainingStock(tradableKind: "item" | "ally", tradableId: string): number {
+    const buyKey = this.buildBuyKey(tradableKind, tradableId);
+    const offer = this.buyOffers().find((entry) => this.buildBuyKey(entry.tradableKind, entry.tradableId) === buyKey);
     if (!offer) return 0;
 
-    return Math.max(0, offer.stock - this.getPendingBuyQuantity(itemId));
+    return Math.max(0, offer.stock - this.getPendingBuyQuantity(buyKey));
   }
 
   public getRemainingOwnedQuantity(itemId: string): number {
     const offer = this.sellOffers().find((entry) => entry.itemId === itemId);
     if (!offer) return 0;
 
-    const boughtInCart = this.getPendingBuyQuantity(itemId);
+    const boughtInCart = this.getPendingBuyQuantity(this.buildBuyKey("item", itemId));
     const soldInCart = this.getPendingSellQuantity(itemId);
     return Math.max(0, offer.ownedQuantity + boughtInCart - soldInCart);
   }
@@ -183,8 +189,8 @@ export class MerchantTradePanel {
     this.closeRequested.emit();
   }
 
-  private getPendingBuyQuantity(itemId: string): number {
-    return this.pendingBuyByItemId().get(itemId) ?? 0;
+  private getPendingBuyQuantity(buyKey: string): number {
+    return this.pendingBuyByItemId().get(buyKey) ?? 0;
   }
 
   private getPendingSellQuantity(itemId: string): number {
@@ -205,9 +211,13 @@ export class MerchantTradePanel {
 
     this.pendingBuyByItemId().forEach((quantity, itemId) => {
       if (quantity <= 0) return;
+      const [rawKind, ...idParts] = itemId.split(":");
+      const kind = rawKind === "ally" ? "ally" : "item";
+      const tradableId = idParts.join(":");
       operations.push({
         operation: "buy",
-        itemId,
+        itemId: tradableId,
+        kind,
         quantity,
       });
     });
@@ -226,5 +236,9 @@ export class MerchantTradePanel {
     }
 
     return String(amount);
+  }
+
+  private buildBuyKey(kind: "item" | "ally", tradableId: string): string {
+    return `${kind}:${tradableId}`;
   }
 }

@@ -137,6 +137,20 @@ export class ActionRegistryService {
       };
     }
 
+    if (actionId === "feed-horse") {
+      const foodQty = (player.inventory?.resources ?? []).find((resource) => resource.label === "food")?.quantity ?? 0;
+      return {
+        id: "feed-horse",
+        label: this.actionCatalogService.getLabel(actionId, "Feed horse"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Spend 1 food before moving to gain +1 movement range this turn.",
+        ),
+        disabled: commonDisabled || context.hasMovedThisTurn || foodQty < 1,
+        pending: false,
+      };
+    }
+
     if (actionId === "safe-place-wait") {
       return {
         id: "safe-place-wait",

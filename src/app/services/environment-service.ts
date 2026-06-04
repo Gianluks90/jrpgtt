@@ -96,6 +96,30 @@ export class EnvironmentService {
     return targets;
   }
 
+  public buildOrthogonalRangeTargetIds(x: number, y: number, maxDistance: number, mapSize: number): Set<string> {
+    const normalizedDistance = Math.max(1, Math.floor(Number(maxDistance ?? 1)));
+    const ids = new Set<string>();
+
+    for (let offsetX = -normalizedDistance; offsetX <= normalizedDistance; offsetX += 1) {
+      for (let offsetY = -normalizedDistance; offsetY <= normalizedDistance; offsetY += 1) {
+        const distance = Math.abs(offsetX) + Math.abs(offsetY);
+        if (distance === 0 || distance > normalizedDistance) {
+          continue;
+        }
+
+        const targetX = x + offsetX;
+        const targetY = y + offsetY;
+        if (!this.isInsideBounds(targetX, targetY, mapSize)) {
+          continue;
+        }
+
+        ids.add(this.cellId(targetX, targetY));
+      }
+    }
+
+    return ids;
+  }
+
   public buildMovementTargetIdsFromEnvironmentCells(environmentCells: MapCell[], mapSize: number): Set<string> {
     const targets = new Set<string>(environmentCells.map((cell) => this.cellId(cell.x, cell.y)));
 

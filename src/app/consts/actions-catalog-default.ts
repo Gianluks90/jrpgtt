@@ -155,6 +155,27 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       },
     },
     {
+      id: "feed-horse",
+      ui: {
+        label: "Feed horse",
+        descriptionTemplate: "Spend 1 food before moving to gain +1 movement range this turn.",
+        i18n: {
+          labelKey: "actions.feedHorse.label",
+          descriptionKey: "actions.feedHorse.description",
+        },
+      },
+      flow: {
+        handler: "ally-feed-horse",
+        errorMessage: "Error while feeding horse",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
       id: "safe-place-wait",
       ui: {
         label: "Wait",

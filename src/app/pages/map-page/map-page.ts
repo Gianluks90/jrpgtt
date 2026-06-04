@@ -20,6 +20,7 @@ import { MapPageActionsService } from "../../services/map-page-actions-service";
 import { MapPageInteractionService } from "../../services/map-page-interaction-service";
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
+import { PlayerAllyEntry } from "../../models/Ally";
 import { ItemDefinition } from "../../models/ItemCatalog";
 import { PlayerComputedStats } from "../../models/PlayerComputedStats";
 import { MapCell } from "../../models/MapCell";
@@ -31,6 +32,7 @@ import { PendingFastTravelState } from "../../models/WorldState";
 import { WorldEventRegionTransitionService } from "../../services/world-event-region-transition-service";
 import { BiomeConditionCatalogService } from "../../services/biome-condition-catalog-service";
 import { ItemCatalogService } from "../../services/item-catalog-service";
+import { AllyCatalogService } from "../../services/ally-catalog-service";
 
 @Component({
   selector: "app-map-page",
@@ -67,6 +69,7 @@ export class MapPage implements OnInit, OnDestroy {
   private worldEventRegionTransitionService = inject(WorldEventRegionTransitionService);
   private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
   private itemCatalogService = inject(ItemCatalogService);
+  private allyCatalogService = inject(AllyCatalogService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -83,6 +86,7 @@ export class MapPage implements OnInit, OnDestroy {
   public isFastTravelTransitionRunning = this.fastTravelVisualService.isTransitionRunning;
   public mockPlayers = signal<Player[]>([]);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
+  public utilitiesExpandedPanel = signal<"inventory" | "allies">("inventory");
     private static readonly locationInfoResetDelayMs = 10000;
     private locationInfoResetTimer: ReturnType<typeof setTimeout> | null = null;
   private lastPendingDialogKey = signal<string | null>(null);
@@ -288,11 +292,67 @@ export class MapPage implements OnInit, OnDestroy {
 
   public visibleInventoryCapacity = computed<number>(() => {
     const configured = this.myPlayer()?.inventory?.itemCapacity;
+    const alliesBonus = this.getAlliesItemCapacityBonus(this.myPlayer()?.allies);
     if (typeof configured === "number" && Number.isFinite(configured)) {
-      return Math.max(1, Math.floor(configured));
+      return Math.max(1, Math.floor(configured)) + alliesBonus;
     }
 
-    return 4;
+    return 4 + alliesBonus;
+  });
+
+  public visibleAllies = computed<Array<{
+    allyId: string;
+    name: string;
+    description: string;
+    hpCurrent: number;
+    hpMax: number;
+    hpPercent: number;
+    labels: Array<{
+      text: string;
+      tone: "neutral" | "positive" | "negative";
+    }>;
+  }>>(() => {
+    const allies = this.normalizePlayerAllies(this.myPlayer()?.allies);
+    return allies
+      .filter((entry) => entry.state !== "discarded")
+      .map((entry) => {
+        const definition = this.allyCatalogService.getCachedAllyById(entry.allyId);
+        const hpMax = typeof definition?.maxHp === "number" ? Math.max(1, Math.floor(definition.maxHp)) : 1;
+        const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
+        return {
+          allyId: entry.allyId,
+          name: definition?.name ?? entry.allyId,
+          description: definition?.description?.trim() || "No description available.",
+          hpCurrent,
+          hpMax,
+          hpPercent: Math.max(0, Math.min(100, Math.floor((hpCurrent / hpMax) * 100))),
+          labels: definition ? this.buildAllyLabels(definition.parameterModifiers ?? []) : [],
+        };
+      });
+  });
+
+  public discardedAlliesCount = computed<number>(() => {
+    return this.normalizePlayerAllies(this.myPlayer()?.allies)
+      .filter((entry) => entry.state === "discarded")
+      .length;
+  });
+
+  public collapsedInventorySummary = computed<string>(() => {
+    const names = this.visibleInventoryItems().map((item) => item.name.trim()).filter((name) => name.length > 0);
+    if (names.length === 0) {
+      return "no items";
+    }
+
+    return names.join(", ");
+  });
+
+  public collapsedAlliesSummary = computed<string>(() => {
+    const names = this.visibleAllies().map((ally) => ally.name.trim()).filter((name) => name.length > 0);
+    if (names.length === 0) {
+      return "no allies";
+    }
+
+    return names.join(", ");
   });
 
   public movableCellIds = computed<Set<string>>(() => {
@@ -322,6 +382,25 @@ export class MapPage implements OnInit, OnDestroy {
       filteredTargets.add(targetCellId);
     });
 
+    const movementBonus = this.getCurrentTurnMovementBonus();
+    if (movementBonus > 0) {
+      const bonusTargets = this.environmentService.buildOrthogonalRangeTargetIds(
+        current.location.x,
+        current.location.y,
+        1 + movementBonus,
+        this.mapSize(),
+      );
+
+      bonusTargets.forEach((targetCellId) => {
+        const targetCell = this.mapCellsById()[targetCellId] ?? null;
+        if (this.cellHasConditionEffect(targetCell, "movement-block-entry", ["impassable"])) {
+          return;
+        }
+
+        filteredTargets.add(targetCellId);
+      });
+    }
+
     return filteredTargets;
   });
 
@@ -339,6 +418,7 @@ export class MapPage implements OnInit, OnDestroy {
     this.mapPageState.init(this.gameId);
     void this.biomeConditionCatalogService.loadConfig();
     void this.itemCatalogService.loadConfig();
+    void this.allyCatalogService.loadConfig();
     effect(() => {
       const player = this.myPlayer();
       const pendingPickup = player?.pendingResourcePickup ?? null;
@@ -420,6 +500,22 @@ export class MapPage implements OnInit, OnDestroy {
       player: this.myPlayer(),
       maxCapacity: this.resourceCapacity(),
     });
+  }
+
+  public isInventoryExpanded(): boolean {
+    return this.utilitiesExpandedPanel() === "inventory";
+  }
+
+  public isAlliesExpanded(): boolean {
+    return this.utilitiesExpandedPanel() === "allies";
+  }
+
+  public onInventoryPanelToggle(): void {
+    this.utilitiesExpandedPanel.set("inventory");
+  }
+
+  public onAlliesPanelToggle(): void {
+    this.utilitiesExpandedPanel.set("allies");
   }
 
   private async syncMockPlayersForLayout(): Promise<void> {
@@ -622,6 +718,114 @@ export class MapPage implements OnInit, OnDestroy {
     });
 
     return Array.from(labels);
+  }
+
+  private buildAllyLabels(modifiers: Array<{
+    parameter: "strength" | "magic" | "luck";
+    amount: number;
+    scopes: Array<"always" | "fight-only" | "day-only" | "night-only">;
+  }>): Array<{
+    text: string;
+    tone: "neutral" | "positive" | "negative";
+  }> {
+    const labels: Array<{
+      text: string;
+      tone: "neutral" | "positive" | "negative";
+    }> = [];
+
+    const scopeLabels = this.buildModifierScopeLabels(modifiers);
+    scopeLabels.forEach((scopeLabel) => {
+      labels.push({
+        text: scopeLabel,
+        tone: "neutral",
+      });
+    });
+
+    modifiers.forEach((modifier) => {
+      const sign = modifier.amount >= 0 ? "+" : "";
+      const parameterLabel = modifier.parameter === "strength"
+        ? "STR"
+        : modifier.parameter === "magic"
+          ? "MAG"
+          : "LCK";
+
+      labels.push({
+        text: `${sign}${modifier.amount} ${parameterLabel}`,
+        tone: modifier.amount >= 0 ? "positive" : "negative",
+      });
+    });
+
+    return labels;
+  }
+
+  private normalizePlayerAllies(rawAllies: unknown): PlayerAllyEntry[] {
+    if (!Array.isArray(rawAllies)) {
+      return [];
+    }
+
+    const allies: PlayerAllyEntry[] = [];
+    rawAllies.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const allyId = (entry as { allyId?: unknown }).allyId;
+      if (typeof allyId !== "string" || !allyId.trim()) {
+        return;
+      }
+
+      const hpCurrent = Math.max(0, Math.floor(Number((entry as { hpCurrent?: unknown }).hpCurrent ?? 0)));
+      const state = (entry as { state?: unknown }).state === "discarded" ? "discarded" : "active";
+
+      allies.push({
+        allyId: allyId.trim(),
+        hpCurrent,
+        state,
+      });
+    });
+
+    return allies;
+  }
+
+  private getCurrentTurnMovementBonus(): number {
+    const worldState = this.worldState();
+    const playerId = this.myPlayer()?.id;
+    if (!worldState || !playerId) {
+      return 0;
+    }
+
+    const currentTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+    const movementBonus = worldState.allyMovementBonusByPlayer?.[playerId];
+    if (!movementBonus || movementBonus.turn !== currentTurn) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor(Number(movementBonus.amount ?? 0)));
+  }
+
+  private getAlliesItemCapacityBonus(rawAllies: unknown): number {
+    const allies = this.normalizePlayerAllies(rawAllies);
+    return allies.reduce((total, entry) => {
+      if (entry.state === "discarded") {
+        return total;
+      }
+
+      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) {
+        return total;
+      }
+
+      const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
+      if (!ally) {
+        return total;
+      }
+
+      const itemCapacityBonus = Number(ally.itemCapacityBonus ?? 0);
+      if (!Number.isFinite(itemCapacityBonus)) {
+        return total;
+      }
+
+      return total + Math.max(0, Math.floor(itemCapacityBonus));
+    }, 0);
   }
 
   private capitalize(value: string): string {

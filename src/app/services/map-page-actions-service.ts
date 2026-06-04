@@ -9,6 +9,7 @@ import { WorldState } from "../models/WorldState";
 import { LandmarksService } from "./landmarks-service";
 import { ActionCatalogService } from "./action-catalog-service";
 import { ItemCatalogService } from "./item-catalog-service";
+import { AllyCatalogService } from "./ally-catalog-service";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -33,6 +34,7 @@ export class MapPageActionsService {
     private landmarksService: LandmarksService,
     private actionCatalogService: ActionCatalogService,
     private itemCatalogService: ItemCatalogService,
+    private allyCatalogService: AllyCatalogService,
   ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
@@ -74,7 +76,8 @@ export class MapPageActionsService {
         ? this.getConfiguredLandmarkActionIds(cell)
         : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
     const inventoryActionIds = this.getInventoryActionIds(player);
-    const actionIds = [...new Set([...configuredActionIds, ...inventoryActionIds])];
+    const allyActionIds = this.getAllyActionIds(player);
+    const actionIds = [...new Set([...configuredActionIds, ...inventoryActionIds, ...allyActionIds])];
     const biomeResources = cell.biome ? (input.biomeResourcesByBiome[cell.biome] ?? []) : [];
     const sanctuaryLabel = isSanctuaryCell && cell.sanctuaryElement
       ? this.sanctuaryElementToLabel(cell.sanctuaryElement)
@@ -159,6 +162,30 @@ export class MapPageActionsService {
       }
 
       item.actions.forEach((actionId) => {
+        if (typeof actionId === "string" && actionId.trim().length > 0) {
+          actionIds.push(actionId);
+        }
+      });
+    });
+
+    return actionIds;
+  }
+
+  private getAllyActionIds(player: Player): string[] {
+    const actionIds: string[] = [];
+    const allies = Array.isArray(player.allies) ? player.allies : [];
+
+    allies.forEach((entry) => {
+      if (!entry || typeof entry !== "object") return;
+      if (entry.state === "discarded") return;
+      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return;
+
+      const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
+      if (!ally?.actions?.length) {
+        return;
+      }
+
+      ally.actions.forEach((actionId) => {
         if (typeof actionId === "string" && actionId.trim().length > 0) {
           actionIds.push(actionId);
         }

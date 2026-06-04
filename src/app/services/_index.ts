@@ -1,5 +1,6 @@
 export * from "./action-executor-service";
 export * from "./action-catalog-service";
+export * from "./ally-catalog-service";
 export * from "./auth-service";
 export * from "./biome-condition-catalog-service";
 export * from "./breakpoint-service";

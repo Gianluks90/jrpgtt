@@ -356,6 +356,7 @@ export class GameService {
           x: spawn.x,
           y: spawn.y,
         },
+        allies: Array.isArray(player?.allies) ? player?.allies : [],
         inventory: {
           items: this.normalizeInventoryItems(inventory?.items),
           resources: (inventory?.resources?.length ?? 0) > 0 ? inventory?.resources : [{ label: "food", quantity: 3 }],
@@ -415,6 +416,7 @@ export class GameService {
         resourceCapacity: DEFAULT_RESOURCE_INVENTORY_CAPACITY,
         itemCapacity: DEFAULT_ITEM_INVENTORY_CAPACITY,
       },
+      allies: [],
       actionsUsedThisTurn: {},
       statuses: [],
       pendingResourcePickup: null,

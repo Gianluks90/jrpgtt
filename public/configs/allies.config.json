@@ -1,0 +1,36 @@
+{
+  "allies": [
+    {
+      "id": "horse",
+      "name": "Horse",
+      "description": "A loyal mount. Use Feed horse before moving to gain +1 movement this turn.",
+      "category": "companion",
+      "maxHp": 3,
+      "actions": ["feed-horse"]
+    },
+    {
+      "id": "princess",
+      "name": "Princess",
+      "description": "A noble ally with arcane intuition.",
+      "category": "companion",
+      "maxHp": 2,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "magic",
+          "amount": 1,
+          "scope": "always"
+        }
+      ]
+    },
+    {
+      "id": "mule",
+      "name": "Mule",
+      "description": "A sturdy pack animal that increases your carrying capacity by 4.",
+      "category": "companion",
+      "maxHp": 4,
+      "itemCapacityBonus": 4,
+      "actions": []
+    }
+  ]
+}

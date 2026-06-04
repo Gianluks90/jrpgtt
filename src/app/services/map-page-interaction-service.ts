@@ -65,6 +65,7 @@ import { isDoctorActionId, SafePlaceDoctorActionId } from "../consts/safe-place-
 import { ActionCatalogService } from "./action-catalog-service";
 import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
 import { ItemCatalogService } from "./item-catalog-service";
+import { AllyCatalogService } from "./ally-catalog-service";
 import { MerchantCatalogService } from "./merchant-catalog-service";
 import { MerchantTradeOffersService } from "./merchant-trade-offers-service";
 import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
@@ -103,6 +104,7 @@ export class MapPageInteractionService {
     private actionCatalogService: ActionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
     private itemCatalogService: ItemCatalogService,
+    private allyCatalogService: AllyCatalogService,
     private merchantCatalogService: MerchantCatalogService,
     private merchantTradeOffersService: MerchantTradeOffersService,
     private mysticRewardsConfigService: MysticRewardsConfigService,
@@ -350,6 +352,18 @@ export class MapPageInteractionService {
       return;
     }
 
+    if (handler === "ally-feed-horse") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.feedHorse(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
     if (handler === "safe-place-doctor") {
       if (!player) return;
 
@@ -429,6 +443,7 @@ export class MapPageInteractionService {
 
       await Promise.all([
         this.itemCatalogService.loadConfig(),
+        this.allyCatalogService.loadConfig(),
         this.merchantCatalogService.loadConfig(),
       ]);
       const merchant = await this.merchantCatalogService.getMerchantByLandmarkId(currentCell.landmarkId);
@@ -454,6 +469,7 @@ export class MapPageInteractionService {
         stockEntries,
         stockMap,
         playerAlignment: player.alignment,
+        playerAllies: player.allies,
       });
 
       const sellOffers = this.merchantTradeOffersService.buildSellOffers({

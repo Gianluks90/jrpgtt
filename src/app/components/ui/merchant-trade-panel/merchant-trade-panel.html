@@ -14,78 +14,82 @@
     <div class="columns">
         <section class="column">
             <h4>Buy</h4>
-            @if (buyOffers().length === 0) {
-                <p class="empty-text">No stock available.</p>
-            } @else {
-                @for (offer of buyOffers(); track offer.itemId) {
-                    <div class="inventory-item-row">
-                        <div class="inventory-item-header">
-                            <p class="inventory-item-title">{{ offer.name }}</p>
-                            <span class="inventory-item-value-tag">
-                                <span>-{{ offer.purchaseValue }}</span>
-                                <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
-                            </span>
-                        </div>
-                        <div class="inventory-item-line"></div>
-                        @if (offer.identityKeywords.length > 0) {
-                            <div class="inventory-item-keywords">
-                                @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
-                                    <span class="inventory-item-keyword">{{ keyword }}</span>
-                                }
+            <div class="column-list">
+                @if (buyOffers().length === 0) {
+                    <p class="empty-text">No stock available.</p>
+                } @else {
+                    @for (offer of buyOffers(); track offer.tradableKind + ':' + offer.tradableId) {
+                        <div class="inventory-item-row">
+                            <div class="inventory-item-header">
+                                <p class="inventory-item-title">{{ offer.name }}</p>
+                                <span class="inventory-item-value-tag">
+                                    <span>-{{ offer.purchaseValue }}</span>
+                                    <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
+                                </span>
                             </div>
-                        }
-                        <p class="inventory-item-description">{{ offer.description }}</p>
-                        <div class="inventory-item-meta">
-                            <span>Category: {{ offer.category }}</span>
-                            <span>Stock: {{ getRemainingStock(offer.itemId) }}</span>
+                            <div class="inventory-item-line"></div>
+                            @if (offer.identityKeywords.length > 0) {
+                                <div class="inventory-item-keywords">
+                                    @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
+                                        <span class="inventory-item-keyword">{{ keyword }}</span>
+                                    }
+                                </div>
+                            }
+                            <p class="inventory-item-description">{{ offer.description }}</p>
+                            <div class="inventory-item-meta">
+                                <span>Category: {{ offer.category }}</span>
+                                <span>Stock: {{ getRemainingStock(offer.tradableKind, offer.tradableId) }}</span>
+                            </div>
+                            <text-button
+                                text="Buy"
+                                [compact]="true"
+                                [disabled]="loading() || !offer.canBuy || getRemainingStock(offer.tradableKind, offer.tradableId) <= 0 || projectedMoney() < offer.purchaseValue"
+                                (clicked)="queueBuy(offer.tradableKind, offer.tradableId)"
+                            ></text-button>
                         </div>
-                        <text-button
-                            text="Buy"
-                            [compact]="true"
-                            [disabled]="loading() || !offer.canBuy || getRemainingStock(offer.itemId) <= 0 || projectedMoney() < offer.purchaseValue"
-                            (clicked)="queueBuy(offer.itemId)"
-                        ></text-button>
-                    </div>
+                    }
                 }
-            }
+            </div>
         </section>
 
         <section class="column">
             <h4>Sell</h4>
-            @if (sellOffers().length === 0) {
-                <p class="empty-text">No sellable items in inventory.</p>
-            } @else {
-                @for (offer of sellOffers(); track offer.itemId) {
-                    <div class="inventory-item-row">
-                        <div class="inventory-item-header">
-                            <p class="inventory-item-title">{{ offer.name }}</p>
-                            <span class="inventory-item-value-tag gain">
-                                <span>+{{ offer.sellValue }}</span>
-                                <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
-                            </span>
-                        </div>
-                        <div class="inventory-item-line"></div>
-                        @if (offer.identityKeywords.length > 0) {
-                            <div class="inventory-item-keywords">
-                                @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
-                                    <span class="inventory-item-keyword">{{ keyword }}</span>
-                                }
+            <div class="column-list">
+                @if (sellOffers().length === 0) {
+                    <p class="empty-text">No sellable items in inventory.</p>
+                } @else {
+                    @for (offer of sellOffers(); track offer.itemId) {
+                        <div class="inventory-item-row">
+                            <div class="inventory-item-header">
+                                <p class="inventory-item-title">{{ offer.name }}</p>
+                                <span class="inventory-item-value-tag gain">
+                                    <span>+{{ offer.sellValue }}</span>
+                                    <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
+                                </span>
                             </div>
-                        }
-                        <p class="inventory-item-description">{{ offer.description }}</p>
-                        <div class="inventory-item-meta">
-                            <span>Category: {{ offer.category }}</span>
-                            <span>Owned: {{ getRemainingOwnedQuantity(offer.itemId) }}</span>
+                            <div class="inventory-item-line"></div>
+                            @if (offer.identityKeywords.length > 0) {
+                                <div class="inventory-item-keywords">
+                                    @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
+                                        <span class="inventory-item-keyword">{{ keyword }}</span>
+                                    }
+                                </div>
+                            }
+                            <p class="inventory-item-description">{{ offer.description }}</p>
+                            <div class="inventory-item-meta">
+                                <span>Category: {{ offer.category }}</span>
+                                <span>Owned: {{ getRemainingOwnedQuantity(offer.itemId) }}</span>
+                            </div>
+                            <text-button
+                                text="Sell"
+                                [compact]="true"
+                                [disabled]="loading() || getRemainingOwnedQuantity(offer.itemId) <= 0"
+                                (clicked)="queueSell(offer.itemId)"
+                            ></text-button>
                         </div>
-                        <text-button
-                            text="Sell"
-                            [compact]="true"
-                            [disabled]="loading() || getRemainingOwnedQuantity(offer.itemId) <= 0"
-                            (clicked)="queueSell(offer.itemId)"
-                        ></text-button>
-                    </div>
+                    }
                 }
-            }
+            </div>
         </section>
     </div>
 
@@ -101,7 +105,7 @@
 
     @if (showCart()) {
         <section class="cart-panel">
-            @for (line of cartLines(); track line.operation + ':' + line.itemId) {
+            @for (line of cartLines(); track line.operation + ':' + line.tradableKind + ':' + line.tradableId) {
                 <div class="cart-line">
                     <span>{{ line.itemName }} x{{ line.quantity }}</span>
                     <span class="cart-line-value" [class.gain]="line.totalValue > 0">

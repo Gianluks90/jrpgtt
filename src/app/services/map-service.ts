@@ -111,7 +111,16 @@ export class MapService {
       }
 
       const targetCellId = this.cellId(targetX, targetY);
-      const isAllowed = await this.canMoveToTarget(transaction, gameId, player, targetCellId, mapSize, tilesConfig);
+      const movementBonus = this.getAllyMovementBonus(worldState, player.id);
+      const isAllowed = await this.canMoveToTarget(
+        transaction,
+        gameId,
+        player,
+        targetCellId,
+        mapSize,
+        tilesConfig,
+        movementBonus,
+      );
       if (!isAllowed) {
         throw new Error("Invalid movement for current environment");
       }
@@ -634,6 +643,29 @@ export class MapService {
     return `${x}_${y}`;
   }
 
+  private parseCellId(cellId: string): { x: number; y: number } {
+    const [xRaw, yRaw] = cellId.split("_");
+    return {
+      x: Math.max(0, Math.floor(Number(xRaw ?? 0))),
+      y: Math.max(0, Math.floor(Number(yRaw ?? 0))),
+    };
+  }
+
+  private getAllyMovementBonus(worldState: WorldState, playerId: string): number {
+    const entry = worldState.allyMovementBonusByPlayer?.[playerId];
+    if (!entry) {
+      return 0;
+    }
+
+    const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+    const entryTurn = Math.max(0, Math.floor(Number(entry.turn ?? -1)));
+    if (entryTurn !== worldTurn) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor(Number(entry.amount ?? 0)));
+  }
+
   private async canMoveToTarget(
     transaction: Transaction,
     gameId: string,
@@ -641,6 +673,7 @@ export class MapService {
     targetCellId: string,
     mapSize: number,
     tilesConfig: TilesConfig,
+    movementBonus = 0,
   ): Promise<boolean> {
     const source = player.location;
     const sourceCellId = this.cellId(source.x, source.y);
@@ -651,6 +684,16 @@ export class MapService {
     const includeDiagonalAdjacency = this.hasDiagonalMovementCondition(sourceCell, tilesConfig);
     if (this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId, includeDiagonalAdjacency)) {
       return true;
+    }
+
+    const bonusDistance = Math.max(0, Math.floor(Number(movementBonus ?? 0)));
+    if (bonusDistance > 0) {
+      const maxDistance = 1 + bonusDistance;
+      const targetCoordinates = this.parseCellId(targetCellId);
+      const orthogonalDistance = Math.abs(source.x - targetCoordinates.x) + Math.abs(source.y - targetCoordinates.y);
+      if (orthogonalDistance > 1 && orthogonalDistance <= maxDistance) {
+        return true;
+      }
     }
 
     if (!sourceCell) {

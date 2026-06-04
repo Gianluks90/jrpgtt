@@ -1,3 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
 .info-text {
   margin: 4px 0;
   font-size: 0.56rem;
@@ -11,24 +18,40 @@
 }
 
 .columns {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-top: 10px;
+  overflow: hidden;
 }
 
 .column {
   border: 1px solid color-mix(in srgb, var(--fg-color) 30%, transparent);
   padding: 8px;
   background: color-mix(in srgb, var(--bg-color) 92%, black 8%);
+  min-height: 0;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
   align-content: start;
+  overflow: hidden;
 }
 
 .column h4 {
   margin: 0 0 8px;
   font-size: 0.58rem;
+}
+
+.column-list {
+  min-height: 0;
+  max-height: min(34dvh, 340px);
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding-right: 4px;
 }
 
 .inventory-item-row {
@@ -182,6 +205,10 @@
 @media screen and (max-width: 900px) {
   .columns {
     grid-template-columns: 1fr;
+  }
+
+  .column-list {
+    max-height: min(24dvh, 230px);
   }
 
   .cart-toolbar {

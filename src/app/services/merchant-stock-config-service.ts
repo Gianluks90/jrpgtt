@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { MerchantStockEntry } from "../models/MerchantCatalog";
+import { MerchantStockEntry, MerchantTradableKind } from "../models/MerchantCatalog";
 
 interface MerchantStockConfig {
   merchantId?: string;
@@ -57,13 +57,13 @@ export class MerchantStockConfigService {
 
   public asStockMap(stock: MerchantStockEntry[]): Record<string, number> {
     return stock.reduce<Record<string, number>>((acc, entry) => {
-      acc[entry.itemId] = Math.max(0, Math.floor(Number(entry.stock ?? 0)));
+      acc[this.buildStockKey(entry.kind, entry.tradableId)] = Math.max(0, Math.floor(Number(entry.stock ?? 0)));
       return acc;
     }, {});
   }
 
-  public getStockEntry(stock: MerchantStockEntry[], itemId: string): MerchantStockEntry | null {
-    return stock.find((entry) => entry.itemId === itemId) ?? null;
+  public getStockEntry(stock: MerchantStockEntry[], kind: MerchantTradableKind, tradableId: string): MerchantStockEntry | null {
+    return stock.find((entry) => entry.kind === kind && entry.tradableId === tradableId) ?? null;
   }
 
   private parseConfig(raw: unknown): MerchantStockConfig {
@@ -97,31 +97,65 @@ export class MerchantStockConfigService {
     }
 
     const typed = raw as {
+      kind?: unknown;
+      tradableId?: unknown;
       itemId?: unknown;
       stock?: unknown;
       purchaseValue?: unknown;
     };
 
-    if (typeof typed.itemId !== "string" || !typed.itemId.trim()) {
-      throw new Error(`Invalid merchant stock configuration: stock entry at index ${index} has invalid itemId`);
-    }
+    const resolvedKind = this.parseKind(typed.kind, typed.itemId);
+    const resolvedTradableId = this.parseTradableId(typed.tradableId, typed.itemId);
 
     const stockValue = Number(typed.stock);
     if (!Number.isFinite(stockValue) || stockValue < 0 || Math.floor(stockValue) !== stockValue) {
-      throw new Error(`Invalid merchant stock configuration: stock '${typed.itemId}' has invalid stock`);
+      throw new Error(`Invalid merchant stock configuration: stock '${resolvedTradableId}' has invalid stock`);
     }
 
     if (typeof typed.purchaseValue !== "undefined") {
       const purchaseValue = Number(typed.purchaseValue);
       if (!Number.isFinite(purchaseValue) || purchaseValue < 0 || Math.floor(purchaseValue) !== purchaseValue) {
-        throw new Error(`Invalid merchant stock configuration: stock '${typed.itemId}' has invalid purchaseValue`);
+        throw new Error(`Invalid merchant stock configuration: stock '${resolvedTradableId}' has invalid purchaseValue`);
       }
     }
 
     return {
-      itemId: typed.itemId,
+      kind: resolvedKind,
+      tradableId: resolvedTradableId,
       stock: Math.floor(stockValue),
       purchaseValue: typeof typed.purchaseValue === "number" ? Math.floor(typed.purchaseValue) : undefined,
     };
+  }
+
+  private parseKind(rawKind: unknown, legacyItemId: unknown): MerchantTradableKind {
+    if (typeof rawKind === "undefined") {
+      if (typeof legacyItemId === "string" && legacyItemId.trim()) {
+        return "item";
+      }
+
+      throw new Error("Invalid merchant stock configuration: stock entry has invalid kind");
+    }
+
+    if (rawKind === "item" || rawKind === "ally") {
+      return rawKind;
+    }
+
+    throw new Error("Invalid merchant stock configuration: stock entry has invalid kind");
+  }
+
+  private parseTradableId(rawTradableId: unknown, legacyItemId: unknown): string {
+    if (typeof rawTradableId === "string" && rawTradableId.trim()) {
+      return rawTradableId.trim();
+    }
+
+    if (typeof legacyItemId === "string" && legacyItemId.trim()) {
+      return legacyItemId.trim();
+    }
+
+    throw new Error("Invalid merchant stock configuration: stock entry has invalid tradable id");
+  }
+
+  private buildStockKey(kind: MerchantTradableKind, tradableId: string): string {
+    return `${kind}:${tradableId}`;
   }
 }

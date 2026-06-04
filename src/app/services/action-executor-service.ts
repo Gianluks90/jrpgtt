@@ -3,6 +3,7 @@ import { doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/fi
 import { GameMap } from "../models/GameMap";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
+import { PlayerAllyEntry } from "../models/Ally";
 import { Player, PlayerStatus } from "../models/Player";
 import { ResourceLabel, ResourceStack } from "../models/Resource";
 import { WorldState } from "../models/WorldState";
@@ -21,6 +22,7 @@ import { WorldZonesService } from "./world-zones-service";
 import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
+import { AllyCatalogService } from "./ally-catalog-service";
 import { ItemCatalogService } from "./item-catalog-service";
 import { ItemOwnershipService } from "./item-ownership-service";
 import { MerchantCatalogService } from "./merchant-catalog-service";
@@ -58,12 +60,14 @@ export interface MerchantTradeOutcome {
 
 export interface MerchantCheckoutOperation {
   operation: "buy" | "sell";
+  kind?: "item" | "ally";
   itemId: string;
   quantity: number;
 }
 
 export interface MerchantCheckoutLineOutcome {
   operation: "buy" | "sell";
+  kind: "item" | "ally";
   itemId: string;
   itemName: string;
   quantity: number;
@@ -100,6 +104,7 @@ export class ActionExecutorService {
     private tilesConfigService: TilesConfigService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
+    private allyCatalogService: AllyCatalogService,
     private itemCatalogService: ItemCatalogService,
     private itemOwnershipService: ItemOwnershipService,
     private merchantCatalogService: MerchantCatalogService,
@@ -1193,6 +1198,93 @@ export class ActionExecutorService {
     });
   }
 
+  public async feedHorse(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    await this.allyCatalogService.loadConfig();
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+      this.ensureActionAvailable(player, "feed-horse", worldTurn, "You can only feed your horse once per turn.");
+
+      const movedThisTurnByPlayer = worldState.movedThisTurnByPlayer ?? {};
+      if (movedThisTurnByPlayer[actor.id] === worldTurn) {
+        throw new Error("You must feed your horse before moving");
+      }
+
+      if (!this.hasActiveAllyWithAction(player.allies, "feed-horse")) {
+        throw new Error("You do not have an active ally that can be fed");
+      }
+
+      const currentResources = player.inventory?.resources ?? [];
+      const foodAmount = currentResources.find((resource) => resource.label === "food")?.quantity ?? 0;
+      if (foodAmount < 1) {
+        throw new Error("You need at least 1 food to feed your horse");
+      }
+
+      const nextResources = this.addResource(currentResources, "food", -1);
+      const currentBonusByPlayer = worldState.allyMovementBonusByPlayer ?? {};
+      const previousBonus = currentBonusByPlayer[actor.id];
+      const previousAmount = previousBonus?.turn === worldTurn
+        ? Math.max(0, Math.floor(Number(previousBonus.amount ?? 0)))
+        : 0;
+
+      const nextBonusByPlayer = {
+        ...currentBonusByPlayer,
+        [actor.id]: {
+          turn: worldTurn,
+          amount: previousAmount + 1,
+        },
+      };
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          resources: nextResources,
+        },
+        actionsUsedThisTurn: this.markActionUsed(player, "feed-horse", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, {
+        allyMovementBonusByPlayer: nextBonusByPlayer,
+      }, { merge: true });
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "system.info", {
+      text: `${actor.name} fed their horse and gained +1 movement for this turn.`,
+    });
+  }
+
   public async healAtSafePlace(
     gameId: string,
     actor: Pick<Player, "id" | "name">,
@@ -2048,6 +2140,7 @@ export class ActionExecutorService {
 
     await Promise.all([
       this.itemCatalogService.loadConfig(),
+      this.allyCatalogService.loadConfig(),
       this.merchantCatalogService.loadConfig(),
     ]);
 
@@ -2108,7 +2201,8 @@ export class ActionExecutorService {
         throw new Error("Merchant is not available at this landmark");
       }
 
-      const stockEntry = this.merchantCatalogService.getStockEntry(merchant, itemId);
+      const stockEntry = this.merchantCatalogService.getStockEntry(merchant, "item", itemId);
+      const itemStockKey = this.buildMerchantStockKey("item", itemId);
       const stockMap = {
         ...this.merchantCatalogService.asDefaultStockMap(merchant),
         ...(mapCell.merchantStockByItemId ?? {}),
@@ -2126,7 +2220,7 @@ export class ActionExecutorService {
           throw new Error("Item not sold by this merchant");
         }
 
-        const availableStock = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0)));
+        const availableStock = Math.max(0, Math.floor(Number(stockMap[itemStockKey] ?? stockMap[itemId] ?? 0)));
         if (availableStock <= 0) {
           throw new Error("Selected item is out of stock");
         }
@@ -2152,14 +2246,14 @@ export class ActionExecutorService {
 
         if (item.occupiesSpace) {
           const occupiedSlots = this.getOccupiedItemSlots(normalizedItems);
-          const capacity = this.getItemCapacity(player);
+          const capacity = this.getEffectiveItemCapacity(player);
           if (occupiedSlots >= capacity) {
             throw new Error("Not enough item inventory space");
           }
         }
 
         const nextItems = [...normalizedItems, this.createInventoryItemEntry(itemId)];
-        stockMap[itemId] = availableStock - 1;
+        stockMap[itemStockKey] = availableStock - 1;
         outcomeCoinsDelta = -purchaseValue;
         outcomeTurnEnded = true;
 
@@ -2220,7 +2314,7 @@ export class ActionExecutorService {
 
       const gainedCoins = this.itemCatalogService.getSellValue(item);
       const nextItems = normalizedItems.filter((_entry, index) => index !== sellItemIndex);
-      stockMap[itemId] = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0))) + 1;
+      stockMap[itemStockKey] = Math.max(0, Math.floor(Number(stockMap[itemStockKey] ?? stockMap[itemId] ?? 0))) + 1;
       outcomeCoinsDelta = gainedCoins;
       outcomeTurnEnded = false;
 
@@ -3079,7 +3173,11 @@ export class ActionExecutorService {
       stockConfigUrl: payload.stockConfigUrl,
     });
 
-    const buyQuantitiesByItemId = new Map<string, number>();
+    const buyQuantitiesByStockKey = new Map<string, {
+      kind: "item" | "ally";
+      tradableId: string;
+      quantity: number;
+    }>();
     const sellQuantitiesByItemId = new Map<string, number>();
     operations.forEach((operation, index) => {
       if (!operation || typeof operation !== "object") {
@@ -3097,7 +3195,21 @@ export class ActionExecutorService {
       }
 
       if (operation.operation === "buy") {
-        buyQuantitiesByItemId.set(itemId, (buyQuantitiesByItemId.get(itemId) ?? 0) + quantity);
+        const kind: "item" | "ally" = operation.kind === "ally" ? "ally" : "item";
+        const stockKey = this.buildMerchantStockKey(kind, itemId);
+        const current = buyQuantitiesByStockKey.get(stockKey);
+        if (current) {
+          buyQuantitiesByStockKey.set(stockKey, {
+            ...current,
+            quantity: current.quantity + quantity,
+          });
+        } else {
+          buyQuantitiesByStockKey.set(stockKey, {
+            kind,
+            tradableId: itemId,
+            quantity,
+          });
+        }
         return;
       }
 
@@ -3109,7 +3221,7 @@ export class ActionExecutorService {
       throw new Error(`Invalid merchant cart operation for item '${itemId}'`);
     });
 
-    if (buyQuantitiesByItemId.size === 0 && sellQuantitiesByItemId.size === 0) {
+    if (buyQuantitiesByStockKey.size === 0 && sellQuantitiesByItemId.size === 0) {
       throw new Error("Merchant cart is empty");
     }
 
@@ -3143,7 +3255,7 @@ export class ActionExecutorService {
 
       const player = playerSnap.data() as Player;
       const worldTurn = worldState.currentTurn ?? 0;
-      if (buyQuantitiesByItemId.size > 0) {
+      if (buyQuantitiesByStockKey.size > 0) {
         this.ensureActionAvailable(player, payload.actionId, worldTurn, "You can only buy once per turn.");
       }
 
@@ -3169,6 +3281,12 @@ export class ActionExecutorService {
       }
 
       const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
+      const normalizedAllies = this.normalizeAllies(player.allies);
+      const activeOwnedAllies = new Set(
+        normalizedAllies
+          .filter((entry) => entry.state !== "discarded" && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0)
+          .map((entry) => entry.allyId),
+      );
       const ownedCountByItemId = normalizedItems.reduce<Record<string, number>>((acc, entry) => {
         acc[entry.itemId] = (acc[entry.itemId] ?? 0) + 1;
         return acc;
@@ -3203,13 +3321,15 @@ export class ActionExecutorService {
 
         const gainedCoinsPerUnit = this.itemCatalogService.getSellValue(item);
         const gainedCoinsTotal = gainedCoinsPerUnit * quantity;
+        const stockKey = this.buildMerchantStockKey("item", itemId);
 
         runningMoney += gainedCoinsTotal;
         ownedCountByItemId[itemId] = owned - quantity;
-        stockMap[itemId] = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0))) + quantity;
+        stockMap[stockKey] = Math.max(0, Math.floor(Number(stockMap[stockKey] ?? 0))) + quantity;
 
         lineOutcomes.push({
           operation: "sell",
+          kind: "item",
           itemId,
           itemName: item.name,
           quantity,
@@ -3218,46 +3338,77 @@ export class ActionExecutorService {
         });
       });
 
-      buyQuantitiesByItemId.forEach((quantity, itemId) => {
-        const stockEntry = this.merchantTradeOffersService.getStockEntry(stockEntries, itemId);
+      buyQuantitiesByStockKey.forEach((buyLine, stockKey) => {
+        const { kind, tradableId: itemId, quantity } = buyLine;
+        const stockEntry = this.merchantTradeOffersService.getStockEntry(stockEntries, kind, itemId);
         if (!stockEntry) {
-          throw new Error("Item not sold by this merchant");
+          throw new Error("Selected offer is not sold by this merchant");
         }
 
-        const item = this.itemCatalogService.getCachedItemById(itemId);
-        if (!item) {
-          throw new Error("Item definition not found");
-        }
-
-        const availableStock = Math.max(0, Math.floor(Number(stockMap[itemId] ?? 0)));
+        const availableStock = Math.max(0, Math.floor(Number(stockMap[stockKey] ?? 0)));
         if (availableStock < quantity) {
-          throw new Error("Selected item is out of stock");
+          throw new Error("Selected offer is out of stock");
         }
 
-        const allowedAlignments = item.constraints?.allowedAlignments;
-        if (Array.isArray(allowedAlignments) && allowedAlignments.length > 0) {
-          const effectiveAlignment = player.alignment ?? "neutral";
-          if (!allowedAlignments.includes(effectiveAlignment)) {
-            throw new Error("Your alignment does not allow this item");
+        if (kind === "ally" && activeOwnedAllies.has(itemId)) {
+          throw new Error("You already have this ally");
+        }
+
+        if (kind === "ally" && quantity > 1) {
+          throw new Error("Allies are unique and can only be bought once");
+        }
+
+        let purchaseValuePerUnit = 0;
+        let itemName = itemId;
+
+        if (kind === "item") {
+          const item = this.itemCatalogService.getCachedItemById(itemId);
+          if (!item) {
+            throw new Error("Item definition not found");
           }
+
+          itemName = item.name;
+          const allowedAlignments = item.constraints?.allowedAlignments;
+          if (Array.isArray(allowedAlignments) && allowedAlignments.length > 0) {
+            const effectiveAlignment = player.alignment ?? "neutral";
+            if (!allowedAlignments.includes(effectiveAlignment)) {
+              throw new Error("Your alignment does not allow this item");
+            }
+          }
+
+          purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
+            ? Math.max(0, Math.floor(stockEntry.purchaseValue))
+            : Math.max(0, Math.floor(item.purchaseValue));
+        } else {
+          const ally = this.allyCatalogService.getCachedAllyById(itemId);
+          if (!ally) {
+            throw new Error("Ally definition not found");
+          }
+
+          itemName = ally.name;
+          purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
+            ? Math.max(0, Math.floor(stockEntry.purchaseValue))
+            : 0;
         }
 
-        const purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
-          ? Math.max(0, Math.floor(stockEntry.purchaseValue))
-          : Math.max(0, Math.floor(item.purchaseValue));
         const purchaseValueTotal = purchaseValuePerUnit * quantity;
         if (runningMoney < purchaseValueTotal) {
           throw new Error("Not enough coins to buy selected cart items");
         }
 
         runningMoney -= purchaseValueTotal;
-        stockMap[itemId] = availableStock - quantity;
-        ownedCountByItemId[itemId] = Math.max(0, Math.floor(Number(ownedCountByItemId[itemId] ?? 0))) + quantity;
+        stockMap[stockKey] = availableStock - quantity;
+        if (kind === "item") {
+          ownedCountByItemId[itemId] = Math.max(0, Math.floor(Number(ownedCountByItemId[itemId] ?? 0))) + quantity;
+        } else {
+          activeOwnedAllies.add(itemId);
+        }
 
         lineOutcomes.push({
           operation: "buy",
+          kind,
           itemId,
-          itemName: item.name,
+          itemName,
           quantity,
           unitCoinsDelta: -purchaseValuePerUnit,
           totalCoinsDelta: -purchaseValueTotal,
@@ -3265,6 +3416,7 @@ export class ActionExecutorService {
       });
 
       const itemCapacity = this.getItemCapacity(player);
+      const effectiveItemCapacity = this.getEffectiveItemCapacity(player);
       let occupiedSlots = this.getOccupiedItemSlots(normalizedItems);
 
       sellQuantitiesByItemId.forEach((quantity, itemId) => {
@@ -3273,17 +3425,19 @@ export class ActionExecutorService {
         occupiedSlots = Math.max(0, occupiedSlots - quantity);
       });
 
-      buyQuantitiesByItemId.forEach((quantity, itemId) => {
+      buyQuantitiesByStockKey.forEach(({ kind, tradableId: itemId, quantity }) => {
+        if (kind !== "item") return;
         const item = this.itemCatalogService.getCachedItemById(itemId);
         if (!item || !item.occupiesSpace) return;
         occupiedSlots += quantity;
       });
 
-      if (occupiedSlots > itemCapacity) {
+      if (occupiedSlots > effectiveItemCapacity) {
         throw new Error("Not enough item inventory space");
       }
 
       const nextItems = [...normalizedItems];
+      const nextAllies = [...normalizedAllies];
       sellQuantitiesByItemId.forEach((quantity, itemId) => {
         let toRemove = quantity;
         while (toRemove > 0) {
@@ -3297,13 +3451,29 @@ export class ActionExecutorService {
         }
       });
 
-      buyQuantitiesByItemId.forEach((quantity, itemId) => {
+      buyQuantitiesByStockKey.forEach(({ kind, tradableId: itemId, quantity }) => {
+        if (kind === "item") {
+          for (let i = 0; i < quantity; i += 1) {
+            nextItems.push(this.createInventoryItemEntry(itemId));
+          }
+          return;
+        }
+
+        const ally = this.allyCatalogService.getCachedAllyById(itemId);
+        if (!ally) {
+          throw new Error("Ally definition not found");
+        }
+
         for (let i = 0; i < quantity; i += 1) {
-          nextItems.push(this.createInventoryItemEntry(itemId));
+          nextAllies.push({
+            allyId: ally.id,
+            hpCurrent: Math.max(1, Math.floor(Number(ally.maxHp ?? 1))),
+            state: "active",
+          });
         }
       });
 
-      turnEnded = buyQuantitiesByItemId.size > 0;
+      turnEnded = buyQuantitiesByStockKey.size > 0;
       if (turnEnded) {
         const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
         const nextWorldState: WorldState = {
@@ -3327,6 +3497,7 @@ export class ActionExecutorService {
             resourceCapacity: this.getResourceCapacity(player),
             itemCapacity,
           },
+          allies: nextAllies,
           statuses: nextStatuses,
           actionsUsedThisTurn: this.markActionUsed(player, payload.actionId, worldTurn),
         }, { merge: true });
@@ -3341,6 +3512,7 @@ export class ActionExecutorService {
             resourceCapacity: this.getResourceCapacity(player),
             itemCapacity,
           },
+          allies: nextAllies,
         }, { merge: true });
       }
 
@@ -3359,6 +3531,7 @@ export class ActionExecutorService {
         await this.tryCreateLog(gameId, actor, "player.merchantBuy", {
           actionId: payload.actionId,
           merchantId,
+          kind: line.kind,
           itemId: line.itemId,
           itemName: line.itemName,
           quantity: line.quantity,
@@ -3371,6 +3544,7 @@ export class ActionExecutorService {
       await this.tryCreateLog(gameId, actor, "player.merchantSell", {
         actionId: payload.actionId,
         merchantId,
+        kind: line.kind,
         itemId: line.itemId,
         itemName: line.itemName,
         quantity: line.quantity,
@@ -3753,6 +3927,39 @@ export class ActionExecutorService {
     return DEFAULT_ITEM_INVENTORY_CAPACITY;
   }
 
+  private getEffectiveItemCapacity(player: Player): number {
+    return this.getItemCapacity(player) + this.getAlliesItemCapacityBonus(player.allies);
+  }
+
+  private getAlliesItemCapacityBonus(rawAllies: unknown): number {
+    const allies = this.normalizeAllies(rawAllies);
+    return allies.reduce((total, allyEntry) => {
+      if (allyEntry.state === "discarded") {
+        return total;
+      }
+
+      if (Math.max(0, Math.floor(Number(allyEntry.hpCurrent ?? 0))) <= 0) {
+        return total;
+      }
+
+      const ally = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+      if (!ally) {
+        return total;
+      }
+
+      const itemCapacityBonus = Number(ally.itemCapacityBonus ?? 0);
+      if (!Number.isFinite(itemCapacityBonus)) {
+        return total;
+      }
+
+      return total + Math.max(0, Math.floor(itemCapacityBonus));
+    }, 0);
+  }
+
+  private buildMerchantStockKey(kind: "item" | "ally", tradableId: string): string {
+    return `${kind}:${tradableId}`;
+  }
+
   private getOccupiedItemSlots(items: InventoryItemEntry[]): number {
     return items.reduce((count, entry) => {
       const item = this.itemCatalogService.getCachedItemById(entry.itemId);
@@ -3794,6 +4001,60 @@ export class ActionExecutorService {
     });
 
     return items;
+  }
+
+  private normalizeAllies(rawAllies: unknown): PlayerAllyEntry[] {
+    if (!Array.isArray(rawAllies)) {
+      return [];
+    }
+
+    const allies: PlayerAllyEntry[] = [];
+    rawAllies.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const allyId = (entry as { allyId?: unknown }).allyId;
+      if (typeof allyId !== "string" || !allyId.trim()) {
+        return;
+      }
+
+      const rawHpCurrent = Number((entry as { hpCurrent?: unknown }).hpCurrent);
+      const hpCurrent = Number.isFinite(rawHpCurrent)
+        ? Math.max(0, Math.floor(rawHpCurrent))
+        : 0;
+
+      const rawState = (entry as { state?: unknown }).state;
+      const state = rawState === "discarded" ? "discarded" : "active";
+
+      allies.push({
+        allyId: allyId.trim(),
+        hpCurrent,
+        state,
+      });
+    });
+
+    return allies;
+  }
+
+  private hasActiveAllyWithAction(rawAllies: unknown, actionId: string): boolean {
+    const allies = this.normalizeAllies(rawAllies);
+    return allies.some((entry) => {
+      if (entry.state === "discarded") {
+        return false;
+      }
+
+      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) {
+        return false;
+      }
+
+      const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
+      if (!ally || !Array.isArray(ally.actions)) {
+        return false;
+      }
+
+      return ally.actions.includes(actionId);
+    });
   }
 
   private createInventoryItemEntry(itemId: string): InventoryItemEntry {

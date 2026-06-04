@@ -4,6 +4,7 @@ import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getBiomeResourcesMap } from "../consts/biome-resources";
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { DEFAULT_ITEM_INVENTORY_CAPACITY } from "../consts/inventory-config";
+import { PlayerAllyEntry } from "../models/Ally";
 import { BiomeType, MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
 import { Player } from "../models/Player";
@@ -14,6 +15,7 @@ import { EventLog } from "../models/EventLog";
 import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
 import { EventLogService } from "./event-log-service";
 import { ActionCatalogService } from "./action-catalog-service";
+import { AllyCatalogService } from "./ally-catalog-service";
 import { FirebaseService } from "./firebase-service";
 import { LandmarksConfigService } from "./landmarks-config-service";
 import { TilesConfigService } from "./tiles-config-service";
@@ -117,6 +119,7 @@ export class MapPageStateService {
     private tilesConfigService: TilesConfigService,
     private landmarksConfigService: LandmarksConfigService,
     private actionCatalogService: ActionCatalogService,
+    private allyCatalogService: AllyCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private statusCatalogService: StatusCatalogService,
   ) { }
@@ -131,6 +134,7 @@ export class MapPageStateService {
     void this.loadBiomeResourcesConfig();
     void this.loadLandmarksConfig();
     void this.loadActionCatalog();
+    void this.loadAlliesCatalog();
     void this.loadBiomeConditionsCatalog();
     void this.loadStatusesCatalog();
 
@@ -190,6 +194,7 @@ export class MapPageStateService {
               resources: [],
               money: PLAYER_STARTING_MONEY,
             },
+            allies: this.normalizePlayerAllies(rawPlayer.allies),
             actionsUsedThisTurn: rawPlayer.actionsUsedThisTurn ?? {},
             statuses: Array.isArray(rawPlayer.statuses) ? rawPlayer.statuses : [],
           } as Player;
@@ -212,7 +217,8 @@ export class MapPageStateService {
               typeof rawPlayer.level !== "number" ||
               !rawPlayer.inventory ||
               typeof rawPlayer.inventory.money !== "number" ||
-              typeof rawPlayer.inventory.itemCapacity !== "number"
+              typeof rawPlayer.inventory.itemCapacity !== "number" ||
+              !Array.isArray(rawPlayer.allies)
             ) &&
             !this.inventoryBackfillRequested.has(rawPlayer.id)
           ) {
@@ -220,6 +226,7 @@ export class MapPageStateService {
             const legacyPlayerRef = doc(this.firebaseService.database, "games", gameId, "players", rawPlayer.id);
             void setDoc(legacyPlayerRef, {
               level: typeof rawPlayer.level === "number" ? rawPlayer.level : 1,
+              allies: this.normalizePlayerAllies(rawPlayer.allies),
               inventory: {
                 items: normalizedItems,
                 resources: rawPlayer.inventory?.resources ?? [],
@@ -299,6 +306,14 @@ export class MapPageStateService {
   private async loadActionCatalog(): Promise<void> {
     try {
       await this.actionCatalogService.loadConfig();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async loadAlliesCatalog(): Promise<void> {
+    try {
+      await this.allyCatalogService.loadConfig();
     } catch (error) {
       console.error(error);
     }
@@ -395,5 +410,54 @@ export class MapPageStateService {
     });
 
     return nextItems;
+  }
+
+  private normalizePlayerAllies(rawAllies: unknown): PlayerAllyEntry[] {
+    if (!Array.isArray(rawAllies)) {
+      return [];
+    }
+
+    const nextAllies: PlayerAllyEntry[] = [];
+    rawAllies.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const allyId = (entry as { allyId?: unknown }).allyId;
+      if (typeof allyId !== "string" || !allyId.trim()) {
+        return;
+      }
+
+      const rawHpCurrent = Number((entry as { hpCurrent?: unknown }).hpCurrent);
+      const hpCurrent = Number.isFinite(rawHpCurrent)
+        ? Math.max(0, Math.floor(rawHpCurrent))
+        : 0;
+
+      const rawState = (entry as { state?: unknown }).state;
+      const state = rawState === "discarded" ? "discarded" : "active";
+
+      const rawDiscardReason = (entry as { discardReason?: unknown }).discardReason;
+      const discardReason = rawDiscardReason === "dead"
+        || rawDiscardReason === "released"
+        || rawDiscardReason === "lost"
+        || rawDiscardReason === "stolen"
+        ? rawDiscardReason
+        : undefined;
+
+      const rawDiscardedAtTurn = Number((entry as { discardedAtTurn?: unknown }).discardedAtTurn);
+      const discardedAtTurn = Number.isFinite(rawDiscardedAtTurn)
+        ? Math.max(0, Math.floor(rawDiscardedAtTurn))
+        : undefined;
+
+      nextAllies.push({
+        allyId: allyId.trim(),
+        hpCurrent,
+        state,
+        ...(discardReason ? { discardReason } : {}),
+        ...(typeof discardedAtTurn === "number" ? { discardedAtTurn } : {}),
+      });
+    });
+
+    return nextAllies;
   }
 }

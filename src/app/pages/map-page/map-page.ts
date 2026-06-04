@@ -33,6 +33,7 @@ import { WorldEventRegionTransitionService } from "../../services/world-event-re
 import { BiomeConditionCatalogService } from "../../services/biome-condition-catalog-service";
 import { ItemCatalogService } from "../../services/item-catalog-service";
 import { AllyCatalogService } from "../../services/ally-catalog-service";
+import { DiscardPileService } from "../../services/discard-pile-service";
 
 @Component({
   selector: "app-map-page",
@@ -70,6 +71,7 @@ export class MapPage implements OnInit, OnDestroy {
   private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
   private itemCatalogService = inject(ItemCatalogService);
   private allyCatalogService = inject(AllyCatalogService);
+  private discardPileService = inject(DiscardPileService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -248,6 +250,15 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     return "Active player in";
+  });
+
+  public discardPileCount = computed<number>(() => {
+    const rawCount = Number(this.worldState()?.nextDiscardSeq ?? 0);
+    if (!Number.isFinite(rawCount)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor(rawCount));
   });
 
   public visibleInventoryItems = computed<Array<{
@@ -481,6 +492,16 @@ export class MapPage implements OnInit, OnDestroy {
       biomeResourcesByBiome: this.biomeResourcesByBiome(),
       sanctuaryStylesByElement: this.sanctuaryStylesByElement(),
     });
+  }
+
+  public async openDiscardPileDialog(): Promise<void> {
+    try {
+      const entries = await this.discardPileService.getDiscardPileEntries(this.gameId);
+      this.mapPageInteractionService.openDiscardPileDialog(entries);
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Unable to open discard pile");
+    }
   }
 
   public onInspectionCellChanged(cell: MapGridPanelCell | null): void {

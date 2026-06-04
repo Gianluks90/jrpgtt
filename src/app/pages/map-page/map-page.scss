@@ -226,8 +226,33 @@
     }
 
     .active-cell-block {
-        top: calc(100% + 36px);
+        position: static;
+        left: auto;
+        top: auto;
+        transform: none;
         max-width: min(90vw, 680px);
+    }
+
+    .map-bottom-hud-row {
+        position: absolute;
+        top: calc(100% + 36px);
+        left: 50%;
+        transform: translateX(-50%);
+        display: inline-flex;
+        align-items: stretch;
+        gap: 8px;
+        max-width: min(94vw, 920px);
+    }
+
+    .discard-pile-block {
+        position: static;
+        left: auto;
+        transform: none;
+        max-width: min(90vw, 260px);
+    }
+
+    .discard-pile-content {
+        border-right: 0;
     }
 
     .active-cell-content {
@@ -548,6 +573,19 @@
     @media (max-width: 1220px) {
         .map-stage {
             grid-template-columns: 240px minmax(0, 1fr) 240px;
+        }
+
+        .map-bottom-hud-row {
+            flex-direction: column;
+            width: min(92vw, 540px);
+            max-width: min(92vw, 540px);
+            gap: 6px;
+        }
+
+        .active-cell-block,
+        .discard-pile-block {
+            max-width: 100%;
+            width: 100%;
         }
     }
 

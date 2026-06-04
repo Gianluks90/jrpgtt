@@ -12,8 +12,9 @@ In questo file raccolgo le idee per gli alleati da inserire nel gioco.
 - **Famiglio**: Spirito. Buono. HP 2. Magia +2 (sempre). Solo personaggi Buoni.
 
 #### Negativi
-- **Poltergeist**: Spirito. Malvagio. HP 1. Riduce i parametri di 1 punto. Azioni: "Caccialo via", solo in bioma Acqua, rimuove l'alleato e ottieni 1 exp.
-- **Banshee**: Spirito. Malvagio. HP 1. Ogni volta che ottieni exp subisci un equal danno agli HP. Azioni: "Caccialo via", solo in bioma Rovine, rimuove l'alleato e ottieni 1 exp.
+- **Poltergeist**: Spirito. Malvagio. HP 1. Riduce i parametri di 1 punto. Azioni: "Caccialo via", solo in bioma Acqua, rimuove l'alleato e ottieni 1 exp. Non subisce danni ambientali.
+- **Banshee**: Spirito. Malvagio. HP 1. Ogni volta che ottieni exp subisci un equal danno agli HP. Azioni: "Caccialo via", solo in bioma Rovine, rimuove l'alleato e ottieni 1 exp. Non subisce danni ambientali.
 
 ###### Note finali
 - Ciascun Alleato può sempre essere sacrificato all'Altare se non diversamente specificato.
+- Fine turno su bioma: gli alleati attivi subiscono in Deserto e recuperano in Acqua il 5% dei loro HP massimi (minimo 1 HP). Se arrivano a 0 HP vengono scartati come "dead".

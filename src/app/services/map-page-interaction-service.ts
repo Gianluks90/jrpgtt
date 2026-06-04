@@ -77,6 +77,8 @@ import {
 import { WorldEventRegionTransitionService } from "./world-event-region-transition-service";
 import { LocationInfoDialog } from "../components/dialogs/location-info-dialog/location-info-dialog";
 import { SanctuaryTilesConfigEntry, TilesConfig } from "../models/TilesConfig";
+import { DiscardPileDialog } from "../components/dialogs/discard-pile-dialog/discard-pile-dialog";
+import { DiscardPileEntry } from "../models/DiscardPile";
 
 interface HandleCommandActionInput {
   actionId: string;
@@ -152,6 +154,15 @@ export class MapPageInteractionService {
         environmentByCellId: input.environmentByCellId,
         biomeResourcesByBiome: input.biomeResourcesByBiome,
         sanctuaryStylesByElement: input.sanctuaryStylesByElement,
+      },
+    }).closed.pipe(take(1)).subscribe();
+  }
+
+  public openDiscardPileDialog(entries: DiscardPileEntry[]): void {
+    this.dialog.open(DiscardPileDialog, {
+      ...DIALOGS_CONFIG,
+      data: {
+        entries,
       },
     }).closed.pipe(take(1)).subscribe();
   }

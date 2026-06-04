@@ -193,6 +193,18 @@ export class EventLogService {
             const environmentSize = Number(args["environmentSize"] ?? 1);
             return `${playerName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
         },
+        "player.allyHostileEnvironmentDamage": ({ playerName, args }) => {
+            const allyName = String(args["allyName"] ?? args["allyId"] ?? "ally");
+            const damageHp = Number(args["damageHp"] ?? 0);
+            const environmentSize = Number(args["environmentSize"] ?? 1);
+            return `${playerName}'s ally ${allyName} suffered ${damageHp} HP from hostile desert (environment size ${environmentSize}).`;
+        },
+        "player.allyRegeneratingWatersHealing": ({ playerName, args }) => {
+            const allyName = String(args["allyName"] ?? args["allyId"] ?? "ally");
+            const healingHp = Number(args["healingHp"] ?? 0);
+            const environmentSize = Number(args["environmentSize"] ?? 1);
+            return `${playerName}'s ally ${allyName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
+        },
         "player.discardResource": ({ playerName, args }) => {
             const resource = String(args["resource"] ?? "resource");
             return `${playerName} discarded 1 ${resource}.`;

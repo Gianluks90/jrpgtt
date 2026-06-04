@@ -59,18 +59,33 @@
                     ></app-map-grid-panel>
                     <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
 
-                    <section class="map-inline-hud active-cell-block">
-                        <div class="map-inline-hud-content active-cell-content">
-                            <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
-                            <p class="active-cell-name">{{ locationInfoCellName() }}</p>
-                        </div>
-                        <icon-button
-                            class="map-inline-hud-tail active-cell-info-button"
-                            iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                            ariaLabel="Open location info"
-                            (clicked)="openLocationInfoDialog()"
-                        ></icon-button>
-                    </section>
+                    <div class="map-bottom-hud-row">
+                        <section class="map-inline-hud active-cell-block">
+                            <div class="map-inline-hud-content active-cell-content">
+                                <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
+                                <p class="active-cell-name">{{ locationInfoCellName() }}</p>
+                            </div>
+                            <icon-button
+                                class="map-inline-hud-tail active-cell-info-button"
+                                iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                                ariaLabel="Open location info"
+                                (clicked)="openLocationInfoDialog()"
+                            ></icon-button>
+                        </section>
+
+                        <section class="map-inline-hud discard-pile-block">
+                            <div class="map-inline-hud-content discard-pile-content">
+                                <p class="active-cell-context">Discard pile</p>
+                                <p class="active-cell-name">{{ discardPileCount() }}</p>
+                            </div>
+                            <icon-button
+                                class="map-inline-hud-tail active-cell-info-button"
+                                iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                                ariaLabel="Open discard pile"
+                                (clicked)="openDiscardPileDialog()"
+                            ></icon-button>
+                        </section>
+                    </div>
                 </div>
             </div>
 

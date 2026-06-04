@@ -45,6 +45,7 @@ export interface WorldState {
     skippedTurnsByPlayer?: Record<string, number>;
     pendingTeleportsByPlayer?: Record<string, PendingTeleportState>;
     allyMovementBonusByPlayer?: Record<string, AllyMovementBonusState>;
+    nextDiscardSeq?: number;
     sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;
     landmarkTargets?: LandmarkTarget[];
 }

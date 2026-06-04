@@ -1,0 +1,28 @@
+<dialog-wrapper [title]="dialogTitle">
+  <div class="discard-list">
+    @if (entries.length === 0) {
+      <p class="discard-empty">No discarded entities yet.</p>
+    } @else {
+      @for (entry of entries; track entry.id) {
+        <article class="discard-card" [class.discard-card-ally]="entry.card.kind === 'ally'" [class.discard-card-item]="entry.card.kind === 'item'">
+          <div class="discard-title-row">
+            <p class="discard-title">{{ resolveCardTitle(entry) }}</p>
+            <span class="discard-seq">#{{ entry.discardSeq }}</span>
+          </div>
+          <span class="discard-divider"></span>
+
+          <div class="discard-card-head">
+            <span class="discard-kind-pill">{{ resolveKindLabel(entry) }}</span>
+            @if (resolveReason(entry); as reason) {
+              <span class="discard-kind-pill discard-kind-pill-bad">{{ reason }}</span>
+            }
+          </div>
+
+          <p class="discard-meta">{{ resolveMetaText(entry) }}</p>
+        </article>
+      }
+    }
+  </div>
+
+  <text-button dialog-action text="Close" (clicked)="close()"></text-button>
+</dialog-wrapper>

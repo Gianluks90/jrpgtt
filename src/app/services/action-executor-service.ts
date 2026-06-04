@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
+import { collection, doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { GameMap } from "../models/GameMap";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
@@ -30,6 +30,7 @@ import { MerchantTradeOffersService } from "./merchant-trade-offers-service";
 import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
 import { StatusCatalogService } from "./status-catalog-service";
 import { ItemEffectCatalogService } from "./item-effect-catalog-service";
+import { DiscardPileEntry } from "../models/DiscardPile";
 
 export interface CapitalEnchantressOutcome {
   rewardId: string;
@@ -88,6 +89,7 @@ export class ActionExecutorService {
   private readonly sanctuaryDonationCost = 5;
   private readonly capitalEnchantressCost = 5;
   private readonly cityMysticCost = 5;
+  private readonly allyBiomeHpPercentDelta = 0.05;
   private readonly poisonStatusKey = "poison";
   private readonly regenStatusKey = "regen";
   private readonly minifiedStatusKey = "minified";
@@ -124,6 +126,7 @@ export class ActionExecutorService {
       this.tilesConfigService.loadConfig(),
       this.biomeConditionCatalogService.loadConfig(),
       this.statusCatalogService.loadConfig(),
+      this.allyCatalogService.loadConfig(),
       this.itemCatalogService.loadConfig(),
       this.itemEffectCatalogService.loadConfig(),
     ]);
@@ -182,11 +185,14 @@ export class ActionExecutorService {
       const mapCellSnap = await transaction.get(mapCellRef);
       const currentCell = mapCellSnap.exists() ? (mapCellSnap.data() as MapCell) : null;
       const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
+      const normalizedAllies = this.normalizeAllies(player.allies);
+      let nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
+      const pendingDiscardEntries: Array<Omit<DiscardPileEntry, "id" | "discardSeq" | "discardedAt">> = [];
       const itemTurnEffects = this.applyConfiguredItemTurnEffects(
         normalizedItems,
         currentCell && currentCell.isSpecial !== true ? currentCell.biome : null,
       );
-      const nextInventoryItems = itemTurnEffects.items;
+      let nextInventoryItems = itemTurnEffects.items;
       endTurnItemLogs = [...itemTurnEffects.logs];
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
@@ -276,6 +282,65 @@ export class ActionExecutorService {
                   environmentSize: connectedEnvironmentSize,
                 },
               });
+
+              nextAllies = nextAllies.map((allyEntry) => {
+                if (allyEntry.state === "discarded") {
+                  return allyEntry;
+                }
+
+                const allyHpCurrent = Math.max(0, Math.floor(Number(allyEntry.hpCurrent ?? 0)));
+                if (allyHpCurrent <= 0) {
+                  return allyEntry;
+                }
+
+                const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+                const allyMaxHp = Math.max(1, Math.floor(Number(allyDefinition?.maxHp ?? allyHpCurrent ?? 1)));
+                const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.allyBiomeHpPercentDelta));
+                const nextAllyHpCurrent = Math.max(0, allyHpCurrent - allyDeltaHp);
+                const allyDamageHp = Math.max(0, allyHpCurrent - nextAllyHpCurrent);
+                if (allyDamageHp <= 0) {
+                  return allyEntry;
+                }
+
+                biomeConditionLogs.push({
+                  code: "player.allyHostileEnvironmentDamage",
+                  args: {
+                    biome: currentCell.biome,
+                    conditionId,
+                    allyId: allyEntry.allyId,
+                    allyName: allyDefinition?.name ?? allyEntry.allyId,
+                    damageHp: allyDamageHp,
+                    environmentSize: connectedEnvironmentSize,
+                  },
+                });
+
+                if (nextAllyHpCurrent <= 0) {
+                  pendingDiscardEntries.push({
+                    card: {
+                      kind: "ally",
+                      cardId: allyEntry.allyId,
+                      name: allyDefinition?.name,
+                    },
+                    source: "world",
+                    ownerPlayerId: actor.id,
+                    turn: Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0))),
+                    reason: "dead",
+                  });
+
+                  return {
+                    ...allyEntry,
+                    hpCurrent: 0,
+                    state: "discarded",
+                    discardReason: "dead",
+                    discardedAtTurn: worldState.currentTurn,
+                  };
+                }
+
+                return {
+                  ...allyEntry,
+                  hpCurrent: nextAllyHpCurrent,
+                };
+              });
               continue;
             }
 
@@ -295,13 +360,119 @@ export class ActionExecutorService {
                 environmentSize: connectedEnvironmentSize,
               },
             });
+
+            nextAllies = nextAllies.map((allyEntry) => {
+              if (allyEntry.state === "discarded") {
+                return allyEntry;
+              }
+
+              const allyHpCurrent = Math.max(0, Math.floor(Number(allyEntry.hpCurrent ?? 0)));
+              if (allyHpCurrent <= 0) {
+                return allyEntry;
+              }
+
+              const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+              const allyMaxHp = Math.max(1, Math.floor(Number(allyDefinition?.maxHp ?? allyHpCurrent ?? 1)));
+              const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.allyBiomeHpPercentDelta));
+              const nextAllyHpCurrent = Math.min(allyMaxHp, allyHpCurrent + allyDeltaHp);
+              const allyHealingHp = Math.max(0, nextAllyHpCurrent - allyHpCurrent);
+              if (allyHealingHp <= 0) {
+                return allyEntry;
+              }
+
+              biomeConditionLogs.push({
+                code: "player.allyRegeneratingWatersHealing",
+                args: {
+                  biome: currentCell.biome,
+                  conditionId,
+                  allyId: allyEntry.allyId,
+                  allyName: allyDefinition?.name ?? allyEntry.allyId,
+                  healingHp: allyHealingHp,
+                  environmentSize: connectedEnvironmentSize,
+                },
+              });
+
+              return {
+                ...allyEntry,
+                hpCurrent: nextAllyHpCurrent,
+              };
+            });
           }
+        }
+      }
+
+      const activeAlliesById = new Set(
+        normalizedAllies
+          .filter((entry) => entry.state !== "discarded" && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0)
+          .map((entry) => entry.allyId),
+      );
+      const alliesJustDiscardedAsDead = new Set(
+        nextAllies
+          .filter((entry) => {
+            if (entry.state !== "discarded" || entry.discardReason !== "dead") {
+              return false;
+            }
+
+            return activeAlliesById.has(entry.allyId);
+          })
+          .map((entry) => entry.allyId),
+      );
+
+      const hasLostCapacityAlly = Array.from(alliesJustDiscardedAsDead).some((allyId) => {
+        const allyDefinition = this.allyCatalogService.getCachedAllyById(allyId);
+        const itemCapacityBonus = Number(allyDefinition?.itemCapacityBonus ?? 0);
+        return Number.isFinite(itemCapacityBonus) && Math.max(0, Math.floor(itemCapacityBonus)) > 0;
+      });
+
+      if (hasLostCapacityAlly) {
+        const baseItemCapacity = this.getItemCapacity(player);
+        if (nextInventoryItems.length > baseItemCapacity) {
+          const overflowItems = nextInventoryItems.slice(baseItemCapacity);
+          nextInventoryItems = nextInventoryItems.slice(0, baseItemCapacity);
+          const overflowBatchId = `capacity-overflow:${actor.id}:${Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)))}`;
+
+          overflowItems.forEach((entry) => {
+            const itemDefinition = this.itemCatalogService.getCachedItemById(entry.itemId);
+            pendingDiscardEntries.push({
+              card: {
+                kind: "item",
+                cardId: entry.itemId,
+                name: itemDefinition?.name,
+                payload: typeof entry.currentCharges === "number"
+                  ? { currentCharges: Math.max(0, Math.floor(entry.currentCharges)) }
+                  : undefined,
+              },
+              source: "player",
+              ownerPlayerId: actor.id,
+              turn: Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0))),
+              batchId: overflowBatchId,
+            });
+          });
+
+          endTurnItemLogs.push(`discarded ${overflowItems.length} item(s) for inventory overflow after ally loss.`);
         }
       }
 
       const nextWorldState: WorldState = {
         ...worldState,
       };
+
+      if (pendingDiscardEntries.length > 0) {
+        let nextDiscardSeq = Math.max(0, Math.floor(Number(worldState.nextDiscardSeq ?? 0)));
+        pendingDiscardEntries.forEach((entry) => {
+          nextDiscardSeq += 1;
+          const discardRef = doc(collection(worldStateRef, "discardPile"));
+          transaction.set(discardRef, {
+            ...entry,
+            id: discardRef.id,
+            discardSeq: nextDiscardSeq,
+            discardedAt: Timestamp.now(),
+          } as DiscardPileEntry);
+        });
+
+        nextWorldState.nextDiscardSeq = nextDiscardSeq;
+      }
+
       if (statusSnapshot.maxSkipTurns > 0) {
         this.playerTurnEffectsService.scheduleSkippedTurnsMax(nextWorldState, actor.id, statusSnapshot.maxSkipTurns);
       }
@@ -337,6 +508,10 @@ export class ActionExecutorService {
           ...(player.inventory ?? { items: [], resources: [], money: 0 }),
           items: nextInventoryItems,
         };
+      }
+
+      if (!this.areAlliesEquivalent(normalizedAllies, nextAllies)) {
+        nextPlayerPatch.allies = nextAllies;
       }
 
       if (Object.keys(nextPlayerPatch).length > 0) {
@@ -4203,6 +4378,42 @@ export class ActionExecutorService {
         : null;
 
       if (leftCharges !== rightCharges) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private areAlliesEquivalent(left: PlayerAllyEntry[], right: PlayerAllyEntry[]): boolean {
+    if (left.length !== right.length) {
+      return false;
+    }
+
+    for (let index = 0; index < left.length; index += 1) {
+      const leftEntry = left[index];
+      const rightEntry = right[index];
+      if (!leftEntry || !rightEntry) {
+        return false;
+      }
+
+      if (leftEntry.allyId !== rightEntry.allyId) {
+        return false;
+      }
+
+      if (Math.max(0, Math.floor(Number(leftEntry.hpCurrent ?? 0))) !== Math.max(0, Math.floor(Number(rightEntry.hpCurrent ?? 0)))) {
+        return false;
+      }
+
+      if ((leftEntry.state === "discarded") !== (rightEntry.state === "discarded")) {
+        return false;
+      }
+
+      if ((leftEntry.discardReason ?? null) !== (rightEntry.discardReason ?? null)) {
+        return false;
+      }
+
+      if ((leftEntry.discardedAtTurn ?? null) !== (rightEntry.discardedAtTurn ?? null)) {
         return false;
       }
     }

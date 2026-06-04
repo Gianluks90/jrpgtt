@@ -30,6 +30,8 @@ interface PlacementCoordinate {
   y: number;
 }
 
+type PlacementSpacingMode = "strict-gap" | "allow-diagonal-touch";
+
 @Injectable({
   providedIn: "root",
 })
@@ -68,7 +70,10 @@ export class LandmarksService {
         throw new Error(`Not enough free cells in quadrant ${quadrantId} to place landmarks`);
       }
 
-      const selectedCoordinates = this.shuffleArray(availableCoordinates).slice(0, categoryOrder.length);
+      const selectedCoordinates = this.selectLandmarkCoordinatesForQuadrant(availableCoordinates, categoryOrder.length);
+      if (selectedCoordinates.length < categoryOrder.length) {
+        throw new Error(`Could not place spaced landmarks in quadrant ${quadrantId}`);
+      }
 
       categoryOrder.forEach((category, index) => {
         const coordinate = selectedCoordinates[index];
@@ -236,6 +241,7 @@ export class LandmarksService {
 
     for (let y = bounds.startY; y < bounds.startY + bounds.size; y++) {
       for (let x = bounds.startX; x < bounds.startX + bounds.size; x++) {
+        if (x === 0 || x === mapSize - 1) continue;
         const id = this.cellId(x, y);
         if (excluded.has(id)) continue;
         candidates.push({ x, y });
@@ -243,6 +249,76 @@ export class LandmarksService {
     }
 
     return candidates;
+  }
+
+  private selectLandmarkCoordinatesForQuadrant(
+    candidates: PlacementCoordinate[],
+    requiredCount: number,
+  ): PlacementCoordinate[] {
+    const strictSelection = this.trySelectSpacedCoordinates(candidates, requiredCount, "strict-gap");
+    if (strictSelection.length === requiredCount) {
+      return strictSelection;
+    }
+
+    return this.trySelectSpacedCoordinates(candidates, requiredCount, "allow-diagonal-touch");
+  }
+
+  private trySelectSpacedCoordinates(
+    candidates: PlacementCoordinate[],
+    requiredCount: number,
+    spacingMode: PlacementSpacingMode,
+  ): PlacementCoordinate[] {
+    const shuffled = this.shuffleArray(candidates);
+    return this.selectSpacedCoordinatesBacktracking(shuffled, requiredCount, spacingMode, []);
+  }
+
+  private selectSpacedCoordinatesBacktracking(
+    pool: PlacementCoordinate[],
+    requiredCount: number,
+    spacingMode: PlacementSpacingMode,
+    selected: PlacementCoordinate[],
+  ): PlacementCoordinate[] {
+    if (selected.length === requiredCount) {
+      return selected;
+    }
+
+    if (pool.length === 0) {
+      return [];
+    }
+
+    for (let index = 0; index < pool.length; index++) {
+      const candidate = pool[index];
+      const isCompatible = selected.every((placed) => {
+        return this.areCoordinatesCompatible(placed, candidate, spacingMode);
+      });
+      if (!isCompatible) continue;
+
+      const nextSelected = [...selected, candidate];
+      const nextPool = pool.slice(index + 1);
+      const result = this.selectSpacedCoordinatesBacktracking(nextPool, requiredCount, spacingMode, nextSelected);
+      if (result.length === requiredCount) {
+        return result;
+      }
+    }
+
+    return [];
+  }
+
+  private areCoordinatesCompatible(
+    first: PlacementCoordinate,
+    second: PlacementCoordinate,
+    spacingMode: PlacementSpacingMode,
+  ): boolean {
+    const deltaX = Math.abs(first.x - second.x);
+    const deltaY = Math.abs(first.y - second.y);
+    const chebyshevDistance = Math.max(deltaX, deltaY);
+    const manhattanDistance = deltaX + deltaY;
+
+    if (spacingMode === "strict-gap") {
+      return chebyshevDistance >= 2;
+    }
+
+    return manhattanDistance >= 2;
   }
 
   private buildDefinitionsByCategory(definitions: LandmarkDefinition[]): Record<string, LandmarkDefinition[]> {

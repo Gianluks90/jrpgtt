@@ -2,7 +2,7 @@
   "map": {
     "size": 10,
     "specialTilesCount": 4,
-    "spawnColumns": [0, 1],
+    "spawnColumns": [0],
     "spawnRule": {
       "allowedRegion": "first"
     },

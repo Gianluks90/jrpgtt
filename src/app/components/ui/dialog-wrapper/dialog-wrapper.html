@@ -6,6 +6,13 @@
         </div>
     </div>
     <div class="dialog-wrapper-content">
+        @if (luckResult() !== undefined) {
+            <app-luck-indicator
+                class="dialog-wrapper-luck-meter"
+                [result]="luckResult() ?? null"
+                [animateFirstResult]="luckAnimateFirstResult()"
+            ></app-luck-indicator>
+        }
         <ng-content></ng-content>
     </div>
     @if (!hideActions()) {

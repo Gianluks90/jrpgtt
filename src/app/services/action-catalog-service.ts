@@ -378,7 +378,11 @@ export class ActionCatalogService {
       || value === "safe-place-wait"
       || value === "safe-place-fast-travel"
       || value === "safe-place-camp-gatherer"
-      || value === "safe-place-camp-hunter";
+        || value === "safe-place-camp-hunter"
+        || value === "graveyard-resurrect"
+        || value === "temple-send-devotee"
+        || value === "altar-sacrifice"
+        || value === "ally-eliminate-zombie";
   }
 
   private isFlowTrigger(value: unknown): value is ActionFlowTrigger {

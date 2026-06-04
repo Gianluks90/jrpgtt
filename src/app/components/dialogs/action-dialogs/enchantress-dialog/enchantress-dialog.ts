@@ -1,6 +1,7 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { ChangeDetectorRef, Component, Inject } from "@angular/core";
 import { EnchantressRewardDialogRow } from "../../../../models/EnchantressRewardsConfig";
+import { LuckCheckResult } from "../../../../models/LuckCheckResult";
 import { CapitalEnchantressOutcome } from "../../../../services/action-executor-service";
 import { DialogResponse } from "../../../../models/DialogResponse";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
@@ -20,9 +21,6 @@ export interface EnchantressDialogData {
   styleUrl: "./enchantress-dialog.scss",
 })
 export class EnchantressDialog {
-  private static readonly rollDurationMs = 700;
-  private static readonly rollStepMs = 55;
-
   public readonly title = "Capital Enchantress";
   public readonly playerMoney: number;
   public readonly requiredCost: number;
@@ -32,9 +30,8 @@ export class EnchantressDialog {
   public paid = false;
   public errorMessage = "";
   public outcome: CapitalEnchantressOutcome | null = null;
-  public isRolling = false;
+  public luckMeterResult: LuckCheckResult | null = null;
   public revealedRewardId: string | null = null;
-  public displayLuckTotal: number | null = null;
   public triggerHighlightPulse = false;
   private payInFlight = false;
 
@@ -86,27 +83,22 @@ export class EnchantressDialog {
   private async executePayFlow(): Promise<void> {
     this.errorMessage = "";
     this.paying = true;
-    this.isRolling = true;
     this.triggerHighlightPulse = false;
     this.revealedRewardId = null;
-    this.displayLuckTotal = null;
+    this.luckMeterResult = null;
     try {
-      const [outcome] = await Promise.all([
-        this.onPay(),
-        this.runRollAnimation(),
-      ]);
+      const outcome = await this.onPay();
       this.outcome = outcome;
-      this.displayLuckTotal = outcome.clampedLuckTotal;
+      this.luckMeterResult = this.buildLuckMeterResult(outcome.clampedLuckTotal, outcome.rolledTotal);
       this.revealedRewardId = outcome.rewardId;
       this.triggerHighlightPulse = true;
       this.paid = true;
     } catch (error) {
       this.errorMessage = error instanceof Error ? error.message : "Error while consulting the enchantress.";
-      this.displayLuckTotal = null;
+      this.luckMeterResult = null;
       this.revealedRewardId = null;
       this.triggerHighlightPulse = false;
     } finally {
-      this.isRolling = false;
       this.paying = false;
       this.payInFlight = false;
       this.cdr.detectChanges();
@@ -129,23 +121,16 @@ export class EnchantressDialog {
     });
   }
 
-  private async runRollAnimation(): Promise<void> {
-    const startedAt = Date.now();
-    while ((Date.now() - startedAt) < EnchantressDialog.rollDurationMs) {
-      this.displayLuckTotal = this.randomInt(1, 100);
-      await this.delay(EnchantressDialog.rollStepMs);
-    }
-  }
-
-  private randomInt(min: number, max: number): number {
-    const normalizedMin = Math.ceil(min);
-    const normalizedMax = Math.floor(max);
-    return Math.floor(Math.random() * (normalizedMax - normalizedMin + 1)) + normalizedMin;
-  }
-
-  private async delay(ms: number): Promise<void> {
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, ms);
-    });
+  private buildLuckMeterResult(displayTotal: number, rolledTotal: number): LuckCheckResult {
+    const total = Math.max(1, Math.min(100, Math.floor(Number(displayTotal ?? 0))));
+    return {
+      checkId: `enchantress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      roll: Math.max(0, Math.floor(Number(rolledTotal ?? total))),
+      luckBonus: 0,
+      total,
+      threshold: 100,
+      success: total >= 100,
+      nearSuccess: total >= 90 && total < 100,
+    };
   }
 }

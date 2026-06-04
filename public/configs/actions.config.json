@@ -538,6 +538,102 @@
       "log": {
         "sourceLabel": "Camp Hunter"
       }
+    },
+    {
+      "id": "graveyard-resurrect",
+      "ui": {
+        "label": "Resurrect",
+        "descriptionTemplate": "Attempt to resurrect a dead ally from your discard pile through a luck check. Outcomes may be dangerous.",
+        "i18n": {
+          "labelKey": "actions.graveyardResurrect.label",
+          "descriptionKey": "actions.graveyardResurrect.description"
+        }
+      },
+      "flow": {
+        "handler": "graveyard-resurrect",
+        "errorMessage": "Error while attempting graveyard resurrection",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Graveyard"
+      }
+    },
+    {
+      "id": "temple-send-devotee",
+      "ui": {
+        "label": "Send devotee",
+        "descriptionTemplate": "Leave an eligible ally at the Temple. Your alignment becomes good, gain 2 XP, then end turn.",
+        "i18n": {
+          "labelKey": "actions.templeSendDevotee.label",
+          "descriptionKey": "actions.templeSendDevotee.description"
+        }
+      },
+      "flow": {
+        "handler": "temple-send-devotee",
+        "errorMessage": "Error while sending devotee at temple",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Temple"
+      }
+    },
+    {
+      "id": "altar-sacrifice",
+      "ui": {
+        "label": "Sacrifice",
+        "descriptionTemplate": "Sacrifice an eligible ally at the Altar. Your alignment becomes evil, gain 2 XP, then end turn.",
+        "i18n": {
+          "labelKey": "actions.altarSacrifice.label",
+          "descriptionKey": "actions.altarSacrifice.description"
+        }
+      },
+      "flow": {
+        "handler": "altar-sacrifice",
+        "errorMessage": "Error while performing altar sacrifice",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Altar"
+      }
+    },
+    {
+      "id": "eliminate-zombie",
+      "ui": {
+        "label": "Eliminate zombie",
+        "descriptionTemplate": "Destroy your zombie companion and end your turn.",
+        "i18n": {
+          "labelKey": "actions.eliminateZombie.label",
+          "descriptionKey": "actions.eliminateZombie.description"
+        }
+      },
+      "flow": {
+        "handler": "ally-eliminate-zombie",
+        "errorMessage": "Error while eliminating zombie",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Zombie"
+      }
     }
   ]
 }

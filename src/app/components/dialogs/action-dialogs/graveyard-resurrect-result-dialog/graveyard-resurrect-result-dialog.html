@@ -1,0 +1,20 @@
+<dialog-wrapper [title]="title" [luckResult]="luckMeterResult" [luckAnimateFirstResult]="true">
+    <p class="info-text">
+        Attempted resurrection for <strong>{{ selectedAllyLabel }}</strong>.
+    </p>
+
+    <div class="reward-table">
+        @for (row of rewardsTable; track row.id) {
+            <div class="reward-row" [class.reward-row--highlighted]="isHighlighted(row)">
+                <span class="reward-range">{{ row.rangeLabel }}</span>
+                <span class="reward-effect">{{ row.effectLabel }}</span>
+            </div>
+        }
+    </div>
+
+    <p class="result-text">
+        Result: <strong>{{ rewardLabel }}</strong>
+    </p>
+
+    <text-button dialog-action text="Continue" (clicked)="continue()"></text-button>
+</dialog-wrapper>

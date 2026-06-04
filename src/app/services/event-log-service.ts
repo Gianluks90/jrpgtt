@@ -158,6 +158,27 @@ export class EventLogService {
             const suffix = extras.length > 0 ? ` (${extras.join(", ")})` : "";
             return `${playerName} consulted ${source}, paid ${spentCoins} coins and drew ${rewardLabel}${suffix}.`;
         },
+        "player.graveyardResurrect": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("graveyard-resurrect", "Graveyard");
+            const allyId = String(args["allyId"] ?? "ally");
+            const rewardId = String(args["rewardId"] ?? "unknown");
+            const appliedOutcome = String(args["appliedOutcome"] ?? rewardId);
+            return `${playerName} attempted resurrection at ${source} for ${allyId}. Outcome: ${appliedOutcome}.`;
+        },
+        "player.templeSendDevotee": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("temple-send-devotee", "Temple");
+            const gainedExperience = Math.max(0, Math.floor(Number(args["gainedExperience"] ?? 0)));
+            return `${playerName} sent a devotee at ${source}, became GOOD and gained ${gainedExperience} XP.`;
+        },
+        "player.altarSacrifice": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("altar-sacrifice", "Altar");
+            const gainedExperience = Math.max(0, Math.floor(Number(args["gainedExperience"] ?? 0)));
+            return `${playerName} performed a sacrifice at ${source}, became EVIL and gained ${gainedExperience} XP.`;
+        },
+        "player.eliminateZombie": ({ playerName }) => {
+            const source = this.getActionSourceLabel("eliminate-zombie", "Zombie");
+            return `${playerName} used ${source} and eliminated the active zombie.`;
+        },
         "player.merchantBuy": ({ playerName, args }) => {
             const source = this.getActionSourceLabel(String(args["actionId"] ?? "city-merchant"), "Merchant");
             const itemName = String(args["itemName"] ?? "item");

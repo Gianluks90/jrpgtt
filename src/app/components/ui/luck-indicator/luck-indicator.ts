@@ -13,6 +13,7 @@ export class LuckIndicator implements OnDestroy {
   private soundService = inject(SoundService);
 
   public result = input<LuckCheckResult | null>(null);
+  public animateFirstResult = input<boolean>(false);
   public isRolling = signal(false);
 
   private displayedResult = signal<LuckCheckResult | null>(null);
@@ -82,7 +83,11 @@ export class LuckIndicator implements OnDestroy {
       this.hasSeenFirstNonNullResult = true;
       this.lastHandledCheckId = incomingCheckId;
       this.lastHandledValueKey = incomingValueKey;
-      this.displayedResult.set(nextResult);
+      if (this.animateFirstResult()) {
+        this.startRollingAnimation(nextResult);
+      } else {
+        this.displayedResult.set(nextResult);
+      }
       return;
     }
 

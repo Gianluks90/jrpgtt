@@ -314,6 +314,7 @@ export class MapPage implements OnInit, OnDestroy {
   public visibleAllies = computed<Array<{
     allyId: string;
     name: string;
+    category: string;
     description: string;
     hpCurrent: number;
     hpMax: number;
@@ -332,12 +333,19 @@ export class MapPage implements OnInit, OnDestroy {
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
           allyId: entry.allyId,
-          name: definition?.name ?? entry.allyId,
+          name: entry.nameOverride ?? definition?.name ?? entry.allyId,
+          category: String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase(),
           description: definition?.description?.trim() || "No description available.",
           hpCurrent,
           hpMax,
           hpPercent: Math.max(0, Math.min(100, Math.floor((hpCurrent / hpMax) * 100))),
-          labels: definition ? this.buildAllyLabels(definition.parameterModifiers ?? []) : [],
+          labels: [
+            {
+              text: `${String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase()}`,
+              tone: "neutral",
+            },
+            ...(definition ? this.buildAllyLabels(definition.parameterModifiers ?? []) : []),
+          ],
         };
       });
   });
@@ -798,10 +806,22 @@ export class MapPage implements OnInit, OnDestroy {
       const hpCurrent = Math.max(0, Math.floor(Number((entry as { hpCurrent?: unknown }).hpCurrent ?? 0)));
       const state = (entry as { state?: unknown }).state === "discarded" ? "discarded" : "active";
 
+      const rawNameOverride = (entry as { nameOverride?: unknown }).nameOverride;
+      const nameOverride = typeof rawNameOverride === "string" && rawNameOverride.trim().length > 0
+        ? rawNameOverride.trim()
+        : undefined;
+
+      const rawCategoryOverride = (entry as { categoryOverride?: unknown }).categoryOverride;
+      const categoryOverride = typeof rawCategoryOverride === "string" && rawCategoryOverride.trim().length > 0
+        ? rawCategoryOverride.trim().toLowerCase()
+        : undefined;
+
       allies.push({
         allyId: allyId.trim(),
         hpCurrent,
         state,
+        ...(nameOverride ? { nameOverride } : {}),
+        ...(categoryOverride ? { categoryOverride } : {}),
       });
     });
 

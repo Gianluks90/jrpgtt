@@ -31,6 +31,21 @@
       "maxHp": 4,
       "itemCapacityBonus": 4,
       "actions": []
+    },
+    {
+      "id": "zombie",
+      "name": "Zombie",
+      "description": "A shambling undead ally. Grants +1 STR, consumes 1 food each turn (or you lose 1 HP), and can be dismissed with Eliminate zombie.",
+      "category": "undead",
+      "maxHp": 2,
+      "actions": ["eliminate-zombie"],
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scope": "always"
+        }
+      ]
     }
   ]
 }

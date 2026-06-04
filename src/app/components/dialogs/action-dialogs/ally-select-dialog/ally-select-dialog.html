@@ -1,0 +1,66 @@
+<dialog-wrapper [title]="title">
+    <p class="info-text">{{ message }}</p>
+
+    @if (outcomePreviewRows.length > 0) {
+        <p class="outcome-title">{{ outcomePreviewTitle }}</p>
+        <div class="outcome-table">
+            @for (row of outcomePreviewRows; track row.id) {
+                <div class="outcome-row">
+                    <span class="outcome-range">{{ row.rangeLabel }}</span>
+                    <span class="outcome-effect">{{ row.effectLabel }}</span>
+                </div>
+            }
+        </div>
+    }
+
+    @if (options.length === 0) {
+        <p class="error-text">No eligible allies available.</p>
+    } @else {
+        <div class="options-list">
+            @for (option of options; track option.key) {
+                <button
+                    type="button"
+                    class="option-card"
+                    [class.selected]="selectedKey === option.key"
+                    (click)="select(option.key)"
+                >
+                    <span class="option-header">
+                        <span class="option-label">{{ option.label }}</span>
+                        <span class="option-hp-counter">{{ option.hpCurrent ?? 0 }}/{{ option.hpMax ?? 1 }}</span>
+                    </span>
+
+                    <span class="option-divider" aria-hidden="true"></span>
+
+                    <span class="option-hp-bar" [class.option-hp-bar-full]="(option.hpCurrent ?? 0) >= (option.hpMax ?? 1)">
+                        <span
+                            class="option-hp-fill"
+                            [style.width.%]="((option.hpCurrent ?? 0) / (option.hpMax ?? 1)) * 100"
+                        ></span>
+                    </span>
+
+                    @if (option.description.length > 0) {
+                        <span class="option-description">{{ option.description }}</span>
+                    }
+
+                    @if ((option.labels?.length ?? 0) > 0) {
+                        <span class="option-keywords">
+                            @for (label of option.labels ?? []; track label.text + $index) {
+                                <span class="option-keyword" [class.option-keyword-positive]="label.tone === 'positive'" [class.option-keyword-negative]="label.tone === 'negative'">
+                                    {{ label.text }}
+                                </span>
+                            }
+                        </span>
+                    }
+                </button>
+            }
+        </div>
+    }
+
+    <text-button
+        dialog-action
+        [text]="confirmText"
+        [disabled]="!canConfirm"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+</dialog-wrapper>

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { collection, doc, getDoc, runTransaction, Timestamp, Transaction } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { GameMap } from "../models/GameMap";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
@@ -31,6 +31,7 @@ import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
 import { StatusCatalogService } from "./status-catalog-service";
 import { ItemEffectCatalogService } from "./item-effect-catalog-service";
 import { DiscardPileEntry } from "../models/DiscardPile";
+import { GraveyardResurrectRewardsConfigService } from "./graveyard-resurrect-rewards-config-service";
 
 export interface CapitalEnchantressOutcome {
   rewardId: string;
@@ -49,6 +50,15 @@ export interface CityMysticOutcome {
   alignment: Player["alignment"] | null;
   gainedExperience: number;
   grantedLevelUp: boolean;
+}
+
+export interface GraveyardResurrectOutcome {
+  selectedAllyId: string;
+  rewardId: string;
+  rewardLabel: string;
+  displayTotal: number;
+  rolledTotal: number;
+  appliedOutcome: string;
 }
 
 export interface MerchantTradeOutcome {
@@ -112,6 +122,7 @@ export class ActionExecutorService {
     private merchantCatalogService: MerchantCatalogService,
     private merchantTradeOffersService: MerchantTradeOffersService,
     private mysticRewardsConfigService: MysticRewardsConfigService,
+    private graveyardResurrectRewardsConfigService: GraveyardResurrectRewardsConfigService,
     private statusCatalogService: StatusCatalogService,
     private itemEffectCatalogService: ItemEffectCatalogService,
     private worldZonesService: WorldZonesService,
@@ -193,6 +204,9 @@ export class ActionExecutorService {
         currentCell && currentCell.isSpecial !== true ? currentCell.biome : null,
       );
       let nextInventoryItems = itemTurnEffects.items;
+      let nextInventoryResources = Array.isArray(player.inventory?.resources)
+        ? player.inventory.resources.map((resource) => ({ ...resource }))
+        : [];
       endTurnItemLogs = [...itemTurnEffects.logs];
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
@@ -347,19 +361,17 @@ export class ActionExecutorService {
             const previousHpCurrent = nextHpCurrent;
             nextHpCurrent = Math.min(hpMax, nextHpCurrent + deltaHp);
             const healingHp = Math.max(0, nextHpCurrent - previousHpCurrent);
-            if (healingHp <= 0) {
-              continue;
+            if (healingHp > 0) {
+              biomeConditionLogs.push({
+                code: condition.logCode ?? "player.biomeConditionHealing",
+                args: {
+                  biome: currentCell.biome,
+                  conditionId,
+                  healingHp,
+                  environmentSize: connectedEnvironmentSize,
+                },
+              });
             }
-
-            biomeConditionLogs.push({
-              code: condition.logCode ?? "player.biomeConditionHealing",
-              args: {
-                biome: currentCell.biome,
-                conditionId,
-                healingHp,
-                environmentSize: connectedEnvironmentSize,
-              },
-            });
 
             nextAllies = nextAllies.map((allyEntry) => {
               if (allyEntry.state === "discarded") {
@@ -372,6 +384,11 @@ export class ActionExecutorService {
               }
 
               const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+              const allyCategory = String(allyEntry.categoryOverride ?? allyDefinition?.category ?? "").trim().toLowerCase();
+              if (allyCategory === "undead") {
+                return allyEntry;
+              }
+
               const allyMaxHp = Math.max(1, Math.floor(Number(allyDefinition?.maxHp ?? allyHpCurrent ?? 1)));
               const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.allyBiomeHpPercentDelta));
               const nextAllyHpCurrent = Math.min(allyMaxHp, allyHpCurrent + allyDeltaHp);
@@ -398,6 +415,31 @@ export class ActionExecutorService {
               };
             });
           }
+        }
+      }
+
+      const activeZombies = nextAllies.filter((allyEntry) => {
+        return allyEntry.allyId === "zombie"
+          && allyEntry.state !== "discarded"
+          && Math.max(0, Math.floor(Number(allyEntry.hpCurrent ?? 0))) > 0;
+      }).length;
+
+      if (activeZombies > 0) {
+        const currentFood = Math.max(
+          0,
+          Math.floor(Number(nextInventoryResources.find((resource) => resource.label === "food")?.quantity ?? 0)),
+        );
+        const consumedFood = Math.min(currentFood, activeZombies);
+        const missingFood = Math.max(0, activeZombies - consumedFood);
+
+        if (consumedFood > 0) {
+          nextInventoryResources = this.addResource(nextInventoryResources, "food", -consumedFood);
+          endTurnItemLogs.push(`zombie consumed ${consumedFood} food.`);
+        }
+
+        if (missingFood > 0) {
+          nextHpCurrent = Math.max(0, nextHpCurrent - missingFood);
+          endTurnItemLogs.push(`zombie upkeep missing ${missingFood} food, player lost ${missingFood} HP.`);
         }
       }
 
@@ -503,10 +545,13 @@ export class ActionExecutorService {
         };
       }
 
-      if (!this.areInventoryItemsEquivalent(normalizedItems, nextInventoryItems)) {
+      const inventoryItemsChanged = !this.areInventoryItemsEquivalent(normalizedItems, nextInventoryItems);
+      const inventoryResourcesChanged = !this.areResourcesEquivalent(player.inventory?.resources ?? [], nextInventoryResources);
+      if (inventoryItemsChanged || inventoryResourcesChanged) {
         nextPlayerPatch.inventory = {
           ...(player.inventory ?? { items: [], resources: [], money: 0 }),
           items: nextInventoryItems,
+          resources: nextInventoryResources,
         };
       }
 
@@ -3023,6 +3068,396 @@ export class ActionExecutorService {
     });
   }
 
+  public async graveyardResurrect(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      allyId: string;
+    },
+  ): Promise<GraveyardResurrectOutcome> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const selectedAllyId = String(payload.allyId ?? "").trim();
+    if (!selectedAllyId) {
+      throw new Error("Invalid ally selection");
+    }
+
+    await Promise.all([
+      this.graveyardResurrectRewardsConfigService.loadConfig(),
+      this.allyCatalogService.loadConfig(),
+    ]);
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    const [playerSnap, worldStateSnap, gameMapSnap] = await Promise.all([
+      getDoc(playerRef),
+      getDoc(worldStateRef),
+      getDoc(gameMapRef),
+    ]);
+    if (!playerSnap.exists()) {
+      throw new Error("Player not found");
+    }
+    if (!worldStateSnap.exists()) {
+      throw new Error("World state not found");
+    }
+
+    const playerForLuck = playerSnap.data() as Player;
+    const worldStateForLuck = worldStateSnap.data() as WorldState;
+    const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+    const mapCellRefForLuck = doc(
+      this.firebaseService.database,
+      "games",
+      gameId,
+      "mapCells",
+      this.cellId(playerForLuck.location.x, playerForLuck.location.y),
+    );
+    const mapCellSnapForLuck = await getDoc(mapCellRefForLuck);
+    const mapCellForLuck = mapCellSnapForLuck.exists() ? (mapCellSnapForLuck.data() as MapCell) : null;
+    const playerLuck = this.playerStatsModifierService.computeEffectiveLuck({
+      player: playerForLuck,
+      currentCell: mapCellForLuck,
+      worldState: worldStateForLuck,
+      mapSize,
+    });
+    const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
+    const rewardTotal = Math.max(1, Math.min(100, Math.floor(luckResult.total)));
+    const reward = await this.graveyardResurrectRewardsConfigService.resolveRewardByTotal(rewardTotal);
+
+    const discardCollectionRef = collection(worldStateRef, "discardPile");
+    const discardSnapshot = await getDocs(discardCollectionRef);
+    const selectedDiscardEntry = discardSnapshot.docs
+      .map((entrySnap) => ({
+        ref: entrySnap.ref,
+        data: entrySnap.data() as DiscardPileEntry,
+      }))
+      .filter((entry) => {
+        return entry.data.ownerPlayerId === actor.id
+          && entry.data.card?.kind === "ally"
+          && entry.data.card?.cardId === selectedAllyId
+          && entry.data.reason === "dead"
+          && !entry.data.recoveredAt;
+      })
+      .sort((left, right) => {
+        const leftSeq = Math.max(0, Math.floor(Number(left.data.discardSeq ?? 0)));
+        const rightSeq = Math.max(0, Math.floor(Number(right.data.discardSeq ?? 0)));
+        return rightSeq - leftSeq;
+      })[0] ?? null;
+
+    if (!selectedDiscardEntry) {
+      throw new Error("Selected ally is not available in discard pile");
+    }
+
+    let appliedOutcome = reward.id;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateTxSnap, playerTxSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateTxSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerTxSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateTxSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using landmark actions");
+
+      const player = playerTxSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "graveyard-resurrect", worldTurn, "You can only use graveyard resurrection once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "graveyard", "You must be at Graveyard to use resurrection");
+
+      const normalizedAllies = this.normalizeAllies(player.allies);
+      const targetIndex = normalizedAllies.findIndex((entry) => {
+        return entry.allyId === selectedAllyId
+          && entry.state === "discarded"
+          && entry.discardReason === "dead";
+      });
+
+      if (targetIndex < 0) {
+        throw new Error("Selected ally is not dead in your party records");
+      }
+
+      const targetEntry = normalizedAllies[targetIndex];
+      const targetDefinition = this.allyCatalogService.getCachedAllyById(selectedAllyId);
+      const targetMaxHp = Math.max(1, Math.floor(Number(targetDefinition?.maxHp ?? targetEntry.hpCurrent ?? 1)));
+      const targetName = String(targetEntry.nameOverride ?? targetDefinition?.name ?? selectedAllyId).trim() || selectedAllyId;
+
+      let nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
+      nextAllies[targetIndex] = {
+        ...targetEntry,
+        state: "discarded",
+        discardReason: "lost",
+        discardedAtTurn: worldTurn,
+      };
+
+      let nextHpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
+
+      if (typeof reward.playerHpDamagePercent === "number" && reward.playerHpDamagePercent > 0) {
+        const playerHpMax = Math.max(
+          1,
+          Math.floor(Number(
+            typeof player.parameters.hp.max === "number"
+              ? player.parameters.hp.max
+              : player.parameters.hp.base,
+          )),
+        );
+        const damageHp = Math.max(1, Math.floor(playerHpMax * reward.playerHpDamagePercent));
+        nextHpCurrent = Math.max(0, nextHpCurrent - damageHp);
+      }
+
+      if (reward.summonZombie === true) {
+        const hasZombie = nextAllies.some((entry) => {
+          return entry.allyId === "zombie"
+            && entry.state !== "discarded"
+            && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
+        });
+
+        if (hasZombie) {
+          appliedOutcome = "summon-zombie-blocked";
+        } else {
+          const zombieDefinition = this.allyCatalogService.getCachedAllyById("zombie");
+          const zombieHp = Math.max(1, Math.floor(Number(zombieDefinition?.maxHp ?? 2)));
+          nextAllies.push({
+            allyId: "zombie",
+            hpCurrent: zombieHp,
+            state: "active",
+          });
+        }
+      }
+
+      if (reward.reviveTarget === "one-hp" || reward.reviveTarget === "full") {
+        const resurrectHp = reward.reviveTarget === "one-hp" ? 1 : targetMaxHp;
+        const shouldMarkAsUndead = reward.markAsUndead === true || reward.reviveTarget === "one-hp";
+
+        nextAllies[targetIndex] = {
+          allyId: targetEntry.allyId,
+          hpCurrent: resurrectHp,
+          state: "active",
+          ...(shouldMarkAsUndead ? { nameOverride: `${targetName} (undead)` } : {}),
+          ...(shouldMarkAsUndead ? { categoryOverride: "undead" } : {}),
+        };
+      }
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.delete(selectedDiscardEntry.ref);
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
+          hp: {
+            ...player.parameters.hp,
+            current: nextHpCurrent,
+          },
+        },
+        statuses: nextStatuses,
+        allies: nextAllies,
+        lastLuckCheck: luckResult,
+        actionsUsedThisTurn: this.markActionUsed(player, "graveyard-resurrect", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.graveyardResurrect", {
+      allyId: selectedAllyId,
+      rolledTotal: Math.floor(luckResult.total),
+      rewardTotal,
+      rewardId: reward.id,
+      appliedOutcome,
+      turnEnded: true,
+    });
+
+    return {
+      selectedAllyId,
+      rewardId: reward.id,
+      rewardLabel: reward.label,
+      displayTotal: rewardTotal,
+      rolledTotal: Math.floor(luckResult.total),
+      appliedOutcome,
+    };
+  }
+
+  public async templeSendDevotee(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      allyId: string;
+    },
+  ): Promise<void> {
+    await this.applyAlignmentAllyAction(gameId, actor, {
+      actionId: "temple-send-devotee",
+      landmarkId: "temple",
+      targetAlignment: "good",
+      selectedAllyId: payload.allyId,
+      experienceGain: 2,
+      discardReason: "released",
+      blockedCategories: ["animal", "spirit", "undead"],
+      alreadyAlignedMessage: "You are already good",
+      invalidLandmarkMessage: "You must be at Temple to send a devotee",
+      invalidAllyMessage: "Selected ally cannot be sent to the Temple",
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.templeSendDevotee", {
+      gainedExperience: 2,
+      alignment: "good",
+      turnEnded: true,
+    });
+  }
+
+  public async altarSacrifice(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      allyId: string;
+    },
+  ): Promise<void> {
+    await this.applyAlignmentAllyAction(gameId, actor, {
+      actionId: "altar-sacrifice",
+      landmarkId: "altar",
+      targetAlignment: "evil",
+      selectedAllyId: payload.allyId,
+      experienceGain: 2,
+      discardReason: "lost",
+      blockedCategories: ["undead"],
+      alreadyAlignedMessage: "You are already evil",
+      invalidLandmarkMessage: "You must be at Altar to perform a sacrifice",
+      invalidAllyMessage: "Selected ally cannot be sacrificed",
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.altarSacrifice", {
+      gainedExperience: 2,
+      alignment: "evil",
+      turnEnded: true,
+    });
+  }
+
+  public async eliminateZombie(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "eliminate-zombie", worldTurn, "You can only eliminate zombie once per turn.");
+
+      const normalizedAllies = this.normalizeAllies(player.allies);
+      const zombieIndex = normalizedAllies.findIndex((entry) => {
+        return entry.allyId === "zombie"
+          && entry.state !== "discarded"
+          && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
+      });
+
+      if (zombieIndex < 0) {
+        throw new Error("You have no active zombie to eliminate");
+      }
+
+      const nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
+      nextAllies[zombieIndex] = {
+        ...nextAllies[zombieIndex],
+        hpCurrent: 0,
+        state: "discarded",
+        discardReason: "lost",
+        discardedAtTurn: worldTurn,
+      };
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
+        },
+        allies: nextAllies,
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "eliminate-zombie", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.eliminateZombie", {
+      turnEnded: true,
+    });
+  }
+
   private async applyCampRewardAction(
     gameId: string,
     actor: Pick<Player, "id" | "name">,
@@ -3735,6 +4170,179 @@ export class ActionExecutorService {
     };
   }
 
+  private async applyAlignmentAllyAction(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    input: {
+      actionId: "temple-send-devotee" | "altar-sacrifice";
+      landmarkId: "temple" | "altar";
+      targetAlignment: "good" | "evil";
+      selectedAllyId: string;
+      experienceGain: number;
+      discardReason: "released" | "lost";
+      blockedCategories: string[];
+      alreadyAlignedMessage: string;
+      invalidLandmarkMessage: string;
+      invalidAllyMessage: string;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const selectedAllyId = String(input.selectedAllyId ?? "").trim();
+    if (!selectedAllyId) {
+      throw new Error("Invalid ally selection");
+    }
+
+    await Promise.all([
+      this.itemOwnershipService.loadConfig(),
+      this.allyCatalogService.loadConfig(),
+    ]);
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using landmark actions");
+
+      const player = playerSnap.data() as Player;
+      if ((player.alignment ?? "neutral") === input.targetAlignment) {
+        throw new Error(input.alreadyAlignedMessage);
+      }
+
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, input.actionId, worldTurn, "You can only use this action once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) {
+        throw new Error("You are not standing on a revealed cell");
+      }
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, input.landmarkId, input.invalidLandmarkMessage);
+
+      const normalizedAllies = this.normalizeAllies(player.allies);
+      const allyIndex = normalizedAllies.findIndex((entry) => {
+        return entry.allyId === selectedAllyId
+          && entry.state !== "discarded"
+          && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
+      });
+
+      if (allyIndex < 0) {
+        throw new Error(input.invalidAllyMessage);
+      }
+
+      const selectedAlly = normalizedAllies[allyIndex];
+      const selectedAllyDefinition = this.allyCatalogService.getCachedAllyById(selectedAlly.allyId);
+      const selectedCategory = String(
+        selectedAlly.categoryOverride
+        ?? selectedAllyDefinition?.category
+        ?? "",
+      ).trim().toLowerCase();
+
+      if (input.blockedCategories.includes(selectedCategory)) {
+        throw new Error(input.invalidAllyMessage);
+      }
+
+      const nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
+      nextAllies[allyIndex] = {
+        ...selectedAlly,
+        hpCurrent: 0,
+        state: "discarded",
+        discardReason: input.discardReason,
+        discardedAtTurn: worldTurn,
+      };
+
+      const ownershipResolution = this.itemOwnershipService.enforceAlignmentConstraints({
+        items: player.inventory?.items ?? [],
+        alignment: input.targetAlignment,
+      });
+
+      const nextDroppedItems = [
+        ...(mapCell.droppedItems ?? []),
+        ...ownershipResolution.droppedItems,
+      ];
+
+      const progression = this.applyExperienceAndResolveLevelUps({
+        currentLevel: player.level,
+        currentExperience: player.experience,
+        gainedExperience: input.experienceGain,
+      });
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextPendingLevelUpChoices = Math.max(0, Math.floor(Number(player.pendingLevelUpChoices ?? 0)))
+        + progression.pendingLevelUpChoices;
+
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: nextMpCurrent,
+          },
+        },
+        alignment: input.targetAlignment,
+        experience: progression.experience,
+        level: progression.level,
+        pendingLevelUpChoices: nextPendingLevelUpChoices,
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          items: ownershipResolution.keptItems,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        allies: nextAllies,
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, input.actionId, worldTurn),
+      }, { merge: true });
+
+      if (ownershipResolution.droppedItems.length > 0) {
+        transaction.set(mapCellRef, {
+          droppedItems: nextDroppedItems,
+        }, { merge: true });
+      }
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+  }
+
   private ensureActionAvailable(player: Player, actionId: string, worldTurn: number, message: string): void {
     const actionsUsed = player.actionsUsedThisTurn ?? {};
     if (actionsUsed[actionId] === worldTurn) {
@@ -4202,10 +4810,37 @@ export class ActionExecutorService {
       const rawState = (entry as { state?: unknown }).state;
       const state = rawState === "discarded" ? "discarded" : "active";
 
+      const rawDiscardReason = (entry as { discardReason?: unknown }).discardReason;
+      const discardReason = rawDiscardReason === "dead"
+        || rawDiscardReason === "released"
+        || rawDiscardReason === "lost"
+        || rawDiscardReason === "stolen"
+        ? rawDiscardReason
+        : undefined;
+
+      const rawDiscardedAtTurn = Number((entry as { discardedAtTurn?: unknown }).discardedAtTurn);
+      const discardedAtTurn = Number.isFinite(rawDiscardedAtTurn)
+        ? Math.max(0, Math.floor(rawDiscardedAtTurn))
+        : undefined;
+
+      const rawNameOverride = (entry as { nameOverride?: unknown }).nameOverride;
+      const nameOverride = typeof rawNameOverride === "string" && rawNameOverride.trim().length > 0
+        ? rawNameOverride.trim()
+        : undefined;
+
+      const rawCategoryOverride = (entry as { categoryOverride?: unknown }).categoryOverride;
+      const categoryOverride = typeof rawCategoryOverride === "string" && rawCategoryOverride.trim().length > 0
+        ? rawCategoryOverride.trim().toLowerCase()
+        : undefined;
+
       allies.push({
         allyId: allyId.trim(),
         hpCurrent,
         state,
+        ...(discardReason ? { discardReason } : {}),
+        ...(typeof discardedAtTurn === "number" ? { discardedAtTurn } : {}),
+        ...(nameOverride ? { nameOverride } : {}),
+        ...(categoryOverride ? { categoryOverride } : {}),
       });
     });
 
@@ -4385,6 +5020,30 @@ export class ActionExecutorService {
     return true;
   }
 
+  private areResourcesEquivalent(left: ResourceStack[], right: ResourceStack[]): boolean {
+    if (left.length !== right.length) {
+      return false;
+    }
+
+    for (let index = 0; index < left.length; index += 1) {
+      const leftEntry = left[index];
+      const rightEntry = right[index];
+      if (!leftEntry || !rightEntry) {
+        return false;
+      }
+
+      if (leftEntry.label !== rightEntry.label) {
+        return false;
+      }
+
+      if (Math.max(0, Math.floor(Number(leftEntry.quantity ?? 0))) !== Math.max(0, Math.floor(Number(rightEntry.quantity ?? 0)))) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   private areAlliesEquivalent(left: PlayerAllyEntry[], right: PlayerAllyEntry[]): boolean {
     if (left.length !== right.length) {
       return false;
@@ -4414,6 +5073,14 @@ export class ActionExecutorService {
       }
 
       if ((leftEntry.discardedAtTurn ?? null) !== (rightEntry.discardedAtTurn ?? null)) {
+        return false;
+      }
+
+      if ((leftEntry.nameOverride ?? null) !== (rightEntry.nameOverride ?? null)) {
+        return false;
+      }
+
+      if ((leftEntry.categoryOverride ?? null) !== (rightEntry.categoryOverride ?? null)) {
         return false;
       }
     }

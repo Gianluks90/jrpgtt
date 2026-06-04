@@ -449,12 +449,24 @@ export class MapPageStateService {
         ? Math.max(0, Math.floor(rawDiscardedAtTurn))
         : undefined;
 
+      const rawNameOverride = (entry as { nameOverride?: unknown }).nameOverride;
+      const nameOverride = typeof rawNameOverride === "string" && rawNameOverride.trim().length > 0
+        ? rawNameOverride.trim()
+        : undefined;
+
+      const rawCategoryOverride = (entry as { categoryOverride?: unknown }).categoryOverride;
+      const categoryOverride = typeof rawCategoryOverride === "string" && rawCategoryOverride.trim().length > 0
+        ? rawCategoryOverride.trim().toLowerCase()
+        : undefined;
+
       nextAllies.push({
         allyId: allyId.trim(),
         hpCurrent,
         state,
         ...(discardReason ? { discardReason } : {}),
         ...(typeof discardedAtTurn === "number" ? { discardedAtTurn } : {}),
+        ...(nameOverride ? { nameOverride } : {}),
+        ...(categoryOverride ? { categoryOverride } : {}),
       });
     });
 

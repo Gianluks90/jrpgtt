@@ -75,11 +75,6 @@
   font-size: 0.56rem;
 }
 
-.rolling-label {
-  opacity: 0.9;
-  animation: rolling-blink 0.42s ease-in-out infinite;
-}
-
 .error-text {
   margin: 6px 0;
   font-size: 0.58rem;
@@ -108,14 +103,3 @@
   }
 }
 
-@keyframes rolling-blink {
-  0% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.35;
-  }
-}

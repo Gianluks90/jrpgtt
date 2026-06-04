@@ -1,4 +1,4 @@
-<dialog-wrapper [title]="title">
+<dialog-wrapper [title]="title" [luckResult]="luckMeterResult" [luckAnimateFirstResult]="true">
     <div dialog-header-extra class="header-money">
         <span>{{ playerMoney }}</span>
         <span class="coin-icon" aria-hidden="true"></span>
@@ -39,15 +39,10 @@
         }
     </div>
 
-    @if (isRolling || outcome) {
+    @if (outcome) {
         <p class="result-text">
             Result:
-            <strong>{{ displayLuckTotal ?? 0 }}/100</strong>
-            @if (isRolling) {
-                <span class="rolling-label">- rolling...</span>
-            } @else if (outcome) {
-                <span> - <strong>{{ outcome.rewardLabel }}</strong></span>
-            }
+            <span> - <strong>{{ outcome.rewardLabel }}</strong></span>
         </p>
     }
 

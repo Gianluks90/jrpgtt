@@ -1,0 +1,44 @@
+{
+  "rewards": [
+    {
+      "id": "wrong-spirit-damage-player",
+      "minTotal": 1,
+      "maxTotal": 20,
+      "label": "Wrong Spirit",
+      "previewLabel": "You summon the wrong spirit, lose 10% HP, no resurrection",
+      "playerHpDamagePercent": 0.1
+    },
+    {
+      "id": "nothing-happens",
+      "minTotal": 21,
+      "maxTotal": 45,
+      "label": "Silence",
+      "previewLabel": "Nothing happens"
+    },
+    {
+      "id": "summon-zombie",
+      "minTotal": 46,
+      "maxTotal": 65,
+      "label": "Zombie Awakening",
+      "previewLabel": "You summon a Zombie instead of the selected ally",
+      "summonZombie": true
+    },
+    {
+      "id": "revive-target-undead-1hp",
+      "minTotal": 66,
+      "maxTotal": 85,
+      "label": "Distorted Resurrection",
+      "previewLabel": "Selected ally returns as undead with 1 HP",
+      "reviveTarget": "one-hp",
+      "markAsUndead": true
+    },
+    {
+      "id": "revive-target-full",
+      "minTotal": 86,
+      "maxTotal": 100,
+      "label": "Complete Resurrection",
+      "previewLabel": "Selected ally returns with full HP",
+      "reviveTarget": "full"
+    }
+  ]
+}

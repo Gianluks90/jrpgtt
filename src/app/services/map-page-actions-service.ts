@@ -68,12 +68,12 @@ export class MapPageActionsService {
     const isBusy = input.pendingActionId !== null;
     const hasMoney = (player.inventory?.money ?? 0) >= this.sanctuaryDonationCost;
     const worldTurn = input.worldState?.currentTurn ?? 0;
-    const isSanctuaryCell = cell.isSpecial === true && cell.specialType === "sanctuary" && !!cell.sanctuaryElement;
-    const isLandmarkCell = cell.isSpecial === true && cell.specialType === "landmark";
+    const isSanctuaryCell = cell.specialType === "sanctuary" && !!cell.sanctuaryElement;
+    const landmarkActionIds = this.getConfiguredLandmarkActionIds(cell);
     const configuredActionIds = isSanctuaryCell
       ? this.getConfiguredSanctuaryActionIds(cell, input.tilesConfig)
-      : isLandmarkCell
-        ? this.getConfiguredLandmarkActionIds(cell)
+      : landmarkActionIds.length > 0
+        ? landmarkActionIds
         : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
     const inventoryActionIds = this.getInventoryActionIds(player);
     const allyActionIds = this.getAllyActionIds(player);
@@ -111,11 +111,7 @@ export class MapPageActionsService {
   }
 
   private getConfiguredLandmarkActionIds(cell: MapCell): string[] {
-    if (cell.specialType !== "landmark" || !cell.landmarkCategory || !cell.landmarkId) {
-      return [];
-    }
-
-    return this.landmarksService.getLandmarkActionIds(cell.landmarkId, cell.landmarkCategory);
+    return this.landmarksService.getLandmarkActionIdsForCell(cell);
   }
 
   private getConfiguredBiomeActionIds(cell: MapCell, tilesConfig: TilesConfig | null): string[] {

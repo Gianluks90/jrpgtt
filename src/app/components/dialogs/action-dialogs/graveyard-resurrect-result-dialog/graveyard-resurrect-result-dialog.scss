@@ -1,0 +1,40 @@
+.info-text {
+  margin: 2px 0 8px;
+  font-size: 0.56rem;
+  line-height: 1.35;
+}
+
+.reward-table {
+  margin-top: 6px;
+  display: grid;
+  gap: 6px;
+}
+
+.reward-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--fg-color) 35%, transparent);
+  background: color-mix(in srgb, var(--bg-color) 92%, black 8%);
+}
+
+.reward-row--highlighted {
+  border-color: #2fa35e;
+  background: color-mix(in srgb, #2fa35e 24%, var(--bg-color));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #2fa35e 65%, transparent) inset;
+}
+
+.reward-range {
+  font-weight: 700;
+  font-size: 0.54rem;
+}
+
+.reward-effect {
+  font-size: 0.54rem;
+}
+
+.result-text {
+  margin-top: 10px;
+  font-size: 0.56rem;
+}

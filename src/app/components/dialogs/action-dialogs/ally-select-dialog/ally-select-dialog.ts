@@ -1,0 +1,147 @@
+import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
+import { Component, Inject } from "@angular/core";
+import { DialogResponse } from "../../../../models/DialogResponse";
+import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
+import { TextButton } from "../../../ui/text-button/text-button";
+
+export interface AllySelectDialogOption {
+  key: string;
+  label: string;
+  description: string;
+  hpCurrent?: number;
+  hpMax?: number;
+  labels?: Array<{
+    text: string;
+    tone: "neutral" | "positive" | "negative";
+  }>;
+}
+
+export interface AllySelectDialogOutcomeRow {
+  id: string;
+  rangeLabel: string;
+  effectLabel: string;
+}
+
+export interface AllySelectDialogData {
+  title: string;
+  message: string;
+  confirmText: string;
+  options: AllySelectDialogOption[];
+  outcomePreviewTitle?: string;
+  outcomePreviewRows?: AllySelectDialogOutcomeRow[];
+}
+
+export interface AllySelectDialogResult {
+  selectedKey: string;
+}
+
+@Component({
+  selector: "app-ally-select-dialog",
+  imports: [DialogWrapper, TextButton],
+  templateUrl: "./ally-select-dialog.html",
+  styleUrl: "./ally-select-dialog.scss",
+})
+export class AllySelectDialog {
+  public readonly title: string;
+  public readonly message: string;
+  public readonly confirmText: string;
+  public readonly options: AllySelectDialogOption[];
+  public readonly outcomePreviewTitle: string;
+  public readonly outcomePreviewRows: AllySelectDialogOutcomeRow[];
+  public selectedKey: string | null;
+
+  constructor(
+    private dialogRef: DialogRef<DialogResponse<AllySelectDialogResult>>,
+    @Inject(DIALOG_DATA) data: AllySelectDialogData,
+  ) {
+    this.title = typeof data?.title === "string" && data.title.trim().length > 0 ? data.title : "Select ally";
+    this.message = typeof data?.message === "string" ? data.message : "Choose an ally.";
+    this.confirmText = typeof data?.confirmText === "string" && data.confirmText.trim().length > 0
+      ? data.confirmText
+      : "Confirm";
+    this.options = this.normalizeOptions(data?.options);
+    this.outcomePreviewTitle = typeof data?.outcomePreviewTitle === "string" && data.outcomePreviewTitle.trim().length > 0
+      ? data.outcomePreviewTitle
+      : "Possible outcomes";
+    this.outcomePreviewRows = this.normalizeOutcomeRows(data?.outcomePreviewRows);
+    this.selectedKey = this.options[0]?.key ?? null;
+  }
+
+  public select(key: string): void {
+    this.selectedKey = key;
+  }
+
+  public get canConfirm(): boolean {
+    if (!this.selectedKey) return false;
+    return this.options.some((option) => option.key === this.selectedKey);
+  }
+
+  public confirm(): void {
+    if (!this.canConfirm || !this.selectedKey) return;
+
+    this.dialogRef.close({
+      result: "confirm",
+      data: {
+        selectedKey: this.selectedKey,
+      },
+    });
+  }
+
+  public close(): void {
+    this.dialogRef.close({
+      result: "cancel",
+    });
+  }
+
+  private normalizeOptions(rawOptions: AllySelectDialogOption[] | undefined): AllySelectDialogOption[] {
+    const normalized: AllySelectDialogOption[] = [];
+    const seen = new Set<string>();
+
+    for (const option of Array.isArray(rawOptions) ? rawOptions : []) {
+      if (!option || typeof option !== "object") continue;
+      if (typeof option.key !== "string" || !option.key.trim()) continue;
+      if (seen.has(option.key)) continue;
+
+      normalized.push({
+        key: option.key,
+        label: typeof option.label === "string" && option.label.trim().length > 0 ? option.label : option.key,
+        description: typeof option.description === "string" ? option.description : "",
+        hpCurrent: Math.max(0, Math.floor(Number(option.hpCurrent ?? 0))),
+        hpMax: Math.max(1, Math.floor(Number(option.hpMax ?? 1))),
+        labels: Array.isArray(option.labels)
+          ? option.labels
+            .filter((label) => !!label && typeof label === "object")
+            .map((label) => {
+              const tone: "neutral" | "positive" | "negative" = label.tone === "positive" || label.tone === "negative"
+                ? label.tone
+                : "neutral";
+
+              return {
+                text: typeof label.text === "string" ? label.text : "",
+                tone,
+              };
+            })
+            .filter((label) => label.text.trim().length > 0)
+          : [],
+      });
+      seen.add(option.key);
+    }
+
+    return normalized;
+  }
+
+  private normalizeOutcomeRows(rawRows: AllySelectDialogOutcomeRow[] | undefined): AllySelectDialogOutcomeRow[] {
+    if (!Array.isArray(rawRows)) {
+      return [];
+    }
+
+    return rawRows
+      .filter((row) => !!row && typeof row === "object")
+      .map((row, index) => ({
+        id: typeof row.id === "string" && row.id.trim().length > 0 ? row.id : `row-${index}`,
+        rangeLabel: typeof row.rangeLabel === "string" ? row.rangeLabel : "-",
+        effectLabel: typeof row.effectLabel === "string" ? row.effectLabel : "",
+      }))
+      .filter((row) => row.effectLabel.trim().length > 0);
+  }
+}

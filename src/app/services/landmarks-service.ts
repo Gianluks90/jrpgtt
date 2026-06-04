@@ -1,16 +1,18 @@
 import { Injectable } from "@angular/core";
 import {
+  BAD_PLACE_ACTIONS_BY_LANDMARK,
   LANDMARK_ALIGNMENT_PREFIX,
   LANDMARK_CATEGORY_DEFINITIONS,
   LANDMARK_CATEGORY_ORDER,
   LANDMARK_DEFINITIONS,
+  MID_PLACE_ACTIONS_BY_LANDMARK,
   MID_LANDMARK_ALIGNMENT_DISTRIBUTION,
   SAFE_LANDMARK_BIOME_SUFFIXES,
   isKnownLandmarkCategory,
 } from "../consts/landmarks-catalog";
 import { SAFE_PLACE_ACTIONS_BY_LANDMARK, SafePlaceLandmarkId } from "../consts/safe-place-actions";
 import { SPECIAL_CELLS } from "../consts/special-cells";
-import { BiomeType } from "../models/MapCell";
+import { BiomeType, MapCell } from "../models/MapCell";
 import {
   LandmarkAlignmentModifier,
   LandmarkCategory,
@@ -165,6 +167,34 @@ export class LandmarksService {
     return this.getLandmarkActionIds(landmarkId, "safe");
   }
 
+  public getLandmarkActionIdsForCell(cell: MapCell | null | undefined): string[] {
+    if (!cell) {
+      return [];
+    }
+
+    const hasLandmarkHints = cell.specialType === "landmark"
+      || cell.isSpecial === true
+      || (typeof cell.landmarkId === "string" && cell.landmarkId.trim().length > 0)
+      || (typeof cell.landmarkDisplayName === "string" && cell.landmarkDisplayName.trim().length > 0)
+      || typeof cell.landmarkCategory === "string";
+
+    if (!hasLandmarkHints || cell.specialType === "sanctuary") {
+      return [];
+    }
+
+    const inferredLandmarkId = this.resolveLandmarkIdFromCell(cell);
+    if (!inferredLandmarkId) {
+      return [];
+    }
+
+    const inferredCategory = cell.landmarkCategory ?? this.resolveLandmarkCategoryFromId(inferredLandmarkId);
+    if (!inferredCategory) {
+      return [];
+    }
+
+    return this.getLandmarkActionIds(inferredLandmarkId, inferredCategory);
+  }
+
   public getLandmarkActionIds(landmarkId: string | undefined, category: LandmarkCategory | undefined): string[] {
     if (!landmarkId || !category) {
       return [];
@@ -183,6 +213,14 @@ export class LandmarksService {
 
     if (category === "safe" && this.isSafeLandmarkId(landmarkId)) {
       return [...SAFE_PLACE_ACTIONS_BY_LANDMARK[landmarkId]];
+    }
+
+    if (category === "mid") {
+      return [...(MID_PLACE_ACTIONS_BY_LANDMARK[landmarkId] ?? [])];
+    }
+
+    if (category === "bad") {
+      return [...(BAD_PLACE_ACTIONS_BY_LANDMARK[landmarkId] ?? [])];
     }
 
     return [];
@@ -292,6 +330,33 @@ export class LandmarksService {
     definitions: LandmarkDefinition[],
   ): LandmarkDefinition | null {
     return definitions.find((definition) => definition.id === landmarkId) ?? null;
+  }
+
+  private resolveLandmarkCategoryFromId(landmarkId: string): LandmarkCategory | null {
+    const definition = this.getDefinitionById(landmarkId);
+    return definition?.category ?? null;
+  }
+
+  private resolveLandmarkIdFromCell(cell: MapCell): string | null {
+    const directId = typeof cell.landmarkId === "string" ? cell.landmarkId.trim() : "";
+    if (directId.length > 0) {
+      return directId;
+    }
+
+    const displayName = typeof cell.landmarkDisplayName === "string"
+      ? cell.landmarkDisplayName.trim().toLowerCase()
+      : "";
+    if (!displayName) {
+      return null;
+    }
+
+    const definitions = this.getDefinitions(this.landmarksConfigService.getCachedConfig());
+    const matched = definitions.find((definition) => {
+      return displayName.includes(definition.id.toLowerCase())
+        || displayName.includes(definition.baseName.toLowerCase());
+    });
+
+    return matched?.id ?? null;
   }
 
   private isSafeLandmarkId(value: string): value is SafePlaceLandmarkId {

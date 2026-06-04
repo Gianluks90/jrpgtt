@@ -65,6 +65,20 @@ export const LANDMARK_ALIGNMENT_PREFIX: Record<LandmarkAlignmentModifier, string
   evil: "Cursed",
 };
 
+export const MID_PLACE_ACTIONS_BY_LANDMARK: Record<string, string[]> = {
+  graveyard: ["graveyard-resurrect"],
+  temple: ["temple-send-devotee"],
+  castle: ["castle-rest", "castle-trainer"],
+  academy: ["academy-merchant", "academy-trainer"],
+};
+
+export const BAD_PLACE_ACTIONS_BY_LANDMARK: Record<string, string[]> = {
+  cave: [],
+  dungeon: [],
+  manor: [],
+  altar: ["altar-sacrifice"],
+};
+
 export function isKnownLandmarkCategory(value: string): value is "safe" | "mid" | "bad" {
   return value === "safe" || value === "mid" || value === "bad";
 }

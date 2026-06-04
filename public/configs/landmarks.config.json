@@ -54,8 +54,8 @@
     "camp": ["safe-place-wait", "fast-travel", "camp-gatherer", "camp-hunter"]
   },
   "midPlaceActionsByLandmark": {
-    "graveyard": [],
-    "temple": [],
+    "graveyard": ["graveyard-resurrect"],
+    "temple": ["temple-send-devotee"],
     "castle": ["castle-rest", "castle-trainer"],
     "academy": ["academy-merchant", "academy-trainer"]
   },
@@ -63,6 +63,6 @@
     "cave": [],
     "dungeon": [],
     "manor": [],
-    "altar": []
+    "altar": ["altar-sacrifice"]
   }
 }

@@ -18,7 +18,11 @@ export type ActionFlowHandler =
   | "safe-place-wait"
   | "safe-place-fast-travel"
   | "safe-place-camp-gatherer"
-  | "safe-place-camp-hunter";
+  | "safe-place-camp-hunter"
+  | "graveyard-resurrect"
+  | "temple-send-devotee"
+  | "altar-sacrifice"
+  | "ally-eliminate-zombie";
 
 export type ActionFlowTrigger = "command-panel";
 

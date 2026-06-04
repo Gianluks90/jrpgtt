@@ -20,7 +20,7 @@
       "minTotal": 46,
       "maxTotal": 65,
       "label": "Zombie Awakening",
-      "previewLabel": "You summon a Zombie instead of the selected ally",
+      "previewLabel": "You summon a Zombie instead of the selected follower",
       "summonZombie": true
     },
     {
@@ -28,7 +28,7 @@
       "minTotal": 66,
       "maxTotal": 85,
       "label": "Distorted Resurrection",
-      "previewLabel": "Selected ally returns as undead with 1 HP",
+      "previewLabel": "Selected follower returns as undead with 1 HP",
       "reviveTarget": "one-hp",
       "markAsUndead": true
     },
@@ -37,7 +37,7 @@
       "minTotal": 86,
       "maxTotal": 100,
       "label": "Complete Resurrection",
-      "previewLabel": "Selected ally returns with full HP",
+      "previewLabel": "Selected follower returns with full HP",
       "reviveTarget": "full"
     }
   ]

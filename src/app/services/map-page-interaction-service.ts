@@ -56,9 +56,9 @@ import {
   FastTravelDialogResult,
 } from "../components/dialogs/action-dialogs/fast-travel-dialog/fast-travel-dialog";
 import {
-  AllySelectDialog,
-  AllySelectDialogData,
-} from "../components/dialogs/action-dialogs/ally-select-dialog/ally-select-dialog";
+  FollowerSelectDialog,
+  FollowerSelectDialogData,
+} from "../components/dialogs/action-dialogs/follower-select-dialog/follower-select-dialog";
 import {
   GraveyardResurrectResultDialog,
   GraveyardResurrectResultDialogData,
@@ -74,7 +74,7 @@ import { isDoctorActionId, SafePlaceDoctorActionId } from "../consts/safe-place-
 import { ActionCatalogService } from "./action-catalog-service";
 import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
 import { ItemCatalogService } from "./item-catalog-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 import { MerchantCatalogService } from "./merchant-catalog-service";
 import { MerchantTradeOffersService } from "./merchant-trade-offers-service";
 import { MysticRewardsConfigService } from "./mystic-rewards-config-service";
@@ -116,7 +116,7 @@ export class MapPageInteractionService {
     private actionCatalogService: ActionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
     private itemCatalogService: ItemCatalogService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
     private merchantCatalogService: MerchantCatalogService,
     private merchantTradeOffersService: MerchantTradeOffersService,
     private mysticRewardsConfigService: MysticRewardsConfigService,
@@ -374,7 +374,7 @@ export class MapPageInteractionService {
       return;
     }
 
-    if (handler === "ally-feed-horse") {
+    if (handler === "follower-feed-horse") {
       if (!player) return;
 
       await this.runNamedAction(input.actionId, async () => {
@@ -465,7 +465,7 @@ export class MapPageInteractionService {
 
       await Promise.all([
         this.itemCatalogService.loadConfig(),
-        this.allyCatalogService.loadConfig(),
+        this.followerCatalogService.loadConfig(),
         this.merchantCatalogService.loadConfig(),
       ]);
       const merchant = await this.merchantCatalogService.getMerchantByLandmarkId(currentCell.landmarkId);
@@ -491,7 +491,7 @@ export class MapPageInteractionService {
         stockEntries,
         stockMap,
         playerAlignment: player.alignment,
-        playerAllies: player.allies,
+        playerFollowers: player.followers,
       });
 
       const sellOffers = this.merchantTradeOffersService.buildSellOffers({
@@ -662,28 +662,28 @@ export class MapPageInteractionService {
       if (!player) return;
 
       const outcomePreviewRows = await this.loadGraveyardOutcomePreviewRows();
-      const options = this.buildDeadAllySelectionOptions(player);
+      const options = this.buildDeadFollowerSelectionOptions(player);
       if (options.length === 0) {
-        window.alert("No dead ally is available for resurrection.");
+        window.alert("No dead follower is available for resurrection.");
         return;
       }
 
-      const selectedAllyId = await this.openAllySelectionDialog({
+      const selectedFollowerId = await this.openFollowerSelectionDialog({
         title: "Graveyard Resurrection",
-        message: "Choose which dead ally you want to call back from the discard pile.",
+        message: "Choose which dead follower you want to call back from the discard pile.",
         confirmText: "Attempt resurrection",
         options,
         outcomePreviewTitle: "Luck check outcomes (1-100)",
         outcomePreviewRows,
       });
-      if (!selectedAllyId) return;
+      if (!selectedFollowerId) return;
 
       const outcome = await this.runNamedAction(input.actionId, async () => {
         return this.actionExecutorService.graveyardResurrect(input.gameId, {
           id: player.id,
           name: player.name,
         }, {
-          allyId: selectedAllyId,
+          followerId: selectedFollowerId,
         });
       }, errorMessage);
 
@@ -691,9 +691,9 @@ export class MapPageInteractionService {
         return;
       }
 
-      const selectedOption = options.find((option) => option.key === selectedAllyId) ?? null;
+      const selectedOption = options.find((option) => option.key === selectedFollowerId) ?? null;
       await this.openGraveyardResurrectResultDialog({
-        selectedAllyLabel: selectedOption?.label ?? selectedAllyId,
+        selectedFollowerLabel: selectedOption?.label ?? selectedFollowerId,
         rewardId: outcome.rewardId,
         rewardLabel: outcome.rewardLabel,
         displayTotal: outcome.displayTotal,
@@ -708,24 +708,24 @@ export class MapPageInteractionService {
 
       const options = this.buildTempleDevoteeSelectionOptions(player);
       if (options.length === 0) {
-        window.alert("No eligible ally is available for temple devotion.");
+        window.alert("No eligible follower is available for temple devotion.");
         return;
       }
 
-      const selectedAllyId = await this.openAllySelectionDialog({
+      const selectedFollowerId = await this.openFollowerSelectionDialog({
         title: "Temple Devotion",
-        message: "Choose an ally to leave at the Temple. Animals, spirits and undead are not allowed.",
+        message: "Choose an follower to leave at the Temple. Animals, spirits and undead are not allowed.",
         confirmText: "Send devotee",
         options,
       });
-      if (!selectedAllyId) return;
+      if (!selectedFollowerId) return;
 
       await this.runNamedAction(input.actionId, async () => {
         await this.actionExecutorService.templeSendDevotee(input.gameId, {
           id: player.id,
           name: player.name,
         }, {
-          allyId: selectedAllyId,
+          followerId: selectedFollowerId,
         });
       }, errorMessage);
       return;
@@ -736,30 +736,30 @@ export class MapPageInteractionService {
 
       const options = this.buildAltarSacrificeSelectionOptions(player);
       if (options.length === 0) {
-        window.alert("No eligible ally is available for altar sacrifice.");
+        window.alert("No eligible follower is available for altar sacrifice.");
         return;
       }
 
-      const selectedAllyId = await this.openAllySelectionDialog({
+      const selectedFollowerId = await this.openFollowerSelectionDialog({
         title: "Altar Sacrifice",
-        message: "Choose an ally to sacrifice at the Altar. Undead cannot be sacrificed.",
-        confirmText: "Sacrifice ally",
+        message: "Choose an follower to sacrifice at the Altar. Undead cannot be sacrificed.",
+        confirmText: "Sacrifice follower",
         options,
       });
-      if (!selectedAllyId) return;
+      if (!selectedFollowerId) return;
 
       await this.runNamedAction(input.actionId, async () => {
         await this.actionExecutorService.altarSacrifice(input.gameId, {
           id: player.id,
           name: player.name,
         }, {
-          allyId: selectedAllyId,
+          followerId: selectedFollowerId,
         });
       }, errorMessage);
       return;
     }
 
-    if (handler === "ally-eliminate-zombie") {
+    if (handler === "follower-eliminate-zombie") {
       if (!player) return;
 
       await this.runNamedAction(input.actionId, async () => {
@@ -1057,14 +1057,14 @@ export class MapPageInteractionService {
     return this.isConfirmResult(response);
   }
 
-  private async openAllySelectionDialog(data: AllySelectDialogData): Promise<string | null> {
-    const dialogRef = this.dialog.open(AllySelectDialog, {
+  private async openFollowerSelectionDialog(data: FollowerSelectDialogData): Promise<string | null> {
+    const dialogRef = this.dialog.open(FollowerSelectDialog, {
       ...DIALOGS_CONFIG,
       data,
     });
 
     const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
-    return this.asSelectedAllyId(response);
+    return this.asSelectedFollowerId(response);
   }
 
   private isConfirmResult(response: unknown): response is DialogResponse {
@@ -1163,7 +1163,7 @@ export class MapPageInteractionService {
     };
   }
 
-  private asSelectedAllyId(response: unknown): string | null {
+  private asSelectedFollowerId(response: unknown): string | null {
     if (typeof response !== "object" || response === null) {
       return null;
     }
@@ -1173,12 +1173,12 @@ export class MapPageInteractionService {
       return null;
     }
 
-    const selectedAllyId = (typed.data as { selectedKey?: unknown }).selectedKey;
-    if (typeof selectedAllyId !== "string" || !selectedAllyId.trim()) {
+    const selectedFollowerId = (typed.data as { selectedKey?: unknown }).selectedKey;
+    if (typeof selectedFollowerId !== "string" || !selectedFollowerId.trim()) {
       return null;
     }
 
-    return selectedAllyId.trim();
+    return selectedFollowerId.trim();
   }
 
   private async applyPendingInventoryDialogResult(
@@ -1272,91 +1272,91 @@ export class MapPageInteractionService {
     return items;
   }
 
-  private buildDeadAllySelectionOptions(player: Player): AllySelectDialogData["options"] {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies
+  private buildDeadFollowerSelectionOptions(player: Player): FollowerSelectDialogData["options"] {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers
       .filter((entry) => {
         if (!entry || typeof entry !== "object") return false;
-        if (typeof entry.allyId !== "string" || !entry.allyId.trim()) return false;
+        if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
         return entry.state === "discarded" && entry.discardReason === "dead";
       })
       .map((entry) => {
-        const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-        const allyName = String(entry.nameOverride ?? ally?.name ?? entry.allyId);
-        const category = String(entry.categoryOverride ?? ally?.category ?? "unknown").toLowerCase();
-        const hpMax = Math.max(1, Math.floor(Number(ally?.maxHp ?? 1)));
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+        const followerName = String(entry.nameOverride ?? follower?.name ?? entry.followerId);
+        const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
+        const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
         return {
-          key: entry.allyId,
-          label: allyName,
-          description: ally?.description?.trim() || "No description available.",
+          key: entry.followerId,
+          label: followerName,
+          description: follower?.description?.trim() || "No description available.",
           hpCurrent: 0,
           hpMax,
-          labels: this.buildAllySelectionLabels(category, ally?.parameterModifiers ?? []),
+          labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
         };
       });
   }
 
-  private buildTempleDevoteeSelectionOptions(player: Player): AllySelectDialogData["options"] {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies
+  private buildTempleDevoteeSelectionOptions(player: Player): FollowerSelectDialogData["options"] {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers
       .filter((entry) => {
         if (!entry || typeof entry !== "object") return false;
-        if (typeof entry.allyId !== "string" || !entry.allyId.trim()) return false;
+        if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
         if (entry.state === "discarded") return false;
         if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
 
-        const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-        const category = String(entry.categoryOverride ?? ally?.category ?? "").trim().toLowerCase();
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+        const category = String(entry.categoryOverride ?? follower?.category ?? "").trim().toLowerCase();
         return category !== "animal" && category !== "spirit" && category !== "undead";
       })
       .map((entry) => {
-        const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-        const allyName = String(entry.nameOverride ?? ally?.name ?? entry.allyId);
-        const category = String(entry.categoryOverride ?? ally?.category ?? "unknown").toLowerCase();
-        const hpMax = Math.max(1, Math.floor(Number(ally?.maxHp ?? 1)));
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+        const followerName = String(entry.nameOverride ?? follower?.name ?? entry.followerId);
+        const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
+        const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
-          key: entry.allyId,
-          label: allyName,
-          description: ally?.description?.trim() || "No description available.",
+          key: entry.followerId,
+          label: followerName,
+          description: follower?.description?.trim() || "No description available.",
           hpCurrent,
           hpMax,
-          labels: this.buildAllySelectionLabels(category, ally?.parameterModifiers ?? []),
+          labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
         };
       });
   }
 
-  private buildAltarSacrificeSelectionOptions(player: Player): AllySelectDialogData["options"] {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies
+  private buildAltarSacrificeSelectionOptions(player: Player): FollowerSelectDialogData["options"] {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers
       .filter((entry) => {
         if (!entry || typeof entry !== "object") return false;
-        if (typeof entry.allyId !== "string" || !entry.allyId.trim()) return false;
+        if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
         if (entry.state === "discarded") return false;
         if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
 
-        const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-        const category = String(entry.categoryOverride ?? ally?.category ?? "").trim().toLowerCase();
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+        const category = String(entry.categoryOverride ?? follower?.category ?? "").trim().toLowerCase();
         return category !== "undead";
       })
       .map((entry) => {
-        const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-        const allyName = String(entry.nameOverride ?? ally?.name ?? entry.allyId);
-        const category = String(entry.categoryOverride ?? ally?.category ?? "unknown").toLowerCase();
-        const hpMax = Math.max(1, Math.floor(Number(ally?.maxHp ?? 1)));
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+        const followerName = String(entry.nameOverride ?? follower?.name ?? entry.followerId);
+        const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
+        const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
-          key: entry.allyId,
-          label: allyName,
-          description: ally?.description?.trim() || "No description available.",
+          key: entry.followerId,
+          label: followerName,
+          description: follower?.description?.trim() || "No description available.",
           hpCurrent,
           hpMax,
-          labels: this.buildAllySelectionLabels(category, ally?.parameterModifiers ?? []),
+          labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
         };
       });
   }
 
-  private async loadGraveyardOutcomePreviewRows(): Promise<NonNullable<AllySelectDialogData["outcomePreviewRows"]>> {
+  private async loadGraveyardOutcomePreviewRows(): Promise<NonNullable<FollowerSelectDialogData["outcomePreviewRows"]>> {
     try {
       return await this.graveyardResurrectRewardsConfigService.buildDialogRows();
     } catch (error) {
@@ -1365,7 +1365,7 @@ export class MapPageInteractionService {
     }
   }
 
-  private buildAllySelectionLabels(
+  private buildFollowerSelectionLabels(
     category: string,
     modifiers: Array<{
       parameter: "strength" | "magic" | "luck";

@@ -9,7 +9,7 @@ import { getDoctorCostPerUnit, isDoctorActionId } from "../consts/safe-place-act
 import { ActionCatalogService } from "./action-catalog-service";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { ItemCatalogService } from "./item-catalog-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 
 export interface ActionCardContext {
   isBusy: boolean;
@@ -32,7 +32,7 @@ export class ActionRegistryService {
     private actionCatalogService: ActionCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private itemCatalogService: ItemCatalogService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
   ) {}
 
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
@@ -372,45 +372,45 @@ export class ActionRegistryService {
     }
 
     if (actionId === "graveyard-resurrect") {
-      const hasDeadAlly = this.getDeadAlliesCount(player) > 0;
+      const hasDeadFollower = this.getDeadFollowersCount(player) > 0;
       return {
         id: "graveyard-resurrect",
         label: this.actionCatalogService.getLabel(actionId, "Resurrect"),
         description: this.actionCatalogService.getDescription(
           actionId,
-          "Attempt to resurrect a dead ally from your discard pile through a luck check.",
+          "Attempt to resurrect a dead follower from your discard pile through a luck check.",
         ),
-        disabled: commonDisabled || !hasDeadAlly,
+        disabled: commonDisabled || !hasDeadFollower,
         pending: false,
       };
     }
 
     if (actionId === "temple-send-devotee") {
-      const eligibleAllies = this.getEligibleTempleAlliesCount(player);
+      const eligibleFollowers = this.getEligibleTempleFollowersCount(player);
       const alignment = player.alignment ?? "neutral";
       return {
         id: "temple-send-devotee",
         label: this.actionCatalogService.getLabel(actionId, "Send devotee"),
         description: this.actionCatalogService.getDescription(
           actionId,
-          "Leave an eligible ally at the Temple. Become good, gain 2 XP and end turn.",
+          "Leave an eligible follower at the Temple. Become good, gain 2 XP and end turn.",
         ),
-        disabled: commonDisabled || alignment === "good" || eligibleAllies <= 0,
+        disabled: commonDisabled || alignment === "good" || eligibleFollowers <= 0,
         pending: false,
       };
     }
 
     if (actionId === "altar-sacrifice") {
-      const eligibleAllies = this.getEligibleAltarAlliesCount(player);
+      const eligibleFollowers = this.getEligibleAltarFollowersCount(player);
       const alignment = player.alignment ?? "neutral";
       return {
         id: "altar-sacrifice",
         label: this.actionCatalogService.getLabel(actionId, "Sacrifice"),
         description: this.actionCatalogService.getDescription(
           actionId,
-          "Sacrifice an eligible ally at the Altar. Become evil, gain 2 XP and end turn.",
+          "Sacrifice an eligible follower at the Altar. Become evil, gain 2 XP and end turn.",
         ),
-        disabled: commonDisabled || alignment === "evil" || eligibleAllies <= 0,
+        disabled: commonDisabled || alignment === "evil" || eligibleFollowers <= 0,
         pending: false,
       };
     }
@@ -430,49 +430,49 @@ export class ActionRegistryService {
     return null;
   }
 
-  private getDeadAlliesCount(player: Player): number {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies.filter((entry) => {
+  private getDeadFollowersCount(player: Player): number {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers.filter((entry) => {
       if (!entry || typeof entry !== "object") return false;
-      if (typeof entry.allyId !== "string" || !entry.allyId.trim()) return false;
+      if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
       return entry.state === "discarded" && entry.discardReason === "dead";
     }).length;
   }
 
-  private getEligibleTempleAlliesCount(player: Player): number {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies.filter((entry) => {
+  private getEligibleTempleFollowersCount(player: Player): number {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers.filter((entry) => {
       if (!entry || typeof entry !== "object") return false;
       if (entry.state === "discarded") return false;
       if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
 
-      const allyDefinition = this.allyCatalogService.getCachedAllyById(entry.allyId);
+      const allyDefinition = this.followerCatalogService.getCachedFollowerById(entry.followerId);
       const category = String(entry.categoryOverride ?? allyDefinition?.category ?? "").trim().toLowerCase();
       if (!category) return false;
       return category !== "animal" && category !== "spirit" && category !== "undead";
     }).length;
   }
 
-  private getEligibleAltarAlliesCount(player: Player): number {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies.filter((entry) => {
+  private getEligibleAltarFollowersCount(player: Player): number {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers.filter((entry) => {
       if (!entry || typeof entry !== "object") return false;
       if (entry.state === "discarded") return false;
       if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
 
-      const allyDefinition = this.allyCatalogService.getCachedAllyById(entry.allyId);
+      const allyDefinition = this.followerCatalogService.getCachedFollowerById(entry.followerId);
       const category = String(entry.categoryOverride ?? allyDefinition?.category ?? "").trim().toLowerCase();
       return category !== "undead";
     }).length;
   }
 
   private hasActiveZombie(player: Player): boolean {
-    const allies = Array.isArray(player.allies) ? player.allies : [];
-    return allies.some((entry) => {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers.some((entry) => {
       if (!entry || typeof entry !== "object") return false;
       if (entry.state === "discarded") return false;
       if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
-      return String(entry.allyId ?? "").trim() === "zombie";
+      return String(entry.followerId ?? "").trim() === "zombie";
     });
   }
 

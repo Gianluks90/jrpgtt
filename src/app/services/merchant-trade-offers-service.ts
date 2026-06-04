@@ -10,7 +10,7 @@ import {
 import { Player } from "../models/Player";
 import { ItemCatalogService } from "./item-catalog-service";
 import { MerchantStockConfigService } from "./merchant-stock-config-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 
 @Injectable({
   providedIn: "root",
@@ -19,7 +19,7 @@ export class MerchantTradeOffersService {
   constructor(
     private itemCatalogService: ItemCatalogService,
     private merchantStockConfigService: MerchantStockConfigService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
   ) {}
 
   public async resolveStockEntries(input: {
@@ -83,9 +83,9 @@ export class MerchantTradeOffersService {
     stockEntries: MerchantStockEntry[];
     stockMap: Record<string, number>;
     playerAlignment?: Player["alignment"];
-    playerAllies?: Player["allies"];
+    playerFollowers?: Player["followers"];
   }): MerchantDialogOfferRow[] {
-    const ownedActiveAllyIds = this.getActiveAllyIds(input.playerAllies);
+    const ownedActiveFollowerIds = this.getActiveFollowerIds(input.playerFollowers);
     const offers = input.stockEntries
       .map((entry): MerchantDialogOfferRow | null => {
         const stockKey = this.buildStockKey(entry.kind, entry.tradableId);
@@ -115,22 +115,22 @@ export class MerchantTradeOffersService {
           };
         }
 
-        const ally = this.allyCatalogService.getCachedAllyById(entry.tradableId);
-        if (!ally) return null;
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.tradableId);
+        if (!follower) return null;
 
         return {
-          tradableKind: "ally",
-          tradableId: ally.id,
-          name: ally.name,
-          description: ally.description,
-          category: ally.category,
-          identityKeywords: this.buildAllyIdentityKeywords(ally),
+          tradableKind: "follower",
+          tradableId: follower.id,
+          name: follower.name,
+          description: follower.description,
+          category: follower.category,
+          identityKeywords: this.buildFollowerIdentityKeywords(follower),
           purchaseValue: typeof entry.purchaseValue === "number"
             ? Math.max(0, Math.floor(entry.purchaseValue))
             : 0,
           stock: Math.max(0, Math.floor(Number(input.stockMap[stockKey] ?? 0))),
-          canBuy: !ownedActiveAllyIds.has(ally.id),
-          blockedReason: ownedActiveAllyIds.has(ally.id) ? "Already in your party" : undefined,
+          canBuy: !ownedActiveFollowerIds.has(follower.id),
+          blockedReason: ownedActiveFollowerIds.has(follower.id) ? "Already in your party" : undefined,
         };
       });
 
@@ -199,14 +199,14 @@ export class MerchantTradeOffersService {
     return keywords;
   }
 
-  private buildAllyIdentityKeywords(ally: {
+  private buildFollowerIdentityKeywords(follower: {
     maxHp: number;
     itemCapacityBonus?: number;
   }): string[] {
     const keywords: string[] = [];
-    keywords.push(`hp ${Math.max(1, Math.floor(Number(ally.maxHp ?? 1)))}`);
+    keywords.push(`hp ${Math.max(1, Math.floor(Number(follower.maxHp ?? 1)))}`);
 
-    const itemCapacityBonus = Number(ally.itemCapacityBonus ?? 0);
+    const itemCapacityBonus = Number(follower.itemCapacityBonus ?? 0);
     if (Number.isFinite(itemCapacityBonus) && Math.floor(itemCapacityBonus) > 0) {
       keywords.push(`+${Math.floor(itemCapacityBonus)} item slots`);
     }
@@ -218,23 +218,23 @@ export class MerchantTradeOffersService {
     return `${kind}:${tradableId}`;
   }
 
-  private getActiveAllyIds(rawAllies: unknown): Set<string> {
-    if (!Array.isArray(rawAllies)) {
+  private getActiveFollowerIds(rawFollowers: unknown): Set<string> {
+    if (!Array.isArray(rawFollowers)) {
       return new Set<string>();
     }
 
     return new Set(
-      rawAllies
+      rawFollowers
         .filter((entry) => {
           if (!entry || typeof entry !== "object") return false;
-          const allyId = (entry as { allyId?: unknown }).allyId;
-          if (typeof allyId !== "string" || !allyId.trim()) return false;
+          const followerId = (entry as { followerId?: unknown }).followerId;
+          if (typeof followerId !== "string" || !followerId.trim()) return false;
           const state = (entry as { state?: unknown }).state;
           if (state === "discarded") return false;
           const hpCurrent = Number((entry as { hpCurrent?: unknown }).hpCurrent);
           return Number.isFinite(hpCurrent) && Math.floor(hpCurrent) > 0;
         })
-        .map((entry) => String((entry as { allyId?: unknown }).allyId).trim()),
+        .map((entry) => String((entry as { followerId?: unknown }).followerId).trim()),
     );
   }
 }

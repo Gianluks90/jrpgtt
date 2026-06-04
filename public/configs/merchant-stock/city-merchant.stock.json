@@ -20,7 +20,7 @@
       "purchaseValue": 4
     },
     {
-      "kind": "ally",
+      "kind": "follower",
       "tradableId": "mule",
       "stock": 2,
       "purchaseValue": 10

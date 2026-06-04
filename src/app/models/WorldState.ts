@@ -24,7 +24,7 @@ export interface WorldEventState {
     emitted: boolean;
 }
 
-export interface AllyMovementBonusState {
+export interface FollowerMovementBonusState {
     turn: number;
     amount: number;
 }
@@ -44,7 +44,7 @@ export interface WorldState {
     pendingFastTravelByPlayer?: Record<string, PendingFastTravelState>;
     skippedTurnsByPlayer?: Record<string, number>;
     pendingTeleportsByPlayer?: Record<string, PendingTeleportState>;
-    allyMovementBonusByPlayer?: Record<string, AllyMovementBonusState>;
+    followerMovementBonusByPlayer?: Record<string, FollowerMovementBonusState>;
     nextDiscardSeq?: number;
     sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;
     landmarkTargets?: LandmarkTarget[];

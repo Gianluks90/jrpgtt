@@ -35,6 +35,7 @@ export class GameService {
   public myGame = signal<Game | null>(null);
   private gameUnsubscribe: Unsubscribe | null = null;
   private snapshotPlayerId: string | null = null;
+  private snapshotGameId: string | null = null;
   private readonly gameConfigUrl = "/configs/game-init.config.json";
 
   constructor(
@@ -48,6 +49,7 @@ export class GameService {
 
     this.stopMyGameSnapshot();
     this.snapshotPlayerId = playerId;
+    this.snapshotGameId = null;
 
     const collectionRef = collection(this.firebaseService.database, "games");
     const q = query(collectionRef, where("playerIds", "array-contains", playerId), limit(1));
@@ -66,10 +68,35 @@ export class GameService {
     });
   }
 
+  public startGameSnapshotById(gameId: string): void {
+    const normalizedGameId = String(gameId ?? "").trim();
+    if (!normalizedGameId) return;
+    if (this.gameUnsubscribe && this.snapshotGameId === normalizedGameId) return;
+
+    this.stopMyGameSnapshot();
+    this.snapshotGameId = normalizedGameId;
+    this.snapshotPlayerId = null;
+
+    const gameRef = doc(this.firebaseService.database, "games", normalizedGameId);
+    this.gameUnsubscribe = onSnapshot(gameRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        this.myGame.set(null);
+        return;
+      }
+
+      const game = {
+        id: snapshot.id,
+        ...snapshot.data(),
+      } as Game;
+      this.myGame.set(game);
+    });
+  }
+
   public stopMyGameSnapshot(): void {
     this.gameUnsubscribe?.();
     this.gameUnsubscribe = null;
     this.snapshotPlayerId = null;
+    this.snapshotGameId = null;
   }
 
   public clearGameSession(): void {
@@ -356,7 +383,7 @@ export class GameService {
           x: spawn.x,
           y: spawn.y,
         },
-        allies: Array.isArray(player?.allies) ? player?.allies : [],
+        followers: Array.isArray(player?.followers) ? player?.followers : [],
         inventory: {
           items: this.normalizeInventoryItems(inventory?.items),
           resources: (inventory?.resources?.length ?? 0) > 0 ? inventory?.resources : [{ label: "food", quantity: 3 }],
@@ -416,7 +443,7 @@ export class GameService {
         resourceCapacity: DEFAULT_RESOURCE_INVENTORY_CAPACITY,
         itemCapacity: DEFAULT_ITEM_INVENTORY_CAPACITY,
       },
-      allies: [],
+      followers: [],
       actionsUsedThisTurn: {},
       statuses: [],
       pendingResourcePickup: null,

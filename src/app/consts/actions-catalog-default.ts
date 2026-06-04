@@ -165,7 +165,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
         },
       },
       flow: {
-        handler: "ally-feed-horse",
+        handler: "follower-feed-horse",
         errorMessage: "Error while feeding horse",
         trigger: "command-panel",
         validators: ["my-turn", "not-busy", "action-not-used"],
@@ -448,7 +448,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "graveyard-resurrect",
       ui: {
         label: "Resurrect",
-        descriptionTemplate: "Attempt to resurrect a dead ally from your discard pile through a luck check. Outcomes may be dangerous.",
+        descriptionTemplate: "Attempt to resurrect a dead follower from your discard pile through a luck check. Outcomes may be dangerous.",
         i18n: {
           labelKey: "actions.graveyardResurrect.label",
           descriptionKey: "actions.graveyardResurrect.description",
@@ -472,7 +472,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "temple-send-devotee",
       ui: {
         label: "Send devotee",
-        descriptionTemplate: "Leave an eligible ally at the Temple. Your alignment becomes good, gain 2 XP, then end turn.",
+        descriptionTemplate: "Leave an eligible follower at the Temple. Your alignment becomes good, gain 2 XP, then end turn.",
         i18n: {
           labelKey: "actions.templeSendDevotee.label",
           descriptionKey: "actions.templeSendDevotee.description",
@@ -496,7 +496,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "altar-sacrifice",
       ui: {
         label: "Sacrifice",
-        descriptionTemplate: "Sacrifice an eligible ally at the Altar. Your alignment becomes evil, gain 2 XP, then end turn.",
+        descriptionTemplate: "Sacrifice an eligible follower at the Altar. Your alignment becomes evil, gain 2 XP, then end turn.",
         i18n: {
           labelKey: "actions.altarSacrifice.label",
           descriptionKey: "actions.altarSacrifice.description",
@@ -527,7 +527,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
         },
       },
       flow: {
-        handler: "ally-eliminate-zombie",
+        handler: "follower-eliminate-zombie",
         errorMessage: "Error while eliminating zombie",
         trigger: "command-panel",
         validators: ["my-turn", "not-busy", "action-not-used"],

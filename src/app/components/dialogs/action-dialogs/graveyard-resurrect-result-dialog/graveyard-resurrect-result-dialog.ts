@@ -7,7 +7,7 @@ import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
 export interface GraveyardResurrectResultDialogData {
-  selectedAllyLabel: string;
+  selectedFollowerLabel: string;
   rewardId: string;
   rewardLabel: string;
   displayTotal: number;
@@ -23,7 +23,7 @@ export interface GraveyardResurrectResultDialogData {
 })
 export class GraveyardResurrectResultDialog {
   public readonly title = "Graveyard Resurrection";
-  public readonly selectedAllyLabel: string;
+  public readonly selectedFollowerLabel: string;
   public readonly rewardId: string;
   public readonly rewardLabel: string;
   public readonly rewardsTable: GraveyardResurrectRewardDialogRow[];
@@ -33,9 +33,9 @@ export class GraveyardResurrectResultDialog {
     private dialogRef: DialogRef<DialogResponse>,
     @Inject(DIALOG_DATA) data: GraveyardResurrectResultDialogData,
   ) {
-    this.selectedAllyLabel = typeof data?.selectedAllyLabel === "string" && data.selectedAllyLabel.trim().length > 0
-      ? data.selectedAllyLabel
-      : "Selected ally";
+    this.selectedFollowerLabel = typeof data?.selectedFollowerLabel === "string" && data.selectedFollowerLabel.trim().length > 0
+      ? data.selectedFollowerLabel
+      : "Selected follower";
     this.rewardId = typeof data?.rewardId === "string" ? data.rewardId : "unknown";
     this.rewardLabel = typeof data?.rewardLabel === "string" ? data.rewardLabel : "Unknown outcome";
     this.rewardsTable = Array.isArray(data?.rewardsTable) ? data.rewardsTable : [];

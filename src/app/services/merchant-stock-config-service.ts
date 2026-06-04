@@ -136,7 +136,7 @@ export class MerchantStockConfigService {
       throw new Error("Invalid merchant stock configuration: stock entry has invalid kind");
     }
 
-    if (rawKind === "item" || rawKind === "ally") {
+    if (rawKind === "item" || rawKind === "follower") {
       return rawKind;
     }
 

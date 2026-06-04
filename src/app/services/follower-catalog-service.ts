@@ -1,15 +1,15 @@
 import { Injectable } from "@angular/core";
-import { AlliesCatalogConfig, AllyDefinition } from "../models/AllyCatalog";
+import { FollowersCatalogConfig, FollowerDefinition } from "../models/FollowerCatalog";
 
 @Injectable({
   providedIn: "root",
 })
-export class AllyCatalogService {
-  private readonly configUrl = "/configs/allies.config.json";
-  private configCache: AlliesCatalogConfig | null = null;
-  private configLoadPromise: Promise<AlliesCatalogConfig> | null = null;
+export class FollowerCatalogService {
+  private readonly configUrl = "/configs/followers.config.json";
+  private configCache: FollowersCatalogConfig | null = null;
+  private configLoadPromise: Promise<FollowersCatalogConfig> | null = null;
 
-  public async loadConfig(): Promise<AlliesCatalogConfig> {
+  public async loadConfig(): Promise<FollowersCatalogConfig> {
     if (this.configCache) return this.configCache;
     if (this.configLoadPromise) return this.configLoadPromise;
 
@@ -21,7 +21,7 @@ export class AllyCatalogService {
       });
 
       if (!response.ok) {
-        throw new Error("Unable to load allies configuration");
+        throw new Error("Unable to load followers configuration");
       }
 
       const raw = await response.json() as unknown;
@@ -37,38 +37,38 @@ export class AllyCatalogService {
     }
   }
 
-  public getCachedAllyById(allyId: string): AllyDefinition | null {
-    const normalized = String(allyId ?? "").trim();
+  public getCachedFollowerById(followerId: string): FollowerDefinition | null {
+    const normalized = String(followerId ?? "").trim();
     if (!normalized || !this.configCache) return null;
 
-    return this.configCache.allies.find((ally) => ally.id === normalized) ?? null;
+    return this.configCache.followers.find((follower) => follower.id === normalized) ?? null;
   }
 
-  private parseConfig(raw: unknown): AlliesCatalogConfig {
+  private parseConfig(raw: unknown): FollowersCatalogConfig {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-      throw new Error("Invalid allies configuration: root object is missing");
+      throw new Error("Invalid followers configuration: root object is missing");
     }
 
-    const typedRoot = raw as { allies?: unknown };
-    if (!Array.isArray(typedRoot.allies)) {
-      throw new Error("Invalid allies configuration: allies array is missing");
+    const typedRoot = raw as { followers?: unknown };
+    if (!Array.isArray(typedRoot.followers)) {
+      throw new Error("Invalid followers configuration: followers array is missing");
     }
 
-    const allyIds = new Set<string>();
-    const allies = typedRoot.allies.map((entry, index) => this.parseAlly(entry, index));
-    allies.forEach((ally) => {
-      if (allyIds.has(ally.id)) {
-        throw new Error(`Invalid allies configuration: duplicate ally id '${ally.id}'`);
+    const followerIds = new Set<string>();
+    const followers = typedRoot.followers.map((entry, index) => this.parseFollower(entry, index));
+    followers.forEach((follower) => {
+      if (followerIds.has(follower.id)) {
+        throw new Error(`Invalid followers configuration: duplicate follower id '${follower.id}'`);
       }
-      allyIds.add(ally.id);
+      followerIds.add(follower.id);
     });
 
-    return { allies };
+    return { followers };
   }
 
-  private parseAlly(raw: unknown, index: number): AllyDefinition {
+  private parseFollower(raw: unknown, index: number): FollowerDefinition {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-      throw new Error(`Invalid allies configuration: ally at index ${index} is invalid`);
+      throw new Error(`Invalid followers configuration: follower at index ${index} is invalid`);
     }
 
     const typed = raw as {
@@ -85,38 +85,38 @@ export class AllyCatalogService {
     };
 
     if (typeof typed.id !== "string" || !typed.id.trim()) {
-      throw new Error(`Invalid allies configuration: ally at index ${index} has invalid id`);
+      throw new Error(`Invalid followers configuration: follower at index ${index} has invalid id`);
     }
 
     if (typeof typed.name !== "string" || !typed.name.trim()) {
-      throw new Error(`Invalid allies configuration: ally '${typed.id}' has invalid name`);
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid name`);
     }
 
     if (typeof typed.description !== "string") {
-      throw new Error(`Invalid allies configuration: ally '${typed.id}' has invalid description`);
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid description`);
     }
 
     if (typeof typed.category !== "string" || !typed.category.trim()) {
-      throw new Error(`Invalid allies configuration: ally '${typed.id}' has invalid category`);
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid category`);
     }
 
     const maxHp = Number(typed.maxHp);
     if (!Number.isFinite(maxHp) || Math.floor(maxHp) !== maxHp || maxHp <= 0) {
-      throw new Error(`Invalid allies configuration: ally '${typed.id}' has invalid maxHp`);
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid maxHp`);
     }
 
     let itemCapacityBonus: number | undefined;
     if (typeof typed.itemCapacityBonus !== "undefined") {
       const parsedItemCapacityBonus = Number(typed.itemCapacityBonus);
       if (!Number.isFinite(parsedItemCapacityBonus) || Math.floor(parsedItemCapacityBonus) !== parsedItemCapacityBonus) {
-        throw new Error(`Invalid allies configuration: ally '${typed.id}' has invalid itemCapacityBonus`);
+        throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid itemCapacityBonus`);
       }
 
       itemCapacityBonus = parsedItemCapacityBonus;
     }
 
     if (!Array.isArray(typed.actions) || typed.actions.some((actionId) => typeof actionId !== "string" || !actionId.trim())) {
-      throw new Error(`Invalid allies configuration: ally '${typed.id}' has invalid actions`);
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid actions`);
     }
 
     return {
@@ -133,34 +133,34 @@ export class AllyCatalogService {
     };
   }
 
-  private parseAllowedBiomes(raw: unknown, allyId: string): AllyDefinition["allowedBiomes"] {
+  private parseAllowedBiomes(raw: unknown, followerId: string): FollowerDefinition["allowedBiomes"] {
     if (typeof raw === "undefined") return undefined;
     const knownBiomes = ["plains", "forest", "mountain", "water", "desert", "ruins"];
     if (!Array.isArray(raw) || raw.some((value) => !knownBiomes.includes(String(value)))) {
-      throw new Error(`Invalid allies configuration: ally '${allyId}' has invalid allowedBiomes`);
+      throw new Error(`Invalid followers configuration: follower '${followerId}' has invalid allowedBiomes`);
     }
 
-    return raw as AllyDefinition["allowedBiomes"];
+    return raw as FollowerDefinition["allowedBiomes"];
   }
 
-  private parseStatusKeys(raw: unknown, allyId: string): AllyDefinition["statusKeysWhileActive"] {
+  private parseStatusKeys(raw: unknown, followerId: string): FollowerDefinition["statusKeysWhileActive"] {
     if (typeof raw === "undefined") return undefined;
     if (!Array.isArray(raw) || raw.some((value) => typeof value !== "string" || !value.trim())) {
-      throw new Error(`Invalid allies configuration: ally '${allyId}' has invalid statusKeysWhileActive`);
+      throw new Error(`Invalid followers configuration: follower '${followerId}' has invalid statusKeysWhileActive`);
     }
 
     return raw.map((value) => value.trim());
   }
 
-  private parseParameterModifiers(raw: unknown, allyId: string): AllyDefinition["parameterModifiers"] {
+  private parseParameterModifiers(raw: unknown, followerId: string): FollowerDefinition["parameterModifiers"] {
     if (typeof raw === "undefined") return undefined;
     if (!Array.isArray(raw)) {
-      throw new Error(`Invalid allies configuration: ally '${allyId}' has invalid parameterModifiers`);
+      throw new Error(`Invalid followers configuration: follower '${followerId}' has invalid parameterModifiers`);
     }
 
     return raw.map((entry, index) => {
       if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-        throw new Error(`Invalid allies configuration: ally '${allyId}' modifier at index ${index} is invalid`);
+        throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} is invalid`);
       }
 
       const typed = entry as {
@@ -171,15 +171,15 @@ export class AllyCatalogService {
       };
 
       if (typed.parameter !== "strength" && typed.parameter !== "magic" && typed.parameter !== "luck") {
-        throw new Error(`Invalid allies configuration: ally '${allyId}' modifier at index ${index} has invalid parameter`);
+        throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid parameter`);
       }
 
       const amount = Number(typed.amount);
       if (!Number.isFinite(amount) || Math.floor(amount) !== amount) {
-        throw new Error(`Invalid allies configuration: ally '${allyId}' modifier at index ${index} has invalid amount`);
+        throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid amount`);
       }
 
-      const scopes = this.parseModifierScopes(typed.scope, typed.scopes, allyId, index);
+      const scopes = this.parseModifierScopes(typed.scope, typed.scopes, followerId, index);
 
       return {
         parameter: typed.parameter,
@@ -192,17 +192,17 @@ export class AllyCatalogService {
   private parseModifierScopes(
     rawScope: unknown,
     rawScopes: unknown,
-    allyId: string,
+    followerId: string,
     index: number,
   ): Array<"always" | "fight-only" | "day-only" | "night-only"> {
     if (typeof rawScopes !== "undefined") {
       if (!Array.isArray(rawScopes) || rawScopes.length === 0) {
-        throw new Error(`Invalid allies configuration: ally '${allyId}' modifier at index ${index} has invalid scopes`);
+        throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid scopes`);
       }
 
       const normalizedScopes = rawScopes.map((value) => {
         if (!this.isValidModifierScope(value)) {
-          throw new Error(`Invalid allies configuration: ally '${allyId}' modifier at index ${index} has invalid scope value`);
+          throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid scope value`);
         }
 
         return value;
@@ -215,7 +215,7 @@ export class AllyCatalogService {
       return [rawScope];
     }
 
-    throw new Error(`Invalid allies configuration: ally '${allyId}' modifier at index ${index} has invalid scope`);
+    throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid scope`);
   }
 
   private isValidModifierScope(value: unknown): value is "always" | "fight-only" | "day-only" | "night-only" {

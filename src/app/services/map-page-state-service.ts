@@ -4,7 +4,7 @@ import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getBiomeResourcesMap } from "../consts/biome-resources";
 import { PLAYER_STARTING_MONEY } from "../consts/player-defaults";
 import { DEFAULT_ITEM_INVENTORY_CAPACITY } from "../consts/inventory-config";
-import { PlayerAllyEntry } from "../models/Ally";
+import { PlayerFollowerEntry } from "../models/Follower";
 import { BiomeType, MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
 import { Player } from "../models/Player";
@@ -15,7 +15,7 @@ import { EventLog } from "../models/EventLog";
 import { EVENT_LOG_CONFIG } from "../consts/logs/event-log-config";
 import { EventLogService } from "./event-log-service";
 import { ActionCatalogService } from "./action-catalog-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 import { FirebaseService } from "./firebase-service";
 import { LandmarksConfigService } from "./landmarks-config-service";
 import { TilesConfigService } from "./tiles-config-service";
@@ -119,7 +119,7 @@ export class MapPageStateService {
     private tilesConfigService: TilesConfigService,
     private landmarksConfigService: LandmarksConfigService,
     private actionCatalogService: ActionCatalogService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private statusCatalogService: StatusCatalogService,
   ) { }
@@ -134,7 +134,7 @@ export class MapPageStateService {
     void this.loadBiomeResourcesConfig();
     void this.loadLandmarksConfig();
     void this.loadActionCatalog();
-    void this.loadAlliesCatalog();
+    void this.loadFollowersCatalog();
     void this.loadBiomeConditionsCatalog();
     void this.loadStatusesCatalog();
 
@@ -194,7 +194,7 @@ export class MapPageStateService {
               resources: [],
               money: PLAYER_STARTING_MONEY,
             },
-            allies: this.normalizePlayerAllies(rawPlayer.allies),
+            followers: this.normalizePlayerFollowers(rawPlayer.followers),
             actionsUsedThisTurn: rawPlayer.actionsUsedThisTurn ?? {},
             statuses: Array.isArray(rawPlayer.statuses) ? rawPlayer.statuses : [],
           } as Player;
@@ -218,7 +218,7 @@ export class MapPageStateService {
               !rawPlayer.inventory ||
               typeof rawPlayer.inventory.money !== "number" ||
               typeof rawPlayer.inventory.itemCapacity !== "number" ||
-              !Array.isArray(rawPlayer.allies)
+              !Array.isArray(rawPlayer.followers)
             ) &&
             !this.inventoryBackfillRequested.has(rawPlayer.id)
           ) {
@@ -226,7 +226,7 @@ export class MapPageStateService {
             const legacyPlayerRef = doc(this.firebaseService.database, "games", gameId, "players", rawPlayer.id);
             void setDoc(legacyPlayerRef, {
               level: typeof rawPlayer.level === "number" ? rawPlayer.level : 1,
-              allies: this.normalizePlayerAllies(rawPlayer.allies),
+              followers: this.normalizePlayerFollowers(rawPlayer.followers),
               inventory: {
                 items: normalizedItems,
                 resources: rawPlayer.inventory?.resources ?? [],
@@ -311,9 +311,9 @@ export class MapPageStateService {
     }
   }
 
-  private async loadAlliesCatalog(): Promise<void> {
+  private async loadFollowersCatalog(): Promise<void> {
     try {
-      await this.allyCatalogService.loadConfig();
+      await this.followerCatalogService.loadConfig();
     } catch (error) {
       console.error(error);
     }
@@ -412,19 +412,19 @@ export class MapPageStateService {
     return nextItems;
   }
 
-  private normalizePlayerAllies(rawAllies: unknown): PlayerAllyEntry[] {
-    if (!Array.isArray(rawAllies)) {
+  private normalizePlayerFollowers(rawFollowers: unknown): PlayerFollowerEntry[] {
+    if (!Array.isArray(rawFollowers)) {
       return [];
     }
 
-    const nextAllies: PlayerAllyEntry[] = [];
-    rawAllies.forEach((entry) => {
+    const nextFollowers: PlayerFollowerEntry[] = [];
+    rawFollowers.forEach((entry) => {
       if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
         return;
       }
 
-      const allyId = (entry as { allyId?: unknown }).allyId;
-      if (typeof allyId !== "string" || !allyId.trim()) {
+      const followerId = (entry as { followerId?: unknown }).followerId;
+      if (typeof followerId !== "string" || !followerId.trim()) {
         return;
       }
 
@@ -459,8 +459,8 @@ export class MapPageStateService {
         ? rawCategoryOverride.trim().toLowerCase()
         : undefined;
 
-      nextAllies.push({
-        allyId: allyId.trim(),
+      nextFollowers.push({
+        followerId: followerId.trim(),
         hpCurrent,
         state,
         ...(discardReason ? { discardReason } : {}),
@@ -470,6 +470,6 @@ export class MapPageStateService {
       });
     });
 
-    return nextAllies;
+    return nextFollowers;
   }
 }

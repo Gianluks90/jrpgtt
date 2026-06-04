@@ -9,7 +9,7 @@ import { GenericConfirmDialog } from "../../components/dialogs/generic-confirm-d
 import { DIALOGS_CONFIG } from "../../consts/dialog-configs";
 import { DialogResponse } from "../../models/DialogResponse";
 import { take } from "rxjs";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { GameSettingsDialog, GameSettingsDialogData } from "../../components/dialogs/game-settings-dialog/game-settings-dialog";
 import { PlayerService, PlayerSetupData } from "../../services/player-service";
 import { Player, PlayerAlignment } from "../../models/Player";
@@ -27,6 +27,7 @@ export class LobbyPage implements OnInit, OnDestroy {
   public playerService = inject(PlayerService);
   public dialog = inject(Dialog);
   public router = inject(Router);
+  public route = inject(ActivatedRoute);
   public fb = inject(FormBuilder);
   private injector = inject(Injector);
 
@@ -98,7 +99,12 @@ export class LobbyPage implements OnInit, OnDestroy {
     const currentUserId = await this.resolveCurrentUserId();
     if (!currentUserId) return;
 
-    this.gameService.startMyGameSnapshot(currentUserId);
+    const routeGameId = String(this.route.snapshot.paramMap.get("gameId") ?? "").trim();
+    if (routeGameId) {
+      this.gameService.startGameSnapshotById(routeGameId);
+    } else {
+      this.gameService.startMyGameSnapshot(currentUserId);
+    }
 
     effect(() => {
       const game = this.myGame();
@@ -236,6 +242,7 @@ export class LobbyPage implements OnInit, OnDestroy {
 
     try {
       await this.gameService.startGame(game.id);
+      await this.router.navigate(["/game", game.id, "map"]);
     } catch (error) {
       console.error(error);
       window.alert(error instanceof Error ? error.message : "Error starting game");

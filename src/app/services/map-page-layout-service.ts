@@ -102,7 +102,7 @@ export class MapPageLayoutService {
         resources: [{ label: "food", quantity: 3 }],
         resourceCapacity: DEFAULT_RESOURCE_INVENTORY_CAPACITY,
       },
-      allies: [],
+      followers: [],
       actionsUsedThisTurn: {},
       statuses: [],
       pendingResourcePickup: null,

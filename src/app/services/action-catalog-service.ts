@@ -366,7 +366,7 @@ export class ActionCatalogService {
       || value === "biome-cell-gather"
       || value === "biome-chop-tree"
       || value === "biome-consume-ration"
-      || value === "ally-feed-horse"
+      || value === "follower-feed-horse"
       || value === "landmark-rest"
       || value === "landmark-trainer"
       || value === "safe-place-doctor"
@@ -382,7 +382,7 @@ export class ActionCatalogService {
         || value === "graveyard-resurrect"
         || value === "temple-send-devotee"
         || value === "altar-sacrifice"
-        || value === "ally-eliminate-zombie";
+        || value === "follower-eliminate-zombie";
   }
 
   private isFlowTrigger(value: unknown): value is ActionFlowTrigger {

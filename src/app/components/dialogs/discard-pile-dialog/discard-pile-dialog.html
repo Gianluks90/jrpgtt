@@ -4,7 +4,7 @@
       <p class="discard-empty">No discarded entities yet.</p>
     } @else {
       @for (entry of entries; track entry.id) {
-        <article class="discard-card" [class.discard-card-ally]="entry.card.kind === 'ally'" [class.discard-card-item]="entry.card.kind === 'item'">
+        <article class="discard-card" [class.discard-card-follower]="entry.card.kind === 'follower'" [class.discard-card-item]="entry.card.kind === 'item'">
           <div class="discard-title-row">
             <p class="discard-title">{{ resolveCardTitle(entry) }}</p>
             <span class="discard-seq">#{{ entry.discardSeq }}</span>

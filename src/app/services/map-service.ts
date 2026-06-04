@@ -111,7 +111,7 @@ export class MapService {
       }
 
       const targetCellId = this.cellId(targetX, targetY);
-      const movementBonus = this.getAllyMovementBonus(worldState, player.id);
+      const movementBonus = this.getFollowerMovementBonus(worldState, player.id);
       const isAllowed = await this.canMoveToTarget(
         transaction,
         gameId,
@@ -651,8 +651,8 @@ export class MapService {
     };
   }
 
-  private getAllyMovementBonus(worldState: WorldState, playerId: string): number {
-    const entry = worldState.allyMovementBonusByPlayer?.[playerId];
+  private getFollowerMovementBonus(worldState: WorldState, playerId: string): number {
+    const entry = worldState.followerMovementBonusByPlayer?.[playerId];
     if (!entry) {
       return 0;
     }

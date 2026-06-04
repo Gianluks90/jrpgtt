@@ -4,7 +4,7 @@ import { DialogResponse } from "../../../../models/DialogResponse";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
-export interface AllySelectDialogOption {
+export interface FollowerSelectDialogOption {
   key: string;
   label: string;
   description: string;
@@ -16,46 +16,46 @@ export interface AllySelectDialogOption {
   }>;
 }
 
-export interface AllySelectDialogOutcomeRow {
+export interface FollowerSelectDialogOutcomeRow {
   id: string;
   rangeLabel: string;
   effectLabel: string;
 }
 
-export interface AllySelectDialogData {
+export interface FollowerSelectDialogData {
   title: string;
   message: string;
   confirmText: string;
-  options: AllySelectDialogOption[];
+  options: FollowerSelectDialogOption[];
   outcomePreviewTitle?: string;
-  outcomePreviewRows?: AllySelectDialogOutcomeRow[];
+  outcomePreviewRows?: FollowerSelectDialogOutcomeRow[];
 }
 
-export interface AllySelectDialogResult {
+export interface FollowerSelectDialogResult {
   selectedKey: string;
 }
 
 @Component({
-  selector: "app-ally-select-dialog",
+  selector: "app-follower-select-dialog",
   imports: [DialogWrapper, TextButton],
-  templateUrl: "./ally-select-dialog.html",
-  styleUrl: "./ally-select-dialog.scss",
+  templateUrl: "./follower-select-dialog.html",
+  styleUrl: "./follower-select-dialog.scss",
 })
-export class AllySelectDialog {
+export class FollowerSelectDialog {
   public readonly title: string;
   public readonly message: string;
   public readonly confirmText: string;
-  public readonly options: AllySelectDialogOption[];
+  public readonly options: FollowerSelectDialogOption[];
   public readonly outcomePreviewTitle: string;
-  public readonly outcomePreviewRows: AllySelectDialogOutcomeRow[];
+  public readonly outcomePreviewRows: FollowerSelectDialogOutcomeRow[];
   public selectedKey: string | null;
 
   constructor(
-    private dialogRef: DialogRef<DialogResponse<AllySelectDialogResult>>,
-    @Inject(DIALOG_DATA) data: AllySelectDialogData,
+    private dialogRef: DialogRef<DialogResponse<FollowerSelectDialogResult>>,
+    @Inject(DIALOG_DATA) data: FollowerSelectDialogData,
   ) {
-    this.title = typeof data?.title === "string" && data.title.trim().length > 0 ? data.title : "Select ally";
-    this.message = typeof data?.message === "string" ? data.message : "Choose an ally.";
+    this.title = typeof data?.title === "string" && data.title.trim().length > 0 ? data.title : "Select follower";
+    this.message = typeof data?.message === "string" ? data.message : "Choose an follower.";
     this.confirmText = typeof data?.confirmText === "string" && data.confirmText.trim().length > 0
       ? data.confirmText
       : "Confirm";
@@ -93,8 +93,8 @@ export class AllySelectDialog {
     });
   }
 
-  private normalizeOptions(rawOptions: AllySelectDialogOption[] | undefined): AllySelectDialogOption[] {
-    const normalized: AllySelectDialogOption[] = [];
+  private normalizeOptions(rawOptions: FollowerSelectDialogOption[] | undefined): FollowerSelectDialogOption[] {
+    const normalized: FollowerSelectDialogOption[] = [];
     const seen = new Set<string>();
 
     for (const option of Array.isArray(rawOptions) ? rawOptions : []) {
@@ -130,7 +130,7 @@ export class AllySelectDialog {
     return normalized;
   }
 
-  private normalizeOutcomeRows(rawRows: AllySelectDialogOutcomeRow[] | undefined): AllySelectDialogOutcomeRow[] {
+  private normalizeOutcomeRows(rawRows: FollowerSelectDialogOutcomeRow[] | undefined): FollowerSelectDialogOutcomeRow[] {
     if (!Array.isArray(rawRows)) {
       return [];
     }

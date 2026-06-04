@@ -183,7 +183,7 @@ export class MerchantCatalogService {
       throw new Error(`Invalid merchants configuration: merchant '${merchantId}' stock at index ${stockIndex} has invalid kind`);
     }
 
-    if (rawKind === "item" || rawKind === "ally") {
+    if (rawKind === "item" || rawKind === "follower") {
       return rawKind;
     }
 

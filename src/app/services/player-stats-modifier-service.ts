@@ -1,13 +1,13 @@
 import { Injectable } from "@angular/core";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
-import { PlayerAllyEntry } from "../models/Ally";
+import { PlayerFollowerEntry } from "../models/Follower";
 import { Player, PlayerAlignment } from "../models/Player";
 import { PlayerCharacteristicDelta, PlayerComputedStats } from "../models/PlayerComputedStats";
 import { WorldState } from "../models/WorldState";
 import { QuadrantId } from "../models/WorldZone";
 import { WorldZonesService } from "./world-zones-service";
 import { StatusCatalogService } from "./status-catalog-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 
 interface PlayerStatsContext {
   player: Player;
@@ -23,7 +23,7 @@ export class PlayerStatsModifierService {
   constructor(
     private worldZonesService: WorldZonesService,
     private statusCatalogService: StatusCatalogService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
   ) {}
 
   public computeStats(context: PlayerStatsContext): PlayerComputedStats {
@@ -58,20 +58,20 @@ export class PlayerStatsModifierService {
   private collectDeltas(context: PlayerStatsContext): PlayerCharacteristicDelta[] {
     const deltas: PlayerCharacteristicDelta[] = [];
     this.applyStatusDeltas(context, deltas);
-    this.applyAllyDeltas(context, deltas);
+    this.applyFollowerDeltas(context, deltas);
     this.applyLandmarkAlignmentDelta(context, deltas);
     this.applySanctuaryQuadrantAttunementDelta(context, deltas);
     return deltas;
   }
 
-  private applyAllyDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
-    const allies = this.normalizeAllies(context.player.allies);
-    if (allies.length === 0) {
+  private applyFollowerDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
+    const followers = this.normalizeFollowers(context.player.followers);
+    if (followers.length === 0) {
       return;
     }
 
-    allies.forEach((allyEntry) => {
-      const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+    followers.forEach((allyEntry) => {
+      const allyDefinition = this.followerCatalogService.getCachedFollowerById(allyEntry.followerId);
       if (!allyDefinition) {
         return;
       }
@@ -208,21 +208,21 @@ export class PlayerStatsModifierService {
       }));
   }
 
-  private normalizeAllies(allies: Player["allies"]): PlayerAllyEntry[] {
-    if (!Array.isArray(allies)) {
+  private normalizeFollowers(followers: Player["followers"]): PlayerFollowerEntry[] {
+    if (!Array.isArray(followers)) {
       return [];
     }
 
-    return allies
+    return followers
       .filter((entry) => {
         if (!entry || typeof entry !== "object") return false;
-        if (typeof entry.allyId !== "string" || !entry.allyId.trim()) return false;
+        if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
         if (entry.state === "discarded") return false;
         if (typeof entry.hpCurrent !== "number" || !Number.isFinite(entry.hpCurrent)) return false;
         return Math.floor(entry.hpCurrent) > 0;
       })
       .map((entry) => ({
-        allyId: entry.allyId,
+        followerId: entry.followerId,
         hpCurrent: Math.max(0, Math.floor(Number(entry.hpCurrent))),
         state: entry.state,
       }));

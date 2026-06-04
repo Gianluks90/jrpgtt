@@ -6,7 +6,7 @@ export type ActionFlowHandler =
   | "biome-cell-gather"
   | "biome-chop-tree"
   | "biome-consume-ration"
-  | "ally-feed-horse"
+  | "follower-feed-horse"
   | "landmark-rest"
   | "landmark-trainer"
   | "safe-place-doctor"
@@ -22,7 +22,7 @@ export type ActionFlowHandler =
   | "graveyard-resurrect"
   | "temple-send-devotee"
   | "altar-sacrifice"
-  | "ally-eliminate-zombie";
+  | "follower-eliminate-zombie";
 
 export type ActionFlowTrigger = "command-panel";
 

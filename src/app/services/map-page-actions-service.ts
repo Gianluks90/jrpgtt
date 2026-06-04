@@ -9,7 +9,7 @@ import { WorldState } from "../models/WorldState";
 import { LandmarksService } from "./landmarks-service";
 import { ActionCatalogService } from "./action-catalog-service";
 import { ItemCatalogService } from "./item-catalog-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -34,7 +34,7 @@ export class MapPageActionsService {
     private landmarksService: LandmarksService,
     private actionCatalogService: ActionCatalogService,
     private itemCatalogService: ItemCatalogService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
   ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
@@ -76,7 +76,7 @@ export class MapPageActionsService {
         ? landmarkActionIds
         : this.getConfiguredBiomeActionIds(cell, input.tilesConfig);
     const inventoryActionIds = this.getInventoryActionIds(player);
-    const allyActionIds = this.getAllyActionIds(player);
+    const allyActionIds = this.getFollowerActionIds(player);
     const actionIds = [...new Set([...configuredActionIds, ...inventoryActionIds, ...allyActionIds])];
     const biomeResources = cell.biome ? (input.biomeResourcesByBiome[cell.biome] ?? []) : [];
     const sanctuaryLabel = isSanctuaryCell && cell.sanctuaryElement
@@ -167,21 +167,21 @@ export class MapPageActionsService {
     return actionIds;
   }
 
-  private getAllyActionIds(player: Player): string[] {
+  private getFollowerActionIds(player: Player): string[] {
     const actionIds: string[] = [];
-    const allies = Array.isArray(player.allies) ? player.allies : [];
+    const followers = Array.isArray(player.followers) ? player.followers : [];
 
-    allies.forEach((entry) => {
+    followers.forEach((entry) => {
       if (!entry || typeof entry !== "object") return;
       if (entry.state === "discarded") return;
       if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return;
 
-      const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-      if (!ally?.actions?.length) {
+      const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      if (!follower?.actions?.length) {
         return;
       }
 
-      ally.actions.forEach((actionId) => {
+      follower.actions.forEach((actionId) => {
         if (typeof actionId === "string" && actionId.trim().length > 0) {
           actionIds.push(actionId);
         }

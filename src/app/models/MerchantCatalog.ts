@@ -1,6 +1,6 @@
 import { ItemCategory } from "./ItemCatalog";
 
-export type MerchantTradableKind = "item" | "ally";
+export type MerchantTradableKind = "item" | "follower";
 
 export interface MerchantStockEntry {
   kind: MerchantTradableKind;

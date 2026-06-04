@@ -131,7 +131,7 @@
             flex-direction: column;
         }
 
-        .player-allies-block {
+        .player-followers-block {
             display: flex;
             flex-direction: column;
         }
@@ -420,13 +420,13 @@
         background: rgba(255, 255, 255, 0.28);
     }
 
-    .ally-hp-section {
+    .follower-hp-section {
         display: flex;
         flex-direction: column;
         gap: 4px;
     }
 
-    .ally-hp-label-row {
+    .follower-hp-label-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -437,21 +437,21 @@
         color: var(--fg-color);
     }
 
-    .ally-hp-bar {
+    .follower-hp-bar {
         width: 100%;
         height: 8px;
         border: 1px solid var(--fg-color);
         background: transparent;
     }
 
-    .ally-hp-bar.ally-hp-bar-full {
-        .ally-hp-fill {
+    .follower-hp-bar.follower-hp-bar-full {
+        .follower-hp-fill {
             background: var(--ok-color);
             opacity: 0.92;
         }
     }
 
-    .ally-hp-fill {
+    .follower-hp-fill {
         height: 100%;
         background: var(--ok-color);
         opacity: 0.82;

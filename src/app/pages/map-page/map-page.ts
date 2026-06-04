@@ -20,7 +20,7 @@ import { MapPageActionsService } from "../../services/map-page-actions-service";
 import { MapPageInteractionService } from "../../services/map-page-interaction-service";
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/inventory-config";
-import { PlayerAllyEntry } from "../../models/Ally";
+import { PlayerFollowerEntry } from "../../models/Follower";
 import { ItemDefinition } from "../../models/ItemCatalog";
 import { PlayerComputedStats } from "../../models/PlayerComputedStats";
 import { MapCell } from "../../models/MapCell";
@@ -32,7 +32,7 @@ import { PendingFastTravelState } from "../../models/WorldState";
 import { WorldEventRegionTransitionService } from "../../services/world-event-region-transition-service";
 import { BiomeConditionCatalogService } from "../../services/biome-condition-catalog-service";
 import { ItemCatalogService } from "../../services/item-catalog-service";
-import { AllyCatalogService } from "../../services/ally-catalog-service";
+import { FollowerCatalogService } from "../../services/follower-catalog-service";
 import { DiscardPileService } from "../../services/discard-pile-service";
 
 @Component({
@@ -70,7 +70,7 @@ export class MapPage implements OnInit, OnDestroy {
   private worldEventRegionTransitionService = inject(WorldEventRegionTransitionService);
   private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
   private itemCatalogService = inject(ItemCatalogService);
-  private allyCatalogService = inject(AllyCatalogService);
+  private followerCatalogService = inject(FollowerCatalogService);
   private discardPileService = inject(DiscardPileService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
@@ -88,7 +88,7 @@ export class MapPage implements OnInit, OnDestroy {
   public isFastTravelTransitionRunning = this.fastTravelVisualService.isTransitionRunning;
   public mockPlayers = signal<Player[]>([]);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
-  public utilitiesExpandedPanel = signal<"inventory" | "allies">("inventory");
+  public utilitiesExpandedPanel = signal<"inventory" | "followers">("inventory");
     private static readonly locationInfoResetDelayMs = 10000;
     private locationInfoResetTimer: ReturnType<typeof setTimeout> | null = null;
   private lastPendingDialogKey = signal<string | null>(null);
@@ -303,7 +303,7 @@ export class MapPage implements OnInit, OnDestroy {
 
   public visibleInventoryCapacity = computed<number>(() => {
     const configured = this.myPlayer()?.inventory?.itemCapacity;
-    const alliesBonus = this.getAlliesItemCapacityBonus(this.myPlayer()?.allies);
+    const alliesBonus = this.getFollowersItemCapacityBonus(this.myPlayer()?.followers);
     if (typeof configured === "number" && Number.isFinite(configured)) {
       return Math.max(1, Math.floor(configured)) + alliesBonus;
     }
@@ -311,8 +311,8 @@ export class MapPage implements OnInit, OnDestroy {
     return 4 + alliesBonus;
   });
 
-  public visibleAllies = computed<Array<{
-    allyId: string;
+  public visibleFollowers = computed<Array<{
+    followerId: string;
     name: string;
     category: string;
     description: string;
@@ -324,16 +324,16 @@ export class MapPage implements OnInit, OnDestroy {
       tone: "neutral" | "positive" | "negative";
     }>;
   }>>(() => {
-    const allies = this.normalizePlayerAllies(this.myPlayer()?.allies);
-    return allies
+    const followers = this.normalizePlayerFollowers(this.myPlayer()?.followers);
+    return followers
       .filter((entry) => entry.state !== "discarded")
       .map((entry) => {
-        const definition = this.allyCatalogService.getCachedAllyById(entry.allyId);
+        const definition = this.followerCatalogService.getCachedFollowerById(entry.followerId);
         const hpMax = typeof definition?.maxHp === "number" ? Math.max(1, Math.floor(definition.maxHp)) : 1;
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
-          allyId: entry.allyId,
-          name: entry.nameOverride ?? definition?.name ?? entry.allyId,
+          followerId: entry.followerId,
+          name: entry.nameOverride ?? definition?.name ?? entry.followerId,
           category: String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase(),
           description: definition?.description?.trim() || "No description available.",
           hpCurrent,
@@ -344,14 +344,14 @@ export class MapPage implements OnInit, OnDestroy {
               text: `${String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase()}`,
               tone: "neutral",
             },
-            ...(definition ? this.buildAllyLabels(definition.parameterModifiers ?? []) : []),
+            ...(definition ? this.buildFollowerLabels(definition.parameterModifiers ?? []) : []),
           ],
         };
       });
   });
 
-  public discardedAlliesCount = computed<number>(() => {
-    return this.normalizePlayerAllies(this.myPlayer()?.allies)
+  public discardedFollowersCount = computed<number>(() => {
+    return this.normalizePlayerFollowers(this.myPlayer()?.followers)
       .filter((entry) => entry.state === "discarded")
       .length;
   });
@@ -365,10 +365,10 @@ export class MapPage implements OnInit, OnDestroy {
     return names.join(", ");
   });
 
-  public collapsedAlliesSummary = computed<string>(() => {
-    const names = this.visibleAllies().map((ally) => ally.name.trim()).filter((name) => name.length > 0);
+  public collapsedFollowersSummary = computed<string>(() => {
+    const names = this.visibleFollowers().map((follower) => follower.name.trim()).filter((name) => name.length > 0);
     if (names.length === 0) {
-      return "no allies";
+      return "no followers";
     }
 
     return names.join(", ");
@@ -437,7 +437,7 @@ export class MapPage implements OnInit, OnDestroy {
     this.mapPageState.init(this.gameId);
     void this.biomeConditionCatalogService.loadConfig();
     void this.itemCatalogService.loadConfig();
-    void this.allyCatalogService.loadConfig();
+    void this.followerCatalogService.loadConfig();
     effect(() => {
       const player = this.myPlayer();
       const pendingPickup = player?.pendingResourcePickup ?? null;
@@ -535,16 +535,16 @@ export class MapPage implements OnInit, OnDestroy {
     return this.utilitiesExpandedPanel() === "inventory";
   }
 
-  public isAlliesExpanded(): boolean {
-    return this.utilitiesExpandedPanel() === "allies";
+  public isFollowersExpanded(): boolean {
+    return this.utilitiesExpandedPanel() === "followers";
   }
 
   public onInventoryPanelToggle(): void {
     this.utilitiesExpandedPanel.set("inventory");
   }
 
-  public onAlliesPanelToggle(): void {
-    this.utilitiesExpandedPanel.set("allies");
+  public onFollowersPanelToggle(): void {
+    this.utilitiesExpandedPanel.set("followers");
   }
 
   private async syncMockPlayersForLayout(): Promise<void> {
@@ -749,7 +749,7 @@ export class MapPage implements OnInit, OnDestroy {
     return Array.from(labels);
   }
 
-  private buildAllyLabels(modifiers: Array<{
+  private buildFollowerLabels(modifiers: Array<{
     parameter: "strength" | "magic" | "luck";
     amount: number;
     scopes: Array<"always" | "fight-only" | "day-only" | "night-only">;
@@ -787,19 +787,19 @@ export class MapPage implements OnInit, OnDestroy {
     return labels;
   }
 
-  private normalizePlayerAllies(rawAllies: unknown): PlayerAllyEntry[] {
-    if (!Array.isArray(rawAllies)) {
+  private normalizePlayerFollowers(rawFollowers: unknown): PlayerFollowerEntry[] {
+    if (!Array.isArray(rawFollowers)) {
       return [];
     }
 
-    const allies: PlayerAllyEntry[] = [];
-    rawAllies.forEach((entry) => {
+    const followers: PlayerFollowerEntry[] = [];
+    rawFollowers.forEach((entry) => {
       if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
         return;
       }
 
-      const allyId = (entry as { allyId?: unknown }).allyId;
-      if (typeof allyId !== "string" || !allyId.trim()) {
+      const followerId = (entry as { followerId?: unknown }).followerId;
+      if (typeof followerId !== "string" || !followerId.trim()) {
         return;
       }
 
@@ -816,8 +816,8 @@ export class MapPage implements OnInit, OnDestroy {
         ? rawCategoryOverride.trim().toLowerCase()
         : undefined;
 
-      allies.push({
-        allyId: allyId.trim(),
+      followers.push({
+        followerId: followerId.trim(),
         hpCurrent,
         state,
         ...(nameOverride ? { nameOverride } : {}),
@@ -825,7 +825,7 @@ export class MapPage implements OnInit, OnDestroy {
       });
     });
 
-    return allies;
+    return followers;
   }
 
   private getCurrentTurnMovementBonus(): number {
@@ -836,7 +836,7 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     const currentTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
-    const movementBonus = worldState.allyMovementBonusByPlayer?.[playerId];
+    const movementBonus = worldState.followerMovementBonusByPlayer?.[playerId];
     if (!movementBonus || movementBonus.turn !== currentTurn) {
       return 0;
     }
@@ -844,9 +844,9 @@ export class MapPage implements OnInit, OnDestroy {
     return Math.max(0, Math.floor(Number(movementBonus.amount ?? 0)));
   }
 
-  private getAlliesItemCapacityBonus(rawAllies: unknown): number {
-    const allies = this.normalizePlayerAllies(rawAllies);
-    return allies.reduce((total, entry) => {
+  private getFollowersItemCapacityBonus(rawFollowers: unknown): number {
+    const followers = this.normalizePlayerFollowers(rawFollowers);
+    return followers.reduce((total, entry) => {
       if (entry.state === "discarded") {
         return total;
       }
@@ -855,12 +855,12 @@ export class MapPage implements OnInit, OnDestroy {
         return total;
       }
 
-      const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-      if (!ally) {
+      const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      if (!follower) {
         return total;
       }
 
-      const itemCapacityBonus = Number(ally.itemCapacityBonus ?? 0);
+      const itemCapacityBonus = Number(follower.itemCapacityBonus ?? 0);
       if (!Number.isFinite(itemCapacityBonus)) {
         return total;
       }

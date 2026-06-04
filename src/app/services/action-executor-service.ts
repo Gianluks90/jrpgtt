@@ -3,7 +3,7 @@ import { collection, doc, getDoc, getDocs, runTransaction, Timestamp, Transactio
 import { GameMap } from "../models/GameMap";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
-import { PlayerAllyEntry } from "../models/Ally";
+import { PlayerFollowerEntry } from "../models/Follower";
 import { Player, PlayerStatus } from "../models/Player";
 import { ResourceLabel, ResourceStack } from "../models/Resource";
 import { WorldState } from "../models/WorldState";
@@ -22,7 +22,7 @@ import { WorldZonesService } from "./world-zones-service";
 import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../consts/safe-place-actions";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { EnchantressRewardsConfigService } from "./enchantress-rewards-config-service";
-import { AllyCatalogService } from "./ally-catalog-service";
+import { FollowerCatalogService } from "./follower-catalog-service";
 import { ItemCatalogService } from "./item-catalog-service";
 import { ItemOwnershipService } from "./item-ownership-service";
 import { MerchantCatalogService } from "./merchant-catalog-service";
@@ -53,7 +53,7 @@ export interface CityMysticOutcome {
 }
 
 export interface GraveyardResurrectOutcome {
-  selectedAllyId: string;
+  selectedFollowerId: string;
   rewardId: string;
   rewardLabel: string;
   displayTotal: number;
@@ -71,14 +71,14 @@ export interface MerchantTradeOutcome {
 
 export interface MerchantCheckoutOperation {
   operation: "buy" | "sell";
-  kind?: "item" | "ally";
+  kind?: "item" | "follower";
   itemId: string;
   quantity: number;
 }
 
 export interface MerchantCheckoutLineOutcome {
   operation: "buy" | "sell";
-  kind: "item" | "ally";
+  kind: "item" | "follower";
   itemId: string;
   itemName: string;
   quantity: number;
@@ -99,7 +99,7 @@ export class ActionExecutorService {
   private readonly sanctuaryDonationCost = 5;
   private readonly capitalEnchantressCost = 5;
   private readonly cityMysticCost = 5;
-  private readonly allyBiomeHpPercentDelta = 0.05;
+  private readonly followerBiomeHpPercentDelta = 0.05;
   private readonly poisonStatusKey = "poison";
   private readonly regenStatusKey = "regen";
   private readonly minifiedStatusKey = "minified";
@@ -116,7 +116,7 @@ export class ActionExecutorService {
     private tilesConfigService: TilesConfigService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
-    private allyCatalogService: AllyCatalogService,
+    private followerCatalogService: FollowerCatalogService,
     private itemCatalogService: ItemCatalogService,
     private itemOwnershipService: ItemOwnershipService,
     private merchantCatalogService: MerchantCatalogService,
@@ -137,7 +137,7 @@ export class ActionExecutorService {
       this.tilesConfigService.loadConfig(),
       this.biomeConditionCatalogService.loadConfig(),
       this.statusCatalogService.loadConfig(),
-      this.allyCatalogService.loadConfig(),
+      this.followerCatalogService.loadConfig(),
       this.itemCatalogService.loadConfig(),
       this.itemEffectCatalogService.loadConfig(),
     ]);
@@ -196,8 +196,8 @@ export class ActionExecutorService {
       const mapCellSnap = await transaction.get(mapCellRef);
       const currentCell = mapCellSnap.exists() ? (mapCellSnap.data() as MapCell) : null;
       const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
-      const normalizedAllies = this.normalizeAllies(player.allies);
-      let nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      let nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
       const pendingDiscardEntries: Array<Omit<DiscardPileEntry, "id" | "discardSeq" | "discardedAt">> = [];
       const itemTurnEffects = this.applyConfiguredItemTurnEffects(
         normalizedItems,
@@ -297,7 +297,7 @@ export class ActionExecutorService {
                 },
               });
 
-              nextAllies = nextAllies.map((allyEntry) => {
+              nextFollowers = nextFollowers.map((allyEntry) => {
                 if (allyEntry.state === "discarded") {
                   return allyEntry;
                 }
@@ -307,32 +307,32 @@ export class ActionExecutorService {
                   return allyEntry;
                 }
 
-                const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+                const allyDefinition = this.followerCatalogService.getCachedFollowerById(allyEntry.followerId);
                 const allyMaxHp = Math.max(1, Math.floor(Number(allyDefinition?.maxHp ?? allyHpCurrent ?? 1)));
-                const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.allyBiomeHpPercentDelta));
-                const nextAllyHpCurrent = Math.max(0, allyHpCurrent - allyDeltaHp);
-                const allyDamageHp = Math.max(0, allyHpCurrent - nextAllyHpCurrent);
+                const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.followerBiomeHpPercentDelta));
+                const nextFollowerHpCurrent = Math.max(0, allyHpCurrent - allyDeltaHp);
+                const allyDamageHp = Math.max(0, allyHpCurrent - nextFollowerHpCurrent);
                 if (allyDamageHp <= 0) {
                   return allyEntry;
                 }
 
                 biomeConditionLogs.push({
-                  code: "player.allyHostileEnvironmentDamage",
+                  code: "player.followerHostileEnvironmentDamage",
                   args: {
                     biome: currentCell.biome,
                     conditionId,
-                    allyId: allyEntry.allyId,
-                    allyName: allyDefinition?.name ?? allyEntry.allyId,
+                    followerId: allyEntry.followerId,
+                    followerName: allyDefinition?.name ?? allyEntry.followerId,
                     damageHp: allyDamageHp,
                     environmentSize: connectedEnvironmentSize,
                   },
                 });
 
-                if (nextAllyHpCurrent <= 0) {
+                if (nextFollowerHpCurrent <= 0) {
                   pendingDiscardEntries.push({
                     card: {
-                      kind: "ally",
-                      cardId: allyEntry.allyId,
+                      kind: "follower",
+                      cardId: allyEntry.followerId,
                       name: allyDefinition?.name,
                     },
                     source: "world",
@@ -352,7 +352,7 @@ export class ActionExecutorService {
 
                 return {
                   ...allyEntry,
-                  hpCurrent: nextAllyHpCurrent,
+                  hpCurrent: nextFollowerHpCurrent,
                 };
               });
               continue;
@@ -373,7 +373,7 @@ export class ActionExecutorService {
               });
             }
 
-            nextAllies = nextAllies.map((allyEntry) => {
+            nextFollowers = nextFollowers.map((allyEntry) => {
               if (allyEntry.state === "discarded") {
                 return allyEntry;
               }
@@ -383,27 +383,27 @@ export class ActionExecutorService {
                 return allyEntry;
               }
 
-              const allyDefinition = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
+              const allyDefinition = this.followerCatalogService.getCachedFollowerById(allyEntry.followerId);
               const allyCategory = String(allyEntry.categoryOverride ?? allyDefinition?.category ?? "").trim().toLowerCase();
               if (allyCategory === "undead") {
                 return allyEntry;
               }
 
               const allyMaxHp = Math.max(1, Math.floor(Number(allyDefinition?.maxHp ?? allyHpCurrent ?? 1)));
-              const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.allyBiomeHpPercentDelta));
-              const nextAllyHpCurrent = Math.min(allyMaxHp, allyHpCurrent + allyDeltaHp);
-              const allyHealingHp = Math.max(0, nextAllyHpCurrent - allyHpCurrent);
+              const allyDeltaHp = Math.max(1, Math.floor(allyMaxHp * this.followerBiomeHpPercentDelta));
+              const nextFollowerHpCurrent = Math.min(allyMaxHp, allyHpCurrent + allyDeltaHp);
+              const allyHealingHp = Math.max(0, nextFollowerHpCurrent - allyHpCurrent);
               if (allyHealingHp <= 0) {
                 return allyEntry;
               }
 
               biomeConditionLogs.push({
-                code: "player.allyRegeneratingWatersHealing",
+                code: "player.followerRegeneratingWatersHealing",
                 args: {
                   biome: currentCell.biome,
                   conditionId,
-                  allyId: allyEntry.allyId,
-                  allyName: allyDefinition?.name ?? allyEntry.allyId,
+                  followerId: allyEntry.followerId,
+                  followerName: allyDefinition?.name ?? allyEntry.followerId,
                   healingHp: allyHealingHp,
                   environmentSize: connectedEnvironmentSize,
                 },
@@ -411,15 +411,15 @@ export class ActionExecutorService {
 
               return {
                 ...allyEntry,
-                hpCurrent: nextAllyHpCurrent,
+                hpCurrent: nextFollowerHpCurrent,
               };
             });
           }
         }
       }
 
-      const activeZombies = nextAllies.filter((allyEntry) => {
-        return allyEntry.allyId === "zombie"
+      const activeZombies = nextFollowers.filter((allyEntry) => {
+        return allyEntry.followerId === "zombie"
           && allyEntry.state !== "discarded"
           && Math.max(0, Math.floor(Number(allyEntry.hpCurrent ?? 0))) > 0;
       }).length;
@@ -443,30 +443,30 @@ export class ActionExecutorService {
         }
       }
 
-      const activeAlliesById = new Set(
-        normalizedAllies
+      const activeFollowersById = new Set(
+        normalizedFollowers
           .filter((entry) => entry.state !== "discarded" && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0)
-          .map((entry) => entry.allyId),
+          .map((entry) => entry.followerId),
       );
       const alliesJustDiscardedAsDead = new Set(
-        nextAllies
+        nextFollowers
           .filter((entry) => {
             if (entry.state !== "discarded" || entry.discardReason !== "dead") {
               return false;
             }
 
-            return activeAlliesById.has(entry.allyId);
+            return activeFollowersById.has(entry.followerId);
           })
-          .map((entry) => entry.allyId),
+          .map((entry) => entry.followerId),
       );
 
-      const hasLostCapacityAlly = Array.from(alliesJustDiscardedAsDead).some((allyId) => {
-        const allyDefinition = this.allyCatalogService.getCachedAllyById(allyId);
+      const hasLostCapacityFollower = Array.from(alliesJustDiscardedAsDead).some((followerId) => {
+        const allyDefinition = this.followerCatalogService.getCachedFollowerById(followerId);
         const itemCapacityBonus = Number(allyDefinition?.itemCapacityBonus ?? 0);
         return Number.isFinite(itemCapacityBonus) && Math.max(0, Math.floor(itemCapacityBonus)) > 0;
       });
 
-      if (hasLostCapacityAlly) {
+      if (hasLostCapacityFollower) {
         const baseItemCapacity = this.getItemCapacity(player);
         if (nextInventoryItems.length > baseItemCapacity) {
           const overflowItems = nextInventoryItems.slice(baseItemCapacity);
@@ -491,7 +491,7 @@ export class ActionExecutorService {
             });
           });
 
-          endTurnItemLogs.push(`discarded ${overflowItems.length} item(s) for inventory overflow after ally loss.`);
+          endTurnItemLogs.push(`discarded ${overflowItems.length} item(s) for inventory overflow after follower loss.`);
         }
       }
 
@@ -555,8 +555,8 @@ export class ActionExecutorService {
         };
       }
 
-      if (!this.areAlliesEquivalent(normalizedAllies, nextAllies)) {
-        nextPlayerPatch.allies = nextAllies;
+      if (!this.areFollowersEquivalent(normalizedFollowers, nextFollowers)) {
+        nextPlayerPatch.followers = nextFollowers;
       }
 
       if (Object.keys(nextPlayerPatch).length > 0) {
@@ -1423,7 +1423,7 @@ export class ActionExecutorService {
       throw new Error("Invalid action payload");
     }
 
-    await this.allyCatalogService.loadConfig();
+    await this.followerCatalogService.loadConfig();
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
@@ -1457,8 +1457,8 @@ export class ActionExecutorService {
         throw new Error("You must feed your horse before moving");
       }
 
-      if (!this.hasActiveAllyWithAction(player.allies, "feed-horse")) {
-        throw new Error("You do not have an active ally that can be fed");
+      if (!this.hasActiveFollowerWithAction(player.followers, "feed-horse")) {
+        throw new Error("You do not have an active follower that can be fed");
       }
 
       const currentResources = player.inventory?.resources ?? [];
@@ -1468,7 +1468,7 @@ export class ActionExecutorService {
       }
 
       const nextResources = this.addResource(currentResources, "food", -1);
-      const currentBonusByPlayer = worldState.allyMovementBonusByPlayer ?? {};
+      const currentBonusByPlayer = worldState.followerMovementBonusByPlayer ?? {};
       const previousBonus = currentBonusByPlayer[actor.id];
       const previousAmount = previousBonus?.turn === worldTurn
         ? Math.max(0, Math.floor(Number(previousBonus.amount ?? 0)))
@@ -1491,7 +1491,7 @@ export class ActionExecutorService {
       }, { merge: true });
 
       transaction.set(worldStateRef, {
-        allyMovementBonusByPlayer: nextBonusByPlayer,
+        followerMovementBonusByPlayer: nextBonusByPlayer,
       }, { merge: true });
 
       transaction.set(gameRef, {
@@ -2360,7 +2360,7 @@ export class ActionExecutorService {
 
     await Promise.all([
       this.itemCatalogService.loadConfig(),
-      this.allyCatalogService.loadConfig(),
+      this.followerCatalogService.loadConfig(),
       this.merchantCatalogService.loadConfig(),
     ]);
 
@@ -3072,21 +3072,21 @@ export class ActionExecutorService {
     gameId: string,
     actor: Pick<Player, "id" | "name">,
     payload: {
-      allyId: string;
+      followerId: string;
     },
   ): Promise<GraveyardResurrectOutcome> {
     if (!gameId || !actor.id) {
       throw new Error("Invalid action payload");
     }
 
-    const selectedAllyId = String(payload.allyId ?? "").trim();
-    if (!selectedAllyId) {
-      throw new Error("Invalid ally selection");
+    const selectedFollowerId = String(payload.followerId ?? "").trim();
+    if (!selectedFollowerId) {
+      throw new Error("Invalid follower selection");
     }
 
     await Promise.all([
       this.graveyardResurrectRewardsConfigService.loadConfig(),
-      this.allyCatalogService.loadConfig(),
+      this.followerCatalogService.loadConfig(),
     ]);
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
@@ -3137,8 +3137,8 @@ export class ActionExecutorService {
       }))
       .filter((entry) => {
         return entry.data.ownerPlayerId === actor.id
-          && entry.data.card?.kind === "ally"
-          && entry.data.card?.cardId === selectedAllyId
+          && entry.data.card?.kind === "follower"
+          && entry.data.card?.cardId === selectedFollowerId
           && entry.data.reason === "dead"
           && !entry.data.recoveredAt;
       })
@@ -3149,7 +3149,7 @@ export class ActionExecutorService {
       })[0] ?? null;
 
     if (!selectedDiscardEntry) {
-      throw new Error("Selected ally is not available in discard pile");
+      throw new Error("Selected follower is not available in discard pile");
     }
 
     let appliedOutcome = reward.id;
@@ -3194,24 +3194,24 @@ export class ActionExecutorService {
       const mapCell = mapCellSnap.data() as MapCell;
       this.ensurePlayerOnLandmark(mapCell, "graveyard", "You must be at Graveyard to use resurrection");
 
-      const normalizedAllies = this.normalizeAllies(player.allies);
-      const targetIndex = normalizedAllies.findIndex((entry) => {
-        return entry.allyId === selectedAllyId
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const targetIndex = normalizedFollowers.findIndex((entry) => {
+        return entry.followerId === selectedFollowerId
           && entry.state === "discarded"
           && entry.discardReason === "dead";
       });
 
       if (targetIndex < 0) {
-        throw new Error("Selected ally is not dead in your party records");
+        throw new Error("Selected follower is not dead in your party records");
       }
 
-      const targetEntry = normalizedAllies[targetIndex];
-      const targetDefinition = this.allyCatalogService.getCachedAllyById(selectedAllyId);
+      const targetEntry = normalizedFollowers[targetIndex];
+      const targetDefinition = this.followerCatalogService.getCachedFollowerById(selectedFollowerId);
       const targetMaxHp = Math.max(1, Math.floor(Number(targetDefinition?.maxHp ?? targetEntry.hpCurrent ?? 1)));
-      const targetName = String(targetEntry.nameOverride ?? targetDefinition?.name ?? selectedAllyId).trim() || selectedAllyId;
+      const targetName = String(targetEntry.nameOverride ?? targetDefinition?.name ?? selectedFollowerId).trim() || selectedFollowerId;
 
-      let nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
-      nextAllies[targetIndex] = {
+      let nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
+      nextFollowers[targetIndex] = {
         ...targetEntry,
         state: "discarded",
         discardReason: "lost",
@@ -3234,8 +3234,8 @@ export class ActionExecutorService {
       }
 
       if (reward.summonZombie === true) {
-        const hasZombie = nextAllies.some((entry) => {
-          return entry.allyId === "zombie"
+        const hasZombie = nextFollowers.some((entry) => {
+          return entry.followerId === "zombie"
             && entry.state !== "discarded"
             && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
         });
@@ -3243,10 +3243,10 @@ export class ActionExecutorService {
         if (hasZombie) {
           appliedOutcome = "summon-zombie-blocked";
         } else {
-          const zombieDefinition = this.allyCatalogService.getCachedAllyById("zombie");
+          const zombieDefinition = this.followerCatalogService.getCachedFollowerById("zombie");
           const zombieHp = Math.max(1, Math.floor(Number(zombieDefinition?.maxHp ?? 2)));
-          nextAllies.push({
-            allyId: "zombie",
+          nextFollowers.push({
+            followerId: "zombie",
             hpCurrent: zombieHp,
             state: "active",
           });
@@ -3257,8 +3257,8 @@ export class ActionExecutorService {
         const resurrectHp = reward.reviveTarget === "one-hp" ? 1 : targetMaxHp;
         const shouldMarkAsUndead = reward.markAsUndead === true || reward.reviveTarget === "one-hp";
 
-        nextAllies[targetIndex] = {
-          allyId: targetEntry.allyId,
+        nextFollowers[targetIndex] = {
+          followerId: targetEntry.followerId,
           hpCurrent: resurrectHp,
           state: "active",
           ...(shouldMarkAsUndead ? { nameOverride: `${targetName} (undead)` } : {}),
@@ -3287,7 +3287,7 @@ export class ActionExecutorService {
           },
         },
         statuses: nextStatuses,
-        allies: nextAllies,
+        followers: nextFollowers,
         lastLuckCheck: luckResult,
         actionsUsedThisTurn: this.markActionUsed(player, "graveyard-resurrect", worldTurn),
       }, { merge: true });
@@ -3301,7 +3301,7 @@ export class ActionExecutorService {
     });
 
     await this.tryCreateLog(gameId, actor, "player.graveyardResurrect", {
-      allyId: selectedAllyId,
+      followerId: selectedFollowerId,
       rolledTotal: Math.floor(luckResult.total),
       rewardTotal,
       rewardId: reward.id,
@@ -3310,7 +3310,7 @@ export class ActionExecutorService {
     });
 
     return {
-      selectedAllyId,
+      selectedFollowerId,
       rewardId: reward.id,
       rewardLabel: reward.label,
       displayTotal: rewardTotal,
@@ -3323,20 +3323,20 @@ export class ActionExecutorService {
     gameId: string,
     actor: Pick<Player, "id" | "name">,
     payload: {
-      allyId: string;
+      followerId: string;
     },
   ): Promise<void> {
-    await this.applyAlignmentAllyAction(gameId, actor, {
+    await this.applyAlignmentFollowerAction(gameId, actor, {
       actionId: "temple-send-devotee",
       landmarkId: "temple",
       targetAlignment: "good",
-      selectedAllyId: payload.allyId,
+      selectedFollowerId: payload.followerId,
       experienceGain: 2,
       discardReason: "released",
       blockedCategories: ["animal", "spirit", "undead"],
       alreadyAlignedMessage: "You are already good",
       invalidLandmarkMessage: "You must be at Temple to send a devotee",
-      invalidAllyMessage: "Selected ally cannot be sent to the Temple",
+      invalidFollowerMessage: "Selected follower cannot be sent to the Temple",
     });
 
     await this.tryCreateLog(gameId, actor, "player.templeSendDevotee", {
@@ -3350,20 +3350,20 @@ export class ActionExecutorService {
     gameId: string,
     actor: Pick<Player, "id" | "name">,
     payload: {
-      allyId: string;
+      followerId: string;
     },
   ): Promise<void> {
-    await this.applyAlignmentAllyAction(gameId, actor, {
+    await this.applyAlignmentFollowerAction(gameId, actor, {
       actionId: "altar-sacrifice",
       landmarkId: "altar",
       targetAlignment: "evil",
-      selectedAllyId: payload.allyId,
+      selectedFollowerId: payload.followerId,
       experienceGain: 2,
       discardReason: "lost",
       blockedCategories: ["undead"],
       alreadyAlignedMessage: "You are already evil",
       invalidLandmarkMessage: "You must be at Altar to perform a sacrifice",
-      invalidAllyMessage: "Selected ally cannot be sacrificed",
+      invalidFollowerMessage: "Selected follower cannot be sacrificed",
     });
 
     await this.tryCreateLog(gameId, actor, "player.altarSacrifice", {
@@ -3405,9 +3405,9 @@ export class ActionExecutorService {
       const worldTurn = worldState.currentTurn ?? 0;
       this.ensureActionAvailable(player, "eliminate-zombie", worldTurn, "You can only eliminate zombie once per turn.");
 
-      const normalizedAllies = this.normalizeAllies(player.allies);
-      const zombieIndex = normalizedAllies.findIndex((entry) => {
-        return entry.allyId === "zombie"
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const zombieIndex = normalizedFollowers.findIndex((entry) => {
+        return entry.followerId === "zombie"
           && entry.state !== "discarded"
           && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
       });
@@ -3416,9 +3416,9 @@ export class ActionExecutorService {
         throw new Error("You have no active zombie to eliminate");
       }
 
-      const nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
-      nextAllies[zombieIndex] = {
-        ...nextAllies[zombieIndex],
+      const nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
+      nextFollowers[zombieIndex] = {
+        ...nextFollowers[zombieIndex],
         hpCurrent: 0,
         state: "discarded",
         discardReason: "lost",
@@ -3440,7 +3440,7 @@ export class ActionExecutorService {
             current: nextMpCurrent,
           },
         },
-        allies: nextAllies,
+        followers: nextFollowers,
         statuses: nextStatuses,
         actionsUsedThisTurn: this.markActionUsed(player, "eliminate-zombie", worldTurn),
       }, { merge: true });
@@ -3784,7 +3784,7 @@ export class ActionExecutorService {
     });
 
     const buyQuantitiesByStockKey = new Map<string, {
-      kind: "item" | "ally";
+      kind: "item" | "follower";
       tradableId: string;
       quantity: number;
     }>();
@@ -3805,7 +3805,7 @@ export class ActionExecutorService {
       }
 
       if (operation.operation === "buy") {
-        const kind: "item" | "ally" = operation.kind === "ally" ? "ally" : "item";
+        const kind: "item" | "follower" = operation.kind === "follower" ? "follower" : "item";
         const stockKey = this.buildMerchantStockKey(kind, itemId);
         const current = buyQuantitiesByStockKey.get(stockKey);
         if (current) {
@@ -3891,11 +3891,11 @@ export class ActionExecutorService {
       }
 
       const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
-      const normalizedAllies = this.normalizeAllies(player.allies);
-      const activeOwnedAllies = new Set(
-        normalizedAllies
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const activeOwnedFollowers = new Set(
+        normalizedFollowers
           .filter((entry) => entry.state !== "discarded" && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0)
-          .map((entry) => entry.allyId),
+          .map((entry) => entry.followerId),
       );
       const ownedCountByItemId = normalizedItems.reduce<Record<string, number>>((acc, entry) => {
         acc[entry.itemId] = (acc[entry.itemId] ?? 0) + 1;
@@ -3960,12 +3960,12 @@ export class ActionExecutorService {
           throw new Error("Selected offer is out of stock");
         }
 
-        if (kind === "ally" && activeOwnedAllies.has(itemId)) {
-          throw new Error("You already have this ally");
+        if (kind === "follower" && activeOwnedFollowers.has(itemId)) {
+          throw new Error("You already have this follower");
         }
 
-        if (kind === "ally" && quantity > 1) {
-          throw new Error("Allies are unique and can only be bought once");
+        if (kind === "follower" && quantity > 1) {
+          throw new Error("Followers are unique and can only be bought once");
         }
 
         let purchaseValuePerUnit = 0;
@@ -3990,12 +3990,12 @@ export class ActionExecutorService {
             ? Math.max(0, Math.floor(stockEntry.purchaseValue))
             : Math.max(0, Math.floor(item.purchaseValue));
         } else {
-          const ally = this.allyCatalogService.getCachedAllyById(itemId);
-          if (!ally) {
-            throw new Error("Ally definition not found");
+          const follower = this.followerCatalogService.getCachedFollowerById(itemId);
+          if (!follower) {
+            throw new Error("Follower definition not found");
           }
 
-          itemName = ally.name;
+          itemName = follower.name;
           purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
             ? Math.max(0, Math.floor(stockEntry.purchaseValue))
             : 0;
@@ -4011,7 +4011,7 @@ export class ActionExecutorService {
         if (kind === "item") {
           ownedCountByItemId[itemId] = Math.max(0, Math.floor(Number(ownedCountByItemId[itemId] ?? 0))) + quantity;
         } else {
-          activeOwnedAllies.add(itemId);
+          activeOwnedFollowers.add(itemId);
         }
 
         lineOutcomes.push({
@@ -4047,7 +4047,7 @@ export class ActionExecutorService {
       }
 
       const nextItems = [...normalizedItems];
-      const nextAllies = [...normalizedAllies];
+      const nextFollowers = [...normalizedFollowers];
       sellQuantitiesByItemId.forEach((quantity, itemId) => {
         let toRemove = quantity;
         while (toRemove > 0) {
@@ -4069,15 +4069,15 @@ export class ActionExecutorService {
           return;
         }
 
-        const ally = this.allyCatalogService.getCachedAllyById(itemId);
-        if (!ally) {
-          throw new Error("Ally definition not found");
+        const follower = this.followerCatalogService.getCachedFollowerById(itemId);
+        if (!follower) {
+          throw new Error("Follower definition not found");
         }
 
         for (let i = 0; i < quantity; i += 1) {
-          nextAllies.push({
-            allyId: ally.id,
-            hpCurrent: Math.max(1, Math.floor(Number(ally.maxHp ?? 1))),
+          nextFollowers.push({
+            followerId: follower.id,
+            hpCurrent: Math.max(1, Math.floor(Number(follower.maxHp ?? 1))),
             state: "active",
           });
         }
@@ -4107,7 +4107,7 @@ export class ActionExecutorService {
             resourceCapacity: this.getResourceCapacity(player),
             itemCapacity,
           },
-          allies: nextAllies,
+          followers: nextFollowers,
           statuses: nextStatuses,
           actionsUsedThisTurn: this.markActionUsed(player, payload.actionId, worldTurn),
         }, { merge: true });
@@ -4122,7 +4122,7 @@ export class ActionExecutorService {
             resourceCapacity: this.getResourceCapacity(player),
             itemCapacity,
           },
-          allies: nextAllies,
+          followers: nextFollowers,
         }, { merge: true });
       }
 
@@ -4170,34 +4170,34 @@ export class ActionExecutorService {
     };
   }
 
-  private async applyAlignmentAllyAction(
+  private async applyAlignmentFollowerAction(
     gameId: string,
     actor: Pick<Player, "id" | "name">,
     input: {
       actionId: "temple-send-devotee" | "altar-sacrifice";
       landmarkId: "temple" | "altar";
       targetAlignment: "good" | "evil";
-      selectedAllyId: string;
+      selectedFollowerId: string;
       experienceGain: number;
       discardReason: "released" | "lost";
       blockedCategories: string[];
       alreadyAlignedMessage: string;
       invalidLandmarkMessage: string;
-      invalidAllyMessage: string;
+      invalidFollowerMessage: string;
     },
   ): Promise<void> {
     if (!gameId || !actor.id) {
       throw new Error("Invalid action payload");
     }
 
-    const selectedAllyId = String(input.selectedAllyId ?? "").trim();
-    if (!selectedAllyId) {
-      throw new Error("Invalid ally selection");
+    const selectedFollowerId = String(input.selectedFollowerId ?? "").trim();
+    if (!selectedFollowerId) {
+      throw new Error("Invalid follower selection");
     }
 
     await Promise.all([
       this.itemOwnershipService.loadConfig(),
-      this.allyCatalogService.loadConfig(),
+      this.followerCatalogService.loadConfig(),
     ]);
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
@@ -4248,32 +4248,32 @@ export class ActionExecutorService {
       const mapCell = mapCellSnap.data() as MapCell;
       this.ensurePlayerOnLandmark(mapCell, input.landmarkId, input.invalidLandmarkMessage);
 
-      const normalizedAllies = this.normalizeAllies(player.allies);
-      const allyIndex = normalizedAllies.findIndex((entry) => {
-        return entry.allyId === selectedAllyId
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const allyIndex = normalizedFollowers.findIndex((entry) => {
+        return entry.followerId === selectedFollowerId
           && entry.state !== "discarded"
           && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
       });
 
       if (allyIndex < 0) {
-        throw new Error(input.invalidAllyMessage);
+        throw new Error(input.invalidFollowerMessage);
       }
 
-      const selectedAlly = normalizedAllies[allyIndex];
-      const selectedAllyDefinition = this.allyCatalogService.getCachedAllyById(selectedAlly.allyId);
+      const selectedFollower = normalizedFollowers[allyIndex];
+      const selectedFollowerDefinition = this.followerCatalogService.getCachedFollowerById(selectedFollower.followerId);
       const selectedCategory = String(
-        selectedAlly.categoryOverride
-        ?? selectedAllyDefinition?.category
+        selectedFollower.categoryOverride
+        ?? selectedFollowerDefinition?.category
         ?? "",
       ).trim().toLowerCase();
 
       if (input.blockedCategories.includes(selectedCategory)) {
-        throw new Error(input.invalidAllyMessage);
+        throw new Error(input.invalidFollowerMessage);
       }
 
-      const nextAllies = normalizedAllies.map((entry) => ({ ...entry }));
-      nextAllies[allyIndex] = {
-        ...selectedAlly,
+      const nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
+      nextFollowers[allyIndex] = {
+        ...selectedFollower,
         hpCurrent: 0,
         state: "discarded",
         discardReason: input.discardReason,
@@ -4323,7 +4323,7 @@ export class ActionExecutorService {
           items: ownershipResolution.keptItems,
           resourceCapacity: this.getResourceCapacity(player),
         },
-        allies: nextAllies,
+        followers: nextFollowers,
         statuses: nextStatuses,
         actionsUsedThisTurn: this.markActionUsed(player, input.actionId, worldTurn),
       }, { merge: true });
@@ -4711,12 +4711,12 @@ export class ActionExecutorService {
   }
 
   private getEffectiveItemCapacity(player: Player): number {
-    return this.getItemCapacity(player) + this.getAlliesItemCapacityBonus(player.allies);
+    return this.getItemCapacity(player) + this.getFollowersItemCapacityBonus(player.followers);
   }
 
-  private getAlliesItemCapacityBonus(rawAllies: unknown): number {
-    const allies = this.normalizeAllies(rawAllies);
-    return allies.reduce((total, allyEntry) => {
+  private getFollowersItemCapacityBonus(rawFollowers: unknown): number {
+    const followers = this.normalizeFollowers(rawFollowers);
+    return followers.reduce((total, allyEntry) => {
       if (allyEntry.state === "discarded") {
         return total;
       }
@@ -4725,12 +4725,12 @@ export class ActionExecutorService {
         return total;
       }
 
-      const ally = this.allyCatalogService.getCachedAllyById(allyEntry.allyId);
-      if (!ally) {
+      const follower = this.followerCatalogService.getCachedFollowerById(allyEntry.followerId);
+      if (!follower) {
         return total;
       }
 
-      const itemCapacityBonus = Number(ally.itemCapacityBonus ?? 0);
+      const itemCapacityBonus = Number(follower.itemCapacityBonus ?? 0);
       if (!Number.isFinite(itemCapacityBonus)) {
         return total;
       }
@@ -4739,7 +4739,7 @@ export class ActionExecutorService {
     }, 0);
   }
 
-  private buildMerchantStockKey(kind: "item" | "ally", tradableId: string): string {
+  private buildMerchantStockKey(kind: "item" | "follower", tradableId: string): string {
     return `${kind}:${tradableId}`;
   }
 
@@ -4786,19 +4786,19 @@ export class ActionExecutorService {
     return items;
   }
 
-  private normalizeAllies(rawAllies: unknown): PlayerAllyEntry[] {
-    if (!Array.isArray(rawAllies)) {
+  private normalizeFollowers(rawFollowers: unknown): PlayerFollowerEntry[] {
+    if (!Array.isArray(rawFollowers)) {
       return [];
     }
 
-    const allies: PlayerAllyEntry[] = [];
-    rawAllies.forEach((entry) => {
+    const followers: PlayerFollowerEntry[] = [];
+    rawFollowers.forEach((entry) => {
       if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
         return;
       }
 
-      const allyId = (entry as { allyId?: unknown }).allyId;
-      if (typeof allyId !== "string" || !allyId.trim()) {
+      const followerId = (entry as { followerId?: unknown }).followerId;
+      if (typeof followerId !== "string" || !followerId.trim()) {
         return;
       }
 
@@ -4833,8 +4833,8 @@ export class ActionExecutorService {
         ? rawCategoryOverride.trim().toLowerCase()
         : undefined;
 
-      allies.push({
-        allyId: allyId.trim(),
+      followers.push({
+        followerId: followerId.trim(),
         hpCurrent,
         state,
         ...(discardReason ? { discardReason } : {}),
@@ -4844,12 +4844,12 @@ export class ActionExecutorService {
       });
     });
 
-    return allies;
+    return followers;
   }
 
-  private hasActiveAllyWithAction(rawAllies: unknown, actionId: string): boolean {
-    const allies = this.normalizeAllies(rawAllies);
-    return allies.some((entry) => {
+  private hasActiveFollowerWithAction(rawFollowers: unknown, actionId: string): boolean {
+    const followers = this.normalizeFollowers(rawFollowers);
+    return followers.some((entry) => {
       if (entry.state === "discarded") {
         return false;
       }
@@ -4858,12 +4858,12 @@ export class ActionExecutorService {
         return false;
       }
 
-      const ally = this.allyCatalogService.getCachedAllyById(entry.allyId);
-      if (!ally || !Array.isArray(ally.actions)) {
+      const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      if (!follower || !Array.isArray(follower.actions)) {
         return false;
       }
 
-      return ally.actions.includes(actionId);
+      return follower.actions.includes(actionId);
     });
   }
 
@@ -5044,7 +5044,7 @@ export class ActionExecutorService {
     return true;
   }
 
-  private areAlliesEquivalent(left: PlayerAllyEntry[], right: PlayerAllyEntry[]): boolean {
+  private areFollowersEquivalent(left: PlayerFollowerEntry[], right: PlayerFollowerEntry[]): boolean {
     if (left.length !== right.length) {
       return false;
     }
@@ -5056,7 +5056,7 @@ export class ActionExecutorService {
         return false;
       }
 
-      if (leftEntry.allyId !== rightEntry.allyId) {
+      if (leftEntry.followerId !== rightEntry.followerId) {
         return false;
       }
 

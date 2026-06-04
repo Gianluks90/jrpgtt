@@ -160,40 +160,40 @@
                 </section>
 
                 <section
-                    class="hud utility-panel player-allies-block"
-                    [class.utility-panel-expanded]="isAlliesExpanded()"
-                    [class.utility-panel-collapsed]="!isAlliesExpanded()"
-                    (click)="onAlliesPanelToggle()"
+                    class="hud utility-panel player-followers-block"
+                    [class.utility-panel-expanded]="isFollowersExpanded()"
+                    [class.utility-panel-collapsed]="!isFollowersExpanded()"
+                    (click)="onFollowersPanelToggle()"
                 >
-                    <p class="hud-title">Allies ({{ visibleAllies().length }})</p>
+                    <p class="hud-title">Followers ({{ visibleFollowers().length }})</p>
 
-                    @if (isAlliesExpanded()) {
-                        <div class="inventory-list" [class.inventory-list-empty]="visibleAllies().length === 0">
-                            @if (visibleAllies().length === 0) {
-                                <p class="inventory-empty inventory-empty-centered">No allies.</p>
+                    @if (isFollowersExpanded()) {
+                        <div class="inventory-list" [class.inventory-list-empty]="visibleFollowers().length === 0">
+                            @if (visibleFollowers().length === 0) {
+                                <p class="inventory-empty inventory-empty-centered">No followers.</p>
                             } @else {
-                                @for (ally of visibleAllies(); track ally.allyId + $index) {
+                                @for (follower of visibleFollowers(); track follower.followerId + $index) {
                                     <div class="inventory-item-row">
                                         <div class="inventory-item-header">
-                                            <p class="inventory-item-title">{{ ally.name }}</p>
+                                            <p class="inventory-item-title">{{ follower.name }}</p>
                                         </div>
                                         <div class="inventory-item-line"></div>
 
-                                        <div class="ally-hp-section">
-                                            <div class="ally-hp-label-row">
+                                        <div class="follower-hp-section">
+                                            <div class="follower-hp-label-row">
                                                 <span>HP</span>
-                                                <span>{{ ally.hpCurrent }}/{{ ally.hpMax }}</span>
+                                                <span>{{ follower.hpCurrent }}/{{ follower.hpMax }}</span>
                                             </div>
-                                            <div class="ally-hp-bar" [class.ally-hp-bar-full]="ally.hpPercent === 100">
-                                                <div class="ally-hp-fill" [style.width.%]="ally.hpPercent"></div>
+                                            <div class="follower-hp-bar" [class.follower-hp-bar-full]="follower.hpPercent === 100">
+                                                <div class="follower-hp-fill" [style.width.%]="follower.hpPercent"></div>
                                             </div>
                                         </div>
 
-                                        <p class="inventory-item-description">{{ ally.description }}</p>
+                                        <p class="inventory-item-description">{{ follower.description }}</p>
 
-                                        @if (ally.labels.length > 0) {
+                                        @if (follower.labels.length > 0) {
                                             <div class="inventory-item-keywords">
-                                                @for (label of ally.labels; track label.text + $index) {
+                                                @for (label of follower.labels; track label.text + $index) {
                                                     <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
                                                 }
                                             </div>
@@ -202,18 +202,18 @@
                                 }
                             }
 
-                            @if (discardedAlliesCount() > 0) {
-                                <p class="inventory-empty">Discarded allies: {{ discardedAlliesCount() }}</p>
+                            @if (discardedFollowersCount() > 0) {
+                                <p class="inventory-empty">Discarded followers: {{ discardedFollowersCount() }}</p>
                             }
                         </div>
                     } @else {
                         <div class="utility-panel-collapsed-content">
-                            <p class="utility-panel-collapsed-label">{{ collapsedAlliesSummary() }}</p>
+                            <p class="utility-panel-collapsed-label">{{ collapsedFollowersSummary() }}</p>
                             <icon-button
                                 class="utility-panel-expand-icon"
                                 iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                                ariaLabel="Expand allies"
-                                (clicked)="onAlliesPanelToggle()"
+                                ariaLabel="Expand followers"
+                                (clicked)="onFollowersPanelToggle()"
                             ></icon-button>
                         </div>
                     }

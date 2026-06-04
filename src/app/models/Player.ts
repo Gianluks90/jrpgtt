@@ -3,7 +3,7 @@ import { Inventory } from "./Inventory";
 import { LuckCheckResult } from "./LuckCheckResult";
 import { SanctuaryElement } from "./MapCell";
 import { ResourceLabel } from "./Resource";
-import { PlayerAllyEntry } from "./Ally";
+import { PlayerFollowerEntry } from "./Follower";
 
 export type PlayerStatusKey = "nutrition" | (string & {});
 export type PlayerAlignment = "evil" | "neutral" | "good";
@@ -33,7 +33,7 @@ export interface Player {
     pendingLevelUpChoices?: number;
     attunedElement?: SanctuaryElement;
     inventory: Inventory;
-    allies: PlayerAllyEntry[];
+    followers: PlayerFollowerEntry[];
     lastLuckCheck?: LuckCheckResult;
     isReady: boolean;
     color: string;

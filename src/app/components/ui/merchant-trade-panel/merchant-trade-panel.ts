@@ -6,7 +6,7 @@ import { TextButton } from "../text-button/text-button";
 
 interface MerchantCartLine {
   operation: "buy" | "sell";
-  tradableKind: "item" | "ally";
+  tradableKind: "item" | "follower";
   tradableId: string;
   itemName: string;
   quantity: number;
@@ -97,7 +97,7 @@ export class MerchantTradePanel {
     return `Coins ${this.projectedMoney()}`;
   });
 
-  public queueBuy(tradableKind: "item" | "ally", tradableId: string): void {
+  public queueBuy(tradableKind: "item" | "follower", tradableId: string): void {
     if (this.loading()) return;
 
     const buyKey = this.buildBuyKey(tradableKind, tradableId);
@@ -160,7 +160,7 @@ export class MerchantTradePanel {
     this.showCart.set(!this.showCart());
   }
 
-  public getRemainingStock(tradableKind: "item" | "ally", tradableId: string): number {
+  public getRemainingStock(tradableKind: "item" | "follower", tradableId: string): number {
     const buyKey = this.buildBuyKey(tradableKind, tradableId);
     const offer = this.buyOffers().find((entry) => this.buildBuyKey(entry.tradableKind, entry.tradableId) === buyKey);
     if (!offer) return 0;
@@ -212,7 +212,7 @@ export class MerchantTradePanel {
     this.pendingBuyByItemId().forEach((quantity, itemId) => {
       if (quantity <= 0) return;
       const [rawKind, ...idParts] = itemId.split(":");
-      const kind = rawKind === "ally" ? "ally" : "item";
+      const kind = rawKind === "follower" ? "follower" : "item";
       const tradableId = idParts.join(":");
       operations.push({
         operation: "buy",
@@ -238,7 +238,7 @@ export class MerchantTradePanel {
     return String(amount);
   }
 
-  private buildBuyKey(kind: "item" | "ally", tradableId: string): string {
+  private buildBuyKey(kind: "item" | "follower", tradableId: string): string {
     return `${kind}:${tradableId}`;
   }
 }

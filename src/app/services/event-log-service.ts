@@ -160,10 +160,10 @@ export class EventLogService {
         },
         "player.graveyardResurrect": ({ playerName, args }) => {
             const source = this.getActionSourceLabel("graveyard-resurrect", "Graveyard");
-            const allyId = String(args["allyId"] ?? "ally");
+            const followerId = String(args["followerId"] ?? "follower");
             const rewardId = String(args["rewardId"] ?? "unknown");
             const appliedOutcome = String(args["appliedOutcome"] ?? rewardId);
-            return `${playerName} attempted resurrection at ${source} for ${allyId}. Outcome: ${appliedOutcome}.`;
+            return `${playerName} attempted resurrection at ${source} for ${followerId}. Outcome: ${appliedOutcome}.`;
         },
         "player.templeSendDevotee": ({ playerName, args }) => {
             const source = this.getActionSourceLabel("temple-send-devotee", "Temple");
@@ -214,17 +214,17 @@ export class EventLogService {
             const environmentSize = Number(args["environmentSize"] ?? 1);
             return `${playerName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
         },
-        "player.allyHostileEnvironmentDamage": ({ playerName, args }) => {
-            const allyName = String(args["allyName"] ?? args["allyId"] ?? "ally");
+        "player.followerHostileEnvironmentDamage": ({ playerName, args }) => {
+            const followerName = String(args["followerName"] ?? args["followerId"] ?? "follower");
             const damageHp = Number(args["damageHp"] ?? 0);
             const environmentSize = Number(args["environmentSize"] ?? 1);
-            return `${playerName}'s ally ${allyName} suffered ${damageHp} HP from hostile desert (environment size ${environmentSize}).`;
+            return `${playerName}'s follower ${followerName} suffered ${damageHp} HP from hostile desert (environment size ${environmentSize}).`;
         },
-        "player.allyRegeneratingWatersHealing": ({ playerName, args }) => {
-            const allyName = String(args["allyName"] ?? args["allyId"] ?? "ally");
+        "player.followerRegeneratingWatersHealing": ({ playerName, args }) => {
+            const followerName = String(args["followerName"] ?? args["followerId"] ?? "follower");
             const healingHp = Number(args["healingHp"] ?? 0);
             const environmentSize = Number(args["environmentSize"] ?? 1);
-            return `${playerName}'s ally ${allyName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
+            return `${playerName}'s follower ${followerName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
         },
         "player.discardResource": ({ playerName, args }) => {
             const resource = String(args["resource"] ?? "resource");

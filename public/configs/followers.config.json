@@ -1,5 +1,5 @@
 {
-  "allies": [
+  "followers": [
     {
       "id": "horse",
       "name": "Horse",
@@ -11,7 +11,7 @@
     {
       "id": "princess",
       "name": "Princess",
-      "description": "A noble ally with arcane intuition.",
+      "description": "A noble follower with arcane intuition.",
       "category": "companion",
       "maxHp": 2,
       "actions": [],
@@ -35,7 +35,7 @@
     {
       "id": "zombie",
       "name": "Zombie",
-      "description": "A shambling undead ally. Grants +1 STR, consumes 1 food each turn (or you lose 1 HP), and can be dismissed with Eliminate zombie.",
+      "description": "A shambling undead follower. Grants +1 STR, consumes 1 food each turn (or you lose 1 HP), and can be dismissed with Eliminate zombie.",
       "category": "undead",
       "maxHp": 2,
       "actions": ["eliminate-zombie"],

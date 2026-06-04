@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
-export type CardEntityKind = "ally" | "item" | "tile" | "event" | (string & {});
+export type CardEntityKind = "follower" | "item" | "tile" | "event" | (string & {});
 
 export interface CardEntityRef {
   kind: CardEntityKind;

@@ -36,7 +36,7 @@ export class DiscardPileDialog {
 
   public resolveKindLabel(entry: DiscardPileEntry): string {
     const kind = String(entry.card?.kind ?? "unknown");
-    if (kind === "ally") return "Ally";
+    if (kind === "follower") return "Follower";
     if (kind === "item") return "Item";
     if (kind === "tile") return "Tile";
     if (kind === "event") return "Event";

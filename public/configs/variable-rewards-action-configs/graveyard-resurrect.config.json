@@ -6,6 +6,8 @@
       "maxTotal": 20,
       "label": "Wrong Spirit",
       "previewLabel": "You summon the wrong spirit, lose 10% HP, no resurrection",
+      "labelKey": "dialogs.graveyardResult.rewards.wrongSpirit.label",
+      "previewLabelKey": "dialogs.graveyardResult.rewards.wrongSpirit.preview",
       "playerHpDamagePercent": 0.1
     },
     {
@@ -13,7 +15,9 @@
       "minTotal": 21,
       "maxTotal": 45,
       "label": "Silence",
-      "previewLabel": "Nothing happens"
+      "previewLabel": "Nothing happens",
+      "labelKey": "dialogs.graveyardResult.rewards.silence.label",
+      "previewLabelKey": "dialogs.graveyardResult.rewards.silence.preview"
     },
     {
       "id": "summon-zombie",
@@ -21,6 +25,8 @@
       "maxTotal": 65,
       "label": "Zombie Awakening",
       "previewLabel": "You summon a Zombie instead of the selected follower",
+      "labelKey": "dialogs.graveyardResult.rewards.zombieAwakening.label",
+      "previewLabelKey": "dialogs.graveyardResult.rewards.zombieAwakening.preview",
       "summonZombie": true
     },
     {
@@ -29,6 +35,8 @@
       "maxTotal": 85,
       "label": "Distorted Resurrection",
       "previewLabel": "Selected follower returns as undead with 1 HP",
+      "labelKey": "dialogs.graveyardResult.rewards.distortedResurrection.label",
+      "previewLabelKey": "dialogs.graveyardResult.rewards.distortedResurrection.preview",
       "reviveTarget": "one-hp",
       "markAsUndead": true
     },
@@ -38,6 +46,8 @@
       "maxTotal": 100,
       "label": "Complete Resurrection",
       "previewLabel": "Selected follower returns with full HP",
+      "labelKey": "dialogs.graveyardResult.rewards.completeResurrection.label",
+      "previewLabelKey": "dialogs.graveyardResult.rewards.completeResurrection.preview",
       "reviveTarget": "full"
     }
   ]

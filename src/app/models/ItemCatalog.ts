@@ -21,6 +21,8 @@ export interface ItemDefinition {
   id: string;
   name: string;
   description: string;
+  nameKey?: string;
+  descriptionKey?: string;
   category: ItemCategory;
   occupiesSpace: boolean;
   consumable: boolean;

@@ -1,6 +1,6 @@
 <dialog-wrapper [title]="title" [luckResult]="luckMeterResult" [luckAnimateFirstResult]="true">
     <p class="info-text">
-        Attempted resurrection for <strong>{{ selectedFollowerLabel }}</strong>.
+        {{ 'dialogs.graveyardResult.attemptedFor' | t: { follower: selectedFollowerLabel } }}
     </p>
 
     <div class="reward-table">
@@ -13,8 +13,8 @@
     </div>
 
     <p class="result-text">
-        Result: <strong>{{ rewardLabel }}</strong>
+        {{ 'dialogs.graveyardResult.result' | t }} <strong>{{ rewardLabel }}</strong>
     </p>
 
-    <text-button dialog-action text="Continue" (clicked)="continue()"></text-button>
+    <text-button dialog-action [text]="'dialogs.graveyardResult.continue' | t" (clicked)="continue()"></text-button>
 </dialog-wrapper>

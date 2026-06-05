@@ -1,7 +1,7 @@
 <dialog-wrapper [title]="dialogTitle">
   <div class="discard-list">
     @if (entries.length === 0) {
-      <p class="discard-empty">No discarded entities yet.</p>
+      <p class="discard-empty">{{ 'dialogs.discardPile.empty' | t }}</p>
     } @else {
       @for (entry of entries; track entry.id) {
         <article class="discard-card" [class.discard-card-follower]="entry.card.kind === 'follower'" [class.discard-card-item]="entry.card.kind === 'item'">
@@ -24,5 +24,5 @@
     }
   </div>
 
-  <text-button dialog-action text="Close" (clicked)="close()"></text-button>
+  <text-button dialog-action [text]="'dialogs.common.close' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

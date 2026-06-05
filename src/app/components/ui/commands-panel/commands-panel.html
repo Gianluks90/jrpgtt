@@ -10,7 +10,7 @@
 				<span class="command-card-header">
 					<span class="command-card-title">
 						@if (action.pending) {
-							Executing...
+							{{ 'map.commands.executing' | t }}
 						} @else {
 							{{ action.label }}
 						}
@@ -25,7 +25,7 @@
 					}
 				</span>
 				<span class="command-card-divider" aria-hidden="true"></span>
-				<span class="command-card-description">{{ action.description || '-' }}</span>
+				<span class="command-card-description">{{ action.description || ('map.commands.noDescription' | t) }}</span>
 				@if (action.warning) {
 					<span class="command-card-warning">{{ action.warning }}</span>
 				}
@@ -33,7 +33,7 @@
 		}
 
 		@if (actions().length === 0) {
-			<p class="commands-empty-state">No actions available for this position.</p>
+			<p class="commands-empty-state">{{ 'map.commands.empty' | t }}</p>
 		}
 	</div>
 </div>

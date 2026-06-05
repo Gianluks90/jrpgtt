@@ -1,0 +1,1024 @@
+{
+  "ui": {
+    "language": {
+      "label": "Language",
+      "switcherAriaLabel": "Language switcher"
+    }
+  },
+  "landing": {
+    "welcome": "Welcome to the Landing Page!",
+    "login": "Login",
+    "googleRequired": "*Google account required"
+  },
+  "home": {
+    "title": "Home Page",
+    "inGame": "You are currently in the game: {gameName}.",
+    "inGameHint": "Go to the lobby to see game details and start playing!",
+    "noGame": "You are not currently in a game. Join or create a new game to get started!",
+    "actions": {
+      "menu": "Menu",
+      "newGame": "New game",
+      "joinGame": "Join game",
+      "deleteGame": "Delete game",
+      "leaveGame": "Leave game",
+      "play": "Play",
+      "lobby": "Lobby",
+      "logout": "Logout"
+    },
+    "errors": {
+      "loadTiles": "Error loading tiles configuration",
+      "createGame": "Error creating game",
+      "joinGame": "Error joining game",
+      "leaveGame": "Error leaving game",
+      "deleteGame": "Error deleting game"
+    }
+  },
+  "lobby": {
+    "header": {
+      "newGamePrefix": "New game"
+    },
+    "summary": {
+      "playersJoined": "Players joined",
+      "playersReady": "Players ready",
+      "joinCode": "Join code",
+      "status": "Status"
+    },
+    "copyJoinCode": {
+      "copy": "Copy join code",
+      "copied": "Copied"
+    },
+    "status": {
+      "waiting": "Waiting",
+      "running": "Running",
+      "ended": "Ended"
+    },
+    "players": {
+      "title": "Players",
+      "ready": "READY",
+      "pending": "PENDING"
+    },
+    "setup": {
+      "title": "Player Setup",
+      "subtitle": "Complete your setup and spend all experience points to become ready.",
+      "currentPlayerReady": "READY",
+      "currentPlayerNotReady": "NOT READY",
+      "nameLabel": "Name",
+      "namePlaceholder": "Enter player name",
+      "alignment": "Alignment",
+      "alignmentAriaLabel": "Player alignment",
+      "parametersPool": "Parameters pool points",
+      "strength": "Strength (each point increase HP by 5%)",
+      "magic": "Magic (each point increase MP by 1)",
+      "luck": "Luck",
+      "readyDone": "Ready!",
+      "confirm": "Confirm"
+    },
+    "alignment": {
+      "good": "Good",
+      "neutral": "Neutral",
+      "evil": "Evil"
+    },
+    "actions": {
+      "home": "Home",
+      "deleteGame": "Delete game",
+      "settings": "Settings",
+      "startGame": "Start game",
+      "leaveGame": "Leave game"
+    },
+    "errors": {
+      "copyJoinCode": "Could not copy join code",
+      "leaveGame": "Error leaving game",
+      "deleteGame": "Error deleting game",
+      "startGame": "Error starting game",
+      "updateSettings": "Error updating game settings",
+      "updatePlayerSetup": "Error updating player setup"
+    }
+  },
+  "dialogs": {
+    "common": {
+      "cancel": "Cancel",
+      "close": "Close",
+      "confirm": "Confirm",
+      "name": "Name",
+      "maxPlayers": "Max Players",
+      "enterText": "Enter text",
+      "enterNumber": "Enter number",
+      "maxPlayersAllowed": "Maximum players allowed: {maxPlayers}"
+    },
+    "gameNew": {
+      "title": "New Game",
+      "description": "Create a new game by entering a name and the maximum number of players allowed. You can always change these settings later in the lobby.",
+      "create": "Create"
+    },
+    "gameJoin": {
+      "title": "Join Game",
+      "description": "Join an existing game by entering the game code provided by the host. Make sure to enter the code correctly to join the desired game.",
+      "joinCode": "Join code",
+      "join": "Join"
+    },
+    "gameSettings": {
+      "title": "Settings",
+      "description": "Update game name and maximum number of players. You can adjust these settings from the lobby while the game is waiting.",
+      "save": "Save"
+    },
+    "genericDelete": {
+      "title": "Delete?",
+      "message": "Are you sure you want to delete this? This action cannot be undone.",
+      "confirm": "Delete"
+    },
+    "genericConfirm": {
+      "title": "Confirm?",
+      "message": "Are you sure you want to proceed? This action cannot be undone.",
+      "confirm": "Confirm"
+    },
+    "eventLog": {
+      "title": "Event Log",
+      "empty": "No events yet."
+    },
+    "discardPile": {
+      "title": "Discard Pile ({count})",
+      "empty": "No discarded entities yet.",
+      "kind": {
+        "follower": "Follower",
+        "item": "Item",
+        "tile": "Tile",
+        "event": "Event"
+      },
+      "unknownCard": "Unknown card",
+      "unknownTime": "Unknown time",
+      "systemSource": "system",
+      "meta": "Source: {source} • Turn: {turn} • {time}"
+    },
+    "fastTravel": {
+      "title": "Fast travel",
+      "safePlace": "Safe place",
+      "startingFrom": "You are departing from {origin}.",
+      "routeCostInfo": "Route cost is 1 coin per orthogonal cell, capped at 15.",
+      "noDestinations": "No discovered safe-place destinations are available yet.",
+      "coordinates": "Coordinates: {x}, {y}",
+      "notEnoughCoinsRoute": "Not enough coins for this route.",
+      "selectedRouteTooExpensive": "Selected route costs {cost} coins, but you only have {money}.",
+      "destination": "Destination: {destination}.",
+      "confirmInfo": "Confirming ends your turn and you will skip one additional turn before arrival.",
+      "confirmRoute": "Confirm route"
+    },
+    "resourceExchange": {
+      "title": "Resource exchange",
+      "description": "Exchange resources 1:1 with the village craftsman. Confirming this action ends your turn.",
+      "give": "Give",
+      "receive": "Receive",
+      "amount": "Amount",
+      "maximum": "Maximum: {max}",
+      "noResources": "You need at least 1 resource to perform an exchange.",
+      "invalidSelection": "Invalid selection. Ensure resources differ and amount is within available quantity.",
+      "summary": "You will exchange {amount} {give} for {amount} {receive}.",
+      "confirm": "Confirm exchange",
+      "unknown": "Unknown"
+    },
+    "followerSelect": {
+      "title": "Select follower",
+      "message": "Choose a follower.",
+      "possibleOutcomes": "Possible outcomes",
+      "noEligibleFollowers": "No eligible followers available."
+    },
+    "levelUp": {
+      "title": "Level Up",
+      "reachedLevel": "You reached level {level}.",
+      "chooseOne": "Choose one parameter to increase by 1.",
+      "remainingExperience": "Remaining experience after level-up: {experience}",
+      "ariaCharacteristic": "Characteristic to increase",
+      "strength": {
+        "label": "Strength",
+        "description": "Increase physical power and HP. HP increases by 5% for each point assigned."
+      },
+      "magic": {
+        "label": "Magic",
+        "description": "Improve magical aptitude and MP. MP increases by 1 for each point assigned."
+      },
+      "luck": {
+        "label": "Luck",
+        "description": "Improve chance-based outcomes."
+      }
+    },
+    "mystic": {
+      "title": "City Mystic",
+      "offerInfo": "Offer exactly {cost} coins to let the Mystic enter your mind.",
+      "result": "Result:",
+      "actions": {
+        "pay": "Pay",
+        "continue": "Continue"
+      },
+      "rewards": {
+        "alignmentEvil": {
+          "label": "Mind Shift: Evil",
+          "preview": "Your alignment becomes Evil"
+        },
+        "alignmentNeutral": {
+          "label": "Mind Shift: Neutral",
+          "preview": "Your alignment becomes Neutral"
+        },
+        "ignored": {
+          "label": "Ignored",
+          "preview": "The Mystic ignores you"
+        },
+        "xp1": {
+          "label": "Glimpse of Insight",
+          "preview": "Gain 1 XP"
+        },
+        "xp2": {
+          "label": "Deep Insight",
+          "preview": "Gain 2 XP"
+        },
+        "levelUp": {
+          "label": "Awakening",
+          "preview": "Exact 100: Gain 1 level up"
+        }
+      },
+      "errors": {
+        "notEnoughCoins": "You do not have enough coins to pay the Mystic.",
+        "consult": "Error while consulting the mystic."
+      }
+    },
+    "enchantress": {
+      "title": "Capital Enchantress",
+      "offerInfo": "Offer exactly {cost} coins to draw your fate.",
+      "result": "Result:",
+      "actions": {
+        "pay": "Pay",
+        "continue": "Continue"
+      },
+      "rewards": {
+        "minified": {
+          "label": "Minified",
+          "preview": "Minified for 1 turn"
+        },
+        "weakened": {
+          "label": "Weakened",
+          "preview": "Weakened for 3 turns"
+        },
+        "hexed": {
+          "label": "Hexed",
+          "preview": "Hexed for 3 turns"
+        },
+        "bravery": {
+          "label": "Bravery",
+          "preview": "Bravery for 3 turns"
+        },
+        "focus": {
+          "label": "Focus",
+          "preview": "Focus for 3 turns"
+        },
+        "jackpot": {
+          "label": "Arcane Jackpot",
+          "preview": "Magic placeholder: Bravery + Focus for 3 turns"
+        }
+      },
+      "errors": {
+        "notEnoughCoins": "You do not have enough coins to pay the Enchantress.",
+        "consult": "Error while consulting the enchantress."
+      }
+    },
+    "merchant": {
+      "coinsValue": "Coins {value}",
+      "confirmWithDelta": "Confirm {delta}",
+      "info": {
+        "main": "Buy or sell items, then confirm your cart.",
+        "turnRule": "Buying ends your turn. Selling does not."
+      },
+      "sections": {
+        "buy": "Buy",
+        "sell": "Sell"
+      },
+      "names": {
+        "city-merchant": "City Merchant",
+        "academy-merchant": "Academy Arcane Merchant"
+      },
+      "meta": {
+        "category": "Category",
+        "stock": "Stock",
+        "owned": "Owned"
+      },
+      "empty": {
+        "noStock": "No stock available.",
+        "noSellableItems": "No sellable items in inventory."
+      },
+      "itemsInCart": "Items in cart: {count}",
+      "actions": {
+        "buy": "Buy",
+        "sell": "Sell",
+        "viewCart": "View cart",
+        "hideCart": "Hide cart",
+        "undo": "Undo"
+      },
+      "keywords": {
+        "evilOnly": "evil only",
+        "hpValue": "HP {value}",
+        "itemSlotsPlus": "+{value} item slots"
+      },
+      "errors": {
+        "alreadyInParty": "Already in your party",
+        "confirmCart": "Unable to confirm merchant cart."
+      }
+    },
+    "doctor": {
+      "title": {
+        "capitalDoctor": "Capital Doctor",
+        "cityHealer": "City Healer"
+      },
+      "provider": {
+        "doctor": "Doctor",
+        "healer": "Healer"
+      },
+      "restoresInfo": "{provider} restores 5% HP per treatment.",
+      "costPerTreatment": "Cost per treatment: {cost} coins",
+      "nightTariff": "(night tariff)",
+      "currentHp": "Current HP: {current}/{max}",
+      "treatments": "Treatments (5% each)",
+      "maximums": "Maximum by HP: {hp} | maximum by coins: {coins}",
+      "expectedHeal": "Expected heal: +{heal} HP",
+      "errors": {
+        "hpFull": "Your HP is already full.",
+        "notEnoughCoinsSingle": "You do not have enough coins for a single treatment.",
+        "notEnoughCoinsSelection": "Selected treatments cost {cost} coins, but you only have {money}."
+      }
+    },
+    "resourceInventory": {
+      "title": {
+        "inventoryFull": "Inventory full",
+        "manageResources": "Manage resources"
+      },
+      "subtitle": {
+        "noFreeSlot": "No free slot for {resource}. Discard one resource or cancel pickup.",
+        "selectDiscard": "Select one resource stack and discard 1 unit."
+      },
+      "noResources": "No resources available.",
+      "discardAndCollect": "Discard selected and collect {resource}",
+      "cancelCollect": "Cancel collect",
+      "discardSelected": "Discard selected"
+    },
+    "graveyardResult": {
+      "title": "Graveyard Resurrection",
+      "selectedFollower": "Selected follower",
+      "unknownOutcome": "Unknown outcome",
+      "attemptedFor": "Attempted resurrection for {follower}.",
+      "result": "Result:",
+      "continue": "Continue",
+      "rewards": {
+        "wrongSpirit": {
+          "label": "Wrong Spirit",
+          "preview": "You summon the wrong spirit, lose 10% HP, no resurrection"
+        },
+        "silence": {
+          "label": "Silence",
+          "preview": "Nothing happens"
+        },
+        "zombieAwakening": {
+          "label": "Zombie Awakening",
+          "preview": "You summon a Zombie instead of the selected follower"
+        },
+        "distortedResurrection": {
+          "label": "Distorted Resurrection",
+          "preview": "Selected follower returns as undead with 1 HP"
+        },
+        "completeResurrection": {
+          "label": "Complete Resurrection",
+          "preview": "Selected follower returns with full HP"
+        }
+      }
+    },
+    "sanctuary": {
+      "title": {
+        "activate": "Activate sanctuary",
+        "donate": "Donate to sanctuary"
+      },
+      "actions": {
+        "activate": "Activate",
+        "donate": "Donate"
+      },
+      "description": {
+        "activate": "Activating the sanctuary grants 2 XP, binds your character to the sanctuary element and marks the sanctuary quadrant under that elemental influence.",
+        "donate": "Donating 5 coins to an active sanctuary shifts your attunement to its element if you are currently attuned to a different one."
+      },
+      "element": "Sanctuary element: {element}",
+      "donationAmount": "Donation amount",
+      "placeholder": "Type {cost}",
+      "mustDonateExactly": "You must donate exactly:",
+      "errors": {
+        "notEnoughCoins": "You do not have enough coins for this action."
+      }
+    }
+  },
+  "map": {
+    "worldTitle": "World",
+    "worldTime": {
+      "ariaLabel": "World time",
+      "prefix": "World time"
+    },
+    "timeOfDay": {
+      "title": "Time",
+      "titleWithRounds": "Time ({rounds} rounds)",
+      "day": "Day",
+      "night": "Night"
+    },
+    "worldPanel": {
+      "turn": "Turn",
+      "round": "Round",
+      "discovered": "Discovered",
+      "activeShrines": "Active shrines",
+      "worldEvent": "World event",
+      "activePlayer": "Active player"
+    },
+    "commands": {
+      "title": "Commands",
+      "executing": "Executing...",
+      "noDescription": "-",
+      "empty": "No actions available for this position."
+    },
+    "locationInfo": {
+      "contextObserving": "Observing cell",
+      "contextActivePlayer": "Active player in",
+      "openAria": "Open location info"
+    },
+    "discardPile": {
+      "title": "Discard pile",
+      "openAria": "Open discard pile",
+      "openError": "Unable to open discard pile"
+    },
+    "inventory": {
+      "title": "Inventory ({used}/{capacity})",
+      "noItems": "No items.",
+      "uses": "Uses",
+      "expandAria": "Expand inventory",
+      "none": "no items"
+    },
+    "followers": {
+      "title": "Followers ({count})",
+      "noFollowers": "No followers.",
+      "discardedCount": "Discarded followers: {count}",
+      "expandAria": "Expand followers",
+      "none": "no followers"
+    },
+    "resources": {
+      "title": "Resources ({current}/{max})",
+      "openAria": "Open resource inventory"
+    },
+    "actions": {
+      "home": "Home"
+    },
+    "alignment": {
+      "title": "Alignment"
+    },
+    "attunement": {
+      "title": "Element"
+    },
+    "elements": {
+      "water": "Water",
+      "fire": "Fire",
+      "wind": "Wind",
+      "earth": "Earth"
+    },
+    "money": {
+      "title": "Money"
+    },
+    "luck": {
+      "title": "Luck-meter",
+      "status": {
+        "success": "Yes!",
+        "near": "Near",
+        "fail": "Nope"
+      }
+    },
+    "players": {
+      "title": "Players",
+      "hpLabel": "HP",
+      "levelUp": {
+        "ariaLabel": "Open level-up choices ({count})",
+        "label": "LEVEL +{count}"
+      }
+    },
+    "log": {
+      "title": "Log",
+      "openAria": "Open logs"
+    },
+    "common": {
+      "noDescription": "No description available."
+    },
+    "cellInspector": {
+      "info": "Info",
+      "region": "Region",
+      "coordinates": "Coordinates XY",
+      "environment": "Environment",
+      "enemiesLevel": "Enemies level",
+      "special": "Special",
+      "description": "Description",
+      "resources": "Resources",
+      "actions": "Actions",
+      "noActionsAvailable": "No actions available here.",
+      "landmarkDiscovered": "{category} discovered",
+      "sanctuaryActive": "Sanctuary active",
+      "sanctuaryInactive": "Sanctuary inactive",
+      "landmarkDescription": "A {category}{alignment} overlays this biome tile.",
+      "dormantSanctuary": "The sanctuary is still dormant and hidden.",
+      "sanctuaryDescriptions": {
+        "water": {
+          "active": "A great crystal slowly spins at the center of the sanctuary, radiating a refreshing blue light. The sanctuary is active.",
+          "inactive": "Suspended above a crystal-clear pool, a large white crystal hovers at the center of the sanctuary."
+        },
+        "fire": {
+          "active": "A great crystal slowly spins at the center of the sanctuary, radiating an intense red light. The sanctuary is active.",
+          "inactive": "Suspended above a pool of blazing lava, a large white crystal hovers at the center of the sanctuary."
+        },
+        "wind": {
+          "active": "A great crystal slowly spins at the center of the sanctuary, radiating a soothing violet light. The sanctuary is active.",
+          "inactive": "The sound of chimes hanging all around the sanctuary accompanies the sight of a large white crystal hovering at its center."
+        },
+        "earth": {
+          "active": "A great crystal slowly spins at the center of the sanctuary, radiating a reassuring yellow light. The sanctuary is active.",
+          "inactive": "Framed by lush, thriving nature, a large white crystal hovers at the center of the sanctuary."
+        }
+      },
+      "none": "None",
+      "no": "No",
+      "yesCells": "Yes ({count} cells)",
+      "unknownBiome": "? ? ?"
+    },
+    "labels": {
+      "little": "little",
+      "fightOnly": "fight only",
+      "dayOnly": "day only",
+      "nightOnly": "night only"
+    },
+    "landmarks": {
+      "categories": {
+        "safe": "Safe place",
+        "mid": "Mid place",
+        "bad": "Bad place",
+        "unknown": "Unknown"
+      },
+      "names": {
+        "capital": "Capital",
+        "city": "City",
+        "village": "Village",
+        "camp": "Camp",
+        "graveyard": "Graveyard",
+        "temple": "Temple",
+        "castle": "Castle",
+        "academy": "Academy",
+        "cave": "Cave",
+        "dungeon": "Dungeon",
+        "manor": "Manor",
+        "altar": "Altar"
+      },
+      "safeNames": {
+        "capital": {
+          "plains": "Frontier Capital",
+          "forest": "Capital of the Woods",
+          "mountain": "Highland Capital",
+          "water": "Coastal Capital",
+          "desert": "Capital of the Desert",
+          "ruins": "Capital of the Fallen"
+        },
+        "city": {
+          "plains": "Frontier City",
+          "forest": "City of the Woods",
+          "mountain": "Highland City",
+          "water": "Coastal City",
+          "desert": "City of the Desert",
+          "ruins": "City of the Fallen"
+        },
+        "village": {
+          "plains": "Frontier Village",
+          "forest": "Village of the Woods",
+          "mountain": "Highland Village",
+          "water": "Coastal Village",
+          "desert": "Village of the Desert",
+          "ruins": "Village of the Fallen"
+        },
+        "camp": {
+          "plains": "Frontier Camp",
+          "forest": "Camp of the Woods",
+          "mountain": "Highland Camp",
+          "water": "Coastal Camp",
+          "desert": "Camp of the Desert",
+          "ruins": "Camp of the Fallen"
+        }
+      },
+      "midNames": {
+        "graveyard": {
+          "good": "Blessed Graveyard",
+          "neutral": "Graveyard",
+          "evil": "Cursed Graveyard"
+        },
+        "temple": {
+          "good": "Blessed Temple",
+          "neutral": "Temple",
+          "evil": "Cursed Temple"
+        },
+        "castle": {
+          "good": "Blessed Castle",
+          "neutral": "Castle",
+          "evil": "Cursed Castle"
+        },
+        "academy": {
+          "good": "Blessed Academy",
+          "neutral": "Academy",
+          "evil": "Cursed Academy"
+        }
+      },
+      "safeBiomeAffixes": {
+        "plains": {
+          "prefix": "Frontier",
+          "suffix": "Frontier"
+        },
+        "forest": {
+          "prefix": "Forest",
+          "suffix": "of the Woods"
+        },
+        "mountain": {
+          "prefix": "Highland",
+          "suffix": "Highland"
+        },
+        "water": {
+          "prefix": "Coastal",
+          "suffix": "Coastal"
+        },
+        "desert": {
+          "prefix": "Desert",
+          "suffix": "of the Desert"
+        },
+        "ruins": {
+          "prefix": "Ruined",
+          "suffix": "of the Fallen"
+        }
+      },
+      "alignmentPrefixes": {
+        "good": "Blessed",
+        "neutral": "",
+        "evil": "Cursed"
+      }
+    },
+    "biomes": {
+      "plains": "Plains",
+      "forest": "Forest",
+      "mountain": "Mountain",
+      "water": "Water",
+      "desert": "Desert",
+      "ruins": "Ruins"
+    },
+    "cells": {
+      "unknownCell": "Unknown cell",
+      "unknownLandmark": "Unknown Landmark",
+      "sanctuary": {
+        "water": "Water Shrine",
+        "fire": "Fire Shrine",
+        "wind": "Wind Shrine",
+        "earth": "Earth Shrine",
+        "generic": "Elemental Shrine"
+      }
+    },
+    "interaction": {
+      "regionCrossing": {
+        "title": "Entering Region II",
+        "message": "Crossing this border may trigger a world event. Do you want to proceed?",
+        "confirm": "Proceed",
+        "cancel": "Stay"
+      },
+      "graveyard": {
+        "title": "Graveyard Resurrection",
+        "message": "Choose which dead follower you want to call back from the discard pile.",
+        "confirm": "Attempt resurrection",
+        "outcomePreviewTitle": "Luck check outcomes (1-100)"
+      },
+      "temple": {
+        "title": "Temple Devotion",
+        "message": "Choose an follower to leave at the Temple. Animals, spirits and undead are not allowed.",
+        "confirm": "Send devotee"
+      },
+      "altar": {
+        "title": "Altar Sacrifice",
+        "message": "Choose an follower to sacrifice at the Altar. Undead cannot be sacrificed.",
+        "confirm": "Sacrifice follower"
+      },
+      "errors": {
+        "movePlayer": "Error while moving player",
+        "noMerchantForLandmark": "No merchant configured for this landmark.",
+        "noDeadFollowerForResurrection": "No dead follower is available for resurrection.",
+        "noTempleFollower": "No eligible follower is available for temple devotion.",
+        "noAltarFollower": "No eligible follower is available for altar sacrifice.",
+        "levelUp": "Error while applying level-up choice",
+        "manageResources": "Error while managing resources"
+      }
+    }
+  },
+  "mapPage": {
+    "endTurn": {
+      "reason": {
+        "pendingResourcePickup": "Resolve pending resource pickup before ending your turn.",
+        "passControl": "Pass control to the next player.",
+        "moveBeforeEnd": "Move at least once before ending your turn."
+      }
+    }
+  },
+  "playerCard": {
+    "activeStatus": "Active status",
+    "moreStatuses": "More active statuses",
+    "activeEffects": "Active effects",
+    "noActiveEffects": "No active bonuses or maluses.",
+    "effectReasons": {
+      "generic": "Modifier",
+      "statusModifier": "Status modifier",
+      "alignedLandmark": "Aligned with landmark ethos",
+      "opposedLandmark": "Opposed to landmark ethos",
+      "sanctuaryQuadrantInfluence": "Attuned sanctuary influence in current quadrant",
+      "followerModifier": "{name} modifier",
+      "followerStatus": "{name} status ({status})"
+    },
+    "stats": {
+      "strengthAbbr": "STR",
+      "magicAbbr": "MAG",
+      "luckAbbr": "LCK"
+    },
+    "turnLeft": {
+      "one": "1 turn left",
+      "many": "{turns} turns left"
+    }
+  },
+  "catalogs": {
+    "followers": {
+      "horse": {
+        "name": "Horse",
+        "description": "A loyal mount. Use Feed horse before moving to gain +1 movement this turn."
+      },
+      "princess": {
+        "name": "Princess",
+        "description": "A noble follower with arcane intuition."
+      },
+      "mule": {
+        "name": "Mule",
+        "description": "A sturdy pack animal that increases your carrying capacity by 4."
+      },
+      "zombie": {
+        "name": "Zombie",
+        "description": "A shambling undead follower. Grants +1 STR, consumes 1 food each turn (or you lose 1 HP), and can be dismissed with Eliminate zombie."
+      }
+    },
+    "items": {
+      "cursed-rune-sword": {
+        "name": "Cursed Rune Sword",
+        "description": "A sword that feeds on dark intent."
+      },
+      "common-sword": {
+        "name": "Sword",
+        "description": "A basic sword for beginners."
+      },
+      "common-axe": {
+        "name": "Axe",
+        "description": "A basic axe for beginners. Enables Chop wood in forests."
+      },
+      "sealed-orb": {
+        "name": "Sealed Orb",
+        "description": "A mysterious relic with latent market value."
+      },
+      "water-bottle": {
+        "name": "Water Bottle",
+        "description": "A reusable bottle that stores water charges for harsh journeys."
+      }
+    }
+  },
+  "logs": {
+    "system": {
+      "info": "{text}",
+      "feedHorse": "{playerName} fed the horse and gained +1 movement for this turn.",
+      "zombieConsumedFood": "{playerName}'s zombie consumed {consumedFood} food.",
+      "zombieUpkeepMissingFood": "{playerName} had zombie upkeep missing {missingFood} food and lost {missingFood} HP.",
+      "inventoryOverflowDiscarded": "{playerName} discarded {discardedItemsCount} item(s) due to inventory overflow after follower loss.",
+      "itemPreventedCondition": "{playerName} used {itemName} ({nextCharges}/{maxCharges}) to prevent {conditionId}.",
+      "itemRechargedInBiome": "{playerName} recharged {itemName} ({nextCharges}/{maxCharges}) in {biomeLabel}."
+    },
+    "tokens": {
+      "alignment": "alignment: {value}",
+      "gainXp": "XP +{value}",
+      "gainLevelUp": "+1 level up",
+      "extrasWrapper": " ({value})",
+      "turn": {
+        "one": "turn",
+        "many": "turns"
+      }
+    },
+    "player": {
+      "move": "{playerName} moved to {x}, {y}.",
+      "discoverBiome": "{playerName} discovered {biome}.",
+      "discoverEnvironment": "{playerName} discovered a new {biome} environment.",
+      "expandEnvironment": "{playerName} expanded a {biome} environment.",
+      "enterSanctuary": "{playerName} entered {sanctuary}.",
+      "discoverLandmark": "{playerName} discovered {landmark}.",
+      "reachLandmark": "{playerName} reached {landmark}.",
+      "gainExperience": "{playerName} gained {amount} XP.",
+      "endTurn": "{playerName} ended the turn.",
+      "activateSanctuary": "{playerName} activated {sanctuaryLabel} and attuned to its element.",
+      "donateSanctuary": "{playerName} donated to {sanctuaryLabel} and shifted attunement.",
+      "praySanctuary": {
+        "lucky": "{playerName} prayed at {sanctuary} and restored {healedHp} HP with a lucky blessing.",
+        "noHeal": "{playerName} prayed at {sanctuary}, but received no healing response.",
+        "heal": "{playerName} prayed at {sanctuary} and restored {healedHp} HP."
+      },
+      "cellGather": "{playerName} spent 1 food and gathered {resource}.",
+      "chopTree": "{playerName} chopped wood and gained {quantity} {resource}.",
+      "consumeRation": "{playerName} consumed a ration and gained Nutrition.",
+      "safePlaceHeal": "{playerName} used {source}, restored {healedHp} HP and spent {spentCoins} coins.",
+      "capitalInn": "{playerName} rested at the {source}, restored {healedHp} HP, spent {spentCoins} coins and ended the turn.",
+      "landmarkTraining": "{playerName} trained at {source}, gained +{increasedBy} {parameter} (now {newValue}), spent {spentCoins} coins, ended the turn and will skip the next turn.",
+      "villageCraftsmanExchange": "{playerName} exchanged {amount} {giveLabel} for {amount} {receiveLabel} at the {source} and ended the turn.",
+      "campReward": "{playerName} used {source} and gained {rewards}.",
+      "safePlaceWait": "{playerName} waited at {place} using {source}, simulated movement on the same cell and ended the turn.",
+      "capitalEnchantress": {
+        "base": "{playerName} consulted {source}, paid {spentCoins} coins and drew {rewardLabel}.",
+        "pending": "{playerName} consulted {source}, paid {spentCoins} coins, drew {rewardLabel}, and unlocked a future magic reward placeholder."
+      },
+      "cityMystic": "{playerName} consulted {source}, paid {spentCoins} coins and drew {rewardLabel}{extras}.",
+      "graveyardResurrect": "{playerName} attempted resurrection at {source} for {followerId}. Outcome: {appliedOutcome}.",
+      "templeSendDevotee": "{playerName} sent a devotee at {source}, became GOOD and gained {gainedExperience} XP.",
+      "altarSacrifice": "{playerName} performed a sacrifice at {source}, became EVIL and gained {gainedExperience} XP.",
+      "eliminateZombie": "{playerName} used {source} and eliminated the active zombie.",
+      "merchantBuy": "{playerName} bought {itemName}{quantityLabel} from {source} for {spentCoins} coins and ended the turn.",
+      "merchantSell": "{playerName} sold {itemName}{quantityLabel} to {source} for {gainedCoins} coins.",
+      "fastTravelBooked": "{playerName} booked {source} from {from} to {to}, spent {spentCoins} coins and will skip {skippedTurns} {turnLabel} before arriving.",
+      "hostileEnvironmentDamage": "{playerName} suffered {damageHp} HP from hostile desert (environment size {environmentSize}).",
+      "regeneratingWatersHealing": "{playerName} healed {healingHp} HP from regenerating waters (environment size {environmentSize}).",
+      "followerHostileEnvironmentDamage": "{playerName}'s follower {followerName} suffered {damageHp} HP from hostile desert (environment size {environmentSize}).",
+      "followerRegeneratingWatersHealing": "{playerName}'s follower {followerName} healed {healingHp} HP from regenerating waters (environment size {environmentSize}).",
+      "discardResource": "{playerName} discarded 1 {resource}.",
+      "pendingPickupCancelled": "{playerName} cancelled collecting pending {resource}.",
+      "swapResource": "{playerName} discarded {droppedResource} and collected {gainedResource}.",
+      "resolvePendingPickup": "{playerName} collected pending {resource}."
+    }
+  },
+  "actions": {
+    "endTurn": {
+      "label": "End turn",
+      "description": "Pass your turn. {reason}"
+    },
+    "activateSanctuary": {
+      "label": "Activate",
+      "description": "Offer 5 coins to awaken {sanctuaryLabel}. Gain 2 XP and attune to its element."
+    },
+    "donateSanctuary": {
+      "label": "Donate",
+      "description": "Offer 5 coins to {sanctuaryLabel} and shift your attunement."
+    },
+    "praySanctuary": {
+      "label": "Pray",
+      "description": "Pray. If you are heard, recover 5% HP, or 10% on a lucky omen, then end your turn."
+    },
+    "cellGather": {
+      "label": "Gather",
+      "description": "Spend 1 food to forage this biome, gain 1 resource, then end your turn."
+    },
+    "chopTree": {
+      "label": "Chop wood",
+      "description": "Use your axe in a forest to gain 1 timber, then end your turn."
+    },
+    "consumeRation": {
+      "label": "Consume ration",
+      "description": "Spend 1 food to gain Nutrition until end of turn and ignore hostile desert damage."
+    },
+    "feedHorse": {
+      "label": "Feed horse",
+      "description": "Spend 1 food before moving to gain +1 movement range this turn."
+    },
+    "safePlaceWait": {
+      "label": "Wait",
+      "description": "Safe place: simulate movement on your current cell and end the turn without cost."
+    },
+    "fastTravel": {
+      "label": "Fast travel",
+      "description": "Safe place: travel to a discovered safe place. Cost 1 coin per orthogonal cell (max 15), then end turn and skip your next turn."
+    },
+    "campGatherer": {
+      "label": "Gatherer",
+      "description": "Camp: gain 1 timber and 1 minerals, then end turn.",
+      "warning": {
+        "capacity": "Not enough inventory capacity: need {requiredSlots} free slots, available {availableSlots}."
+      }
+    },
+    "campHunter": {
+      "label": "Hunter",
+      "description": "Camp: gain 1 food and 1 cloth, then end turn.",
+      "warning": {
+        "capacity": "Not enough inventory capacity: need {requiredSlots} free slots, available {availableSlots}."
+      }
+    },
+    "capitalDoctor": {
+      "label": "Doctor",
+      "description": "Visit the Capital Doctor: each treatment restores 5% HP and costs {costPerUnit} coins ({timeOfDay}). Then end your turn."
+    },
+    "capitalEnchantress": {
+      "label": "Enchantress",
+      "description": "Consult the Capital Enchantress for 5 coins. Draw your fate from a luck check, then end your turn."
+    },
+    "cityHealer": {
+      "label": "Healer",
+      "description": "Visit the City Healer: each treatment restores 5% HP and costs {costPerUnit} coins ({timeOfDay}). Then end your turn."
+    },
+    "cityMystic": {
+      "label": "Mystic",
+      "description": "Consult the City Mystic for 5 coins. Draw your fate from a luck check, then end your turn."
+    },
+    "cityMerchant": {
+      "label": "Merchant",
+      "description": "Visit the City Merchant. Buy or sell items from a configurable stock. Buying ends your turn."
+    },
+    "capitalInn": {
+      "label": "Inn",
+      "description": "Rest at the Capital Inn: restore 50% HP, pay 10 coins, then end your turn (day only)."
+    },
+    "castleRest": {
+      "label": "Rest",
+      "description": "Rest at the Castle: restore 50% HP, pay 10 coins, then end your turn (day and night)."
+    },
+    "castleTrainer": {
+      "label": "Trainer",
+      "description": "Train Strength at the Castle. Cost {trainingCost} coins (3 x level), gain +1 permanent STR, end your turn and skip your next one."
+    },
+    "academyTrainer": {
+      "label": "Trainer",
+      "description": "Train Magic at the Academy. Cost {trainingCost} coins (3 x level), gain +1 permanent MAG, end your turn and skip your next one."
+    },
+    "academyMerchant": {
+      "label": "Arcane Merchant",
+      "description": "Visit the Academy Merchant. Buy magical stock and sell only magical items. Buying ends your turn."
+    },
+    "villageCraftsman": {
+      "label": "Craftsman",
+      "description": "Trade resources 1:1 at the Village Craftsman, then end your turn."
+    },
+    "graveyardResurrect": {
+      "label": "Resurrect",
+      "description": "Attempt to resurrect a dead follower from your discard pile through a luck check. Outcomes may be dangerous."
+    },
+    "templeSendDevotee": {
+      "label": "Send devotee",
+      "description": "Leave an eligible follower at the Temple. Your alignment becomes good, gain 2 XP, then end turn."
+    },
+    "altarSacrifice": {
+      "label": "Sacrifice",
+      "description": "Sacrifice an eligible follower at the Altar. Your alignment becomes evil, gain 2 XP, then end turn."
+    },
+    "eliminateZombie": {
+      "label": "Eliminate zombie",
+      "description": "Destroy your zombie companion and end your turn."
+    }
+  },
+  "statuses": {
+    "nutrition": {
+      "label": "Nutrition",
+      "description": "Prevents hostile environment damage for this turn."
+    },
+    "poison": {
+      "label": "Poison",
+      "description": "Takes damage at the end of each turn."
+    },
+    "regen": {
+      "label": "Regen",
+      "description": "Heals a small amount at the end of each turn."
+    },
+    "minified": {
+      "label": "Minified",
+      "description": "Transforms the target into a mouse. Primary stats are set to 1, HP/MP recovery is disabled, and item use is blocked."
+    },
+    "silence": {
+      "label": "Silence",
+      "description": "Spell casting and MP natural regeneration are disabled."
+    },
+    "fortune": {
+      "label": "Fortune",
+      "description": "Doubles the luck bonus applied to luck checks."
+    },
+    "bravery": {
+      "label": "Bravery",
+      "description": "Increases Strength by 1."
+    },
+    "weakened": {
+      "label": "Weakened",
+      "description": "Decreases Strength by 1."
+    },
+    "focus": {
+      "label": "Focus",
+      "description": "Increases Magic by 1."
+    },
+    "hexed": {
+      "label": "Hexed",
+      "description": "Decreases Magic by 1."
+    },
+    "zombified": {
+      "label": "Zombified",
+      "description": "Raised by dark rites and bound to your service for a short time."
+    }
+  },
+  "resources": {
+    "timber": "Timber",
+    "food": "Food",
+    "minerals": "Minerals",
+    "cloth": "Cloth"
+  }
+}

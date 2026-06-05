@@ -11,6 +11,7 @@ import { Player } from "../models/Player";
 import { ItemCatalogService } from "./item-catalog-service";
 import { MerchantStockConfigService } from "./merchant-stock-config-service";
 import { FollowerCatalogService } from "./follower-catalog-service";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
@@ -20,6 +21,7 @@ export class MerchantTradeOffersService {
     private itemCatalogService: ItemCatalogService,
     private merchantStockConfigService: MerchantStockConfigService,
     private followerCatalogService: FollowerCatalogService,
+    private translationService: TranslationService,
   ) {}
 
   public async resolveStockEntries(input: {
@@ -103,8 +105,8 @@ export class MerchantTradeOffersService {
           return {
             tradableKind: "item",
             tradableId: item.id,
-            name: item.name,
-            description: item.description,
+            name: this.itemCatalogService.getLocalizedName(item),
+            description: this.itemCatalogService.getLocalizedDescription(item),
             category: item.category,
             identityKeywords: this.buildIdentityKeywords(item),
             purchaseValue: typeof entry.purchaseValue === "number"
@@ -121,8 +123,8 @@ export class MerchantTradeOffersService {
         return {
           tradableKind: "follower",
           tradableId: follower.id,
-          name: follower.name,
-          description: follower.description,
+          name: this.followerCatalogService.getLocalizedName(follower),
+          description: this.followerCatalogService.getLocalizedDescription(follower),
           category: follower.category,
           identityKeywords: this.buildFollowerIdentityKeywords(follower),
           purchaseValue: typeof entry.purchaseValue === "number"
@@ -130,7 +132,9 @@ export class MerchantTradeOffersService {
             : 0,
           stock: Math.max(0, Math.floor(Number(input.stockMap[stockKey] ?? 0))),
           canBuy: !ownedActiveFollowerIds.has(follower.id),
-          blockedReason: ownedActiveFollowerIds.has(follower.id) ? "Already in your party" : undefined,
+          blockedReason: ownedActiveFollowerIds.has(follower.id)
+            ? this.translationService.tOrFallback("dialogs.merchant.errors.alreadyInParty", "Already in your party")
+            : undefined,
         };
       });
 
@@ -167,8 +171,8 @@ export class MerchantTradeOffersService {
       })
       .map((entry) => ({
         itemId: entry.item.id,
-        name: entry.item.name,
-        description: entry.item.description,
+        name: this.itemCatalogService.getLocalizedName(entry.item),
+        description: this.itemCatalogService.getLocalizedDescription(entry.item),
         category: entry.item.category,
         identityKeywords: this.buildIdentityKeywords(entry.item),
         sellValue: this.itemCatalogService.getSellValue(entry.item),
@@ -185,7 +189,7 @@ export class MerchantTradeOffersService {
     const keywords: string[] = [];
 
     if (!item.occupiesSpace) {
-      keywords.push("little");
+      keywords.push(this.translationService.tOrFallback("map.labels.little", "little"));
     }
 
     const allowedAlignments = item.constraints?.allowedAlignments;
@@ -193,7 +197,7 @@ export class MerchantTradeOffersService {
       && allowedAlignments.length === 1
       && allowedAlignments[0] === "evil";
     if (evilOnly) {
-      keywords.push("evil only");
+      keywords.push(this.translationService.tOrFallback("dialogs.merchant.keywords.evilOnly", "evil only"));
     }
 
     return keywords;
@@ -204,11 +208,19 @@ export class MerchantTradeOffersService {
     itemCapacityBonus?: number;
   }): string[] {
     const keywords: string[] = [];
-    keywords.push(`hp ${Math.max(1, Math.floor(Number(follower.maxHp ?? 1)))}`);
+    keywords.push(this.translationService.tOrFallback(
+      "dialogs.merchant.keywords.hpValue",
+      "HP {value}",
+      { value: Math.max(1, Math.floor(Number(follower.maxHp ?? 1))) },
+    ));
 
     const itemCapacityBonus = Number(follower.itemCapacityBonus ?? 0);
     if (Number.isFinite(itemCapacityBonus) && Math.floor(itemCapacityBonus) > 0) {
-      keywords.push(`+${Math.floor(itemCapacityBonus)} item slots`);
+      keywords.push(this.translationService.tOrFallback(
+        "dialogs.merchant.keywords.itemSlotsPlus",
+        "+{value} item slots",
+        { value: Math.floor(itemCapacityBonus) },
+      ));
     }
 
     return keywords;

@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from "@angular/core";
 import { ResourceLabel, ResourceStack } from "../../../models/Resource";
 import { RESOURCE_CATALOG } from "../../../consts/resources-catalog";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-resource-counter",
@@ -9,6 +10,8 @@ import { RESOURCE_CATALOG } from "../../../consts/resources-catalog";
   standalone: true,
 })
 export class ResourceCounter {
+  constructor(private translationService: TranslationService) {}
+
   public resources = input<ResourceStack[]>([]);
   public currentCount = input<number>(0);
   public maxCount = input<number>(12);
@@ -28,6 +31,18 @@ export class ResourceCounter {
         quantity: byLabel.get(label) ?? 0,
       };
     });
+  });
+
+  public panelAriaLabel = computed<string>(() => {
+    return this.translationService.tOrFallback("map.resources.openAria", "Open resource inventory");
+  });
+
+  public panelTitle = computed<string>(() => {
+    return this.translationService.tOrFallback(
+      "map.resources.title",
+      "Resources ({current}/{max})",
+      { current: this.currentCount(), max: this.maxCount() },
+    );
   });
 
   public onPanelClicked(): void {

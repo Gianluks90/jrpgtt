@@ -9,6 +9,8 @@ export interface EnchantressRewardDefinition {
   maxTotal: number;
   label: string;
   previewLabel: string;
+  labelKey?: string;
+  previewLabelKey?: string;
   pendingMagicReward?: boolean;
   statuses: EnchantressRewardStatusEffect[];
 }

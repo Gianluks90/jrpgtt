@@ -2,6 +2,7 @@ import { Component, computed, input } from "@angular/core";
 import { Player } from "../../../models/Player";
 import { MapCell } from "../../../models/MapCell";
 import { WorldState } from "../../../models/WorldState";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-world-state-panel",
@@ -10,6 +11,8 @@ import { WorldState } from "../../../models/WorldState";
   styleUrl: "./world-state-panel.scss",
 })
 export class WorldStatePanel {
+  constructor(private translationService: TranslationService) {}
+
   public worldState = input<WorldState | null>(null);
   public players = input<Player[]>([]);
   public mapCellsById = input<Record<string, MapCell>>({});
@@ -66,12 +69,36 @@ export class WorldStatePanel {
     const activePlayer = this.activePlayerLabel();
 
     return [
-      { label: "Turn", value: String(turn), isActivePlayer: false },
-      { label: "Round", value: String(round), isActivePlayer: false },
-      { label: "Discovered", value: discovered, isActivePlayer: false },
-      { label: "Active shrines", value: activeShrines, isActivePlayer: false },
-      { label: "World event", value: worldEventLabel, isActivePlayer: false },
-      { label: "Active player", value: activePlayer, isActivePlayer: true },
+      {
+        label: this.translationService.tOrFallback("map.worldPanel.turn", "Turn"),
+        value: String(turn),
+        isActivePlayer: false,
+      },
+      {
+        label: this.translationService.tOrFallback("map.worldPanel.round", "Round"),
+        value: String(round),
+        isActivePlayer: false,
+      },
+      {
+        label: this.translationService.tOrFallback("map.worldPanel.discovered", "Discovered"),
+        value: discovered,
+        isActivePlayer: false,
+      },
+      {
+        label: this.translationService.tOrFallback("map.worldPanel.activeShrines", "Active shrines"),
+        value: activeShrines,
+        isActivePlayer: false,
+      },
+      {
+        label: this.translationService.tOrFallback("map.worldPanel.worldEvent", "World event"),
+        value: worldEventLabel,
+        isActivePlayer: false,
+      },
+      {
+        label: this.translationService.tOrFallback("map.worldPanel.activePlayer", "Active player"),
+        value: activePlayer,
+        isActivePlayer: true,
+      },
     ];
   });
 }

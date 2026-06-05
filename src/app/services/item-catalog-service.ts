@@ -1,10 +1,13 @@
 import { Injectable } from "@angular/core";
 import { ItemCatalogConfig, ItemDefinition } from "../models/ItemCatalog";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class ItemCatalogService {
+  constructor(private translationService: TranslationService) {}
+
   private readonly configUrl = "/configs/items.config.json";
   private configCache: ItemCatalogConfig | null = null;
   private configLoadPromise: Promise<ItemCatalogConfig> | null = null;
@@ -58,6 +61,22 @@ export class ItemCatalogService {
     return Math.floor(purchaseValue / 2);
   }
 
+  public getLocalizedName(item: Pick<ItemDefinition, "id" | "name" | "nameKey">): string {
+    if (typeof item.nameKey === "string" && item.nameKey.trim()) {
+      return this.translationService.tOrFallback(item.nameKey, item.name);
+    }
+
+    return item.name;
+  }
+
+  public getLocalizedDescription(item: Pick<ItemDefinition, "id" | "description" | "descriptionKey">): string {
+    if (typeof item.descriptionKey === "string" && item.descriptionKey.trim()) {
+      return this.translationService.tOrFallback(item.descriptionKey, item.description);
+    }
+
+    return item.description;
+  }
+
   private parseConfig(raw: unknown): ItemCatalogConfig {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       throw new Error("Invalid items configuration: root object is missing");
@@ -91,6 +110,8 @@ export class ItemCatalogService {
       id?: unknown;
       name?: unknown;
       description?: unknown;
+      nameKey?: unknown;
+      descriptionKey?: unknown;
       category?: unknown;
       occupiesSpace?: unknown;
       consumable?: unknown;
@@ -112,6 +133,15 @@ export class ItemCatalogService {
 
     if (typeof typed.description !== "string") {
       throw new Error(`Invalid items configuration: item '${typed.id}' has invalid description`);
+    }
+
+    if (typeof typed.nameKey !== "undefined" && (typeof typed.nameKey !== "string" || !typed.nameKey.trim())) {
+      throw new Error(`Invalid items configuration: item '${typed.id}' has invalid nameKey`);
+    }
+
+    if (typeof typed.descriptionKey !== "undefined"
+      && (typeof typed.descriptionKey !== "string" || !typed.descriptionKey.trim())) {
+      throw new Error(`Invalid items configuration: item '${typed.id}' has invalid descriptionKey`);
     }
 
     if (typeof typed.category !== "string" || !typed.category.trim()) {
@@ -155,6 +185,8 @@ export class ItemCatalogService {
       id: typed.id,
       name: typed.name,
       description: typed.description,
+      ...(typeof typed.nameKey === "string" ? { nameKey: typed.nameKey } : {}),
+      ...(typeof typed.descriptionKey === "string" ? { descriptionKey: typed.descriptionKey } : {}),
       category: typed.category,
       occupiesSpace: typed.occupiesSpace,
       consumable: typed.consumable,

@@ -1,14 +1,14 @@
-<dialog-wrapper title="Fast travel">
+<dialog-wrapper [title]="'dialogs.fastTravel.title' | t">
     <div dialog-header-extra class="header-money">
         <span>{{ playerMoney }}</span>
         <span class="coin-icon" aria-hidden="true"></span>
     </div>
 
-    <p class="info-text">Stai partendo da <strong>{{ originName }}</strong>.</p>
-    <p class="info-text">Route cost is 1 coin per orthogonal cell, capped at 15.</p>
+    <p class="info-text">{{ 'dialogs.fastTravel.startingFrom' | t: { origin: originName } }}</p>
+    <p class="info-text">{{ 'dialogs.fastTravel.routeCostInfo' | t }}</p>
 
     @if (routes.length === 0) {
-        <p class="error-text">No discovered safe-place destinations are available yet.</p>
+        <p class="error-text">{{ 'dialogs.fastTravel.noDestinations' | t }}</p>
     } @else {
         <div class="routes-list">
             @for (route of routes; track route.cellId) {
@@ -26,9 +26,9 @@
                         </span>
                     </span>
                     <span class="route-divider" aria-hidden="true"></span>
-                    <span class="route-meta">Coordinates: {{ route.x + 1 }}, {{ route.y + 1 }}</span>
+                    <span class="route-meta">{{ 'dialogs.fastTravel.coordinates' | t: { x: route.x + 1, y: route.y + 1 } }}</span>
                     @if (isTooExpensive(route)) {
-                        <span class="route-warning">Not enough coins for this route.</span>
+                        <span class="route-warning">{{ 'dialogs.fastTravel.notEnoughCoinsRoute' | t }}</span>
                     }
                 </button>
             }
@@ -36,21 +36,21 @@
     }
 
     @if (selectedRoute && !canConfirm) {
-        <p class="error-text">Selected route costs {{ selectedRoute.cost }} coins, but you only have {{ playerMoney }}.</p>
+        <p class="error-text">{{ 'dialogs.fastTravel.selectedRouteTooExpensive' | t: { cost: selectedRoute.cost, money: playerMoney } }}</p>
     }
 
     @if (selectedRoute && canConfirm) {
         <p class="info-text">
-            Destination: <strong>{{ selectedRoute.destinationName }}</strong>.
-            Confirming ends your turn and you will skip one additional turn before arrival.
+            {{ 'dialogs.fastTravel.destination' | t: { destination: selectedRoute.destinationName } }}
+            {{ 'dialogs.fastTravel.confirmInfo' | t }}
         </p>
     }
 
     <text-button
         dialog-action
-        text="Confirm route"
+        [text]="'dialogs.fastTravel.confirmRoute' | t"
         [disabled]="!canConfirm"
         (clicked)="confirm()"
     ></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

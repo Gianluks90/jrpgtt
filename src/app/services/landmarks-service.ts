@@ -24,6 +24,7 @@ import { LandmarksConfig } from "../models/LandmarksConfig";
 import { QuadrantId } from "../models/WorldZone";
 import { LandmarksConfigService } from "./landmarks-config-service";
 import { WorldZonesService } from "./world-zones-service";
+import { TranslationService } from "./translation-service";
 
 interface PlacementCoordinate {
   x: number;
@@ -41,6 +42,7 @@ export class LandmarksService {
   constructor(
     private worldZonesService: WorldZonesService,
     private landmarksConfigService: LandmarksConfigService,
+    private translationService: TranslationService,
   ) {}
 
   public async loadConfig(): Promise<LandmarksConfig> {
@@ -116,25 +118,91 @@ export class LandmarksService {
     const config = await this.landmarksConfigService.loadConfig();
     const definition = this.getDefinitionByIdFromDefinitions(target.landmarkId, this.getDefinitions(config));
     if (!definition) {
-      return "Unknown Landmark";
+      return this.translationService.tOrFallback("map.cells.unknownLandmark", "Unknown Landmark");
     }
+
+    const baseName = this.translationService.tOrFallback(
+      `map.landmarks.names.${definition.id}`,
+      definition.baseName,
+    );
 
     if (target.category === "safe") {
       const suffix = this.getSafeBiomeSuffixes(config)[biome];
-      if (suffix.kind === "prefix") {
-        return `${suffix.value} ${definition.baseName}`;
-      }
-      return `${definition.baseName} ${suffix.value}`;
+      const localizedAffix = this.translationService.tOrFallback(
+        `map.landmarks.safeBiomeAffixes.${biome}.${suffix.kind}`,
+        suffix.value,
+      );
+      return this.getLocalizedSafeLandmarkName({
+        landmarkId: definition.id,
+        biome,
+        baseName,
+        fallbackAffix: localizedAffix,
+        fallbackKind: suffix.kind,
+      });
     }
 
     if (target.category === "mid") {
       const alignmentPrefixes = this.getAlignmentPrefixes(config);
-      const modifier = alignmentPrefixes[target.alignmentModifier ?? "neutral"];
-      if (!modifier) return definition.baseName;
-      return `${modifier} ${definition.baseName}`;
+      const alignment = target.alignmentModifier ?? "neutral";
+      const modifier = this.translationService.tOrFallback(
+        `map.landmarks.alignmentPrefixes.${alignment}`,
+        alignmentPrefixes[alignment],
+      );
+      return this.getLocalizedMidLandmarkName({
+        landmarkId: definition.id,
+        alignment,
+        baseName,
+        fallbackPrefix: modifier,
+      });
     }
 
-    return definition.baseName;
+    return baseName;
+  }
+
+  public getLocalizedLandmarkNameFromCell(cell: MapCell | null | undefined): string {
+    if (!cell || cell.specialType !== "landmark") {
+      return this.translationService.tOrFallback("map.cells.unknownLandmark", "Unknown Landmark");
+    }
+
+    const baseName = this.getLocalizedLandmarkBaseName(cell.landmarkId);
+    if (cell.landmarkCategory === "safe") {
+      const biome = cell.biome;
+      if (!biome) {
+        return baseName;
+      }
+
+      const config = this.landmarksConfigService.getCachedConfig();
+      const suffix = this.getSafeBiomeSuffixes(config)[biome];
+      const localizedAffix = this.translationService.tOrFallback(
+        `map.landmarks.safeBiomeAffixes.${biome}.${suffix.kind}`,
+        suffix.value,
+      );
+      return this.getLocalizedSafeLandmarkName({
+        landmarkId: cell.landmarkId ?? "",
+        biome,
+        baseName,
+        fallbackAffix: localizedAffix,
+        fallbackKind: suffix.kind,
+      });
+    }
+
+    if (cell.landmarkCategory === "mid") {
+      const alignment = cell.landmarkAlignmentModifier ?? "neutral";
+      const config = this.landmarksConfigService.getCachedConfig();
+      const fallbackPrefix = this.getAlignmentPrefixes(config)[alignment];
+      const modifier = this.translationService.tOrFallback(
+        `map.landmarks.alignmentPrefixes.${alignment}`,
+        fallbackPrefix,
+      );
+      return this.getLocalizedMidLandmarkName({
+        landmarkId: cell.landmarkId ?? "",
+        alignment,
+        baseName,
+        fallbackPrefix: modifier,
+      });
+    }
+
+    return baseName;
   }
 
   public getCategoryDefinition(category: LandmarkCategory): LandmarkCategoryDefinition | null {
@@ -164,8 +232,12 @@ export class LandmarksService {
   }
 
   public getCategoryLabel(category: LandmarkCategory | undefined): string {
-    if (!category) return "Unknown";
-    return this.getCategoryDefinition(category)?.label ?? category;
+    if (!category) {
+      return this.translationService.tOrFallback("map.landmarks.categories.unknown", "Unknown");
+    }
+
+    const fallback = this.getCategoryDefinition(category)?.label ?? category;
+    return this.translationService.tOrFallback(`map.landmarks.categories.${category}`, fallback);
   }
 
   public getSafePlaceActionIds(landmarkId: string | undefined): string[] {
@@ -428,8 +500,13 @@ export class LandmarksService {
 
     const definitions = this.getDefinitions(this.landmarksConfigService.getCachedConfig());
     const matched = definitions.find((definition) => {
+      const localizedBaseName = this.translationService.tOrFallback(
+        `map.landmarks.names.${definition.id}`,
+        definition.baseName,
+      ).toLowerCase();
       return displayName.includes(definition.id.toLowerCase())
-        || displayName.includes(definition.baseName.toLowerCase());
+        || displayName.includes(definition.baseName.toLowerCase())
+        || displayName.includes(localizedBaseName);
     });
 
     return matched?.id ?? null;
@@ -437,6 +514,55 @@ export class LandmarksService {
 
   private isSafeLandmarkId(value: string): value is SafePlaceLandmarkId {
     return value === "capital" || value === "city" || value === "village" || value === "camp";
+  }
+
+  private getLocalizedLandmarkBaseName(landmarkId: string | undefined): string {
+    if (!landmarkId) {
+      return this.translationService.tOrFallback("map.cells.unknownLandmark", "Unknown Landmark");
+    }
+
+    const definition = this.getDefinitionById(landmarkId);
+    const fallbackBase = definition?.baseName ?? landmarkId;
+    return this.translationService.tOrFallback(`map.landmarks.names.${landmarkId}`, fallbackBase);
+  }
+
+  private getLocalizedSafeLandmarkName(input: {
+    landmarkId: string;
+    biome: BiomeType;
+    baseName: string;
+    fallbackAffix: string;
+    fallbackKind: "prefix" | "suffix";
+  }): string {
+    const explicitName = this.translationService.tOrFallback(
+      `map.landmarks.safeNames.${input.landmarkId}.${input.biome}`,
+      "",
+    ).trim();
+
+    if (explicitName) {
+      return explicitName;
+    }
+
+    return input.fallbackKind === "prefix"
+      ? `${input.fallbackAffix} ${input.baseName}`
+      : `${input.baseName} ${input.fallbackAffix}`;
+  }
+
+  private getLocalizedMidLandmarkName(input: {
+    landmarkId: string;
+    alignment: LandmarkAlignmentModifier;
+    baseName: string;
+    fallbackPrefix: string;
+  }): string {
+    const explicitName = this.translationService.tOrFallback(
+      `map.landmarks.midNames.${input.landmarkId}.${input.alignment}`,
+      "",
+    ).trim();
+
+    if (explicitName) {
+      return explicitName;
+    }
+
+    return input.fallbackPrefix ? `${input.fallbackPrefix} ${input.baseName}` : input.baseName;
   }
 
   private shuffleArray<T>(items: T[]): T[] {

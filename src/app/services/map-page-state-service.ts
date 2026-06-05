@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from "@angular/core";
+import { computed, effect, inject, Injectable, signal } from "@angular/core";
 import { getAuth, onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getBiomeResourcesMap } from "../consts/biome-resources";
@@ -21,6 +21,7 @@ import { LandmarksConfigService } from "./landmarks-config-service";
 import { TilesConfigService } from "./tiles-config-service";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { StatusCatalogService } from "./status-catalog-service";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
@@ -113,6 +114,7 @@ export class MapPageStateService {
   private inventoryBackfillRequested = new Set<string>();
   private activeGameId: string | null = null;
   private eventLogService = inject(EventLogService);
+  private translationService = inject(TranslationService);
 
   constructor(
     private firebaseService: FirebaseService,
@@ -123,6 +125,16 @@ export class MapPageStateService {
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private statusCatalogService: StatusCatalogService,
   ) { }
+
+  private readonly localizeLogsEffect = effect(() => {
+    this.translationService.language();
+    this.eventLogs.update((logs) => {
+      return logs.map((log) => ({
+        ...log,
+        message: this.eventLogService.localizeEventLog(log),
+      }));
+    });
+  });
 
   public init(gameId: string): void {
     if (!gameId) return;
@@ -336,7 +348,9 @@ export class MapPageStateService {
   }
 
   private buildLatestEventLogSummary(logs: EventLog[], playersCount: number): string {
-    if (logs.length === 0) return EVENT_LOG_CONFIG.footer.emptyMessage;
+    if (logs.length === 0) {
+      return this.translationService.tOrFallback("dialogs.eventLog.empty", EVENT_LOG_CONFIG.footer.emptyMessage);
+    }
 
     const latestLog = logs[0];
     if (playersCount <= 1) {

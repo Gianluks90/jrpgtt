@@ -1,21 +1,26 @@
 import { Component, computed, input } from "@angular/core";
 import { SanctuaryElement } from "../../../models/MapCell";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-attunement-indicator",
+  imports: [TranslationPipe],
   templateUrl: "./attunement-indicator.html",
   styleUrl: "./attunement-indicator.scss",
   standalone: true,
 })
 export class AttunementIndicator {
+  constructor(private translationService: TranslationService) {}
+
   public element = input<SanctuaryElement | null>(null);
 
   public label = computed<string>(() => {
     const element = this.element();
-    if (element === "water") return "Water";
-    if (element === "fire") return "Fire";
-    if (element === "wind") return "Wind";
-    if (element === "earth") return "Earth";
+    if (element === "water") return this.translationService.tOrFallback("map.elements.water", "Water");
+    if (element === "fire") return this.translationService.tOrFallback("map.elements.fire", "Fire");
+    if (element === "wind") return this.translationService.tOrFallback("map.elements.wind", "Wind");
+    if (element === "earth") return this.translationService.tOrFallback("map.elements.earth", "Earth");
     return "-";
   });
 

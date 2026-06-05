@@ -10,6 +10,7 @@ import { LandmarksService } from "./landmarks-service";
 import { ActionCatalogService } from "./action-catalog-service";
 import { ItemCatalogService } from "./item-catalog-service";
 import { FollowerCatalogService } from "./follower-catalog-service";
+import { TranslationService } from "./translation-service";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -35,15 +36,25 @@ export class MapPageActionsService {
     private actionCatalogService: ActionCatalogService,
     private itemCatalogService: ItemCatalogService,
     private followerCatalogService: FollowerCatalogService,
+    private translationService: TranslationService,
   ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
     const actions: CommandPanelAction[] = [];
     const endTurnReason = input.player?.pendingResourcePickup
-      ? "Resolve pending resource pickup before ending your turn."
+      ? this.translationService.tOrFallback(
+        "mapPage.endTurn.reason.pendingResourcePickup",
+        "Resolve pending resource pickup before ending your turn.",
+      )
       : input.hasMovedOnCurrentTurn
-        ? "Pass control to the next player."
-        : "Move at least once before ending your turn.";
+        ? this.translationService.tOrFallback(
+          "mapPage.endTurn.reason.passControl",
+          "Pass control to the next player.",
+        )
+        : this.translationService.tOrFallback(
+          "mapPage.endTurn.reason.moveBeforeEnd",
+          "Move at least once before ending your turn.",
+        );
 
     actions.push({
       id: "end-turn",
@@ -192,10 +203,19 @@ export class MapPageActionsService {
   }
 
   private sanctuaryElementToLabel(element: SanctuaryElement): string {
-    if (element === "water") return "Water Shrine";
-    if (element === "fire") return "Fire Shrine";
-    if (element === "wind") return "Wind Shrine";
-    return "Earth Shrine";
+    if (element === "water") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.water", "Water Shrine");
+    }
+
+    if (element === "fire") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.fire", "Fire Shrine");
+    }
+
+    if (element === "wind") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.wind", "Wind Shrine");
+    }
+
+    return this.translationService.tOrFallback("map.cells.sanctuary.earth", "Earth Shrine");
   }
 
   private cellId(x: number, y: number): string {

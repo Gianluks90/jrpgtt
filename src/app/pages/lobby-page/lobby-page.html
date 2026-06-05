@@ -2,80 +2,80 @@
     <div class="page-shell">
         @if (myGame()) {
             <section class="hud world-header">
-                <p class="hud-title">New game > {{ myGame()?.name }}</p>
+                <p class="hud-title">{{ 'lobby.header.newGamePrefix' | t }} > {{ myGame()?.name }}</p>
                 <p class="world-summary-line">
                     <span class="world-summary-entry">
-                        <span class="world-summary-label">Players joined</span>
+                        <span class="world-summary-label">{{ 'lobby.summary.playersJoined' | t }}</span>
                         <strong class="world-summary-value">{{ myGame()?.playerIds?.length }} / {{ myGame()?.maxPlayers }}</strong>
                     </span>
                     <span class="world-summary-entry">
-                        <span class="world-summary-label">Players ready</span>
+                        <span class="world-summary-label">{{ 'lobby.summary.playersReady' | t }}</span>
                         <strong class="world-summary-value">{{ readyPlayersCount() }} / {{ myGame()?.maxPlayers }}</strong>
                     </span>
                     <span class="world-summary-entry join-code-entry">
-                        <span class="world-summary-label">Join code</span>
+                        <span class="world-summary-label">{{ 'lobby.summary.joinCode' | t }}</span>
                         <strong class="world-summary-value">{{ myGame()?.joinCode }}</strong>
                         <button
                             class="copy-code-button"
                             [class.is-copied]="copyFeedback() === 'copied'"
                             type="button"
-                            [attr.aria-label]="copyFeedback() === 'copied' ? 'Copied' : 'Copy join code'"
-                            [title]="copyFeedback() === 'copied' ? 'Copied' : 'Copy join code'"
+                            [attr.aria-label]="copyCodeButtonLabel()"
+                            [title]="copyCodeButtonLabel()"
                             (click)="onCopyJoinCode()"
                         >
                             <span class="copy-code-icon" [style.mask]="'url(./icons/content_copy_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg) no-repeat center / contain'"></span>
                         </button>
                     </span>
                     <span class="world-summary-entry">
-                        <span class="world-summary-label">Status</span>
-                        <strong class="world-summary-value flashing-text">{{ myGame()?.status }}</strong>
+                        <span class="world-summary-label">{{ 'lobby.summary.status' | t }}</span>
+                        <strong class="world-summary-value flashing-text">{{ gameStatusLabel(myGame()?.status) }}</strong>
                     </span>
                 </p>
             </section>
 
             <div class="lobby-stage">
                 <section class="players-panel">
-                    <p class="panel-title">Players</p>
+                    <p class="panel-title">{{ 'lobby.players.title' | t }}</p>
                     <div class="panel-scroll-body player-list-column">
                         @for (player of lobbyPlayers(); track player.id) {
                             <div class="mini-player-row">
                                 <span class="mini-player-color" [style.background]="player.color"></span>
                                 <span class="mini-player-name">{{ player.name }}</span>
                                 <span class="mini-player-spacer"></span>
-                                <span class="mini-player-ready" [class.is-ready]="player.isReady">{{ player.isReady ? 'READY' : 'PENDING' }}</span>
+                                <span class="mini-player-ready" [class.is-ready]="player.isReady">{{ playerReadyLabel(player.isReady) }}</span>
                             </div>
                         }
                     </div>
                 </section>
 
                 <section class="hud setup-panel">
-                    <p class="hud-title">Player Setup</p>
+                    <p class="hud-title">{{ 'lobby.setup.title' | t }}</p>
 
                     <div class="setup-scroll-body">
                         <p class="setup-subtitle">
-                            Complete your setup and spend all experience points to become ready.
+                            {{ 'lobby.setup.subtitle' | t }}
                         </p>
 
                         <div class="current-player-line">
                             <span>{{ myPlayer()?.name }}</span>
-                            <span [class.is-ready]="myPlayer()?.isReady">{{ myPlayer()?.isReady ? 'READY' : 'NOT READY' }}</span>
+                            <span [class.is-ready]="myPlayer()?.isReady">{{ currentPlayerReadyLabel(myPlayer()?.isReady) }}</span>
                         </div>
 
                         <form [formGroup]="playerSetupForm" class="player-setup-form">
                             <div class="form-section">
-                                <label for="player-name">Name</label>
+                                <label for="player-name">{{ 'lobby.setup.nameLabel' | t }}</label>
                                 <input
                                     id="player-name"
                                     type="text"
                                     formControlName="name"
                                     maxlength="8"
-                                    placeholder="Enter player name"
+                                    [placeholder]="'lobby.setup.namePlaceholder' | t"
                                 />
                             </div>
 
                             <div class="form-section alignment-box" [class.disabled]="isPlayerReady()">
-                                <span class="world-summary-label">Alignment</span>
-                                <div class="alignment-options" role="radiogroup" aria-label="Player alignment">
+                                <span class="world-summary-label">{{ 'lobby.setup.alignment' | t }}</span>
+                                <div class="alignment-options" role="radiogroup" [attr.aria-label]="'lobby.setup.alignmentAriaLabel' | t">
                                     @for (alignment of alignments; track alignment) {
                                         <button
                                             type="button"
@@ -89,34 +89,34 @@
                                             (click)="playerSetupForm.controls['alignment'].setValue(alignment)"
                                         >
                                             <span class="alignment-icon" [style.mask]="'url(/alignment-icons/' + alignment + '-icon.svg) no-repeat center / contain'"></span>
-                                            <span class="alignment-label">{{ alignment }}</span>
+                                            <span class="alignment-label">{{ alignmentLabel(alignment) }}</span>
                                         </button>
                                     }
                                 </div>
                             </div>
 
                             <div class="pool-box">
-                                <span class="world-summary-label">Parameters pool points</span>
+                                <span class="world-summary-label">{{ 'lobby.setup.parametersPool' | t }}</span>
                                 <strong class="point-value" [style.color]="experiencePool() === 0 ? 'var(--ok-color)' : ''">{{ experiencePool() }}</strong>
                             </div>
 
                             <div class="form-section parameter-group">
                                 <div class="parameter-row">
-                                    <span class="parameter-name">Strength (each point increase HP by 5%)</span>
+                                    <span class="parameter-name">{{ 'lobby.setup.strength' | t }}</span>
                                     <button type="button" class="param-btn" [disabled]="!canDecreaseParameter('strength')" (click)="decreaseParameter('strength')">-</button>
                                     <span class="param-value">{{ strength() }}</span>
                                     <button type="button" class="param-btn" [disabled]="!canIncreaseParameter()" (click)="increaseParameter('strength')">+</button>
                                 </div>
 
                                 <div class="parameter-row">
-                                    <span class="parameter-name">Magic (each point increase MP by 1)</span>
+                                    <span class="parameter-name">{{ 'lobby.setup.magic' | t }}</span>
                                     <button type="button" class="param-btn" [disabled]="!canDecreaseParameter('magic')" (click)="decreaseParameter('magic')">-</button>
                                     <span class="param-value">{{ magic() }}</span>
                                     <button type="button" class="param-btn" [disabled]="!canIncreaseParameter()" (click)="increaseParameter('magic')">+</button>
                                 </div>
 
                                 <div class="parameter-row">
-                                    <span class="parameter-name">Luck</span>
+                                    <span class="parameter-name">{{ 'lobby.setup.luck' | t }}</span>
                                     <button type="button" class="param-btn" [disabled]="!canDecreaseParameter('luck')" (click)="decreaseParameter('luck')">-</button>
                                     <span class="param-value">{{ luck() }}</span>
                                     <button type="button" class="param-btn" [disabled]="!canIncreaseParameter()" (click)="increaseParameter('luck')">+</button>
@@ -124,7 +124,7 @@
                             </div>
 
                             <button class="ready-button" type="button" [disabled]="!canConfirmPlayerSetup()" (click)="onConfirmPlayerSetup()">
-                                {{ myPlayer()?.isReady ? 'Ready!' : 'Confirm' }}
+                                {{ myPlayer()?.isReady ? ('lobby.setup.readyDone' | t) : ('lobby.setup.confirm' | t) }}
                             </button>
                         </form>
                     </div>
@@ -135,30 +135,30 @@
                 <icon-button
                     class="footer-home-button"
                     iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                    ariaLabel="Home"
+                    [ariaLabel]="'lobby.actions.home' | t"
                     (clicked)="onHome()"
                 ></icon-button>
 
                 @if (isOwner()) {
                     <text-button
-                        text="Delete game"
+                        [text]="'lobby.actions.deleteGame' | t"
                         iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                         (clicked)="openDeleteDialog()"
                     ></text-button>
                     <text-button
-                        text="Settings"
+                        [text]="'lobby.actions.settings' | t"
                         iconUrl="./icons/settings_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
                         (clicked)="openSettings()"
                     ></text-button>
                     <text-button
-                        text="Start game"
+                        [text]="'lobby.actions.startGame' | t"
                         iconUrl="./icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                         [disabled]="!canStartGame()"
                         (clicked)="onStartGame()"
                     ></text-button>
                 } @else {
                     <text-button
-                        text="Leave game"
+                        [text]="'lobby.actions.leaveGame' | t"
                         iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                         (clicked)="openConfirmDialog()"
                     ></text-button>

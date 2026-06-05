@@ -5,7 +5,7 @@
                 <span class="player-icon" [style.color]="player().color"></span>
                 <span class="player-name">{{ player().name }}</span>
                 @if (hasVisibleStatuses()) {
-                <app-ui-tooltip [tooltipId]="'player-statuses-' + player().id" [title]="'Active status'"
+                <app-ui-tooltip [tooltipId]="'player-statuses-' + player().id" [title]="'playerCard.activeStatus' | t"
                     [disabled]="!hasVisibleStatuses()">
                     <span tooltipTrigger class="status-icons-wrap">
                         @for (status of visibleStatusIcons(); track status.key) {
@@ -13,7 +13,7 @@
                             aria-hidden="true"></span>
                         }
                         @if (hasOverflowStatuses()) {
-                        <span class="status-overflow" aria-label="More active statuses">...</span>
+                        <span class="status-overflow" [attr.aria-label]="'playerCard.moreStatuses' | t">...</span>
                         }
                     </span>
 
@@ -45,10 +45,10 @@
     </div>
 
     <div class="player-content">
-        <app-ui-tooltip [tooltipId]="'player-effects-' + player().id" [title]="'Active effects'">
+        <app-ui-tooltip [tooltipId]="'player-effects-' + player().id" [title]="'playerCard.activeEffects' | t">
             <div tooltipTrigger class="stats-grid stats-grid-tooltip-trigger">
                 <div class="stat-box">
-                    <span class="stat-label">STR</span>
+                    <span class="stat-label">{{ 'playerCard.stats.strengthAbbr' | t }}</span>
                     <span class="stat-value" [class]="deltaClass(strengthDelta())">{{ strengthValue() }}</span>
                     @if (strengthDelta() !== 0) {
                     <span class="stat-delta" [class]="deltaClass(strengthDelta())">({{ deltaLabel(strengthDelta())
@@ -56,14 +56,14 @@
                     }
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">MAG</span>
+                    <span class="stat-label">{{ 'playerCard.stats.magicAbbr' | t }}</span>
                     <span class="stat-value" [class]="deltaClass(magicDelta())">{{ magicValue() }}</span>
                     @if (magicDelta() !== 0) {
                     <span class="stat-delta" [class]="deltaClass(magicDelta())">({{ deltaLabel(magicDelta()) }})</span>
                     }
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">LCK</span>
+                    <span class="stat-label">{{ 'playerCard.stats.luckAbbr' | t }}</span>
                     <span class="stat-value" [class]="deltaClass(luckDelta())">{{ luckValue() }}</span>
                     @if (luckDelta() !== 0) {
                     <span class="stat-delta" [class]="deltaClass(luckDelta())">({{ deltaLabel(luckDelta()) }})</span>
@@ -84,7 +84,7 @@
                     }
                 </ul>
                 } @else {
-                <span class="effects-empty">No active bonuses or maluses.</span>
+                <span class="effects-empty">{{ 'playerCard.noActiveEffects' | t }}</span>
                 }
             </span>
         </app-ui-tooltip>

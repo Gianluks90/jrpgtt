@@ -1,6 +1,8 @@
 import { Injectable } from "@angular/core";
 import { MapCell } from "../models/MapCell";
 import { GridCoordinate, PlayerTurnEffectsService } from "./player-turn-effects-service";
+import { LandmarksService } from "./landmarks-service";
+import { TranslationService } from "./translation-service";
 
 export interface FastTravelRouteOption {
   cellId: string;
@@ -17,7 +19,11 @@ export interface FastTravelRouteOption {
 export class SafePlaceFastTravelService {
   private readonly maxTravelCost = 15;
 
-  constructor(private playerTurnEffectsService: PlayerTurnEffectsService) {}
+  constructor(
+    private playerTurnEffectsService: PlayerTurnEffectsService,
+    private landmarksService: LandmarksService,
+    private translationService: TranslationService,
+  ) {}
 
   public isSafePlaceCell(cell: MapCell | null | undefined): cell is MapCell {
     return !!cell
@@ -64,15 +70,11 @@ export class SafePlaceFastTravelService {
   }
 
   public getSafePlaceName(cell: MapCell): string {
-    if (typeof cell.landmarkDisplayName === "string" && cell.landmarkDisplayName.trim().length > 0) {
-      return cell.landmarkDisplayName;
+    if (cell.specialType === "landmark") {
+      return this.landmarksService.getLocalizedLandmarkNameFromCell(cell);
     }
 
-    if (cell.landmarkId === "capital") return "Capital";
-    if (cell.landmarkId === "city") return "City";
-    if (cell.landmarkId === "village") return "Village";
-    if (cell.landmarkId === "camp") return "Camp";
-    return "Safe place";
+    return this.translationService.tOrFallback("map.landmarks.categories.safe", "Safe place");
   }
 
   private toCoordinate(cell: MapCell): GridCoordinate {

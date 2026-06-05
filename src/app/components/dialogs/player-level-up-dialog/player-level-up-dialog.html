@@ -1,10 +1,10 @@
-<dialog-wrapper title="Level Up">
-    <p class="info-text">You reached level <span class="level-value flashing-text">{{ level }}</span>.</p>
-    <p class="info-text">Choose one parameter to increase by 1.</p>
-    <p class="info-text">Remaining experience after level-up: {{ experience }}</p>
+<dialog-wrapper [title]="'dialogs.levelUp.title' | t">
+    <p class="info-text">{{ 'dialogs.levelUp.reachedLevel' | t: { level: level } }}</p>
+    <p class="info-text">{{ 'dialogs.levelUp.chooseOne' | t }}</p>
+    <p class="info-text">{{ 'dialogs.levelUp.remainingExperience' | t: { experience: experience } }}</p>
 
     <form [formGroup]="form" (submit)="$event.preventDefault()">
-        <div class="choices" role="radiogroup" aria-label="Characteristic to increase">
+        <div class="choices" role="radiogroup" [attr.aria-label]="'dialogs.levelUp.ariaCharacteristic' | t">
             @for (option of options; track option.value) {
             <label class="choice-card" [class.selected]="isSelected(option.value)" [attr.for]="option.value">
                 <input [id]="option.value" class="choice-input" type="radio" formControlName="characteristic"
@@ -16,5 +16,5 @@
         </div>
     </form>
 
-    <text-button dialog-action text="Confirm" [disabled]="!form.valid" (clicked)="confirm()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.confirm' | t" [disabled]="!form.valid" (clicked)="confirm()"></text-button>
 </dialog-wrapper>

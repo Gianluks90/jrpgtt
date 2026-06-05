@@ -4,6 +4,8 @@ import { DialogResponse } from "../../../models/DialogResponse";
 import { DiscardPileEntry } from "../../../models/DiscardPile";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
 
 export interface DiscardPileDialogData {
   entries: DiscardPileEntry[];
@@ -12,7 +14,7 @@ export interface DiscardPileDialogData {
 @Component({
   selector: "app-discard-pile-dialog",
   standalone: true,
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./discard-pile-dialog.html",
   styleUrl: "./discard-pile-dialog.scss",
 })
@@ -22,10 +24,15 @@ export class DiscardPileDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<never>>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: DiscardPileDialogData,
   ) {
     this.entries = Array.isArray(data?.entries) ? data.entries : [];
-    this.dialogTitle = `Discard Pile (${this.entries.length})`;
+    this.dialogTitle = this.translationService.tOrFallback(
+      "dialogs.discardPile.title",
+      "Discard Pile ({count})",
+      { count: this.entries.length },
+    );
   }
 
   public close(): void {
@@ -36,10 +43,10 @@ export class DiscardPileDialog {
 
   public resolveKindLabel(entry: DiscardPileEntry): string {
     const kind = String(entry.card?.kind ?? "unknown");
-    if (kind === "follower") return "Follower";
-    if (kind === "item") return "Item";
-    if (kind === "tile") return "Tile";
-    if (kind === "event") return "Event";
+    if (kind === "follower") return this.translationService.tOrFallback("dialogs.discardPile.kind.follower", "Follower");
+    if (kind === "item") return this.translationService.tOrFallback("dialogs.discardPile.kind.item", "Item");
+    if (kind === "tile") return this.translationService.tOrFallback("dialogs.discardPile.kind.tile", "Tile");
+    if (kind === "event") return this.translationService.tOrFallback("dialogs.discardPile.kind.event", "Event");
     return kind;
   }
 
@@ -50,7 +57,7 @@ export class DiscardPileDialog {
     const cardId = String(entry.card?.cardId ?? "").trim();
     if (cardId) return cardId;
 
-    return "Unknown card";
+    return this.translationService.tOrFallback("dialogs.discardPile.unknownCard", "Unknown card");
   }
 
   public resolveReason(entry: DiscardPileEntry): string | null {
@@ -59,9 +66,13 @@ export class DiscardPileDialog {
   }
 
   public resolveMetaText(entry: DiscardPileEntry): string {
-    const source = String(entry.source ?? "system");
+    const source = String(entry.source ?? this.translationService.tOrFallback("dialogs.discardPile.systemSource", "system"));
     const turn = Math.max(0, Math.floor(Number(entry.turn ?? 0)));
-    return `Source: ${source} • Turn: ${turn} • ${this.formatDiscardedAt(entry)}`;
+    return this.translationService.tOrFallback(
+      "dialogs.discardPile.meta",
+      "Source: {source} • Turn: {turn} • {time}",
+      { source, turn, time: this.formatDiscardedAt(entry) },
+    );
   }
 
   public formatDiscardedAt(entry: DiscardPileEntry): string {
@@ -73,7 +84,7 @@ export class DiscardPileDialog {
     try {
       return discardedAt.toDate().toLocaleString();
     } catch {
-      return "Unknown time";
+      return this.translationService.tOrFallback("dialogs.discardPile.unknownTime", "Unknown time");
     }
   }
 }

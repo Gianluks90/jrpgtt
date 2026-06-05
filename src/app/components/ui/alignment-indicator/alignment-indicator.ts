@@ -1,20 +1,25 @@
 import { Component, computed, input } from "@angular/core";
 import { PlayerAlignment } from "../../../models/Player";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-alignment-indicator",
+  imports: [TranslationPipe],
   templateUrl: "./alignment-indicator.html",
   styleUrl: "./alignment-indicator.scss",
   standalone: true,
 })
 export class AlignmentIndicator {
+  constructor(private translationService: TranslationService) {}
+
   public alignment = input<PlayerAlignment | null>(null);
 
   public label = computed<string>(() => {
     const alignment = this.alignment();
-    if (alignment === "good") return "Good";
-    if (alignment === "evil") return "Evil";
-    return "Neutral";
+    if (alignment === "good") return this.translationService.tOrFallback("lobby.alignment.good", "Good");
+    if (alignment === "evil") return this.translationService.tOrFallback("lobby.alignment.evil", "Evil");
+    return this.translationService.tOrFallback("lobby.alignment.neutral", "Neutral");
   });
 
   public iconUrl = computed<string>(() => {

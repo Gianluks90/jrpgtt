@@ -1,6 +1,7 @@
 import { Component, Injector, OnDestroy, computed, effect, inject, input, signal } from "@angular/core";
 import { DAY_NIGHT_ROUNDS_PER_TOGGLE } from "../../../consts/day-night-cycle";
 import { TimeOfDay, WorldState } from "../../../models/WorldState";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-day-night-cycle-panel",
@@ -10,6 +11,7 @@ import { TimeOfDay, WorldState } from "../../../models/WorldState";
 })
 export class DayNightCyclePanel implements OnDestroy {
   private injector = inject(Injector);
+  private translationService = inject(TranslationService);
 
   public worldState = input<WorldState | null>(null);
   public isTransitioning = signal(false);
@@ -36,8 +38,15 @@ export class DayNightCyclePanel implements OnDestroy {
 
   public title = computed<string>(() => {
     const rounds = Math.max(1, Math.floor(DAY_NIGHT_ROUNDS_PER_TOGGLE));
-    if (rounds === 1) return "Time";
-    return `Time (${rounds} rounds)`;
+    if (rounds === 1) {
+      return this.translationService.tOrFallback("map.timeOfDay.title", "Time");
+    }
+
+    return this.translationService.tOrFallback(
+      "map.timeOfDay.titleWithRounds",
+      "Time ({rounds} rounds)",
+      { rounds },
+    );
   });
 
   public transitionDuration = computed<string>(() => `${this.transitionDurationMs}ms`);
@@ -50,7 +59,11 @@ export class DayNightCyclePanel implements OnDestroy {
     return this.displayedTimeOfDay();
   });
 
-  public label = computed<string>(() => this.timeOfDay());
+  public label = computed<string>(() => {
+    return this.timeOfDay() === "night"
+      ? this.translationService.tOrFallback("map.timeOfDay.night", "Night")
+      : this.translationService.tOrFallback("map.timeOfDay.day", "Day");
+  });
 
   private handleIncomingTimeOfDay(nextTimeOfDay: TimeOfDay): void {
     if (!this.hasInitializedTime) {

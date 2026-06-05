@@ -3,6 +3,8 @@ import { Component, Inject } from "@angular/core";
 import { DialogResponse } from "../../../../models/DialogResponse";
 import { GraveyardResurrectRewardDialogRow } from "../../../../models/GraveyardResurrectRewardsConfig";
 import { LuckCheckResult } from "../../../../models/LuckCheckResult";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -17,12 +19,12 @@ export interface GraveyardResurrectResultDialogData {
 
 @Component({
   selector: "app-graveyard-resurrect-result-dialog",
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./graveyard-resurrect-result-dialog.html",
   styleUrl: "./graveyard-resurrect-result-dialog.scss",
 })
 export class GraveyardResurrectResultDialog {
-  public readonly title = "Graveyard Resurrection";
+  public readonly title: string;
   public readonly selectedFollowerLabel: string;
   public readonly rewardId: string;
   public readonly rewardLabel: string;
@@ -31,13 +33,17 @@ export class GraveyardResurrectResultDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: GraveyardResurrectResultDialogData,
   ) {
+    this.title = this.translationService.tOrFallback("dialogs.graveyardResult.title", "Graveyard Resurrection");
     this.selectedFollowerLabel = typeof data?.selectedFollowerLabel === "string" && data.selectedFollowerLabel.trim().length > 0
       ? data.selectedFollowerLabel
-      : "Selected follower";
+      : this.translationService.tOrFallback("dialogs.graveyardResult.selectedFollower", "Selected follower");
     this.rewardId = typeof data?.rewardId === "string" ? data.rewardId : "unknown";
-    this.rewardLabel = typeof data?.rewardLabel === "string" ? data.rewardLabel : "Unknown outcome";
+    this.rewardLabel = typeof data?.rewardLabel === "string"
+      ? data.rewardLabel
+      : this.translationService.tOrFallback("dialogs.graveyardResult.unknownOutcome", "Unknown outcome");
     this.rewardsTable = Array.isArray(data?.rewardsTable) ? data.rewardsTable : [];
 
     const displayTotal = Math.max(1, Math.min(100, Math.floor(Number(data?.displayTotal ?? 0))));

@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angula
 import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../../../../consts/safe-place-actions";
 import { DialogResponse } from "../../../../models/DialogResponse";
 import { TimeOfDay } from "../../../../models/WorldState";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -21,7 +23,7 @@ export interface DoctorHealDialogResult {
 
 @Component({
   selector: "app-doctor-heal-dialog",
-  imports: [DialogWrapper, ReactiveFormsModule, TextButton],
+  imports: [DialogWrapper, ReactiveFormsModule, TextButton, TranslationPipe],
   templateUrl: "./doctor-heal-dialog.html",
   styleUrl: "./doctor-heal-dialog.scss",
 })
@@ -42,6 +44,7 @@ export class DoctorHealDialog {
   constructor(
     private dialogRef: DialogRef<DialogResponse<DoctorHealDialogResult>>,
     private fb: FormBuilder,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: DoctorHealDialogData,
   ) {
     this.actionId = data.actionId;
@@ -65,11 +68,15 @@ export class DoctorHealDialog {
   }
 
   public get title(): string {
-    return this.actionId === "capital-doctor" ? "Capital Doctor" : "City Healer";
+    return this.actionId === "capital-doctor"
+      ? this.translationService.tOrFallback("dialogs.doctor.title.capitalDoctor", "Capital Doctor")
+      : this.translationService.tOrFallback("dialogs.doctor.title.cityHealer", "City Healer");
   }
 
   public get providerLabel(): string {
-    return this.actionId === "capital-doctor" ? "Doctor" : "Healer";
+    return this.actionId === "capital-doctor"
+      ? this.translationService.tOrFallback("dialogs.doctor.provider.doctor", "Doctor")
+      : this.translationService.tOrFallback("dialogs.doctor.provider.healer", "Healer");
   }
 
   public get selectedUnits(): number {

@@ -4,6 +4,8 @@ import { EnchantressRewardDialogRow } from "../../../../models/EnchantressReward
 import { LuckCheckResult } from "../../../../models/LuckCheckResult";
 import { CapitalEnchantressOutcome } from "../../../../services/action-executor-service";
 import { DialogResponse } from "../../../../models/DialogResponse";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -16,12 +18,12 @@ export interface EnchantressDialogData {
 
 @Component({
   selector: "app-enchantress-dialog",
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./enchantress-dialog.html",
   styleUrl: "./enchantress-dialog.scss",
 })
 export class EnchantressDialog {
-  public readonly title = "Capital Enchantress";
+  public readonly title: string;
   public readonly playerMoney: number;
   public readonly requiredCost: number;
   public readonly rewardsTable: EnchantressRewardDialogRow[];
@@ -38,8 +40,10 @@ export class EnchantressDialog {
   constructor(
     private dialogRef: DialogRef<DialogResponse>,
     private cdr: ChangeDetectorRef,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: EnchantressDialogData,
   ) {
+    this.title = this.translationService.tOrFallback("dialogs.enchantress.title", "Capital Enchantress");
     this.playerMoney = Math.max(0, Math.floor(Number(data.playerMoney ?? 0)));
     this.requiredCost = Math.max(1, Math.floor(Number(data.requiredCost ?? 5)));
     this.rewardsTable = data.rewardsTable;
@@ -94,7 +98,9 @@ export class EnchantressDialog {
       this.triggerHighlightPulse = true;
       this.paid = true;
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : "Error while consulting the enchantress.";
+      this.errorMessage = error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("dialogs.enchantress.errors.consult", "Error while consulting the enchantress.");
       this.luckMeterResult = null;
       this.revealedRewardId = null;
       this.triggerHighlightPulse = false;

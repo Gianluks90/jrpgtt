@@ -1,10 +1,11 @@
 import { Component, input, output } from "@angular/core";
 import { IconButton } from "../icon-button/icon-button";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
 
 @Component({
   selector: "app-map-log-panel",
   standalone: true,
-  imports: [IconButton],
+  imports: [IconButton, TranslationPipe],
   templateUrl: "./map-log-panel.html",
   styleUrl: "./map-log-panel.scss",
 })

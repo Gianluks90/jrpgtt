@@ -4,6 +4,8 @@ import { DialogResponse } from "../../../../models/DialogResponse";
 import { LuckCheckResult } from "../../../../models/LuckCheckResult";
 import { MysticRewardDialogRow } from "../../../../models/MysticRewardsConfig";
 import { CityMysticOutcome } from "../../../../services/action-executor-service";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -16,12 +18,12 @@ export interface MysticDialogData {
 
 @Component({
   selector: "app-mystic-dialog",
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./mystic-dialog.html",
   styleUrl: "./mystic-dialog.scss",
 })
 export class MysticDialog {
-  public readonly title = "City Mystic";
+  public readonly title: string;
   public readonly playerMoney: number;
   public readonly requiredCost: number;
   public readonly rewardsTable: MysticRewardDialogRow[];
@@ -38,8 +40,10 @@ export class MysticDialog {
   constructor(
     private dialogRef: DialogRef<DialogResponse>,
     private cdr: ChangeDetectorRef,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: MysticDialogData,
   ) {
+    this.title = this.translationService.tOrFallback("dialogs.mystic.title", "City Mystic");
     this.playerMoney = Math.max(0, Math.floor(Number(data.playerMoney ?? 0)));
     this.requiredCost = Math.max(1, Math.floor(Number(data.requiredCost ?? 5)));
     this.rewardsTable = data.rewardsTable;
@@ -92,7 +96,9 @@ export class MysticDialog {
       this.triggerHighlightPulse = true;
       this.paid = true;
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : "Error while consulting the mystic.";
+      this.errorMessage = error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("dialogs.mystic.errors.consult", "Error while consulting the mystic.");
       this.luckMeterResult = null;
       this.revealedRewardId = null;
       this.triggerHighlightPulse = false;

@@ -5,6 +5,7 @@ import { DialogResponse } from "../../../models/DialogResponse";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { GAME_DEFAULT_CONFIG } from "../../../consts/game-default-config";
 import { TextButton } from "../../ui/text-button/text-button";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
 
 export interface GameNewDialogData {
   name: string;
@@ -13,7 +14,7 @@ export interface GameNewDialogData {
 
 @Component({
   selector: "app-game-new-dialog",
-  imports: [DialogWrapper, ReactiveFormsModule, TextButton],
+  imports: [DialogWrapper, ReactiveFormsModule, TextButton, TranslationPipe],
   templateUrl: "./game-new-dialog.html",
   styleUrl: "./game-new-dialog.scss",
 })

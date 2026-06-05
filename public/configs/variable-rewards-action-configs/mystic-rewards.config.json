@@ -6,6 +6,8 @@
       "maxTotal": 16,
       "label": "Mind Shift: Evil",
       "previewLabel": "Your alignment becomes Evil",
+      "labelKey": "dialogs.mystic.rewards.alignmentEvil.label",
+      "previewLabelKey": "dialogs.mystic.rewards.alignmentEvil.preview",
       "alignment": "evil"
     },
     {
@@ -14,6 +16,8 @@
       "maxTotal": 32,
       "label": "Mind Shift: Neutral",
       "previewLabel": "Your alignment becomes Neutral",
+      "labelKey": "dialogs.mystic.rewards.alignmentNeutral.label",
+      "previewLabelKey": "dialogs.mystic.rewards.alignmentNeutral.preview",
       "alignment": "neutral"
     },
     {
@@ -22,6 +26,8 @@
       "maxTotal": 64,
       "label": "Ignored",
       "previewLabel": "The Mystic ignores you",
+      "labelKey": "dialogs.mystic.rewards.ignored.label",
+      "previewLabelKey": "dialogs.mystic.rewards.ignored.preview",
       "alignment": null
     },
     {
@@ -30,6 +36,8 @@
       "maxTotal": 80,
       "label": "Glimpse of Insight",
       "previewLabel": "Gain 1 XP",
+      "labelKey": "dialogs.mystic.rewards.xp1.label",
+      "previewLabelKey": "dialogs.mystic.rewards.xp1.preview",
       "experienceGain": 1
     },
     {
@@ -38,6 +46,8 @@
       "maxTotal": 99,
       "label": "Deep Insight",
       "previewLabel": "Gain 2 XP",
+      "labelKey": "dialogs.mystic.rewards.xp2.label",
+      "previewLabelKey": "dialogs.mystic.rewards.xp2.preview",
       "experienceGain": 2
     },
     {
@@ -46,6 +56,8 @@
       "maxTotal": 100,
       "label": "Awakening",
       "previewLabel": "Exact 100: Gain 1 level up",
+      "labelKey": "dialogs.mystic.rewards.levelUp.label",
+      "previewLabelKey": "dialogs.mystic.rewards.levelUp.preview",
       "grantLevelUp": true
     }
   ]

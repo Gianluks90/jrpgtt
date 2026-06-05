@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "i18n:check": "node tools/check-i18n.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "host": "ng build && firebase deploy --only hosting"

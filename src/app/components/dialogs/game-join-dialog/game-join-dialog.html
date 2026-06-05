@@ -1,13 +1,13 @@
-<dialog-wrapper title="Join Game">
+<dialog-wrapper [title]="'dialogs.gameJoin.title' | t">
     <p class="info-text">
-        Join an existing game by entering the game code provided by the host. Make sure to enter the code correctly to join the desired game.
+        {{ 'dialogs.gameJoin.description' | t }}
     </p>
     <form [formGroup]="form">
         <div class="form-field">
-            <label for="joinCode">Join code</label>
-            <input id="joinCode" formControlName="joinCode" type="text" placeholder="Enter text" />
+            <label for="joinCode">{{ 'dialogs.gameJoin.joinCode' | t }}</label>
+            <input id="joinCode" formControlName="joinCode" type="text" [placeholder]="'dialogs.common.enterText' | t" />
         </div>
     </form>
-    <text-button dialog-action text="Join" (clicked)="confirm()" [disabled]="form.invalid"></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.gameJoin.join' | t" (clicked)="confirm()" [disabled]="form.invalid"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

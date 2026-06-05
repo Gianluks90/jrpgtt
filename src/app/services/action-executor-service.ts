@@ -150,7 +150,10 @@ export class ActionExecutorService {
       code: string;
       args: Record<string, unknown>;
     }> = [];
-    let endTurnItemLogs: string[] = [];
+    let endTurnItemLogs: Array<{
+      textKey: string;
+      textParams: Record<string, unknown>;
+    }> = [];
     let biomeConditionExperienceGained = 0;
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
@@ -434,12 +437,22 @@ export class ActionExecutorService {
 
         if (consumedFood > 0) {
           nextInventoryResources = this.addResource(nextInventoryResources, "food", -consumedFood);
-          endTurnItemLogs.push(`zombie consumed ${consumedFood} food.`);
+          endTurnItemLogs.push({
+            textKey: "logs.system.zombieConsumedFood",
+            textParams: {
+              consumedFood,
+            },
+          });
         }
 
         if (missingFood > 0) {
           nextHpCurrent = Math.max(0, nextHpCurrent - missingFood);
-          endTurnItemLogs.push(`zombie upkeep missing ${missingFood} food, player lost ${missingFood} HP.`);
+          endTurnItemLogs.push({
+            textKey: "logs.system.zombieUpkeepMissingFood",
+            textParams: {
+              missingFood,
+            },
+          });
         }
       }
 
@@ -491,7 +504,12 @@ export class ActionExecutorService {
             });
           });
 
-          endTurnItemLogs.push(`discarded ${overflowItems.length} item(s) for inventory overflow after follower loss.`);
+          endTurnItemLogs.push({
+            textKey: "logs.system.inventoryOverflowDiscarded",
+            textParams: {
+              discardedItemsCount: overflowItems.length,
+            },
+          });
         }
       }
 
@@ -574,9 +592,13 @@ export class ActionExecutorService {
       await this.tryCreateLog(gameId, actor, conditionLog.code, conditionLog.args);
     }
 
-    for (const text of endTurnItemLogs) {
+    for (const entry of endTurnItemLogs) {
       await this.tryCreateLog(gameId, actor, "system.info", {
-        text: `${actor.name} ${text}`,
+        textKey: entry.textKey,
+        textParams: {
+          playerName: actor.name,
+          ...entry.textParams,
+        },
       });
     }
 
@@ -1501,7 +1523,10 @@ export class ActionExecutorService {
     });
 
     await this.tryCreateLog(gameId, actor, "system.info", {
-      text: `${actor.name} fed their horse and gained +1 movement for this turn.`,
+      textKey: "logs.system.feedHorse",
+      textParams: {
+        playerName: actor.name,
+      },
     });
   }
 
@@ -2017,6 +2042,7 @@ export class ActionExecutorService {
     const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
     const clampedLuckTotal = Math.max(1, Math.min(100, Math.floor(luckResult.total)));
     const reward = await this.enchantressRewardsConfigService.resolveRewardByTotal(clampedLuckTotal);
+    const rewardLabel = this.enchantressRewardsConfigService.getLocalizedLabel(reward);
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateTxSnap, playerTxSnap] = await Promise.all([
@@ -2120,7 +2146,7 @@ export class ActionExecutorService {
       rolledTotal: Math.floor(luckResult.total),
       roll: luckResult.roll,
       rewardId: reward.id,
-      rewardLabel: reward.label,
+      rewardLabel,
       rewardStatuses: reward.statuses.map((status) => `${status.key}:${status.durationTurns}`).join(", "),
       pendingMagicReward: reward.pendingMagicReward === true,
       turnEnded: true,
@@ -2128,7 +2154,7 @@ export class ActionExecutorService {
 
     return {
       rewardId: reward.id,
-      rewardLabel: reward.label,
+      rewardLabel,
       clampedLuckTotal,
       rolledTotal: Math.floor(luckResult.total),
       pendingMagicReward: reward.pendingMagicReward === true,
@@ -2190,6 +2216,7 @@ export class ActionExecutorService {
     const gainedExperience = Math.max(0, Math.floor(Number(reward.experienceGain ?? 0)));
     const grantedLevelUp = reward.grantLevelUp === true;
     const alignment = typeof reward.alignment === "string" ? reward.alignment : null;
+    const localizedRewardLabel = this.mysticRewardsConfigService.getLocalizedLabel(reward);
     let droppedItemsCount = 0;
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
@@ -2311,7 +2338,7 @@ export class ActionExecutorService {
       rolledTotal,
       roll: luckResult.roll,
       rewardId: reward.id,
-      rewardLabel: reward.label,
+      rewardLabel: localizedRewardLabel,
       gainedExperience,
       grantedLevelUp,
       droppedItemsCount,
@@ -2321,7 +2348,7 @@ export class ActionExecutorService {
 
     return {
       rewardId: reward.id,
-      rewardLabel: reward.label,
+      rewardLabel: localizedRewardLabel,
       displayTotal,
       rolledTotal,
       alignment,
@@ -2431,7 +2458,7 @@ export class ActionExecutorService {
       const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
       const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
       const item = this.itemCatalogService.getCachedItemById(itemId);
-      outcomeItemName = item?.name ?? itemId;
+      outcomeItemName = item ? this.itemCatalogService.getLocalizedName(item) : itemId;
 
       if (payload.operation === "buy") {
         this.ensureActionAvailable(player, payload.actionId, worldTurn, "You can only buy once per turn.");
@@ -3127,6 +3154,7 @@ export class ActionExecutorService {
     const luckResult = this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses));
     const rewardTotal = Math.max(1, Math.min(100, Math.floor(luckResult.total)));
     const reward = await this.graveyardResurrectRewardsConfigService.resolveRewardByTotal(rewardTotal);
+    const rewardLabel = this.graveyardResurrectRewardsConfigService.getLocalizedLabel(reward);
 
     const discardCollectionRef = collection(worldStateRef, "discardPile");
     const discardSnapshot = await getDocs(discardCollectionRef);
@@ -3208,7 +3236,10 @@ export class ActionExecutorService {
       const targetEntry = normalizedFollowers[targetIndex];
       const targetDefinition = this.followerCatalogService.getCachedFollowerById(selectedFollowerId);
       const targetMaxHp = Math.max(1, Math.floor(Number(targetDefinition?.maxHp ?? targetEntry.hpCurrent ?? 1)));
-      const targetName = String(targetEntry.nameOverride ?? targetDefinition?.name ?? selectedFollowerId).trim() || selectedFollowerId;
+      const localizedTargetName = targetDefinition
+        ? this.followerCatalogService.getLocalizedName(targetDefinition)
+        : selectedFollowerId;
+      const targetName = String(targetEntry.nameOverride ?? localizedTargetName).trim() || selectedFollowerId;
 
       let nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
       nextFollowers[targetIndex] = {
@@ -3312,7 +3343,7 @@ export class ActionExecutorService {
     return {
       selectedFollowerId,
       rewardId: reward.id,
-      rewardLabel: reward.label,
+      rewardLabel,
       displayTotal: rewardTotal,
       rolledTotal: Math.floor(luckResult.total),
       appliedOutcome,
@@ -3941,7 +3972,7 @@ export class ActionExecutorService {
           operation: "sell",
           kind: "item",
           itemId,
-          itemName: item.name,
+          itemName: this.itemCatalogService.getLocalizedName(item),
           quantity,
           unitCoinsDelta: gainedCoinsPerUnit,
           totalCoinsDelta: gainedCoinsTotal,
@@ -3977,7 +4008,7 @@ export class ActionExecutorService {
             throw new Error("Item definition not found");
           }
 
-          itemName = item.name;
+          itemName = this.itemCatalogService.getLocalizedName(item);
           const allowedAlignments = item.constraints?.allowedAlignments;
           if (Array.isArray(allowedAlignments) && allowedAlignments.length > 0) {
             const effectiveAlignment = player.alignment ?? "neutral";
@@ -3995,7 +4026,7 @@ export class ActionExecutorService {
             throw new Error("Follower definition not found");
           }
 
-          itemName = follower.name;
+          itemName = this.followerCatalogService.getLocalizedName(follower);
           purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
             ? Math.max(0, Math.floor(stockEntry.purchaseValue))
             : 0;
@@ -4895,11 +4926,17 @@ export class ActionExecutorService {
   ): {
     items: InventoryItemEntry[];
     preventedBiomeConditionIds: Set<string>;
-    logs: string[];
+    logs: Array<{
+      textKey: string;
+      textParams: Record<string, unknown>;
+    }>;
   } {
     const nextItems = items.map((entry) => ({ ...entry }));
     const preventedBiomeConditionIds = new Set<string>();
-    const logs: string[] = [];
+    const logs: Array<{
+      textKey: string;
+      textParams: Record<string, unknown>;
+    }> = [];
 
     if (!biome) {
       return {
@@ -4945,7 +4982,15 @@ export class ActionExecutorService {
             currentCharges: nextCharges,
           };
           preventedBiomeConditionIds.add(effect.conditionId);
-          logs.push(`used ${itemDefinition.name} (${nextCharges}/${maxCharges}) to prevent ${effect.conditionId}.`);
+          logs.push({
+            textKey: "logs.system.itemPreventedCondition",
+            textParams: {
+              itemId: itemDefinition.id,
+              nextCharges,
+              maxCharges,
+              conditionId: effect.conditionId,
+            },
+          });
           continue;
         }
 
@@ -4968,7 +5013,15 @@ export class ActionExecutorService {
           ...nextItems[index],
           currentCharges: nextCharges,
         };
-        logs.push(`recharged ${itemDefinition.name} (${nextCharges}/${maxCharges}) in ${biome}.`);
+        logs.push({
+          textKey: "logs.system.itemRechargedInBiome",
+          textParams: {
+            itemId: itemDefinition.id,
+            nextCharges,
+            maxCharges,
+            biome,
+          },
+        });
       }
     }
 

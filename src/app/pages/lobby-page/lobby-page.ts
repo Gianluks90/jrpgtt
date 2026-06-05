@@ -15,10 +15,12 @@ import { PlayerService, PlayerSetupData } from "../../services/player-service";
 import { Player, PlayerAlignment } from "../../models/Player";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { IconButton } from "../../components/ui/icon-button/icon-button";
+import { TranslationPipe } from "../../pipes/translation-pipe";
+import { TranslationService } from "../../services/translation-service";
 
 @Component({
   selector: "app-lobby-page",
-  imports: [TextButton, ReactiveFormsModule, IconButton],
+  imports: [TextButton, ReactiveFormsModule, IconButton, TranslationPipe],
   templateUrl: "./lobby-page.html",
   styleUrl: "./lobby-page.scss",
 })
@@ -29,6 +31,7 @@ export class LobbyPage implements OnInit, OnDestroy {
   public router = inject(Router);
   public route = inject(ActivatedRoute);
   public fb = inject(FormBuilder);
+  public translationService = inject(TranslationService);
   private injector = inject(Injector);
 
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
@@ -88,6 +91,13 @@ export class LobbyPage implements OnInit, OnDestroy {
   public canConfirmPlayerSetup = computed(() => {
     const player = this.myPlayer();
     return !!player && !player.isReady && this.playerSetupForm.valid && this.experiencePool() === 0 && !this.isSubmittingSetup();
+  });
+
+  public copyCodeButtonLabel = computed(() => {
+    if (this.copyFeedback() === "copied") {
+      return this.translationService.tOrFallback("lobby.copyJoinCode.copied", "Copied");
+    }
+    return this.translationService.tOrFallback("lobby.copyJoinCode.copy", "Copy join code");
   });
 
   public copyFeedback = signal<"idle" | "copied">("idle");
@@ -180,7 +190,7 @@ export class LobbyPage implements OnInit, OnDestroy {
       this.copyFeedbackTimeoutId = setTimeout(() => this.copyFeedback.set("idle"), 1800);
     } catch (error) {
       console.error(error);
-      window.alert("Could not copy join code");
+      window.alert(this.translationService.tOrFallback("lobby.errors.copyJoinCode", "Could not copy join code"));
     }
   }
 
@@ -219,7 +229,9 @@ export class LobbyPage implements OnInit, OnDestroy {
       await this.router.navigate(["/home"]);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error leaving game");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("lobby.errors.leaveGame", "Error leaving game"));
     }
   }
 
@@ -232,7 +244,9 @@ export class LobbyPage implements OnInit, OnDestroy {
       await this.router.navigate(["/home"]);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error deleting game");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("lobby.errors.deleteGame", "Error deleting game"));
     }
   }
 
@@ -245,7 +259,9 @@ export class LobbyPage implements OnInit, OnDestroy {
       await this.router.navigate(["/game", game.id, "map"]);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error starting game");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("lobby.errors.startGame", "Error starting game"));
     }
   }
 
@@ -271,7 +287,9 @@ export class LobbyPage implements OnInit, OnDestroy {
         });
       } catch (error) {
         console.error(error);
-        window.alert(error instanceof Error ? error.message : "Error updating game settings");
+        window.alert(error instanceof Error
+          ? error.message
+          : this.translationService.tOrFallback("lobby.errors.updateSettings", "Error updating game settings"));
       }
     });
   }
@@ -325,10 +343,43 @@ export class LobbyPage implements OnInit, OnDestroy {
       await this.playerService.updatePlayerSetup(game.id, player.id, setupData, player);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error updating player setup");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("lobby.errors.updatePlayerSetup", "Error updating player setup"));
     } finally {
       this.isSubmittingSetup.set(false);
     }
+  }
+
+  public gameStatusLabel(status: string | null | undefined): string {
+    const normalized = String(status ?? "").trim().toLowerCase();
+    if (normalized === "waiting") {
+      return this.translationService.tOrFallback("lobby.status.waiting", "Waiting");
+    }
+    if (normalized === "running") {
+      return this.translationService.tOrFallback("lobby.status.running", "Running");
+    }
+    if (normalized === "ended") {
+      return this.translationService.tOrFallback("lobby.status.ended", "Ended");
+    }
+    return status ?? "";
+  }
+
+  public playerReadyLabel(isReady: boolean | null | undefined): string {
+    return isReady
+      ? this.translationService.tOrFallback("lobby.players.ready", "READY")
+      : this.translationService.tOrFallback("lobby.players.pending", "PENDING");
+  }
+
+  public currentPlayerReadyLabel(isReady: boolean | null | undefined): string {
+    return isReady
+      ? this.translationService.tOrFallback("lobby.setup.currentPlayerReady", "READY")
+      : this.translationService.tOrFallback("lobby.setup.currentPlayerNotReady", "NOT READY");
+  }
+
+  public alignmentLabel(alignment: PlayerAlignment): string {
+    const key = `lobby.alignment.${alignment}`;
+    return this.translationService.tOrFallback(key, alignment);
   }
 
   private isConfirmWithData<TData>(response: unknown): response is DialogResponse<TData> {

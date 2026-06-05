@@ -6,6 +6,8 @@ export interface MysticRewardDefinition {
   maxTotal: number;
   label: string;
   previewLabel: string;
+  labelKey?: string;
+  previewLabelKey?: string;
   alignment?: PlayerAlignment | null;
   experienceGain?: number;
   grantLevelUp?: boolean;

@@ -3,6 +3,8 @@ import { MerchantDialogOfferRow, MerchantDialogSellRow } from "../../../models/M
 import { MerchantCheckoutOperation } from "../../../services/action-executor-service";
 import { DialogWrapper } from "../dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../text-button/text-button";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
 
 interface MerchantCartLine {
   operation: "buy" | "sell";
@@ -16,7 +18,7 @@ interface MerchantCartLine {
 @Component({
   selector: "app-merchant-trade-panel",
   standalone: true,
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./merchant-trade-panel.html",
   styleUrl: "./merchant-trade-panel.scss",
 })
@@ -34,6 +36,8 @@ export class MerchantTradePanel {
   public showCart = signal(false);
   private readonly pendingBuyByItemId = signal<Map<string, number>>(new Map<string, number>());
   private readonly pendingSellByItemId = signal<Map<string, number>>(new Map<string, number>());
+
+  constructor(private translationService: TranslationService) {}
 
   public cartLines = computed<MerchantCartLine[]>(() => {
     const lines: MerchantCartLine[] = [];
@@ -90,11 +94,19 @@ export class MerchantTradePanel {
   });
 
   public confirmText = computed<string>(() => {
-    return `Confirm ${this.formatSignedCoins(this.netCoinsDelta())}`;
+    return this.translationService.tOrFallback(
+      "dialogs.merchant.confirmWithDelta",
+      "Confirm {delta}",
+      { delta: this.formatSignedCoins(this.netCoinsDelta()) },
+    );
   });
 
   public headerMoneyText = computed<string>(() => {
-    return `Coins ${this.projectedMoney()}`;
+    return this.translationService.tOrFallback(
+      "dialogs.merchant.coinsValue",
+      "Coins {value}",
+      { value: this.projectedMoney() },
+    );
   });
 
   public queueBuy(tradableKind: "item" | "follower", tradableId: string): void {

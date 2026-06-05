@@ -3,6 +3,8 @@ import { Component, Inject, signal } from "@angular/core";
 import { DialogResponse } from "../../../../models/DialogResponse";
 import { ResourceLabel, ResourceStack } from "../../../../models/Resource";
 import { RESOURCE_CATALOG } from "../../../../consts/resources-catalog";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -20,7 +22,7 @@ export type ResourceInventoryDialogResult =
 
 @Component({
   selector: "app-resource-inventory-dialog",
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./resource-inventory-dialog.html",
   styleUrl: "./resource-inventory-dialog.scss",
 })
@@ -34,6 +36,7 @@ export class ResourceInventoryDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<ResourceInventoryDialogResult>>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: ResourceInventoryDialogData,
   ) {
     const resources = Array.isArray(data.resources)
@@ -56,15 +59,24 @@ export class ResourceInventoryDialog {
   }
 
   public get title(): string {
-    return this.pendingResource ? "Inventory full" : "Manage resources";
+    return this.pendingResource
+      ? this.translationService.tOrFallback("dialogs.resourceInventory.title.inventoryFull", "Inventory full")
+      : this.translationService.tOrFallback("dialogs.resourceInventory.title.manageResources", "Manage resources");
   }
 
   public get subtitle(): string {
     if (this.pendingResource) {
-      return `No free slot for ${this.pendingLabel}. Discard one resource or cancel pickup.`;
+      return this.translationService.tOrFallback(
+        "dialogs.resourceInventory.subtitle.noFreeSlot",
+        "No free slot for {resource}. Discard one resource or cancel pickup.",
+        { resource: this.pendingLabel },
+      );
     }
 
-    return "Select one resource stack and discard 1 unit.";
+    return this.translationService.tOrFallback(
+      "dialogs.resourceInventory.subtitle.selectDiscard",
+      "Select one resource stack and discard 1 unit.",
+    );
   }
 
   public get pendingLabel(): string {
@@ -125,10 +137,10 @@ export class ResourceInventoryDialog {
   }
 
   public toLabel(resource: ResourceLabel | null | undefined): string {
-    if (resource === "food") return "Food";
-    if (resource === "timber") return "Timber";
-    if (resource === "minerals") return "Minerals";
-    if (resource === "cloth") return "Cloth";
-    return "Unknown";
+    if (resource === "food") return this.translationService.tOrFallback("resources.food", "Food");
+    if (resource === "timber") return this.translationService.tOrFallback("resources.timber", "Timber");
+    if (resource === "minerals") return this.translationService.tOrFallback("resources.minerals", "Minerals");
+    if (resource === "cloth") return this.translationService.tOrFallback("resources.cloth", "Cloth");
+    return this.translationService.tOrFallback("dialogs.resourceExchange.unknown", "Unknown");
   }
 }

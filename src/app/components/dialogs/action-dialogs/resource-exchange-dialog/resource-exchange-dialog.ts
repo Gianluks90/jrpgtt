@@ -4,6 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angula
 import { RESOURCE_CATALOG } from "../../../../consts/resources-catalog";
 import { DialogResponse } from "../../../../models/DialogResponse";
 import { ResourceLabel, ResourceStack } from "../../../../models/Resource";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -19,7 +21,7 @@ export interface ResourceExchangeDialogResult {
 
 @Component({
   selector: "app-resource-exchange-dialog",
-  imports: [DialogWrapper, ReactiveFormsModule, TextButton],
+  imports: [DialogWrapper, ReactiveFormsModule, TextButton, TranslationPipe],
   templateUrl: "./resource-exchange-dialog.html",
   styleUrl: "./resource-exchange-dialog.scss",
 })
@@ -34,6 +36,7 @@ export class ResourceExchangeDialog {
   constructor(
     private dialogRef: DialogRef<DialogResponse<ResourceExchangeDialogResult>>,
     private fb: FormBuilder,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: ResourceExchangeDialogData,
   ) {
     this.quantityByLabel = this.normalizeResourceMap(data.resources);
@@ -136,11 +139,11 @@ export class ResourceExchangeDialog {
   }
 
   public toLabel(resource: ResourceLabel | null | undefined): string {
-    if (resource === "food") return "Food";
-    if (resource === "timber") return "Timber";
-    if (resource === "minerals") return "Minerals";
-    if (resource === "cloth") return "Cloth";
-    return "Unknown";
+    if (resource === "food") return this.translationService.tOrFallback("resources.food", "Food");
+    if (resource === "timber") return this.translationService.tOrFallback("resources.timber", "Timber");
+    if (resource === "minerals") return this.translationService.tOrFallback("resources.minerals", "Minerals");
+    if (resource === "cloth") return this.translationService.tOrFallback("resources.cloth", "Cloth");
+    return this.translationService.tOrFallback("dialogs.resourceExchange.unknown", "Unknown");
   }
 
   private normalizeResourceMap(resources: ResourceStack[] | undefined): Record<ResourceLabel, number> {

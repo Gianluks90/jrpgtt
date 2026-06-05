@@ -15,6 +15,7 @@ import {
   ActionValidatorKey,
   ActionsCatalogConfig,
 } from "../models/ActionCatalog";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
@@ -23,6 +24,8 @@ export class ActionCatalogService {
   private readonly actionsConfigUrl = "/configs/actions.config.json";
   private hasLoadedRemoteConfig = false;
   private actionsById = this.toMap(DEFAULT_ACTIONS_CATALOG_CONFIG.actions);
+
+  constructor(private translationService: TranslationService) {}
 
   public getAction(actionId: string): ActionCatalogEntry | null {
     return this.actionsById[actionId] ?? null;
@@ -51,7 +54,15 @@ export class ActionCatalogService {
   }
 
   public getLabel(actionId: string, fallback: string): string {
-    const configured = this.getAction(actionId)?.ui.label;
+    const action = this.getAction(actionId);
+    const configured = action?.ui.label;
+    const resolvedFallback = typeof configured === "string" && configured.trim().length > 0 ? configured : fallback;
+
+    const labelKey = action?.ui.i18n?.labelKey;
+    if (typeof labelKey === "string" && labelKey.trim().length > 0) {
+      return this.translationService.tOrFallback(labelKey, resolvedFallback);
+    }
+
     if (typeof configured === "string" && configured.trim().length > 0) {
       return configured;
     }
@@ -60,15 +71,31 @@ export class ActionCatalogService {
   }
 
   public getDescription(actionId: string, fallbackTemplate: string, params: ActionDescriptionParams = {}): string {
-    const template = this.getAction(actionId)?.ui.descriptionTemplate ?? fallbackTemplate;
+    const action = this.getAction(actionId);
+    const configuredTemplate = action?.ui.descriptionTemplate;
+    const resolvedFallback = typeof configuredTemplate === "string" && configuredTemplate.trim().length > 0
+      ? configuredTemplate
+      : fallbackTemplate;
+
+    const descriptionKey = action?.ui.i18n?.descriptionKey;
+    const template = typeof descriptionKey === "string" && descriptionKey.trim().length > 0
+      ? this.translationService.tOrFallback(descriptionKey, resolvedFallback)
+      : resolvedFallback;
+
     return this.interpolateTemplate(template, params);
   }
 
   public getWarning(actionId: string, params: ActionDescriptionParams = {}): string | null {
-    const template = this.getAction(actionId)?.ui.warningTemplate;
-    if (typeof template !== "string" || !template.trim()) {
+    const action = this.getAction(actionId);
+    const configuredTemplate = action?.ui.warningTemplate;
+    if (typeof configuredTemplate !== "string" || !configuredTemplate.trim()) {
       return null;
     }
+
+    const warningKey = action?.ui.i18n?.warningKey;
+    const template = typeof warningKey === "string" && warningKey.trim().length > 0
+      ? this.translationService.tOrFallback(warningKey, configuredTemplate)
+      : configuredTemplate;
 
     return this.interpolateTemplate(template, params);
   }

@@ -1,7 +1,7 @@
-<dialog-wrapper title="Delete?">
+<dialog-wrapper [title]="'dialogs.genericDelete.title' | t">
     <p class="info-text">
-        Are you sure you want to delete this? This action cannot be undone.
+        {{ 'dialogs.genericDelete.message' | t }}
     </p>
-    <text-button dialog-action text="Delete" (clicked)="confirm()"></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.genericDelete.confirm' | t" (clicked)="confirm()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

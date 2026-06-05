@@ -1,6 +1,8 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
 import { DialogResponse } from "../../../../models/DialogResponse";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -37,7 +39,7 @@ export interface FollowerSelectDialogResult {
 
 @Component({
   selector: "app-follower-select-dialog",
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./follower-select-dialog.html",
   styleUrl: "./follower-select-dialog.scss",
 })
@@ -52,17 +54,22 @@ export class FollowerSelectDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<FollowerSelectDialogResult>>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: FollowerSelectDialogData,
   ) {
-    this.title = typeof data?.title === "string" && data.title.trim().length > 0 ? data.title : "Select follower";
-    this.message = typeof data?.message === "string" ? data.message : "Choose an follower.";
+    this.title = typeof data?.title === "string" && data.title.trim().length > 0
+      ? data.title
+      : this.translationService.tOrFallback("dialogs.followerSelect.title", "Select follower");
+    this.message = typeof data?.message === "string"
+      ? data.message
+      : this.translationService.tOrFallback("dialogs.followerSelect.message", "Choose a follower.");
     this.confirmText = typeof data?.confirmText === "string" && data.confirmText.trim().length > 0
       ? data.confirmText
-      : "Confirm";
+      : this.translationService.tOrFallback("dialogs.common.confirm", "Confirm");
     this.options = this.normalizeOptions(data?.options);
     this.outcomePreviewTitle = typeof data?.outcomePreviewTitle === "string" && data.outcomePreviewTitle.trim().length > 0
       ? data.outcomePreviewTitle
-      : "Possible outcomes";
+      : this.translationService.tOrFallback("dialogs.followerSelect.possibleOutcomes", "Possible outcomes");
     this.outcomePreviewRows = this.normalizeOutcomeRows(data?.outcomePreviewRows);
     this.selectedKey = this.options[0]?.key ?? null;
   }

@@ -2,6 +2,8 @@ import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
 import { DialogResponse } from "../../../../models/DialogResponse";
 import { FastTravelRouteOption } from "../../../../services/safe-place-fast-travel-service";
+import { TranslationPipe } from "../../../../pipes/translation-pipe";
+import { TranslationService } from "../../../../services/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 
@@ -20,7 +22,7 @@ export interface FastTravelDialogResult {
 
 @Component({
   selector: "app-fast-travel-dialog",
-  imports: [DialogWrapper, TextButton],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./fast-travel-dialog.html",
   styleUrl: "./fast-travel-dialog.scss",
 })
@@ -32,11 +34,12 @@ export class FastTravelDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<FastTravelDialogResult>>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: FastTravelDialogData,
   ) {
     this.originName = typeof data.originName === "string" && data.originName.trim().length > 0
       ? data.originName
-      : "Safe place";
+      : this.translationService.tOrFallback("dialogs.fastTravel.safePlace", "Safe place");
 
     this.playerMoney = Math.max(0, Math.floor(Number(data.playerMoney ?? 0)));
     this.routes = this.normalizeRoutes(data.routes);
@@ -101,7 +104,7 @@ export class FastTravelDialog {
         cellId: route.cellId,
         destinationName: typeof route.destinationName === "string" && route.destinationName.trim().length > 0
           ? route.destinationName
-          : "Safe place",
+          : this.translationService.tOrFallback("dialogs.fastTravel.safePlace", "Safe place"),
         landmarkId: typeof route.landmarkId === "string" ? route.landmarkId : "unknown",
         x: Math.max(0, Math.floor(x)),
         y: Math.max(0, Math.floor(y)),

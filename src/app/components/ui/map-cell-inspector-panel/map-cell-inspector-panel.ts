@@ -7,18 +7,26 @@ import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesCon
 import { MapGridPanelCell } from "../../core/map-grid-panel/map-grid-panel";
 import { LandmarksService } from "../../../services/landmarks-service";
 import { ActionCatalogService } from "../../../services/action-catalog-service";
+import { TranslationService } from "../../../services/translation-service";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { WorldState } from "../../../models/WorldState";
+import { ActionDescriptionParams } from "../../../models/ActionCatalog";
+import { getDoctorCostPerUnit, isDoctorActionId } from "../../../consts/safe-place-actions";
 
 @Component({
   selector: "app-map-cell-inspector-panel",
   standalone: true,
+  imports: [TranslationPipe],
   templateUrl: "./map-cell-inspector-panel.html",
   styleUrl: "./map-cell-inspector-panel.scss",
 })
 export class MapCellInspectorPanel {
   private landmarksService = inject(LandmarksService);
   private actionCatalogService = inject(ActionCatalogService);
+  private translationService = inject(TranslationService);
   public inspectedCell = input<MapGridPanelCell | null>(null);
   public activePlayer = input<Player | null>(null);
+  public worldState = input<WorldState | null>(null);
   public players = input<Player[]>([]);
   public mapCellsById = input<Record<string, MapCell>>({});
   public mapSize = input(10);
@@ -33,7 +41,7 @@ export class MapCellInspectorPanel {
       const liveMapCell = this.mapCellsById()[inspected.id] ?? null;
       return {
         ...inspected,
-        mapCell: liveMapCell,
+        mapCell: liveMapCell ?? inspected.mapCell ?? null,
       };
     }
 
@@ -84,24 +92,28 @@ export class MapCellInspectorPanel {
     const cell = this.currentCell();
     if (cell?.isSpecial === true) {
       if (cell.specialType === "landmark") {
-        return cell.landmarkDisplayName ?? "Unknown Landmark";
+        return this.landmarksService.getLocalizedLandmarkNameFromCell(cell);
       }
       return this.sanctuaryElementToLabel(cell.sanctuaryElement);
     }
 
     const biome = this.currentCellBiome();
-    if (!biome) return "? ? ?";
+    if (!biome) return this.translationService.tOrFallback("map.cellInspector.unknownBiome", "? ? ?");
     return this.biomeToLabel(biome);
   });
 
   public currentCellResourcesLabel = computed<string>(() => {
     const cell = this.currentCell();
-    if (cell?.isSpecial === true) return "None";
+    if (cell?.isSpecial === true) {
+      return this.translationService.tOrFallback("map.cellInspector.none", "None");
+    }
 
     const biome = this.currentCellBiome();
     if (!biome) return "-";
     const resources = this.biomeResourcesByBiome()[biome] ?? [];
-    if (resources.length === 0) return "None";
+    if (resources.length === 0) {
+      return this.translationService.tOrFallback("map.cellInspector.none", "None");
+    }
     return resources.map((resource) => this.resourceToLabel(resource)).join(", ");
   });
 
@@ -124,10 +136,12 @@ export class MapCellInspectorPanel {
   public currentCellEnvironmentLabel = computed<string>(() => {
     const size = this.currentCellEnvironmentSize();
     if (size < 2) {
-      return "No";
+      return this.translationService.tOrFallback("map.cellInspector.no", "No");
     }
 
-    return `Yes (${size} cells)`;
+    return this.translationService.tOrFallback("map.cellInspector.yesCells", "Yes ({count} cells)", {
+      count: size,
+    });
   });
 
   public currentCellSectorLabel = computed<string>(() => {
@@ -161,12 +175,21 @@ export class MapCellInspectorPanel {
       return [];
     }
 
+    const sanctuaryLabel = cell.isSpecial === true && cell.specialType === "sanctuary" && cell.sanctuaryElement
+      ? this.sanctuaryElementToLabel(cell.sanctuaryElement)
+      : undefined;
+
     const actionIds = this.getConfiguredCellActionIds(cell);
     return actionIds.map((actionId) => {
+      const descriptionParams = this.buildActionDescriptionParams(actionId, cell);
       return {
         id: actionId,
         label: this.actionCatalogService.getLabel(actionId, this.humanizeActionId(actionId)),
-        description: this.actionCatalogService.getDescription(actionId, "No description available."),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          this.translationService.tOrFallback("map.common.noDescription", "No description available."),
+          descriptionParams,
+        ),
       };
     });
   });
@@ -182,11 +205,19 @@ export class MapCellInspectorPanel {
     if (!this.currentCellIsSpecial()) return "-";
     const currentCell = this.currentCell();
     if (currentCell?.specialType === "landmark") {
-      return `${this.landmarksService.getCategoryLabel(currentCell.landmarkCategory)} discovered`;
+      return this.translationService.tOrFallback(
+        "map.cellInspector.landmarkDiscovered",
+        "{category} discovered",
+        {
+          category: this.landmarksService.getCategoryLabel(currentCell.landmarkCategory),
+        },
+      );
     }
 
     const sanctuaryIsActive = currentCell?.active === true;
-    return sanctuaryIsActive ? "Sanctuary active" : "Sanctuary inactive";
+    return sanctuaryIsActive
+      ? this.translationService.tOrFallback("map.cellInspector.sanctuaryActive", "Sanctuary active")
+      : this.translationService.tOrFallback("map.cellInspector.sanctuaryInactive", "Sanctuary inactive");
   });
 
   public currentCellSpecialDescription = computed<string>(() => {
@@ -195,19 +226,30 @@ export class MapCellInspectorPanel {
     const currentCell = this.currentCell();
     if (currentCell?.specialType === "landmark") {
       const alignment = currentCell.landmarkAlignmentModifier ? ` (${currentCell.landmarkAlignmentModifier})` : "";
-      return `A ${this.landmarksService.getCategoryLabel(currentCell.landmarkCategory)}${alignment} overlays this biome tile.`;
+      return this.translationService.tOrFallback(
+        "map.cellInspector.landmarkDescription",
+        "A {category}{alignment} overlays this biome tile.",
+        {
+          category: this.landmarksService.getCategoryLabel(currentCell.landmarkCategory),
+          alignment,
+        },
+      );
     }
 
     const sanctuaryElement = currentCell?.sanctuaryElement;
     if (!sanctuaryElement) {
-      return "The sanctuary is still dormant and hidden.";
+      return this.translationService.tOrFallback(
+        "map.cellInspector.dormantSanctuary",
+        "The sanctuary is still dormant and hidden.",
+      );
     }
 
     const config = this.sanctuaryStylesByElement()[sanctuaryElement];
     if (!config) return "-";
 
     const sanctuaryIsActive = currentCell?.active === true;
-    return sanctuaryIsActive ? config.description.active : config.description.inactive;
+    const rawDescription = sanctuaryIsActive ? config.description.active : config.description.inactive;
+    return this.resolveConfigText(rawDescription);
   });
 
   public currentCellPreviewBackground = computed<string>(() => {
@@ -266,27 +308,48 @@ export class MapCellInspectorPanel {
   });
 
   private resourceToLabel(resource: ResourceLabel): string {
-    if (resource === "timber") return "Timber";
-    if (resource === "food") return "Food";
-    if (resource === "minerals") return "Minerals";
-    return "Cloth";
+    if (resource === "timber") {
+      return this.translationService.tOrFallback("resources.timber", "Timber");
+    }
+
+    if (resource === "food") {
+      return this.translationService.tOrFallback("resources.food", "Food");
+    }
+
+    if (resource === "minerals") {
+      return this.translationService.tOrFallback("resources.minerals", "Minerals");
+    }
+
+    return this.translationService.tOrFallback("resources.cloth", "Cloth");
   }
 
   private biomeToLabel(biome: BiomeType): string {
-    if (biome === "plains") return "Plains";
-    if (biome === "forest") return "Forest";
-    if (biome === "mountain") return "Mountain";
-    if (biome === "water") return "Water";
-    if (biome === "desert") return "Desert";
-    return "Ruins";
+    if (biome === "plains") return this.translationService.tOrFallback("map.biomes.plains", "Plains");
+    if (biome === "forest") return this.translationService.tOrFallback("map.biomes.forest", "Forest");
+    if (biome === "mountain") return this.translationService.tOrFallback("map.biomes.mountain", "Mountain");
+    if (biome === "water") return this.translationService.tOrFallback("map.biomes.water", "Water");
+    if (biome === "desert") return this.translationService.tOrFallback("map.biomes.desert", "Desert");
+    return this.translationService.tOrFallback("map.biomes.ruins", "Ruins");
   }
 
   private sanctuaryElementToLabel(element?: SanctuaryElement): string {
-    if (element === "water") return "Water Shrine";
-    if (element === "fire") return "Fire Shrine";
-    if (element === "wind") return "Wind Shrine";
-    if (element === "earth") return "Earth Shrine";
-    return "Elemental Shrine";
+    if (element === "water") return this.translationService.tOrFallback("map.cells.sanctuary.water", "Water Shrine");
+    if (element === "fire") return this.translationService.tOrFallback("map.cells.sanctuary.fire", "Fire Shrine");
+    if (element === "wind") return this.translationService.tOrFallback("map.cells.sanctuary.wind", "Wind Shrine");
+    if (element === "earth") return this.translationService.tOrFallback("map.cells.sanctuary.earth", "Earth Shrine");
+    return this.translationService.tOrFallback("map.cells.sanctuary.generic", "Elemental Shrine");
+  }
+
+  private resolveConfigText(value: string): string {
+    const normalized = String(value ?? "").trim();
+    if (!normalized) return "";
+
+    // Accept dotted i18n-like keys from JSON configs while preserving raw text fallback.
+    if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*(?:\.[a-z0-9]+(?:[.-][a-z0-9]+)*)+$/i.test(normalized)) {
+      return normalized;
+    }
+
+    return this.translationService.tOrFallback(normalized, normalized);
   }
 
   private cellId(x: number, y: number): string {
@@ -331,5 +394,27 @@ export class MapCellInspectorPanel {
       .filter((part) => part.trim().length > 0)
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
+  }
+
+  private buildActionDescriptionParams(actionId: string, cell: MapCell): ActionDescriptionParams {
+    const params: ActionDescriptionParams = {};
+    const player = this.activePlayer();
+    const timeOfDay = this.worldState()?.timeOfDay ?? "day";
+
+    if (cell.isSpecial === true && cell.specialType === "sanctuary" && cell.sanctuaryElement) {
+      params["sanctuaryLabel"] = this.sanctuaryElementToLabel(cell.sanctuaryElement);
+    }
+
+    if (actionId === "castle-trainer" || actionId === "academy-trainer") {
+      const playerLevel = Math.max(1, Math.floor(Number(player?.level ?? 1)));
+      params["trainingCost"] = playerLevel * 3;
+    }
+
+    if (isDoctorActionId(actionId)) {
+      params["timeOfDay"] = timeOfDay;
+      params["costPerUnit"] = getDoctorCostPerUnit(actionId, timeOfDay);
+    }
+
+    return params;
   }
 }

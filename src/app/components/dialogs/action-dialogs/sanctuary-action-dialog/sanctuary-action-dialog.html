@@ -5,11 +5,11 @@
     </div>
 
     <p class="info-text">{{ description }}</p>
-    <p class="info-text sanctuary-element">Sanctuary element: <strong>{{ sanctuaryLabel }}</strong></p>
+    <p class="info-text sanctuary-element">{{ 'dialogs.sanctuary.element' | t: { element: sanctuaryLabel } }}</p>
 
     <form [formGroup]="form">
         <div class="form-field">
-            <label for="donatedCoins">Donation amount</label>
+            <label for="donatedCoins">{{ 'dialogs.sanctuary.donationAmount' | t }}</label>
             <input
                 id="donatedCoins"
                 type="number"
@@ -17,10 +17,10 @@
                 formControlName="donatedCoins"
                 [min]="donationCost"
                 [max]="donationCost"
-                [placeholder]="'Type ' + donationCost"
+                [placeholder]="'dialogs.sanctuary.placeholder' | t: { cost: donationCost }"
             />
             <p class="info-text donate-cost-row">
-                <span>You must donate exactly:</span>
+                <span>{{ 'dialogs.sanctuary.mustDonateExactly' | t }}</span>
                 <span class="spend-tag">
                     <span>-{{ donationCost }}</span>
                     <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
@@ -30,7 +30,7 @@
     </form>
 
     @if (donationDisabled) {
-        <p class="error-text">You do not have enough coins for this action.</p>
+        <p class="error-text">{{ 'dialogs.sanctuary.errors.notEnoughCoins' | t }}</p>
     }
 
     <text-button
@@ -39,5 +39,5 @@
         [disabled]="form.invalid || donationDisabled"
         (clicked)="confirm()"
     ></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

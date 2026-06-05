@@ -17,10 +17,12 @@ import { BreakpointService } from "../../services/breakpoint-service";
 import { ActionMenu } from "../../components/ui/action-menu/action-menu";
 import { APP_VERSION } from "../../consts/app-version";
 import { TilesConfigService } from "../../services/tiles-config-service";
+import { TranslationPipe } from "../../pipes/translation-pipe";
+import { LanguageCode, TranslationService } from "../../services/translation-service";
 
 @Component({
   selector: "app-home-page",
-  imports: [TextButton, ActionMenu],
+  imports: [TextButton, ActionMenu, TranslationPipe],
   templateUrl: "./home-page.html",
   styleUrl: "./home-page.scss",
 })
@@ -31,10 +33,17 @@ export class HomePage implements OnInit {
   public tilesConfigService = inject(TilesConfigService);
   public router = inject(Router);
   public dialog = inject(Dialog);
+  public translationService = inject(TranslationService);
   public readonly appVersion = APP_VERSION;
+  public readonly language = this.translationService.language;
 
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
   public isMobile = this.breakpointService.isMobile;
+  public playActionLabel = computed(() => {
+    return this.isOwner() && this.myGame()?.status !== "waiting"
+      ? this.translationService.tOrFallback("home.actions.play", "Play")
+      : this.translationService.tOrFallback("home.actions.lobby", "Lobby");
+  });
   
   public isOwner = computed(() => {
     const currentUserId = getAuth().currentUser?.uid;
@@ -48,7 +57,9 @@ export class HomePage implements OnInit {
       await this.tilesConfigService.loadConfig();
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error loading tiles configuration");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("home.errors.loadTiles", "Error loading tiles configuration"));
       return;
     }
 
@@ -110,7 +121,9 @@ export class HomePage implements OnInit {
         await this.router.navigate(["/game", gameId, "lobby"]);
       } catch (error) {
         console.error(error);
-        window.alert(error instanceof Error ? error.message : "Error creating game");
+        window.alert(error instanceof Error
+          ? error.message
+          : this.translationService.tOrFallback("home.errors.createGame", "Error creating game"));
       }
     });
   }
@@ -134,7 +147,9 @@ export class HomePage implements OnInit {
         await this.router.navigate(["/game", gameId, "lobby"]);
       } catch (error) {
         console.error(error);
-        window.alert(error instanceof Error ? error.message : "Error joining game");
+        window.alert(error instanceof Error
+          ? error.message
+          : this.translationService.tOrFallback("home.errors.joinGame", "Error joining game"));
       }
     });
   }
@@ -166,7 +181,9 @@ export class HomePage implements OnInit {
       await this.gameService.leaveGame(game.id, currentUserId);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error leaving game");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("home.errors.leaveGame", "Error leaving game"));
     }
   }
 
@@ -178,8 +195,14 @@ export class HomePage implements OnInit {
       await this.gameService.deleteGame(game.id);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error deleting game");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("home.errors.deleteGame", "Error deleting game"));
     }
+  }
+
+  public async setLanguage(language: LanguageCode): Promise<void> {
+    await this.translationService.setLanguage(language);
   }
 
   public onPlay(): void {

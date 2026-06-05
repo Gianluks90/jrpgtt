@@ -89,6 +89,7 @@ import { LocationInfoDialog } from "../components/dialogs/location-info-dialog/l
 import { SanctuaryTilesConfigEntry, TilesConfig } from "../models/TilesConfig";
 import { DiscardPileDialog } from "../components/dialogs/discard-pile-dialog/discard-pile-dialog";
 import { DiscardPileEntry } from "../models/DiscardPile";
+import { TranslationService } from "./translation-service";
 
 interface HandleCommandActionInput {
   actionId: string;
@@ -123,6 +124,7 @@ export class MapPageInteractionService {
     private safePlaceFastTravelService: SafePlaceFastTravelService,
     private graveyardResurrectRewardsConfigService: GraveyardResurrectRewardsConfigService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
+    private translationService: TranslationService,
   ) {}
 
   public resetUiState(): void {
@@ -144,6 +146,7 @@ export class MapPageInteractionService {
     title: string;
     inspectedCell: MapGridPanelCell | null;
     activePlayer: Player | null;
+    worldState: WorldState | null;
     players: Player[];
     mapCellsById: Record<string, MapCell>;
     mapSize: number;
@@ -158,6 +161,7 @@ export class MapPageInteractionService {
         title: input.title,
         inspectedCell: input.inspectedCell,
         activePlayer: input.activePlayer,
+        worldState: input.worldState,
         players: input.players,
         mapCellsById: input.mapCellsById,
         mapSize: input.mapSize,
@@ -200,10 +204,13 @@ export class MapPageInteractionService {
 
     if (requiresCrossingConfirm) {
       const confirmed = await this.openGenericConfirmDialog({
-        title: "Entering Region II",
-        message: "Crossing this border may trigger a world event. Do you want to proceed?",
-        confirmText: "Proceed",
-        cancelText: "Stay",
+        title: this.translationService.tOrFallback("map.interaction.regionCrossing.title", "Entering Region II"),
+        message: this.translationService.tOrFallback(
+          "map.interaction.regionCrossing.message",
+          "Crossing this border may trigger a world event. Do you want to proceed?",
+        ),
+        confirmText: this.translationService.tOrFallback("map.interaction.regionCrossing.confirm", "Proceed"),
+        cancelText: this.translationService.tOrFallback("map.interaction.regionCrossing.cancel", "Stay"),
       });
       if (!confirmed) return;
     }
@@ -212,7 +219,9 @@ export class MapPageInteractionService {
       await this.mapService.movePlayer(gameId, myPlayer.id, cell.x, cell.y);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error while moving player");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("map.interaction.errors.movePlayer", "Error while moving player"));
     }
   }
 
@@ -470,7 +479,10 @@ export class MapPageInteractionService {
       ]);
       const merchant = await this.merchantCatalogService.getMerchantByLandmarkId(currentCell.landmarkId);
       if (!merchant) {
-        window.alert("No merchant configured for this landmark.");
+        window.alert(this.translationService.tOrFallback(
+          "map.interaction.errors.noMerchantForLandmark",
+          "No merchant configured for this landmark.",
+        ));
         return;
       }
 
@@ -500,7 +512,7 @@ export class MapPageInteractionService {
       });
 
       await this.openMerchantDialog({
-        merchantLabel: merchant.label,
+        merchantLabel: this.translationService.tOrFallback(`dialogs.merchant.names.${merchant.id}`, merchant.label),
         playerMoney: player.inventory?.money ?? 0,
         buyOffers,
         sellOffers,
@@ -664,16 +676,28 @@ export class MapPageInteractionService {
       const outcomePreviewRows = await this.loadGraveyardOutcomePreviewRows();
       const options = this.buildDeadFollowerSelectionOptions(player);
       if (options.length === 0) {
-        window.alert("No dead follower is available for resurrection.");
+        window.alert(this.translationService.tOrFallback(
+          "map.interaction.errors.noDeadFollowerForResurrection",
+          "No dead follower is available for resurrection.",
+        ));
         return;
       }
 
       const selectedFollowerId = await this.openFollowerSelectionDialog({
-        title: "Graveyard Resurrection",
-        message: "Choose which dead follower you want to call back from the discard pile.",
-        confirmText: "Attempt resurrection",
+        title: this.translationService.tOrFallback("map.interaction.graveyard.title", "Graveyard Resurrection"),
+        message: this.translationService.tOrFallback(
+          "map.interaction.graveyard.message",
+          "Choose which dead follower you want to call back from the discard pile.",
+        ),
+        confirmText: this.translationService.tOrFallback(
+          "map.interaction.graveyard.confirm",
+          "Attempt resurrection",
+        ),
         options,
-        outcomePreviewTitle: "Luck check outcomes (1-100)",
+        outcomePreviewTitle: this.translationService.tOrFallback(
+          "map.interaction.graveyard.outcomePreviewTitle",
+          "Luck check outcomes (1-100)",
+        ),
         outcomePreviewRows,
       });
       if (!selectedFollowerId) return;
@@ -708,14 +732,20 @@ export class MapPageInteractionService {
 
       const options = this.buildTempleDevoteeSelectionOptions(player);
       if (options.length === 0) {
-        window.alert("No eligible follower is available for temple devotion.");
+        window.alert(this.translationService.tOrFallback(
+          "map.interaction.errors.noTempleFollower",
+          "No eligible follower is available for temple devotion.",
+        ));
         return;
       }
 
       const selectedFollowerId = await this.openFollowerSelectionDialog({
-        title: "Temple Devotion",
-        message: "Choose an follower to leave at the Temple. Animals, spirits and undead are not allowed.",
-        confirmText: "Send devotee",
+        title: this.translationService.tOrFallback("map.interaction.temple.title", "Temple Devotion"),
+        message: this.translationService.tOrFallback(
+          "map.interaction.temple.message",
+          "Choose an follower to leave at the Temple. Animals, spirits and undead are not allowed.",
+        ),
+        confirmText: this.translationService.tOrFallback("map.interaction.temple.confirm", "Send devotee"),
         options,
       });
       if (!selectedFollowerId) return;
@@ -736,14 +766,20 @@ export class MapPageInteractionService {
 
       const options = this.buildAltarSacrificeSelectionOptions(player);
       if (options.length === 0) {
-        window.alert("No eligible follower is available for altar sacrifice.");
+        window.alert(this.translationService.tOrFallback(
+          "map.interaction.errors.noAltarFollower",
+          "No eligible follower is available for altar sacrifice.",
+        ));
         return;
       }
 
       const selectedFollowerId = await this.openFollowerSelectionDialog({
-        title: "Altar Sacrifice",
-        message: "Choose an follower to sacrifice at the Altar. Undead cannot be sacrificed.",
-        confirmText: "Sacrifice follower",
+        title: this.translationService.tOrFallback("map.interaction.altar.title", "Altar Sacrifice"),
+        message: this.translationService.tOrFallback(
+          "map.interaction.altar.message",
+          "Choose an follower to sacrifice at the Altar. Undead cannot be sacrificed.",
+        ),
+        confirmText: this.translationService.tOrFallback("map.interaction.altar.confirm", "Sacrifice follower"),
         options,
       });
       if (!selectedFollowerId) return;
@@ -815,7 +851,9 @@ export class MapPageInteractionService {
       await this.playerProgressionService.applyNextPendingLevelUp(input.gameId, input.player.id, input.player);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error while applying level-up choice");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("map.interaction.errors.levelUp", "Error while applying level-up choice"));
     } finally {
       this.isOpeningLevelUp.set(false);
     }
@@ -862,7 +900,9 @@ export class MapPageInteractionService {
       }
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Error while managing resources");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("map.interaction.errors.manageResources", "Error while managing resources"));
     } finally {
       this.inventoryDialogOpen.set(false);
     }
@@ -1282,13 +1322,18 @@ export class MapPageInteractionService {
       })
       .map((entry) => {
         const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-        const followerName = String(entry.nameOverride ?? follower?.name ?? entry.followerId);
+        const localizedFollowerName = follower
+          ? this.followerCatalogService.getLocalizedName(follower)
+          : entry.followerId;
+        const followerName = String(entry.nameOverride ?? localizedFollowerName);
         const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
         const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
         return {
           key: entry.followerId,
           label: followerName,
-          description: follower?.description?.trim() || "No description available.",
+          description: (follower
+            ? this.followerCatalogService.getLocalizedDescription(follower).trim()
+            : "") || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
           hpCurrent: 0,
           hpMax,
           labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
@@ -1311,14 +1356,19 @@ export class MapPageInteractionService {
       })
       .map((entry) => {
         const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-        const followerName = String(entry.nameOverride ?? follower?.name ?? entry.followerId);
+        const localizedFollowerName = follower
+          ? this.followerCatalogService.getLocalizedName(follower)
+          : entry.followerId;
+        const followerName = String(entry.nameOverride ?? localizedFollowerName);
         const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
         const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
           key: entry.followerId,
           label: followerName,
-          description: follower?.description?.trim() || "No description available.",
+          description: (follower
+            ? this.followerCatalogService.getLocalizedDescription(follower).trim()
+            : "") || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
           hpCurrent,
           hpMax,
           labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
@@ -1341,14 +1391,19 @@ export class MapPageInteractionService {
       })
       .map((entry) => {
         const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-        const followerName = String(entry.nameOverride ?? follower?.name ?? entry.followerId);
+        const localizedFollowerName = follower
+          ? this.followerCatalogService.getLocalizedName(follower)
+          : entry.followerId;
+        const followerName = String(entry.nameOverride ?? localizedFollowerName);
         const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
         const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
           key: entry.followerId,
           label: followerName,
-          description: follower?.description?.trim() || "No description available.",
+          description: (follower
+            ? this.followerCatalogService.getLocalizedDescription(follower).trim()
+            : "") || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
           hpCurrent,
           hpMax,
           labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),

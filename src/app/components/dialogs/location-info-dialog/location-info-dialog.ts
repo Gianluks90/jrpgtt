@@ -9,11 +9,15 @@ import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesCon
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
 import { MapCellInspectorPanel } from "../../ui/map-cell-inspector-panel/map-cell-inspector-panel";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
+import { WorldState } from "../../../models/WorldState";
 
 export interface LocationInfoDialogData {
   title: string;
   inspectedCell: MapGridPanelCell | null;
   activePlayer: Player | null;
+  worldState: WorldState | null;
   players: Player[];
   mapCellsById: Record<string, MapCell>;
   mapSize: number;
@@ -26,7 +30,7 @@ export interface LocationInfoDialogData {
 @Component({
   selector: "app-location-info-dialog",
   standalone: true,
-  imports: [DialogWrapper, TextButton, MapCellInspectorPanel],
+  imports: [DialogWrapper, TextButton, MapCellInspectorPanel, TranslationPipe],
   templateUrl: "./location-info-dialog.html",
   styleUrl: "./location-info-dialog.scss",
 })
@@ -34,6 +38,7 @@ export class LocationInfoDialog {
   public readonly title: string;
   public readonly inspectedCell: MapGridPanelCell | null;
   public readonly activePlayer: Player | null;
+  public readonly worldState: WorldState | null;
   public readonly players: Player[];
   public readonly mapCellsById: Record<string, MapCell>;
   public readonly mapSize: number;
@@ -44,11 +49,15 @@ export class LocationInfoDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<never>>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: LocationInfoDialogData,
   ) {
-    this.title = typeof data?.title === "string" && data.title.trim() ? data.title : "Unknown cell";
+    this.title = typeof data?.title === "string" && data.title.trim()
+      ? data.title
+      : this.translationService.tOrFallback("map.cells.unknownCell", "Unknown cell");
     this.inspectedCell = data?.inspectedCell ?? null;
     this.activePlayer = data?.activePlayer ?? null;
+    this.worldState = data?.worldState ?? null;
     this.players = Array.isArray(data?.players) ? data.players : [];
     this.mapCellsById = data?.mapCellsById ?? {};
     this.mapSize = Math.max(1, Math.floor(Number(data?.mapSize ?? 10)));

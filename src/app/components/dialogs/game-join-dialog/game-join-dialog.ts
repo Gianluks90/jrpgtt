@@ -4,6 +4,7 @@ import { DialogRef } from "@angular/cdk/dialog";
 import { DialogResponse } from "../../../models/DialogResponse";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { TextButton } from "../../ui/text-button/text-button";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
 
 export interface GameJoinDialogData {
   joinCode: string;
@@ -11,7 +12,7 @@ export interface GameJoinDialogData {
 
 @Component({
   selector: "app-game-join-dialog",
-  imports: [DialogWrapper, ReactiveFormsModule, TextButton],
+  imports: [DialogWrapper, ReactiveFormsModule, TextButton, TranslationPipe],
   templateUrl: "./game-join-dialog.html",
   styleUrl: "./game-join-dialog.scss",
 })

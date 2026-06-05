@@ -1,4 +1,5 @@
 import { Component, input, output } from "@angular/core";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
 
 export interface CommandPanelAction {
   id: string;
@@ -13,6 +14,7 @@ export interface CommandPanelAction {
 @Component({
   selector: "app-commands-panel",
   standalone: true,
+  imports: [TranslationPipe],
   templateUrl: "./commands-panel.html",
   styleUrl: "./commands-panel.scss",
 })

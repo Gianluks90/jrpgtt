@@ -2,15 +2,19 @@ import { Component, computed, input, output } from "@angular/core";
 import { Player } from "../../../models/Player";
 import { PlayerComputedStats } from "../../../models/PlayerComputedStats";
 import { PlayerCard } from "../player-card/player-card";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-map-players-panel",
   standalone: true,
-  imports: [PlayerCard],
+  imports: [PlayerCard, TranslationPipe],
   templateUrl: "./map-players-panel.html",
   styleUrl: "./map-players-panel.scss",
 })
 export class MapPlayersPanel {
+  constructor(private translationService: TranslationService) {}
+
   public myPlayer = input<Player | null>(null);
   public myPlayerComputedStats = input<PlayerComputedStats | null>(null);
   public players = input<Player[]>([]);
@@ -22,6 +26,22 @@ export class MapPlayersPanel {
 
   public hasLevelUpChoices = computed<boolean>(() => {
     return this.pendingLevelUpChoices() > 0;
+  });
+
+  public levelUpAriaLabel = computed<string>(() => {
+    return this.translationService.tOrFallback(
+      "map.players.levelUp.ariaLabel",
+      "Open level-up choices ({count})",
+      { count: this.pendingLevelUpChoices() },
+    );
+  });
+
+  public levelUpButtonLabel = computed<string>(() => {
+    return this.translationService.tOrFallback(
+      "map.players.levelUp.label",
+      "LEVEL +{count}",
+      { count: this.pendingLevelUpChoices() },
+    );
   });
 
   public sidebarPlayers = computed<Player[]>(() => {

@@ -4,11 +4,14 @@ import {
   GraveyardResurrectRewardDialogRow,
   GraveyardResurrectRewardsConfig,
 } from "../models/GraveyardResurrectRewardsConfig";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class GraveyardResurrectRewardsConfigService {
+  constructor(private translationService: TranslationService) {}
+
   private readonly configUrl = "/configs/variable-rewards-action-configs/graveyard-resurrect.config.json";
   private configCache: GraveyardResurrectRewardsConfig | null = null;
   private loadingPromise: Promise<GraveyardResurrectRewardsConfig> | null = null;
@@ -60,8 +63,24 @@ export class GraveyardResurrectRewardsConfigService {
     return config.rewards.map((reward) => ({
       id: reward.id,
       rangeLabel: reward.minTotal === reward.maxTotal ? `${reward.minTotal}` : `${reward.minTotal}-${reward.maxTotal}`,
-      effectLabel: reward.previewLabel,
+      effectLabel: this.getLocalizedPreviewLabel(reward),
     }));
+  }
+
+  public getLocalizedLabel(reward: GraveyardResurrectRewardDefinition): string {
+    if (typeof reward.labelKey === "string" && reward.labelKey.trim()) {
+      return this.translationService.tOrFallback(reward.labelKey, reward.label);
+    }
+
+    return reward.label;
+  }
+
+  public getLocalizedPreviewLabel(reward: GraveyardResurrectRewardDefinition): string {
+    if (typeof reward.previewLabelKey === "string" && reward.previewLabelKey.trim()) {
+      return this.translationService.tOrFallback(reward.previewLabelKey, reward.previewLabel);
+    }
+
+    return reward.previewLabel;
   }
 
   private parseConfig(raw: unknown): GraveyardResurrectRewardsConfig {
@@ -91,6 +110,8 @@ export class GraveyardResurrectRewardsConfigService {
       maxTotal?: unknown;
       label?: unknown;
       previewLabel?: unknown;
+      labelKey?: unknown;
+      previewLabelKey?: unknown;
       playerHpDamagePercent?: unknown;
       summonZombie?: unknown;
       reviveTarget?: unknown;
@@ -119,6 +140,15 @@ export class GraveyardResurrectRewardsConfigService {
       throw new Error(`Invalid graveyard resurrect rewards configuration: reward '${typed.id}' has invalid previewLabel`);
     }
 
+    if (typeof typed.labelKey !== "undefined" && (typeof typed.labelKey !== "string" || !typed.labelKey.trim())) {
+      throw new Error(`Invalid graveyard resurrect rewards configuration: reward '${typed.id}' has invalid labelKey`);
+    }
+
+    if (typeof typed.previewLabelKey !== "undefined"
+      && (typeof typed.previewLabelKey !== "string" || !typed.previewLabelKey.trim())) {
+      throw new Error(`Invalid graveyard resurrect rewards configuration: reward '${typed.id}' has invalid previewLabelKey`);
+    }
+
     if (typeof typed.playerHpDamagePercent !== "undefined") {
       const value = Number(typed.playerHpDamagePercent);
       if (!Number.isFinite(value) || value < 0 || value > 1) {
@@ -144,6 +174,8 @@ export class GraveyardResurrectRewardsConfigService {
       maxTotal,
       label: typed.label,
       previewLabel: typed.previewLabel,
+      ...(typeof typed.labelKey === "string" ? { labelKey: typed.labelKey } : {}),
+      ...(typeof typed.previewLabelKey === "string" ? { previewLabelKey: typed.previewLabelKey } : {}),
       ...(typeof typed.playerHpDamagePercent === "number" ? { playerHpDamagePercent: typed.playerHpDamagePercent } : {}),
       ...(typed.summonZombie === true ? { summonZombie: true } : {}),
       ...(typed.reviveTarget === "one-hp" || typed.reviveTarget === "full" ? { reviveTarget: typed.reviveTarget } : {}),

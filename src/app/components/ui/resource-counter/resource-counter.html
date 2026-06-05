@@ -2,12 +2,12 @@
   class="resource-counter-panel"
   role="button"
   tabindex="0"
-  aria-label="Open resource inventory"
+  [attr.aria-label]="panelAriaLabel()"
   (click)="onPanelClicked()"
   (keydown.enter)="onPanelClicked()"
   (keydown.space)="onPanelClicked()"
 >
-  <p class="resource-counter-title">Resources ({{ currentCount() }}/{{ maxCount() }})</p>
+  <p class="resource-counter-title">{{ panelTitle() }}</p>
   <div class="resource-counter-root">
     @for (resource of counterItems(); track resource.label) {
       <span class="resource-icon-wrap">

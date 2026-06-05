@@ -34,6 +34,9 @@ import { BiomeConditionCatalogService } from "../../services/biome-condition-cat
 import { ItemCatalogService } from "../../services/item-catalog-service";
 import { FollowerCatalogService } from "../../services/follower-catalog-service";
 import { DiscardPileService } from "../../services/discard-pile-service";
+import { TranslationPipe } from "../../pipes/translation-pipe";
+import { TranslationService } from "../../services/translation-service";
+import { LandmarksService } from "../../services/landmarks-service";
 
 @Component({
   selector: "app-map-page",
@@ -51,6 +54,7 @@ import { DiscardPileService } from "../../services/discard-pile-service";
     BiomesCounter,
     CommandsPanel,
     MapLogPanel,
+    TranslationPipe,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
@@ -72,6 +76,8 @@ export class MapPage implements OnInit, OnDestroy {
   private itemCatalogService = inject(ItemCatalogService);
   private followerCatalogService = inject(FollowerCatalogService);
   private discardPileService = inject(DiscardPileService);
+  private translationService = inject(TranslationService);
+  private landmarksService = inject(LandmarksService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -246,10 +252,10 @@ export class MapPage implements OnInit, OnDestroy {
 
   public locationInfoContextLabel = computed<string>(() => {
     if (this.inspectedCell()) {
-      return "Observing cell";
+      return this.translationService.tOrFallback("map.locationInfo.contextObserving", "Observing cell");
     }
 
-    return "Active player in";
+    return this.translationService.tOrFallback("map.locationInfo.contextActivePlayer", "Active player in");
   });
 
   public discardPileCount = computed<number>(() => {
@@ -285,9 +291,10 @@ export class MapPage implements OnInit, OnDestroy {
       const uses = definition ? this.buildInventoryUses(entry, definition) : null;
       return {
         itemId: entry.itemId,
-        name: definition?.name ?? entry.itemId,
+        name: definition ? this.itemCatalogService.getLocalizedName(definition) : entry.itemId,
         sellValue: sellValue > 0 ? sellValue : null,
-        description: definition?.description?.trim() || "No description available.",
+        description: (definition ? this.itemCatalogService.getLocalizedDescription(definition).trim() : "")
+          || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
         occupiesSpace: definition?.occupiesSpace === true,
         uses,
         labels,
@@ -333,9 +340,10 @@ export class MapPage implements OnInit, OnDestroy {
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         return {
           followerId: entry.followerId,
-          name: entry.nameOverride ?? definition?.name ?? entry.followerId,
+          name: entry.nameOverride ?? (definition ? this.followerCatalogService.getLocalizedName(definition) : entry.followerId),
           category: String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase(),
-          description: definition?.description?.trim() || "No description available.",
+          description: (definition ? this.followerCatalogService.getLocalizedDescription(definition).trim() : "")
+            || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
           hpCurrent,
           hpMax,
           hpPercent: Math.max(0, Math.min(100, Math.floor((hpCurrent / hpMax) * 100))),
@@ -359,7 +367,7 @@ export class MapPage implements OnInit, OnDestroy {
   public collapsedInventorySummary = computed<string>(() => {
     const names = this.visibleInventoryItems().map((item) => item.name.trim()).filter((name) => name.length > 0);
     if (names.length === 0) {
-      return "no items";
+      return this.translationService.tOrFallback("map.inventory.none", "no items");
     }
 
     return names.join(", ");
@@ -368,7 +376,7 @@ export class MapPage implements OnInit, OnDestroy {
   public collapsedFollowersSummary = computed<string>(() => {
     const names = this.visibleFollowers().map((follower) => follower.name.trim()).filter((name) => name.length > 0);
     if (names.length === 0) {
-      return "no followers";
+      return this.translationService.tOrFallback("map.followers.none", "no followers");
     }
 
     return names.join(", ");
@@ -492,6 +500,7 @@ export class MapPage implements OnInit, OnDestroy {
       title: this.locationInfoCellName(),
       inspectedCell: this.inspectedCell(),
       activePlayer: this.activePlayer(),
+      worldState: this.worldState(),
       players: this.players(),
       mapCellsById: this.mapCellsById(),
       mapSize: this.mapSize(),
@@ -508,7 +517,9 @@ export class MapPage implements OnInit, OnDestroy {
       this.mapPageInteractionService.openDiscardPileDialog(entries);
     } catch (error) {
       console.error(error);
-      window.alert(error instanceof Error ? error.message : "Unable to open discard pile");
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("map.discardPile.openError", "Unable to open discard pile"));
     }
   }
 
@@ -654,12 +665,12 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   private biomeToLabel(biome: MapCell["biome"]): string {
-    if (biome === "plains") return "Plains";
-    if (biome === "forest") return "Forest";
-    if (biome === "mountain") return "Mountain";
-    if (biome === "water") return "Water";
-    if (biome === "desert") return "Desert";
-    return "Ruins";
+    if (biome === "plains") return this.translationService.tOrFallback("map.biomes.plains", "Plains");
+    if (biome === "forest") return this.translationService.tOrFallback("map.biomes.forest", "Forest");
+    if (biome === "mountain") return this.translationService.tOrFallback("map.biomes.mountain", "Mountain");
+    if (biome === "water") return this.translationService.tOrFallback("map.biomes.water", "Water");
+    if (biome === "desert") return this.translationService.tOrFallback("map.biomes.desert", "Desert");
+    return this.translationService.tOrFallback("map.biomes.ruins", "Ruins");
   }
 
   private buildInventoryLabels(item: ItemDefinition): Array<{
@@ -673,7 +684,7 @@ export class MapPage implements OnInit, OnDestroy {
 
     if (item.occupiesSpace !== true) {
       labels.push({
-        text: "little",
+        text: this.translationService.tOrFallback("map.labels.little", "little"),
         tone: "neutral",
       });
     }
@@ -735,14 +746,14 @@ export class MapPage implements OnInit, OnDestroy {
       scopes.forEach((scope) => {
         if (scope === "always") return;
         if (scope === "fight-only") {
-          labels.add("fight only");
+          labels.add(this.translationService.tOrFallback("map.labels.fightOnly", "fight only"));
           return;
         }
         if (scope === "day-only") {
-          labels.add("day only");
+          labels.add(this.translationService.tOrFallback("map.labels.dayOnly", "day only"));
           return;
         }
-        labels.add("night only");
+        labels.add(this.translationService.tOrFallback("map.labels.nightOnly", "night only"));
       });
     });
 
@@ -877,19 +888,27 @@ export class MapPage implements OnInit, OnDestroy {
   private resolveCellNameFromCoordinates(x: number, y: number): string {
     const cellId = `${x}_${y}`;
     const cell = this.mapCellsById()[cellId] ?? null;
-    if (!cell) return "Unknown cell";
+    if (!cell) return this.translationService.tOrFallback("map.cells.unknownCell", "Unknown cell");
 
     if (cell.isSpecial === true) {
       if (cell.specialType === "landmark") {
-        return cell.landmarkDisplayName ?? "Unknown Landmark";
+        return this.landmarksService.getLocalizedLandmarkNameFromCell(cell);
       }
 
       if (cell.specialType === "sanctuary") {
-        if (cell.sanctuaryElement === "water") return "Water Shrine";
-        if (cell.sanctuaryElement === "fire") return "Fire Shrine";
-        if (cell.sanctuaryElement === "wind") return "Wind Shrine";
-        if (cell.sanctuaryElement === "earth") return "Earth Shrine";
-        return "Elemental Shrine";
+        if (cell.sanctuaryElement === "water") {
+          return this.translationService.tOrFallback("map.cells.sanctuary.water", "Water Shrine");
+        }
+        if (cell.sanctuaryElement === "fire") {
+          return this.translationService.tOrFallback("map.cells.sanctuary.fire", "Fire Shrine");
+        }
+        if (cell.sanctuaryElement === "wind") {
+          return this.translationService.tOrFallback("map.cells.sanctuary.wind", "Wind Shrine");
+        }
+        if (cell.sanctuaryElement === "earth") {
+          return this.translationService.tOrFallback("map.cells.sanctuary.earth", "Earth Shrine");
+        }
+        return this.translationService.tOrFallback("map.cells.sanctuary.generic", "Elemental Shrine");
       }
     }
 

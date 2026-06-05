@@ -1,6 +1,6 @@
 <div class="cell-inspector-panel">
   <div class="cell-inspector-body">
-    <p class="inspector-section-title">Info</p>
+    <p class="inspector-section-title">{{ 'map.cellInspector.info' | t }}</p>
 
     <div class="inspector-biome-row">
       <span class="inspector-biome-value">
@@ -15,25 +15,25 @@
       </span>
     </div>
 
-    <p class="summary-item"><span>Region</span><strong>{{ currentCellSectorLabel() }}</strong></p>
-    <p class="summary-item"><span>Coordinates XY</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
-    <p class="summary-item"><span>Environment</span><strong>{{ currentCellEnvironmentLabel() }}</strong></p>
-    <p class="summary-item"><span>Enemies level</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
+    <p class="summary-item"><span>{{ 'map.cellInspector.region' | t }}</span><strong>{{ currentCellSectorLabel() }}</strong></p>
+    <p class="summary-item"><span>{{ 'map.cellInspector.coordinates' | t }}</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
+    <p class="summary-item"><span>{{ 'map.cellInspector.environment' | t }}</span><strong>{{ currentCellEnvironmentLabel() }}</strong></p>
+    <p class="summary-item"><span>{{ 'map.cellInspector.enemiesLevel' | t }}</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
 
     @if (currentCellIsSpecial()) {
-      <p class="inspector-section-title">Special</p>
+      <p class="inspector-section-title">{{ 'map.cellInspector.special' | t }}</p>
       <p class="inspector-special-value">{{ currentCellSpecialStatusLabel() }}</p>
 
-      <p class="inspector-section-title">Description</p>
+      <p class="inspector-section-title">{{ 'map.cellInspector.description' | t }}</p>
       <p class="inspector-description-value">{{ currentCellSpecialDescription() }}</p>
     }
 
-    <p class="inspector-section-title">Resources</p>
+    <p class="inspector-section-title">{{ 'map.cellInspector.resources' | t }}</p>
     <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
 
-    <p class="inspector-section-title">Actions</p>
+    <p class="inspector-section-title">{{ 'map.cellInspector.actions' | t }}</p>
     @if (currentCellActions().length === 0) {
-      <p class="inspector-actions-empty">No actions available here.</p>
+      <p class="inspector-actions-empty">{{ 'map.cellInspector.noActionsAvailable' | t }}</p>
     } @else {
       <div class="inspector-actions-list">
         @for (action of currentCellActions(); track action.id) {

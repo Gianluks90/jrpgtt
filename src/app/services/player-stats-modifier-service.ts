@@ -76,6 +76,8 @@ export class PlayerStatsModifierService {
         return;
       }
 
+      const localizedFollowerName = this.followerCatalogService.getLocalizedName(allyDefinition);
+
       (allyDefinition.parameterModifiers ?? []).forEach((modifier) => {
         if (!this.isScopeActive(modifier.scopes, context.worldState?.timeOfDay)) {
           return;
@@ -85,7 +87,7 @@ export class PlayerStatsModifierService {
           characteristic: modifier.parameter,
           amount: this.normalizeDelta(modifier.amount),
           source: "status",
-          reason: `${allyDefinition.name} modifier`,
+          reason: `${localizedFollowerName} modifier`,
         });
       });
 
@@ -100,7 +102,7 @@ export class PlayerStatsModifierService {
             characteristic: "strength",
             amount: this.normalizeDelta(statModifiers.strength),
             source: "status",
-            reason: `${allyDefinition.name} status (${statusKey})`,
+            reason: `${localizedFollowerName} status (${statusKey})`,
           });
         }
 
@@ -109,7 +111,7 @@ export class PlayerStatsModifierService {
             characteristic: "magic",
             amount: this.normalizeDelta(statModifiers.magic),
             source: "status",
-            reason: `${allyDefinition.name} status (${statusKey})`,
+            reason: `${localizedFollowerName} status (${statusKey})`,
           });
         }
 
@@ -118,7 +120,7 @@ export class PlayerStatsModifierService {
             characteristic: "luck",
             amount: this.normalizeDelta(statModifiers.luck),
             source: "status",
-            reason: `${allyDefinition.name} status (${statusKey})`,
+            reason: `${localizedFollowerName} status (${statusKey})`,
           });
         }
       });

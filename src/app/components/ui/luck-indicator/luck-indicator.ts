@@ -1,9 +1,12 @@
 import { Component, Injector, OnDestroy, computed, effect, inject, input, signal } from "@angular/core";
 import { LuckCheckResult } from "../../../models/LuckCheckResult";
 import { SoundService } from "../../../services/sound-service";
+import { TranslationPipe } from "../../../pipes/translation-pipe";
+import { TranslationService } from "../../../services/translation-service";
 
 @Component({
   selector: "app-luck-indicator",
+  imports: [TranslationPipe],
   templateUrl: "./luck-indicator.html",
   styleUrl: "./luck-indicator.scss",
   standalone: true,
@@ -11,6 +14,7 @@ import { SoundService } from "../../../services/sound-service";
 export class LuckIndicator implements OnDestroy {
   private injector = inject(Injector);
   private soundService = inject(SoundService);
+  private translationService = inject(TranslationService);
 
   public result = input<LuckCheckResult | null>(null);
   public animateFirstResult = input<boolean>(false);
@@ -44,9 +48,9 @@ export class LuckIndicator implements OnDestroy {
     if (this.isRolling()) return "...";
     const result = this.displayedResult();
     if (!result) return "-";
-    if (result.success) return "Yes!";
-    if (result.nearSuccess) return "Near";
-    return "Nope";
+    if (result.success) return this.translationService.tOrFallback("map.luck.status.success", "Yes!");
+    if (result.nearSuccess) return this.translationService.tOrFallback("map.luck.status.near", "Near");
+    return this.translationService.tOrFallback("map.luck.status.fail", "Nope");
   });
 
   public statusClass = computed(() => {

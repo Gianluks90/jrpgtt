@@ -13,6 +13,33 @@
         margin: 0;
         line-height: 1.4;
     }
+
+    .language-switcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        span {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        button {
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.08);
+            color: inherit;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+        }
+
+        button.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.75);
+        }
+    }
 }
 
 @media (max-width: 768px) {

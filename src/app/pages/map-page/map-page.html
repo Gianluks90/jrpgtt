@@ -8,7 +8,7 @@
                 [mapSize]="mapSize()"
                 [totalSpecialCells]="4"
                 [showTitle]="true"
-                title="World"
+                [title]="'map.worldTitle' | t"
             ></app-world-state-panel>
         </div>
 
@@ -25,7 +25,7 @@
                 ></app-map-players-panel>
 
                 <section class="hud sidebar-block commands-block">
-                    <p class="hud-title">Commands</p>
+                    <p class="hud-title">{{ 'map.commands.title' | t }}</p>
                     <app-commands-panel
                         [actions]="commandActions()"
                         (actionRequested)="onCommandActionRequested($event)"
@@ -37,9 +37,9 @@
 
             <div class="map-wrapper">
                 <div class="map-center-shell">
-                    <section class="map-inline-hud map-time-block" aria-label="World time">
+                    <section class="map-inline-hud map-time-block" [attr.aria-label]="'map.worldTime.ariaLabel' | t">
                         <div class="map-inline-hud-content map-time-content">
-                            <span class="map-inline-hud-prefix">World time</span>
+                            <span class="map-inline-hud-prefix">{{ 'map.worldTime.prefix' | t }}</span>
                             <app-day-night-cycle-panel class="map-inline-day-night" [worldState]="worldState()"></app-day-night-cycle-panel>
                         </div>
                     </section>
@@ -68,20 +68,20 @@
                             <icon-button
                                 class="map-inline-hud-tail active-cell-info-button"
                                 iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                                ariaLabel="Open location info"
+                                [ariaLabel]="'map.locationInfo.openAria' | t"
                                 (clicked)="openLocationInfoDialog()"
                             ></icon-button>
                         </section>
 
                         <section class="map-inline-hud discard-pile-block">
                             <div class="map-inline-hud-content discard-pile-content">
-                                <p class="active-cell-context">Discard pile</p>
+                                <p class="active-cell-context">{{ 'map.discardPile.title' | t }}</p>
                                 <p class="active-cell-name">{{ discardPileCount() }}</p>
                             </div>
                             <icon-button
                                 class="map-inline-hud-tail active-cell-info-button"
                                 iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                                ariaLabel="Open discard pile"
+                                [ariaLabel]="'map.discardPile.openAria' | t"
                                 (clicked)="openDiscardPileDialog()"
                             ></icon-button>
                         </section>
@@ -99,12 +99,12 @@
                     [class.utility-panel-collapsed]="!isInventoryExpanded()"
                     (click)="onInventoryPanelToggle()"
                 >
-                    <p class="hud-title">Inventory ({{ visibleInventoryOccupiedSlots() }}/{{ visibleInventoryCapacity() }})</p>
+                    <p class="hud-title">{{ 'map.inventory.title' | t: { used: visibleInventoryOccupiedSlots(), capacity: visibleInventoryCapacity() } }}</p>
 
                     @if (isInventoryExpanded()) {
                         <div class="inventory-list" [class.inventory-list-empty]="visibleInventoryItems().length === 0">
                             @if (visibleInventoryItems().length === 0) {
-                                <p class="inventory-empty inventory-empty-centered">No items.</p>
+                                <p class="inventory-empty inventory-empty-centered">{{ 'map.inventory.noItems' | t }}</p>
                             } @else {
                                 @for (item of visibleInventoryItems(); track item.itemId + $index) {
                                     <div class="inventory-item-row">
@@ -123,7 +123,7 @@
 
                                         @if (item.uses) {
                                             <div class="inventory-item-uses">
-                                                <p class="inventory-item-uses-title">Uses</p>
+                                                <p class="inventory-item-uses-title">{{ 'map.inventory.uses' | t }}</p>
                                                 <div class="inventory-item-uses-row">
                                                     <div class="inventory-item-uses-slots">
                                                         @for (slotFilled of item.uses.slots; track $index) {
@@ -152,7 +152,7 @@
                             <icon-button
                                 class="utility-panel-expand-icon"
                                 iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                                ariaLabel="Expand inventory"
+                                [ariaLabel]="'map.inventory.expandAria' | t"
                                 (clicked)="onInventoryPanelToggle()"
                             ></icon-button>
                         </div>
@@ -165,12 +165,12 @@
                     [class.utility-panel-collapsed]="!isFollowersExpanded()"
                     (click)="onFollowersPanelToggle()"
                 >
-                    <p class="hud-title">Followers ({{ visibleFollowers().length }})</p>
+                    <p class="hud-title">{{ 'map.followers.title' | t: { count: visibleFollowers().length } }}</p>
 
                     @if (isFollowersExpanded()) {
                         <div class="inventory-list" [class.inventory-list-empty]="visibleFollowers().length === 0">
                             @if (visibleFollowers().length === 0) {
-                                <p class="inventory-empty inventory-empty-centered">No followers.</p>
+                                <p class="inventory-empty inventory-empty-centered">{{ 'map.followers.noFollowers' | t }}</p>
                             } @else {
                                 @for (follower of visibleFollowers(); track follower.followerId + $index) {
                                     <div class="inventory-item-row">
@@ -203,7 +203,7 @@
                             }
 
                             @if (discardedFollowersCount() > 0) {
-                                <p class="inventory-empty">Discarded followers: {{ discardedFollowersCount() }}</p>
+                                <p class="inventory-empty">{{ 'map.followers.discardedCount' | t: { count: discardedFollowersCount() } }}</p>
                             }
                         </div>
                     } @else {
@@ -212,7 +212,7 @@
                             <icon-button
                                 class="utility-panel-expand-icon"
                                 iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                                ariaLabel="Expand followers"
+                                [ariaLabel]="'map.followers.expandAria' | t"
                                 (clicked)="onFollowersPanelToggle()"
                             ></icon-button>
                         </div>
@@ -237,7 +237,7 @@
             <icon-button
                 class="footer-home-button"
                 iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
-                ariaLabel="Home"
+                [ariaLabel]="'map.actions.home' | t"
                 (clicked)="onBackHome()"
             ></icon-button>
         </div>

@@ -1,10 +1,13 @@
 import { Injectable } from "@angular/core";
 import { FollowersCatalogConfig, FollowerDefinition } from "../models/FollowerCatalog";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class FollowerCatalogService {
+  constructor(private translationService: TranslationService) {}
+
   private readonly configUrl = "/configs/followers.config.json";
   private configCache: FollowersCatalogConfig | null = null;
   private configLoadPromise: Promise<FollowersCatalogConfig> | null = null;
@@ -44,6 +47,22 @@ export class FollowerCatalogService {
     return this.configCache.followers.find((follower) => follower.id === normalized) ?? null;
   }
 
+  public getLocalizedName(follower: Pick<FollowerDefinition, "id" | "name" | "nameKey">): string {
+    if (typeof follower.nameKey === "string" && follower.nameKey.trim()) {
+      return this.translationService.tOrFallback(follower.nameKey, follower.name);
+    }
+
+    return follower.name;
+  }
+
+  public getLocalizedDescription(follower: Pick<FollowerDefinition, "id" | "description" | "descriptionKey">): string {
+    if (typeof follower.descriptionKey === "string" && follower.descriptionKey.trim()) {
+      return this.translationService.tOrFallback(follower.descriptionKey, follower.description);
+    }
+
+    return follower.description;
+  }
+
   private parseConfig(raw: unknown): FollowersCatalogConfig {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
       throw new Error("Invalid followers configuration: root object is missing");
@@ -75,6 +94,8 @@ export class FollowerCatalogService {
       id?: unknown;
       name?: unknown;
       description?: unknown;
+      nameKey?: unknown;
+      descriptionKey?: unknown;
       category?: unknown;
       maxHp?: unknown;
       itemCapacityBonus?: unknown;
@@ -94,6 +115,15 @@ export class FollowerCatalogService {
 
     if (typeof typed.description !== "string") {
       throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid description`);
+    }
+
+    if (typeof typed.nameKey !== "undefined" && (typeof typed.nameKey !== "string" || !typed.nameKey.trim())) {
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid nameKey`);
+    }
+
+    if (typeof typed.descriptionKey !== "undefined"
+      && (typeof typed.descriptionKey !== "string" || !typed.descriptionKey.trim())) {
+      throw new Error(`Invalid followers configuration: follower '${typed.id}' has invalid descriptionKey`);
     }
 
     if (typeof typed.category !== "string" || !typed.category.trim()) {
@@ -123,6 +153,8 @@ export class FollowerCatalogService {
       id: typed.id,
       name: typed.name,
       description: typed.description,
+      ...(typeof typed.nameKey === "string" ? { nameKey: typed.nameKey } : {}),
+      ...(typeof typed.descriptionKey === "string" ? { descriptionKey: typed.descriptionKey } : {}),
       category: typed.category,
       maxHp,
       ...(typeof itemCapacityBonus === "number" ? { itemCapacityBonus } : {}),

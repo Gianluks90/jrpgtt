@@ -1,11 +1,14 @@
 import { Injectable } from "@angular/core";
 import { PlayerAlignment } from "../models/Player";
 import { MysticRewardDefinition, MysticRewardDialogRow, MysticRewardsConfig } from "../models/MysticRewardsConfig";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class MysticRewardsConfigService {
+  constructor(private translationService: TranslationService) {}
+
   private readonly configUrl = "/configs/variable-rewards-action-configs/mystic-rewards.config.json";
   private configCache: MysticRewardsConfig | null = null;
   private loadingPromise: Promise<MysticRewardsConfig> | null = null;
@@ -57,8 +60,24 @@ export class MysticRewardsConfigService {
     return config.rewards.map((reward) => ({
       id: reward.id,
       rangeLabel: reward.minTotal === reward.maxTotal ? `${reward.minTotal}` : `${reward.minTotal}-${reward.maxTotal}`,
-      effectLabel: reward.previewLabel,
+      effectLabel: this.getLocalizedPreviewLabel(reward),
     }));
+  }
+
+  public getLocalizedLabel(reward: MysticRewardDefinition): string {
+    if (typeof reward.labelKey === "string" && reward.labelKey.trim()) {
+      return this.translationService.tOrFallback(reward.labelKey, reward.label);
+    }
+
+    return reward.label;
+  }
+
+  public getLocalizedPreviewLabel(reward: MysticRewardDefinition): string {
+    if (typeof reward.previewLabelKey === "string" && reward.previewLabelKey.trim()) {
+      return this.translationService.tOrFallback(reward.previewLabelKey, reward.previewLabel);
+    }
+
+    return reward.previewLabel;
   }
 
   private parseConfig(raw: unknown): MysticRewardsConfig {
@@ -88,6 +107,8 @@ export class MysticRewardsConfigService {
       maxTotal?: unknown;
       label?: unknown;
       previewLabel?: unknown;
+      labelKey?: unknown;
+      previewLabelKey?: unknown;
       alignment?: unknown;
       experienceGain?: unknown;
       grantLevelUp?: unknown;
@@ -115,6 +136,15 @@ export class MysticRewardsConfigService {
       throw new Error(`Invalid mystic rewards configuration: reward '${typed.id}' has invalid previewLabel`);
     }
 
+    if (typeof typed.labelKey !== "undefined" && (typeof typed.labelKey !== "string" || !typed.labelKey.trim())) {
+      throw new Error(`Invalid mystic rewards configuration: reward '${typed.id}' has invalid labelKey`);
+    }
+
+    if (typeof typed.previewLabelKey !== "undefined"
+      && (typeof typed.previewLabelKey !== "string" || !typed.previewLabelKey.trim())) {
+      throw new Error(`Invalid mystic rewards configuration: reward '${typed.id}' has invalid previewLabelKey`);
+    }
+
     if (typeof typed.alignment !== "undefined" && typed.alignment !== null && !this.isAlignment(typed.alignment)) {
       throw new Error(`Invalid mystic rewards configuration: reward '${typed.id}' has invalid alignment`);
     }
@@ -133,6 +163,8 @@ export class MysticRewardsConfigService {
       maxTotal,
       label: typed.label,
       previewLabel: typed.previewLabel,
+      ...(typeof typed.labelKey === "string" ? { labelKey: typed.labelKey } : {}),
+      ...(typeof typed.previewLabelKey === "string" ? { previewLabelKey: typed.previewLabelKey } : {}),
       alignment: (typeof typed.alignment === "undefined" ? undefined : typed.alignment) as PlayerAlignment | null | undefined,
       experienceGain: typeof typed.experienceGain === "number" ? Math.max(0, Math.floor(typed.experienceGain)) : undefined,
       grantLevelUp: typed.grantLevelUp === true,

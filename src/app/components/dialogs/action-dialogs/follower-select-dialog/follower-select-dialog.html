@@ -14,7 +14,7 @@
     }
 
     @if (options.length === 0) {
-        <p class="error-text">No eligible followers available.</p>
+        <p class="error-text">{{ 'dialogs.followerSelect.noEligibleFollowers' | t }}</p>
     } @else {
         <div class="options-list">
             @for (option of options; track option.key) {
@@ -62,5 +62,5 @@
         [disabled]="!canConfirm"
         (clicked)="confirm()"
     ></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

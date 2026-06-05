@@ -1,20 +1,19 @@
-<dialog-wrapper title="New Game">
+<dialog-wrapper [title]="'dialogs.gameNew.title' | t">
     <p class="info-text">
-        Create a new game by entering a name and the maximum number of players allowed. You can always change these
-        settings later in the lobby.
+        {{ 'dialogs.gameNew.description' | t }}
     </p>
     <form [formGroup]="form">
         <div class="form-field">
-            <label for="name">Name</label>
-            <input id="name" formControlName="name" type="text" placeholder="Enter text" />
+            <label for="name">{{ 'dialogs.common.name' | t }}</label>
+            <input id="name" formControlName="name" type="text" [placeholder]="'dialogs.common.enterText' | t" />
         </div>
         <div class="form-field">
-            <label for="maxPlayers">Max Players</label>
+            <label for="maxPlayers">{{ 'dialogs.common.maxPlayers' | t }}</label>
             <input id="maxPlayers" formControlName="maxPlayers" type="number" inputMode="numeric"
-                placeholder="Enter number" min="1" [max]="maxPlayers" />
-            <p class="info-text">Maximum players allowed: {{ maxPlayers }}</p>
+                [placeholder]="'dialogs.common.enterNumber' | t" min="1" [max]="maxPlayers" />
+            <p class="info-text">{{ 'dialogs.common.maxPlayersAllowed' | t: { maxPlayers: maxPlayers } }}</p>
         </div>
     </form>
-    <text-button dialog-action text="Create" (clicked)="confirm()" [disabled]="form.invalid"></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.gameNew.create' | t" (clicked)="confirm()" [disabled]="form.invalid"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

@@ -6,6 +6,7 @@ import {
   StatusesCatalogConfig,
   StatusStatModifiers,
 } from "../models/StatusCatalog";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
@@ -15,6 +16,8 @@ export class StatusCatalogService {
   private configCache: StatusesCatalogConfig | null = null;
   private loadingPromise: Promise<StatusesCatalogConfig> | null = null;
   private statusesByKey: Record<string, StatusDefinition> = {};
+
+  constructor(private translationService: TranslationService) {}
 
   public async loadConfig(): Promise<StatusesCatalogConfig> {
     if (this.configCache) {
@@ -60,6 +63,22 @@ export class StatusCatalogService {
     }
 
     return this.statusesByKey[key] ?? null;
+  }
+
+  public getLocalizedLabel(statusKey: string, fallback: string): string {
+    const status = this.statusesByKey[statusKey];
+    const configuredFallback = typeof status?.label === "string" && status.label.trim().length > 0
+      ? status.label
+      : fallback;
+    return this.translationService.tOrFallback(status?.i18n?.labelKey, configuredFallback);
+  }
+
+  public getLocalizedDescription(statusKey: string, fallback: string): string {
+    const status = this.statusesByKey[statusKey];
+    const configuredFallback = typeof status?.description === "string" && status.description.trim().length > 0
+      ? status.description
+      : fallback;
+    return this.translationService.tOrFallback(status?.i18n?.descriptionKey, configuredFallback);
   }
 
   private parseConfig(raw: unknown): StatusesCatalogConfig {

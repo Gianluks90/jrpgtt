@@ -7,6 +7,7 @@ import {
   MerchantCheckoutOutcome,
 } from "../../../../services/action-executor-service";
 import { MerchantTradePanel } from "../../../ui/merchant-trade-panel/merchant-trade-panel";
+import { TranslationService } from "../../../../services/translation-service";
 
 export interface MerchantDialogData {
   merchantLabel: string;
@@ -36,6 +37,7 @@ export class MerchantDialog {
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<MerchantCheckoutOutcome>>,
+    private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: MerchantDialogData,
   ) {
     this.merchantLabel = data.merchantLabel;
@@ -60,7 +62,9 @@ export class MerchantDialog {
         data: outcome,
       });
     } catch (error) {
-      this.errorMessage = error instanceof Error ? error.message : "Unable to confirm merchant cart.";
+      this.errorMessage = error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("dialogs.merchant.errors.confirmCart", "Unable to confirm merchant cart.");
     } finally {
       this.loading = false;
     }

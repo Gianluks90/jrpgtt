@@ -1,5 +1,5 @@
 <section class="players-panel">
-  <p class="panel-title">Players</p>
+  <p class="panel-title">{{ 'map.players.title' | t }}</p>
   @if (mainPlayer(); as player) {
     <div class="main-player-card-wrap">
       <app-player-card
@@ -13,11 +13,11 @@
           type="button"
           class="level-up-trigger"
           [disabled]="!canOpenLevelUpDialog()"
-          [attr.aria-label]="'Open level-up choices (' + pendingLevelUpChoices() + ')'"
+          [attr.aria-label]="levelUpAriaLabel()"
           (click)="onOpenLevelUp()"
         >
           <span class="level-up-trigger-icon flashing-text" [style.mask]="'url(./icons/shift_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg) no-repeat center / contain'"></span>
-          <span class="level-up-trigger-label flashing-text"> LEVEL +{{ pendingLevelUpChoices() }}</span>
+          <span class="level-up-trigger-label flashing-text"> {{ levelUpButtonLabel() }}</span>
         </button>
       }
     </div>
@@ -32,7 +32,7 @@
             <span class="mini-player-name">{{ player.name }}</span>
             <span class="mini-player-level">Lv. {{ player.level }}</span>
             <span class="mini-player-spacer"></span>
-            <span class="mini-player-hp-label">HP</span>
+            <span class="mini-player-hp-label">{{ 'map.players.hpLabel' | t }}</span>
             <strong class="mini-player-hp-value">{{ player.parameters.hp.current }}</strong>
           </div>
         }

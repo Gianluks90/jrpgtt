@@ -6,6 +6,8 @@ export interface GraveyardResurrectRewardDefinition {
   maxTotal: number;
   label: string;
   previewLabel: string;
+  labelKey?: string;
+  previewLabelKey?: string;
   playerHpDamagePercent?: number;
   summonZombie?: boolean;
   reviveTarget?: GraveyardReviveTargetMode;

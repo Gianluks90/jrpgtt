@@ -14,6 +14,8 @@ export interface FollowerDefinition {
   id: string;
   name: string;
   description: string;
+  nameKey?: string;
+  descriptionKey?: string;
   category: FollowerCategory;
   maxHp: number;
   itemCapacityBonus?: number;

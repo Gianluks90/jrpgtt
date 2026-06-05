@@ -3,6 +3,7 @@
     <app-map-cell-inspector-panel
       [inspectedCell]="inspectedCell"
       [activePlayer]="activePlayer"
+      [worldState]="worldState"
       [players]="players"
       [mapCellsById]="mapCellsById"
       [mapSize]="mapSize"
@@ -13,5 +14,5 @@
     ></app-map-cell-inspector-panel>
   </div>
 
-  <text-button dialog-action text="Close" (clicked)="close()"></text-button>
+  <text-button dialog-action [text]="'dialogs.common.close' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

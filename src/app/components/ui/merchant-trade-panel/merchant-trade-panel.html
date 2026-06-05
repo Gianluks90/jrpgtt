@@ -4,8 +4,8 @@
         <span class="coin-icon" aria-hidden="true"></span>
     </div>
 
-    <p class="info-text">Buy or sell items, then confirm your cart.</p>
-    <p class="info-text">Buying ends your turn. Selling does not.</p>
+    <p class="info-text">{{ 'dialogs.merchant.info.main' | t }}</p>
+    <p class="info-text">{{ 'dialogs.merchant.info.turnRule' | t }}</p>
 
     @if (errorMessage()) {
         <p class="error-text">{{ errorMessage() }}</p>
@@ -13,10 +13,10 @@
 
     <div class="columns">
         <section class="column">
-            <h4>Buy</h4>
+            <h4>{{ 'dialogs.merchant.sections.buy' | t }}</h4>
             <div class="column-list">
                 @if (buyOffers().length === 0) {
-                    <p class="empty-text">No stock available.</p>
+                    <p class="empty-text">{{ 'dialogs.merchant.empty.noStock' | t }}</p>
                 } @else {
                     @for (offer of buyOffers(); track offer.tradableKind + ':' + offer.tradableId) {
                         <div class="inventory-item-row">
@@ -37,11 +37,11 @@
                             }
                             <p class="inventory-item-description">{{ offer.description }}</p>
                             <div class="inventory-item-meta">
-                                <span>Category: {{ offer.category }}</span>
-                                <span>Stock: {{ getRemainingStock(offer.tradableKind, offer.tradableId) }}</span>
+                                <span>{{ 'dialogs.merchant.meta.category' | t }}: {{ offer.category }}</span>
+                                <span>{{ 'dialogs.merchant.meta.stock' | t }}: {{ getRemainingStock(offer.tradableKind, offer.tradableId) }}</span>
                             </div>
                             <text-button
-                                text="Buy"
+                                [text]="'dialogs.merchant.actions.buy' | t"
                                 [compact]="true"
                                 [disabled]="loading() || !offer.canBuy || getRemainingStock(offer.tradableKind, offer.tradableId) <= 0 || projectedMoney() < offer.purchaseValue"
                                 (clicked)="queueBuy(offer.tradableKind, offer.tradableId)"
@@ -53,10 +53,10 @@
         </section>
 
         <section class="column">
-            <h4>Sell</h4>
+            <h4>{{ 'dialogs.merchant.sections.sell' | t }}</h4>
             <div class="column-list">
                 @if (sellOffers().length === 0) {
-                    <p class="empty-text">No sellable items in inventory.</p>
+                    <p class="empty-text">{{ 'dialogs.merchant.empty.noSellableItems' | t }}</p>
                 } @else {
                     @for (offer of sellOffers(); track offer.itemId) {
                         <div class="inventory-item-row">
@@ -77,11 +77,11 @@
                             }
                             <p class="inventory-item-description">{{ offer.description }}</p>
                             <div class="inventory-item-meta">
-                                <span>Category: {{ offer.category }}</span>
-                                <span>Owned: {{ getRemainingOwnedQuantity(offer.itemId) }}</span>
+                                <span>{{ 'dialogs.merchant.meta.category' | t }}: {{ offer.category }}</span>
+                                <span>{{ 'dialogs.merchant.meta.owned' | t }}: {{ getRemainingOwnedQuantity(offer.itemId) }}</span>
                             </div>
                             <text-button
-                                text="Sell"
+                                [text]="'dialogs.merchant.actions.sell' | t"
                                 [compact]="true"
                                 [disabled]="loading() || getRemainingOwnedQuantity(offer.itemId) <= 0"
                                 (clicked)="queueSell(offer.itemId)"
@@ -96,11 +96,11 @@
     <div class="cart-toolbar">
         <text-button
             [compact]="true"
-            [text]="showCart() ? 'Hide cart' : 'View cart'"
+            [text]="showCart() ? ('dialogs.merchant.actions.hideCart' | t) : ('dialogs.merchant.actions.viewCart' | t)"
             [disabled]="loading() || cartCount() === 0"
             (clicked)="toggleCart()"
         ></text-button>
-        <p class="cart-summary">Items in cart: {{ cartCount() }}</p>
+        <p class="cart-summary">{{ 'dialogs.merchant.itemsInCart' | t: { count: cartCount() } }}</p>
     </div>
 
     @if (showCart()) {
@@ -114,7 +114,7 @@
                     </span>
                     <text-button
                         [compact]="true"
-                        text="Undo"
+                        [text]="'dialogs.merchant.actions.undo' | t"
                         [disabled]="loading()"
                         (clicked)="removeCartLine(line)"
                     ></text-button>
@@ -131,7 +131,7 @@
     ></text-button>
     <text-button
         dialog-action
-        text="Close"
+        [text]="'dialogs.common.close' | t"
         [disabled]="loading()"
         (clicked)="close()"
     ></text-button>

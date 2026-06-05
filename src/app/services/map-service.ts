@@ -67,6 +67,7 @@ export class MapService {
     let movedToNewCell = false;
     let movedSanctuaryElement: SanctuaryElement | undefined;
     let movedLandmarkName = "";
+    let movedLandmarkId = "";
     let landedSpecialType: "sanctuary" | "landmark" | null = null;
     let movedOnTurn = 0;
     let movedPlayerStatuses: Player["statuses"] = [];
@@ -192,6 +193,7 @@ export class MapService {
             }
 
             movedLandmarkName = newCell.landmarkDisplayName;
+            movedLandmarkId = newCell.landmarkId ?? "";
             landedOnSpecialCell = true;
             landedSpecialType = "landmark";
           }
@@ -223,7 +225,8 @@ export class MapService {
         }
         if (cell.specialType === "landmark") {
           landedSpecialType = "landmark";
-          movedLandmarkName = cell.landmarkDisplayName ?? "Unknown Landmark";
+          movedLandmarkName = this.landmarksService.getLocalizedLandmarkNameFromCell(cell);
+          movedLandmarkId = cell.landmarkId ?? "";
         }
 
         const projectedPlayer: Player = {
@@ -288,16 +291,15 @@ export class MapService {
     if (landedSpecialType === "sanctuary") {
       await this.tryCreateLog(gameId, movingPlayer, "player.enterSanctuary", {
         sanctuary: movedSanctuaryElement,
-        sanctuaryLabel: this.sanctuaryElementToLabel(movedSanctuaryElement),
       });
     } else if (landedSpecialType === "landmark") {
       await this.tryCreateLog(gameId, movingPlayer, movedToNewCell ? "player.discoverLandmark" : "player.reachLandmark", {
-        landmarkName: movedLandmarkName || "Unknown Landmark",
+        landmarkId: movedLandmarkId,
+        landmarkName: movedLandmarkName || this.landmarksService.getLocalizedLandmarkNameFromCell(null),
       });
     } else if (movedToNewCell && landedBiome) {
       await this.tryCreateLog(gameId, movingPlayer, "player.discoverBiome", {
         biome: landedBiome,
-        biomeLabel: this.biomeToLabel(landedBiome),
       });
     }
 
@@ -308,7 +310,6 @@ export class MapService {
         environmentProgressionEvent === "discover" ? "player.discoverEnvironment" : "player.expandEnvironment",
         {
           biome: landedBiome,
-          biomeLabel: this.biomeToLabel(landedBiome),
         },
       );
     }

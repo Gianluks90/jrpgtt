@@ -5,17 +5,17 @@
     </div>
 
     <p class="info-text">
-        {{ providerLabel }} restores 5% HP per treatment.
-        Cost per treatment: <strong>{{ costPerUnit }}</strong> coins
+        {{ 'dialogs.doctor.restoresInfo' | t: { provider: providerLabel } }}
+        {{ 'dialogs.doctor.costPerTreatment' | t: { cost: costPerUnit } }}
         @if (timeOfDay === 'night') {
-            <span>(night tariff)</span>
+            <span>{{ 'dialogs.doctor.nightTariff' | t }}</span>
         }
     </p>
-    <p class="info-text">Current HP: <strong>{{ hpCurrent }}/{{ hpMax }}</strong></p>
+    <p class="info-text">{{ 'dialogs.doctor.currentHp' | t: { current: hpCurrent, max: hpMax } }}</p>
 
     <form [formGroup]="form">
         <div class="form-field">
-            <label for="doctorUnits">Treatments (5% each)</label>
+            <label for="doctorUnits">{{ 'dialogs.doctor.treatments' | t }}</label>
             <input
                 id="doctorUnits"
                 type="number"
@@ -24,25 +24,25 @@
                 min="1"
                 [max]="maxUnitsByHp"
             />
-            <p class="info-text">Maximum by HP: {{ maxUnitsByHp }} | maximum by coins: {{ maxUnitsByMoney }}</p>
+            <p class="info-text">{{ 'dialogs.doctor.maximums' | t: { hp: maxUnitsByHp, coins: maxUnitsByMoney } }}</p>
         </div>
     </form>
 
     @if (hpMissing <= 0) {
-        <p class="error-text">Your HP is already full.</p>
+        <p class="error-text">{{ 'dialogs.doctor.errors.hpFull' | t }}</p>
     }
 
     @if (maxUnitsByMoney <= 0 && hpMissing > 0) {
-        <p class="error-text">You do not have enough coins for a single treatment.</p>
+        <p class="error-text">{{ 'dialogs.doctor.errors.notEnoughCoinsSingle' | t }}</p>
     }
 
     @if (!hasEnoughMoneyForSelection && selectedUnits > 0) {
-        <p class="error-text">Selected treatments cost {{ totalCost }} coins, but you only have {{ playerMoney }}.</p>
+        <p class="error-text">{{ 'dialogs.doctor.errors.notEnoughCoinsSelection' | t: { cost: totalCost, money: playerMoney } }}</p>
     }
 
     @if (selectedUnits > 0) {
         <p class="info-text expected-row">
-            <span>Expected heal: <strong>+{{ expectedHeal }} HP</strong></span>
+            <span>{{ 'dialogs.doctor.expectedHeal' | t: { heal: expectedHeal } }}</span>
             <span class="spend-tag">
                 <span>-{{ totalCost }}</span>
                 <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
@@ -52,9 +52,9 @@
 
     <text-button
         dialog-action
-        text="Confirm"
+        [text]="'dialogs.common.confirm' | t"
         [disabled]="!canConfirm"
         (clicked)="confirm()"
     ></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

@@ -1,9 +1,9 @@
-<dialog-wrapper title="Resource exchange">
-    <p class="info-text">Exchange resources 1:1 with the village craftsman. Confirming this action ends your turn.</p>
+<dialog-wrapper [title]="'dialogs.resourceExchange.title' | t">
+    <p class="info-text">{{ 'dialogs.resourceExchange.description' | t }}</p>
 
     <form [formGroup]="form">
         <div class="form-field">
-            <label for="giveLabel">Give</label>
+            <label for="giveLabel">{{ 'dialogs.resourceExchange.give' | t }}</label>
             <select id="giveLabel" formControlName="giveLabel" (change)="onGiveChanged()">
                 @for (option of giveOptions; track option.label) {
                     <option [value]="option.label">{{ toLabel(option.label) }} (x{{ option.quantity }})</option>
@@ -12,7 +12,7 @@
         </div>
 
         <div class="form-field">
-            <label for="receiveLabel">Receive</label>
+            <label for="receiveLabel">{{ 'dialogs.resourceExchange.receive' | t }}</label>
             <select id="receiveLabel" formControlName="receiveLabel">
                 @for (option of receiveOptions; track option) {
                     <option [value]="option" [disabled]="option === selectedGiveLabel">{{ toLabel(option) }}</option>
@@ -21,7 +21,7 @@
         </div>
 
         <div class="form-field">
-            <label for="exchangeAmount">Amount</label>
+            <label for="exchangeAmount">{{ 'dialogs.resourceExchange.amount' | t }}</label>
             <input
                 id="exchangeAmount"
                 type="number"
@@ -31,30 +31,29 @@
                 [max]="maxAmount"
                 (blur)="onAmountBlur()"
             />
-            <p class="info-text">Maximum: {{ maxAmount }}</p>
+            <p class="info-text">{{ 'dialogs.resourceExchange.maximum' | t: { max: maxAmount } }}</p>
         </div>
     </form>
 
     @if (giveOptions.length === 0) {
-        <p class="error-text">You need at least 1 resource to perform an exchange.</p>
+        <p class="error-text">{{ 'dialogs.resourceExchange.noResources' | t }}</p>
     }
 
     @if (!canConfirm && selectedGiveLabel && selectedReceiveLabel && selectedAmount > 0) {
-        <p class="error-text">Invalid selection. Ensure resources differ and amount is within available quantity.</p>
+        <p class="error-text">{{ 'dialogs.resourceExchange.invalidSelection' | t }}</p>
     }
 
     @if (canConfirm && selectedGiveLabel && selectedReceiveLabel) {
         <p class="info-text">
-            You will exchange <strong>{{ selectedAmount }}</strong> {{ toLabel(selectedGiveLabel) }}
-            for <strong>{{ selectedAmount }}</strong> {{ toLabel(selectedReceiveLabel) }}.
+            {{ 'dialogs.resourceExchange.summary' | t: { amount: selectedAmount, give: toLabel(selectedGiveLabel), receive: toLabel(selectedReceiveLabel) } }}
         </p>
     }
 
     <text-button
         dialog-action
-        text="Confirm exchange"
+        [text]="'dialogs.resourceExchange.confirm' | t"
         [disabled]="!canConfirm"
         (clicked)="confirm()"
     ></text-button>
-    <text-button dialog-action text="Cancel" (clicked)="close()"></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

@@ -4,11 +4,14 @@ import {
   EnchantressRewardDialogRow,
   EnchantressRewardsConfig,
 } from "../models/EnchantressRewardsConfig";
+import { TranslationService } from "./translation-service";
 
 @Injectable({
   providedIn: "root",
 })
 export class EnchantressRewardsConfigService {
+  constructor(private translationService: TranslationService) {}
+
   private readonly configUrl = "/configs/variable-rewards-action-configs/enchantress-rewards.config.json";
   private configCache: EnchantressRewardsConfig | null = null;
   private loadingPromise: Promise<EnchantressRewardsConfig> | null = null;
@@ -66,9 +69,25 @@ export class EnchantressRewardsConfigService {
       return {
         id: reward.id,
         rangeLabel: `${reward.minTotal}-${reward.maxTotal}`,
-        effectLabel: reward.previewLabel,
+        effectLabel: this.getLocalizedPreviewLabel(reward),
       };
     });
+  }
+
+  public getLocalizedLabel(reward: EnchantressRewardDefinition): string {
+    if (typeof reward.labelKey === "string" && reward.labelKey.trim()) {
+      return this.translationService.tOrFallback(reward.labelKey, reward.label);
+    }
+
+    return reward.label;
+  }
+
+  public getLocalizedPreviewLabel(reward: EnchantressRewardDefinition): string {
+    if (typeof reward.previewLabelKey === "string" && reward.previewLabelKey.trim()) {
+      return this.translationService.tOrFallback(reward.previewLabelKey, reward.previewLabel);
+    }
+
+    return reward.previewLabel;
   }
 
   private parseConfig(raw: unknown): EnchantressRewardsConfig {
@@ -101,6 +120,8 @@ export class EnchantressRewardsConfigService {
       maxTotal?: unknown;
       label?: unknown;
       previewLabel?: unknown;
+      labelKey?: unknown;
+      previewLabelKey?: unknown;
       pendingMagicReward?: unknown;
       statuses?: unknown;
     };
@@ -129,6 +150,15 @@ export class EnchantressRewardsConfigService {
 
     if (typeof typed.previewLabel !== "string" || !typed.previewLabel.trim()) {
       throw new Error(`Invalid enchantress rewards configuration: reward '${typed.id}' has invalid previewLabel`);
+    }
+
+    if (typeof typed.labelKey !== "undefined" && (typeof typed.labelKey !== "string" || !typed.labelKey.trim())) {
+      throw new Error(`Invalid enchantress rewards configuration: reward '${typed.id}' has invalid labelKey`);
+    }
+
+    if (typeof typed.previewLabelKey !== "undefined"
+      && (typeof typed.previewLabelKey !== "string" || !typed.previewLabelKey.trim())) {
+      throw new Error(`Invalid enchantress rewards configuration: reward '${typed.id}' has invalid previewLabelKey`);
     }
 
     if (typeof typed.pendingMagicReward !== "undefined" && typeof typed.pendingMagicReward !== "boolean") {
@@ -169,6 +199,8 @@ export class EnchantressRewardsConfigService {
       maxTotal,
       label: typed.label,
       previewLabel: typed.previewLabel,
+      ...(typeof typed.labelKey === "string" ? { labelKey: typed.labelKey } : {}),
+      ...(typeof typed.previewLabelKey === "string" ? { previewLabelKey: typed.previewLabelKey } : {}),
       pendingMagicReward: typed.pendingMagicReward,
       statuses,
     };

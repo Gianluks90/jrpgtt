@@ -6,6 +6,8 @@
       "maxTotal": 16,
       "label": "Minified",
       "previewLabel": "Minified for 1 turn",
+      "labelKey": "dialogs.enchantress.rewards.minified.label",
+      "previewLabelKey": "dialogs.enchantress.rewards.minified.preview",
       "statuses": [
         {
           "key": "minified",
@@ -19,6 +21,8 @@
       "maxTotal": 32,
       "label": "Weakened",
       "previewLabel": "Weakened for 3 turns",
+      "labelKey": "dialogs.enchantress.rewards.weakened.label",
+      "previewLabelKey": "dialogs.enchantress.rewards.weakened.preview",
       "statuses": [
         {
           "key": "weakened",
@@ -32,6 +36,8 @@
       "maxTotal": 48,
       "label": "Hexed",
       "previewLabel": "Hexed for 3 turns",
+      "labelKey": "dialogs.enchantress.rewards.hexed.label",
+      "previewLabelKey": "dialogs.enchantress.rewards.hexed.preview",
       "statuses": [
         {
           "key": "hexed",
@@ -45,6 +51,8 @@
       "maxTotal": 64,
       "label": "Bravery",
       "previewLabel": "Bravery for 3 turns",
+      "labelKey": "dialogs.enchantress.rewards.bravery.label",
+      "previewLabelKey": "dialogs.enchantress.rewards.bravery.preview",
       "statuses": [
         {
           "key": "bravery",
@@ -58,6 +66,8 @@
       "maxTotal": 80,
       "label": "Focus",
       "previewLabel": "Focus for 3 turns",
+      "labelKey": "dialogs.enchantress.rewards.focus.label",
+      "previewLabelKey": "dialogs.enchantress.rewards.focus.preview",
       "statuses": [
         {
           "key": "focus",
@@ -71,6 +81,8 @@
       "maxTotal": 100,
       "label": "Arcane Jackpot",
       "previewLabel": "Magic placeholder: Bravery + Focus for 3 turns",
+      "labelKey": "dialogs.enchantress.rewards.jackpot.label",
+      "previewLabelKey": "dialogs.enchantress.rewards.jackpot.preview",
       "pendingMagicReward": true,
       "statuses": [
         {

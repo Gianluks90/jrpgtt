@@ -4,18 +4,17 @@ import { AuthService } from "../../services/_index";
 import { getAuth, onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { Router } from "@angular/router";
 import { TranslationPipe } from "../../pipes/translation-pipe";
-import { LanguageCode, TranslationService } from "../../services/translation-service";
+import { LanguageMenu } from "../../components/ui/language-menu/language-menu";
+import { SoundToggleButton } from "../../components/ui/sound-toggle-button/sound-toggle-button";
   
 @Component({
   selector: "app-landing-page",
-  imports: [TextButton, TranslationPipe],
+  imports: [TextButton, TranslationPipe, LanguageMenu, SoundToggleButton],
   templateUrl: "./landing-page.html",
   styleUrl: "./landing-page.scss",
 })
 export class LandingPage implements OnInit, OnDestroy {
   private authUnsubscribe: Unsubscribe | null = null;
-  private readonly translationService = inject(TranslationService);
-  protected readonly language = this.translationService.language;
 
   constructor(
     private authService: AuthService,
@@ -39,7 +38,4 @@ export class LandingPage implements OnInit, OnDestroy {
     void this.authService.login();
   }
 
-  public async setLanguage(language: LanguageCode): Promise<void> {
-    await this.translationService.setLanguage(language);
-  }
 }

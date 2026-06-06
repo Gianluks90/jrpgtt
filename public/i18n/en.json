@@ -2,23 +2,33 @@
   "ui": {
     "language": {
       "label": "Language",
-      "switcherAriaLabel": "Language switcher"
+      "switcherAriaLabel": "Language switcher",
+      "menuAriaLabel": "Languages menu",
+      "italian": "italiano",
+      "english": "english"
+    },
+    "sound": {
+      "toggleAriaLabel": "Toggle sounds on or off"
     }
   },
   "landing": {
     "welcome": "Welcome to the Landing Page!",
-    "login": "Login",
-    "googleRequired": "*Google account required"
+    "tagline": "Explore, fight and win",
+    "login": "Login/Sign up",
+    "googleRequired": "*Google account required. If this is your first login, an account will be created automatically"
   },
   "home": {
     "title": "Home Page",
-    "inGame": "You are currently in the game: {gameName}.",
+    "runningGameLabel": "Current game",
     "inGameHint": "Go to the lobby to see game details and start playing!",
+    "inGameResumeHint": "Press Play to resume the game",
     "noGame": "You are not currently in a game. Join or create a new game to get started!",
     "actions": {
       "menu": "Menu",
       "newGame": "New game",
       "joinGame": "Join game",
+      "abandon": "Abandon",
+      "disconnect": "Disconnect",
       "deleteGame": "Delete game",
       "leaveGame": "Leave game",
       "play": "Play",

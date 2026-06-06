@@ -1,15 +1,20 @@
 <div class="home-page-main-container">
-    <div class="language-switcher" [attr.aria-label]="'ui.language.switcherAriaLabel' | t">
-        <span>{{ 'ui.language.label' | t }}</span>
-        <button type="button" [class.active]="language() === 'en'" (click)="setLanguage('en')">EN</button>
-        <button type="button" [class.active]="language() === 'it'" (click)="setLanguage('it')">IT</button>
+    <div class="top-controls">
+        <sound-toggle-button></sound-toggle-button>
+        <language-menu class="top-language-menu"></language-menu>
     </div>
+    <p class="app-version">v.{{ appVersion }}</p>
 
-    <h1>{{ 'home.title' | t }}</h1>
-    <p class="info-text">{{ appVersion }}</p>
+    <h1 class="app-title">Amulet</h1>
     @if(myGame()) {
-        <p class="info-text">{{ 'home.inGame' | t: { gameName: myGame()?.name ?? '' } }}</p>
-        <p class="info-text">{{ 'home.inGameHint' | t }}</p>
+        <p class="running-game-label">{{ 'home.runningGameLabel' | t }}</p>
+        <hr class="running-game-separator">
+        <h2 class="running-game-title">"{{ myGame()?.name }}"</h2>
+        @if (myGame()?.status === 'waiting') {
+            <p class="info-text">{{ 'home.inGameHint' | t }}</p>
+        } @else {
+            <p class="info-text">{{ 'home.inGameResumeHint' | t }}</p>
+        }
     } @else {
         <p class="info-text">{{ 'home.noGame' | t }}</p>
     }
@@ -26,27 +31,20 @@
                     iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                     (clicked)="openJoinGameDialog()"
                 ></text-button>
+                <text-button [text]="'home.actions.disconnect' | t" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
             } @else {
-                @if (isOwner()) {
-                    <text-button
-                        [text]="'home.actions.deleteGame' | t"
-                        iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                        (clicked)="openDeleteDialog()"
-                    ></text-button>
-                } @else {
-                    <text-button
-                        [text]="'home.actions.leaveGame' | t"
-                        iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                        (clicked)="openConfirmDialog()"
-                    ></text-button>
-                }
                 <text-button
-                    [text]="playActionLabel()"
+                    [text]="'home.actions.play' | t"
                     [iconUrl]="isOwner() && myGame()?.status !== 'waiting' ? './icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/group_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
                     (clicked)="onPlay()"
                 ></text-button>
+                <text-button
+                    [text]="'home.actions.abandon' | t"
+                    [iconUrl]="isOwner() ? './icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
+                    (clicked)="onAbandon()"
+                ></text-button>
+                <text-button [text]="'home.actions.disconnect' | t" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
             }
-            <text-button [text]="'home.actions.logout' | t" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
         </div>
     } @else {
         <div class="mobile-actions-container">
@@ -65,31 +63,28 @@
                         iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                         (clicked)="openJoinGameDialog()"
                     ></text-button>
-                } @else {
-                    @if (isOwner()) {
-                        <text-button
-                            [text]="'home.actions.deleteGame' | t"
-                            iconUrl="./icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                            (clicked)="openDeleteDialog()"
-                        ></text-button>
-                    } @else {
-                        <text-button
-                            [text]="'home.actions.leaveGame' | t"
-                            iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                            (clicked)="openConfirmDialog()"
-                        ></text-button>
-                    }
                     <text-button
-                        [text]="playActionLabel()"
+                        [text]="'home.actions.disconnect' | t"
+                        iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="authService.logout()"
+                    ></text-button>
+                } @else {
+                    <text-button
+                        [text]="'home.actions.play' | t"
                         [iconUrl]="isOwner() && myGame()?.status !== 'waiting' ? './icons/play_arrow_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/group_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
                         (clicked)="onPlay()"
                     ></text-button>
+                    <text-button
+                        [text]="'home.actions.abandon' | t"
+                        [iconUrl]="isOwner() ? './icons/delete_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
+                        (clicked)="onAbandon()"
+                    ></text-button>
+                    <text-button
+                        [text]="'home.actions.disconnect' | t"
+                        iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="authService.logout()"
+                    ></text-button>
                 }
-                <text-button
-                    [text]="'home.actions.logout' | t"
-                    iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
-                    (clicked)="authService.logout()"
-                ></text-button>
             </action-menu>
         </div>
     }

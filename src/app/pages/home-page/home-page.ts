@@ -18,11 +18,13 @@ import { ActionMenu } from "../../components/ui/action-menu/action-menu";
 import { APP_VERSION } from "../../consts/app-version";
 import { TilesConfigService } from "../../services/tiles-config-service";
 import { TranslationPipe } from "../../pipes/translation-pipe";
-import { LanguageCode, TranslationService } from "../../services/translation-service";
+import { TranslationService } from "../../services/translation-service";
+import { LanguageMenu } from "../../components/ui/language-menu/language-menu";
+import { SoundToggleButton } from "../../components/ui/sound-toggle-button/sound-toggle-button";
 
 @Component({
   selector: "app-home-page",
-  imports: [TextButton, ActionMenu, TranslationPipe],
+  imports: [TextButton, ActionMenu, TranslationPipe, LanguageMenu, SoundToggleButton],
   templateUrl: "./home-page.html",
   styleUrl: "./home-page.scss",
 })
@@ -35,15 +37,9 @@ export class HomePage implements OnInit {
   public dialog = inject(Dialog);
   public translationService = inject(TranslationService);
   public readonly appVersion = APP_VERSION;
-  public readonly language = this.translationService.language;
 
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
   public isMobile = this.breakpointService.isMobile;
-  public playActionLabel = computed(() => {
-    return this.isOwner() && this.myGame()?.status !== "waiting"
-      ? this.translationService.tOrFallback("home.actions.play", "Play")
-      : this.translationService.tOrFallback("home.actions.lobby", "Lobby");
-  });
   
   public isOwner = computed(() => {
     const currentUserId = getAuth().currentUser?.uid;
@@ -201,8 +197,13 @@ export class HomePage implements OnInit {
     }
   }
 
-  public async setLanguage(language: LanguageCode): Promise<void> {
-    await this.translationService.setLanguage(language);
+  public onAbandon(): void {
+    if (this.isOwner()) {
+      this.openDeleteDialog();
+      return;
+    }
+
+    this.openConfirmDialog();
   }
 
   public onPlay(): void {

@@ -1,0 +1,45 @@
+:host {
+    display: block;
+}
+
+.language-menu-trigger {
+    background: none;
+    border: thick double var(--fg-color);
+    color: var(--fg-color);
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    .language-icon {
+        width: 24px;
+        height: 24px;
+        background-color: var(--fg-color);
+    }
+}
+
+.language-menu-dropdown {
+    margin-top: 8px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    min-width: 132px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    text-button {
+        display: block;
+    }
+
+    text-button::ng-deep .text-button {
+        text-transform: lowercase;
+    }
+
+    text-button.active::ng-deep .text-button {
+        background: rgba(255, 255, 255, 0.16);
+    }
+}

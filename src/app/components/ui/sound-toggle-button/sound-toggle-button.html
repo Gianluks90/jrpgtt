@@ -1,0 +1,15 @@
+<button
+    type="button"
+    class="sound-toggle-button"
+    [attr.aria-label]="'ui.sound.toggleAriaLabel' | t"
+    (click)="toggleSound()"
+>
+    <span
+        class="button-icon"
+        [style.mask]="(
+            isEnabled()
+                ? 'url(./icons/volume_up_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg)'
+                : 'url(./icons/no_sound_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg)'
+        ) + ' no-repeat center / contain'"
+    ></span>
+</button>

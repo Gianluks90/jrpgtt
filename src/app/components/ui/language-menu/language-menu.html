@@ -1,0 +1,26 @@
+<button
+    type="button"
+    class="language-menu-trigger"
+    [attr.aria-label]="'ui.language.switcherAriaLabel' | t"
+    [cdkMenuTriggerFor]="languageMenuPanel"
+    #languageMenuTrigger="cdkMenuTriggerFor"
+>
+    <span class="language-icon" [style.mask]="'url(./icons/language_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg) no-repeat center / contain'"></span>
+</button>
+
+<ng-template #languageMenuPanel>
+    <div class="language-menu-dropdown" cdkMenu [attr.aria-label]="'ui.language.menuAriaLabel' | t">
+        <text-button
+            cdkMenuItem
+            [text]="'ui.language.italian' | t"
+            [class.active]="language() === 'it'"
+            (clicked)="setLanguage('it', languageMenuTrigger)"
+        ></text-button>
+        <text-button
+            cdkMenuItem
+            [text]="'ui.language.english' | t"
+            [class.active]="language() === 'en'"
+            (clicked)="setLanguage('en', languageMenuTrigger)"
+        ></text-button>
+    </div>
+</ng-template>

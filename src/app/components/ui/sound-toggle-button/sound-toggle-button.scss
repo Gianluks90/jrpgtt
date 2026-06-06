@@ -1,0 +1,22 @@
+:host {
+    display: block;
+}
+
+.sound-toggle-button {
+    background: none;
+    border: thick double var(--fg-color);
+    color: var(--fg-color);
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    .button-icon {
+        width: 24px;
+        height: 24px;
+        background-color: var(--fg-color);
+    }
+}

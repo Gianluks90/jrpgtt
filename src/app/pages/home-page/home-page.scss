@@ -1,4 +1,5 @@
 .home-page-main-container {
+    position: relative;
     height: 100%;
     width: 100%;
     display: flex;
@@ -7,31 +8,47 @@
     flex-direction: column;
     gap: 12px;
 
-    .language-switcher {
+    .top-controls {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        z-index: 2;
         display: inline-flex;
         align-items: center;
         gap: 8px;
+    }
 
-        span {
-            font-size: 0.9rem;
-            opacity: 0.85;
-        }
+    .app-version {
+        position: absolute;
+        top: 26px;
+        left: 24px;
+        margin: 0;
+        font-size: 0.68rem;
+        line-height: 1;
+        opacity: 0.82;
+    }
 
-        button {
-            border: 1px solid rgba(255, 255, 255, 0.45);
-            background: rgba(255, 255, 255, 0.08);
-            color: inherit;
-            border-radius: 8px;
-            padding: 4px 10px;
-            font-size: 0.8rem;
-            letter-spacing: 0.04em;
-            cursor: pointer;
-        }
+    .running-game-label {
+        margin: 0;
+        font-size: 0.75rem;
+        opacity: 0.86;
+        letter-spacing: 0.05em;
+    }
 
-        button.active {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: rgba(255, 255, 255, 0.75);
-        }
+    .running-game-title {
+        margin: 0;
+        font-family: 'Jacquard 12', serif;
+        font-size: clamp(2.4rem, 8vw, 4.4rem);
+        color: var(--bad-color);
+        line-height: 0.95;
+    }
+
+    .running-game-separator {
+        margin: 2px 0 4px;
+        width: 50%;
+        border: 0;
+        border-top: 1px solid var(--fg-color);
+        opacity: 0.7;
     }
 
     & > .actions-container {
@@ -44,6 +61,15 @@
         align-items: center;
         gap: 12px;
         width: max-content;
+
+        text-button {
+            width: 220px;
+            display: block;
+        }
+
+        text-button::ng-deep .text-button {
+            width: 100%;
+        }
     }
 
     & > .mobile-actions-container {
@@ -55,16 +81,24 @@
     }
 }
 
+h1.app-title {
+    font-family: 'Jacquard 12', serif;
+    font-size: clamp(5rem, 24vw, 15rem);
+    margin: 0;
+    color: var(--bad-color);
+    line-height: 0.9;
+}
+
 @media (max-width: 768px) {
     .home-page-main-container {
         padding: 20px;
         justify-content: flex-start;
         text-align: center;
 
-        h1 {
+        h1.app-title {
             margin-top: 24px;
             margin-bottom: 8px;
-            font-size: 1.7rem;
+            font-size: clamp(4.2rem, 22vw, 6rem);
         }
 
         .info-text {
@@ -72,8 +106,15 @@
             line-height: 1.45;
         }
 
-        .language-switcher {
-            margin-top: 12px;
+        .top-controls {
+            top: 16px;
+            right: 16px;
+        }
+
+        .app-version {
+            top: 18px;
+            left: 16px;
+            font-size: 0.62rem;
         }
 
         & > .mobile-actions-container {

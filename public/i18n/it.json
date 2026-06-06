@@ -2,23 +2,33 @@
     "ui": {
         "language": {
             "label": "Lingua",
-            "switcherAriaLabel": "Selettore lingua"
+            "switcherAriaLabel": "Selettore lingua",
+            "menuAriaLabel": "Menu lingue",
+            "italian": "Italiano",
+            "english": "English"
+        },
+        "sound": {
+            "toggleAriaLabel": "Attiva o disattiva i suoni"
         }
     },
     "landing": {
         "welcome": "Benvenuto nella pagina iniziale!",
-        "login": "Accedi",
-        "googleRequired": "*Account Google richiesto"
+        "tagline": "Esplora, combatti e vinci",
+        "login": "Accedi/Registrati",
+        "googleRequired": "*Account Google richiesto, se è la prima volta che si accede verrà creato un account automaticamente"
     },
     "home": {
         "title": "Home",
-        "inGame": "Sei attualmente nella partita: {gameName}.",
+        "runningGameLabel": "Partita in corso",
         "inGameHint": "Vai alla lobby per vedere i dettagli della partita e iniziare a giocare!",
+        "inGameResumeHint": "Premi Gioca per riprendere la partita",
         "noGame": "Al momento non sei in una partita. Entra o creane una nuova per iniziare!",
         "actions": {
             "menu": "Menu",
             "newGame": "Nuova partita",
             "joinGame": "Entra in partita",
+            "abandon": "Abbandona",
+            "disconnect": "Disconnettiti",
             "deleteGame": "Elimina partita",
             "leaveGame": "Lascia partita",
             "play": "Gioca",

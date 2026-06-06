@@ -1,11 +1,19 @@
 <div class="landing-page-main-container">
-    <div class="language-switcher" [attr.aria-label]="'ui.language.switcherAriaLabel' | t">
-        <span>{{ 'ui.language.label' | t }}</span>
-        <button type="button" [class.active]="language() === 'en'" (click)="setLanguage('en')">EN</button>
-        <button type="button" [class.active]="language() === 'it'" (click)="setLanguage('it')">IT</button>
+    <div class="top-controls">
+        <sound-toggle-button></sound-toggle-button>
+        <language-menu class="top-language-menu"></language-menu>
     </div>
 
-    <p>{{ 'landing.welcome' | t }}</p>
-    <text-button [text]="'landing.login' | t" iconUrl="./icons/login_20dp_E3E3E3_FILL1_wght400_GRAD-25_opsz20.svg" (clicked)="handleLogin()"></text-button>
-    <p class="info-text">{{ 'landing.googleRequired' | t }}</p>
+    <h1 class="app-title">Amulet</h1>
+    <p class="landing-tagline">{{ 'landing.tagline' | t }}</p>
+
+    <div class="bottom-login-container">
+        <text-button
+            [text]="'landing.login' | t"
+            iconUrl="./icons/login_20dp_E3E3E3_FILL1_wght400_GRAD-25_opsz20.svg"
+            [fullWidth]="true"
+            (clicked)="handleLogin()"
+        ></text-button>
+        <p class="info-text">{{ 'landing.googleRequired' | t }}</p>
+    </div>
 </div>

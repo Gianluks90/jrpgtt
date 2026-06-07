@@ -21,6 +21,7 @@ import {
   LandmarkTarget,
 } from "../models/Landmark";
 import { LandmarksConfig } from "../models/LandmarksConfig";
+import { LandmarkPlacementConfig } from "../models/MapConfig";
 import { QuadrantId } from "../models/WorldZone";
 import { LandmarksConfigService } from "./landmarks-config-service";
 import { WorldZonesService } from "./world-zones-service";
@@ -31,6 +32,12 @@ interface PlacementCoordinate {
   y: number;
 }
 
+interface LandmarkPlacementCandidate {
+  quadrantId: QuadrantId;
+  categoryOrder: LandmarkCategory[];
+  selectedCoordinates: PlacementCoordinate[];
+}
+
 type PlacementSpacingMode = "strict-gap" | "allow-diagonal-touch";
 
 @Injectable({
@@ -38,6 +45,14 @@ type PlacementSpacingMode = "strict-gap" | "allow-diagonal-touch";
 })
 export class LandmarksService {
   private readonly quadrantOrder: QuadrantId[] = ["Q1", "Q2", "Q3", "Q4"];
+
+  private readonly defaultPlacementConfig: Required<LandmarkPlacementConfig> = {
+    maxPlacementAttempts: 40,
+    alignmentThreshold: 3,
+    overflowPenaltyMultiplier: 4,
+    targetMinimumManhattanDistance: 4,
+    minDistancePenaltyMultiplier: 1,
+  };
 
   constructor(
     private worldZonesService: WorldZonesService,
@@ -52,36 +67,45 @@ export class LandmarksService {
   public async generateLandmarkTargets(
     mapSize: number,
     excludedCoordinates: Array<{ x: number; y: number }>,
+    placementConfig?: LandmarkPlacementConfig,
   ): Promise<LandmarkTarget[]> {
     const config = await this.landmarksConfigService.loadConfig();
-    const excluded = new Set<string>([
-      ...excludedCoordinates.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
-      ...SPECIAL_CELLS.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
-    ]);
+    const scoring = this.resolvePlacementConfig(placementConfig);
+    let bestCandidate: LandmarkPlacementCandidate[] | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
 
-    const categoryOrder = this.getCategoryOrder(config);
+    for (let attempt = 0; attempt < scoring.maxPlacementAttempts; attempt++) {
+      const candidate = this.tryBuildPlacementCandidate(mapSize, excludedCoordinates, config);
+      if (!candidate) {
+        continue;
+      }
+
+      const score = this.scorePlacementCandidate(candidate, scoring);
+      if (score < bestScore) {
+        bestScore = score;
+        bestCandidate = candidate;
+      }
+
+      if (score <= 0) {
+        break;
+      }
+    }
+
+    if (!bestCandidate) {
+      throw new Error("Could not generate landmark targets with the current constraints");
+    }
+
     const definitionsByCategory = this.buildDefinitionsByCategory(this.getDefinitions(config));
     const categoryIndices: Partial<Record<LandmarkCategory, number>> = {};
     const midAlignmentPool = this.shuffleArray([...this.getMidAlignmentDistribution(config)]);
     let midAlignmentIndex = 0;
 
     const targets: LandmarkTarget[] = [];
-    for (const quadrantId of this.quadrantOrder) {
-      const availableCoordinates = this.buildQuadrantCandidates(quadrantId, mapSize, excluded);
-      if (availableCoordinates.length < categoryOrder.length) {
-        throw new Error(`Not enough free cells in quadrant ${quadrantId} to place landmarks`);
-      }
-
-      const selectedCoordinates = this.selectLandmarkCoordinatesForQuadrant(availableCoordinates, categoryOrder.length);
-      if (selectedCoordinates.length < categoryOrder.length) {
-        throw new Error(`Could not place spaced landmarks in quadrant ${quadrantId}`);
-      }
-
-      categoryOrder.forEach((category, index) => {
-        const coordinate = selectedCoordinates[index];
+    for (const quadrantPlacement of bestCandidate) {
+      quadrantPlacement.categoryOrder.forEach((category, index) => {
+        const coordinate = quadrantPlacement.selectedCoordinates[index];
         if (!coordinate) return;
 
-        excluded.add(this.cellId(coordinate.x, coordinate.y));
         const landmarkDefinition = this.pickDefinitionForCategory(category, definitionsByCategory, categoryIndices);
 
         let alignmentModifier: LandmarkAlignmentModifier | undefined;
@@ -95,7 +119,7 @@ export class LandmarksService {
           y: coordinate.y,
           landmarkId: landmarkDefinition.id,
           category,
-          quadrantId,
+          quadrantId: quadrantPlacement.quadrantId,
         };
 
         if (alignmentModifier) {
@@ -107,6 +131,168 @@ export class LandmarksService {
     }
 
     return targets;
+  }
+
+  private resolvePlacementConfig(config: LandmarkPlacementConfig | undefined): Required<LandmarkPlacementConfig> {
+    const maxPlacementAttempts = this.normalizePositiveInt(
+      config?.maxPlacementAttempts,
+      this.defaultPlacementConfig.maxPlacementAttempts,
+    );
+    const alignmentThreshold = this.normalizePositiveInt(
+      config?.alignmentThreshold,
+      this.defaultPlacementConfig.alignmentThreshold,
+    );
+    const overflowPenaltyMultiplier = this.normalizePositiveInt(
+      config?.overflowPenaltyMultiplier,
+      this.defaultPlacementConfig.overflowPenaltyMultiplier,
+    );
+    const targetMinimumManhattanDistance = this.normalizePositiveInt(
+      config?.targetMinimumManhattanDistance,
+      this.defaultPlacementConfig.targetMinimumManhattanDistance,
+    );
+    const minDistancePenaltyMultiplier = this.normalizePositiveInt(
+      config?.minDistancePenaltyMultiplier,
+      this.defaultPlacementConfig.minDistancePenaltyMultiplier,
+    );
+
+    return {
+      maxPlacementAttempts,
+      alignmentThreshold,
+      overflowPenaltyMultiplier,
+      targetMinimumManhattanDistance,
+      minDistancePenaltyMultiplier,
+    };
+  }
+
+  private tryBuildPlacementCandidate(
+    mapSize: number,
+    excludedCoordinates: Array<{ x: number; y: number }>,
+    config: LandmarksConfig,
+  ): LandmarkPlacementCandidate[] | null {
+    const excluded = new Set<string>([
+      ...excludedCoordinates.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
+      ...SPECIAL_CELLS.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
+    ]);
+
+    const categoryOrder = this.getCategoryOrder(config);
+    const placement: LandmarkPlacementCandidate[] = [];
+
+    for (const quadrantId of this.quadrantOrder) {
+      const availableCoordinates = this.buildQuadrantCandidates(quadrantId, mapSize, excluded);
+      if (availableCoordinates.length < categoryOrder.length) {
+        return null;
+      }
+
+      const selectedCoordinates = this.selectLandmarkCoordinatesForQuadrant(availableCoordinates, categoryOrder.length);
+      if (selectedCoordinates.length < categoryOrder.length) {
+        return null;
+      }
+
+      for (const coordinate of selectedCoordinates) {
+        excluded.add(this.cellId(coordinate.x, coordinate.y));
+      }
+
+      placement.push({
+        quadrantId,
+        categoryOrder: [...categoryOrder],
+        selectedCoordinates,
+      });
+    }
+
+    return placement;
+  }
+
+  private scorePlacementCandidate(
+    candidate: LandmarkPlacementCandidate[],
+    scoring: Required<LandmarkPlacementConfig>,
+  ): number {
+    const coordinates = candidate.flatMap((entry) => entry.selectedCoordinates);
+    const byMainDiagonal = new Map<number, number>();
+    const bySecondaryDiagonal = new Map<number, number>();
+    const byColumn = new Map<number, number>();
+    const byRow = new Map<number, number>();
+
+    for (const coordinate of coordinates) {
+      byMainDiagonal.set(coordinate.x - coordinate.y, (byMainDiagonal.get(coordinate.x - coordinate.y) ?? 0) + 1);
+      bySecondaryDiagonal.set(coordinate.x + coordinate.y, (bySecondaryDiagonal.get(coordinate.x + coordinate.y) ?? 0) + 1);
+      byColumn.set(coordinate.x, (byColumn.get(coordinate.x) ?? 0) + 1);
+      byRow.set(coordinate.y, (byRow.get(coordinate.y) ?? 0) + 1);
+    }
+
+    let penalty = 0;
+    penalty += this.sumAlignmentPenalties(
+      byMainDiagonal.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+    penalty += this.sumAlignmentPenalties(
+      bySecondaryDiagonal.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+    penalty += this.sumAlignmentPenalties(
+      byColumn.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+    penalty += this.sumAlignmentPenalties(
+      byRow.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+
+    const minDistance = this.minimumManhattanDistance(coordinates);
+    if (Number.isFinite(minDistance)) {
+      penalty += Math.max(0, scoring.targetMinimumManhattanDistance - minDistance) * scoring.minDistancePenaltyMultiplier;
+    }
+
+    return penalty;
+  }
+
+  private sumAlignmentPenalties(
+    counts: Iterable<number>,
+    threshold: number,
+    overflowPenaltyMultiplier: number,
+  ): number {
+    let penalty = 0;
+    for (const count of counts) {
+      if (count <= threshold) continue;
+      const overflow = count - threshold;
+      penalty += overflow * overflow * overflowPenaltyMultiplier;
+    }
+    return penalty;
+  }
+
+  private normalizePositiveInt(value: unknown, fallback: number): number {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return fallback;
+    }
+
+    const normalized = Math.floor(numeric);
+    if (normalized <= 0) {
+      return fallback;
+    }
+
+    return normalized;
+  }
+
+  private minimumManhattanDistance(coordinates: PlacementCoordinate[]): number {
+    if (coordinates.length < 2) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    let minDistance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < coordinates.length; i++) {
+      for (let j = i + 1; j < coordinates.length; j++) {
+        const first = coordinates[i];
+        const second = coordinates[j];
+        const distance = Math.abs(first.x - second.x) + Math.abs(first.y - second.y);
+        minDistance = Math.min(minDistance, distance);
+      }
+    }
+
+    return minDistance;
   }
 
   public findTargetAtCoordinate(targets: LandmarkTarget[] | undefined, x: number, y: number): LandmarkTarget | null {

@@ -664,6 +664,7 @@ export class GameService {
     context.worldState.landmarkTargets = await this.landmarksService.generateLandmarkTargets(
       context.config.map.size,
       excludedCoordinates,
+      context.config.map.landmarkPlacement,
     );
   }
 

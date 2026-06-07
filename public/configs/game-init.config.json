@@ -2,6 +2,13 @@
   "map": {
     "size": 10,
     "specialTilesCount": 4,
+    "landmarkPlacement": {
+      "maxPlacementAttempts": 40,
+      "alignmentThreshold": 3,
+      "overflowPenaltyMultiplier": 4,
+      "targetMinimumManhattanDistance": 4,
+      "minDistancePenaltyMultiplier": 1
+    },
     "spawnColumns": [0],
     "spawnRule": {
       "allowedRegion": "first"

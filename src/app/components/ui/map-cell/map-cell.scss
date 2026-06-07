@@ -108,40 +108,23 @@
     mask-image: var(--sanctuary-icon);
 }
 
+.special-cell.landmark-cell.revealed-cell::before {
+    opacity: 0.9;
+    background: var(--landmark-icon-color, rgba(36, 36, 36, 0.92));
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 58% 58%;
+    mask-size: 58% 58%;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-image: var(--landmark-icon);
+    mask-image: var(--landmark-icon);
+}
+
 .special-cell.movable-cell {
     box-shadow:
         inset 0 0 0 1px rgba(255, 239, 176, 0.75),
         0 0 0 1px rgba(107, 79, 23, 0.95);
-}
-
-.landmark-marker {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 14px;
-    height: 14px;
-    background: rgba(255, 255, 255, 0.97);
-    -webkit-mask-image: var(--landmark-icon);
-    mask-image: var(--landmark-icon);
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: center;
-    mask-position: center;
-    -webkit-mask-size: 12px 12px;
-    mask-size: 12px 12px;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.85));
-    z-index: 4;
-    pointer-events: none;
-}
-
-.landmark-notch {
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    width: 0;
-    height: 0;
-    border-top: 7px solid rgba(235, 210, 118, 0.98);
-    border-right: 7px solid transparent;
 }
 
 .environment-hover-cell::after {
@@ -229,33 +212,39 @@
 .map-cell.biome-plains {
     --biome-icon: url("/map-icons/plains-tile-icon.svg");
     --tile-icon-color: #5f7250;
+    --landmark-icon-color: #435037;
     background: #788b69;
 }
 
 .map-cell.biome-forest {
     --biome-icon: url("/map-icons/forest-tile-icon.svg");
     --tile-icon-color: #314131;
+    --landmark-icon-color: #202d20;
     background: #496149;
 }
 
 .map-cell.biome-mountain {
     --biome-icon: url("/map-icons/mountain-tile-icon.svg");
     --tile-icon-color: #5f5e5c;
+    --landmark-icon-color: #434240;
     background: #7a7977;
 }
 
 .map-cell.biome-water {
     --biome-icon: url("/map-icons/water-tile-icon.svg");
     --tile-icon-color: #374b69;
+    --landmark-icon-color: #24354d;
     background: #4b658d;
 }
 
 .map-cell.biome-desert {
+    --landmark-icon-color: #6f5d3d;
     background: #9f8a64;
 }
 
 .map-cell.biome-ruins {
     --biome-icon: url("/map-icons/ruins-tile-icon.svg");
     --tile-icon-color: #52463f;
+    --landmark-icon-color: #3b302a;
     background: #665953;
 }

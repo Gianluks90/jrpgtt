@@ -37,12 +37,6 @@
         <div class="impassable-cross" aria-hidden="true"></div>
     }
 
-    @if (revealed() && isLandmarkCell() && landmarkIconUrl()) {
-        <div class="landmark-marker" aria-hidden="true">
-            <span class="landmark-notch"></span>
-        </div>
-    }
-
     @if (players().length > 0) {
         <div class="player-marker-cluster">
             <div class="player-marker flashing-text" [style.--marker-color]="markerColor()"></div>

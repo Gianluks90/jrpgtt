@@ -22,6 +22,7 @@ export class EnvironmentService {
       const root = mapCellsById[cellId];
       if (!root) continue;
       if (root.isSpecial === true) continue;
+      const rootBiome = this.getEffectiveBiome(root);
 
       const queue: string[] = [cellId];
       const component: string[] = [];
@@ -43,7 +44,7 @@ export class EnvironmentService {
           const neighborCell = mapCellsById[neighborId];
           if (!neighborCell) continue;
           if (neighborCell.isSpecial === true) continue;
-          if (neighborCell.biome !== root.biome) continue;
+          if (this.getEffectiveBiome(neighborCell) !== rootBiome) continue;
 
           visited.add(neighborId);
           queue.push(neighborId);
@@ -52,7 +53,7 @@ export class EnvironmentService {
 
       if (component.length >= 2) {
         environments.push({
-          biome: root.biome,
+          biome: rootBiome,
           cellIds: component,
         });
       }
@@ -230,5 +231,9 @@ export class EnvironmentService {
 
   private isInsideBounds(x: number, y: number, size: number): boolean {
     return x >= 0 && x < size && y >= 0 && y < size;
+  }
+
+  private getEffectiveBiome(cell: MapCell): BiomeType {
+    return cell.worldEventBiomeOverride ?? cell.biome;
   }
 }

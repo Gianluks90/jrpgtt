@@ -25,6 +25,34 @@
     "noGame": "You are not currently in a game. Join or create a new game to get started!",
     "actions": {
       "menu": "Menu",
+    "worldEventTitle": {
+      "default": "World Event",
+      "none": "No change",
+      "forest": {
+        "negative": "Expansion",
+        "positive": "Lush Nature"
+      },
+      "desert": {
+        "negative": "Desertification",
+        "positive": "Favorable Winds"
+      },
+      "water": {
+        "negative": "Flood",
+        "positive": "Magic Spring"
+      },
+      "plains": {
+        "negative": "Shooting Range",
+        "positive": "Open Field"
+      },
+      "mountain": {
+        "negative": "Earthquake",
+        "positive": "Ancient Vein"
+      },
+      "ruins": {
+        "negative": "Ancient Corruption",
+        "positive": "Lost Archive"
+      }
+    },
       "newGame": "New game",
       "joinGame": "Join game",
       "abandon": "Abandon",
@@ -424,6 +452,13 @@
       "ariaLabel": "World time",
       "prefix": "World time"
     },
+    "worldEventFlow": {
+      "title": "World Event",
+      "announcing": "{outcome}: target {targetBiome}, driver {driverBiome}. Preparing...",
+      "propagating": "Applying mutations {propagatedCellsCount}/{totalMutations}...",
+      "summary": "Mutation complete: {propagatedCellsCount}/{totalMutations} cells updated.",
+      "completed": "World Event completed."
+    },
     "timeOfDay": {
       "title": "Time",
       "titleWithRounds": "Time ({rounds} rounds)",
@@ -438,6 +473,12 @@
       "discovered": "Discovered",
       "activeShrines": "Active shrines",
       "worldEvent": "World event",
+      "worldEventSummary": "{title} | {outcome} | target {targetBiome} / driver {driverBiome} | mutated {cellsMutated}/{cellsAffected}",
+      "worldEventOutcome": {
+        "negative": "Negative",
+        "positive": "Positive",
+        "none": "No change"
+      },
       "activePlayer": "Active player",
       "helpTitle": "Help",
       "help": {
@@ -528,6 +569,11 @@
       "info": "Info",
       "region": "Region",
       "coordinates": "Coordinates XY",
+      "transformation": "Transformation",
+      "transformedNo": "No",
+      "transformedFromTo": "Yes ({from} -> {to})",
+      "conditions": "Conditions",
+      "conditionNone": "None",
       "environment": "Environment",
       "enemiesLevel": "Enemies level",
       "special": "Special",
@@ -561,7 +607,31 @@
       "none": "None",
       "no": "No",
       "yesCells": "Yes ({count} cells)",
-      "unknownBiome": "? ? ?"
+      "unknownBiome": "? ? ?",
+      "conditionLabel": {
+        "hostile-environment": "Hostile environment",
+        "regenerating-waters": "Regenerating waters",
+        "abundant-resources": "Abundant resources",
+        "open-ground": "Open ground",
+        "swift-path": "Swift path",
+        "impassable": "Impassable",
+        "vein-of-plenty": "Vein of plenty",
+        "ancient-knowledge": "Ancient knowledge",
+        "cursed-ground": "Cursed ground",
+        "enemy-level-bonus-by-region-value": "Enemy level bonus by region"
+      },
+      "conditionDescription": {
+        "hostile-environment": "Inflicts HP damage per connected biome cell unless protected by an active status.",
+        "regenerating-waters": "Restores HP based on connected environment size, up to a capped amount.",
+        "abundant-resources": "Doubles resources gained from exploration and gather actions on this cell.",
+        "open-ground": "Allows diagonal movement from this cell.",
+        "swift-path": "Improves movement from this cell with enhanced traversal.",
+        "impassable": "Blocks entry into this cell.",
+        "vein-of-plenty": "Doubles minerals gained on this cell.",
+        "ancient-knowledge": "Grants bonus experience when ending your turn on this cell.",
+        "cursed-ground": "Reduces luck-check effectiveness on this cell.",
+        "enemy-level-bonus-by-region-value": "Increases enemy level according to the cell's region value."
+      }
     },
     "labels": {
       "little": "little",
@@ -835,6 +905,8 @@
     "player": {
       "move": "{playerName} moved to {x}, {y}.",
       "discoverBiome": "{playerName} discovered {biome}.",
+      "worldEventTriggered": "{playerName} triggered {eventTitle}: {outcome}. Target {targetBiome}, driver {driverBiome}, active shrines in Region I: {activeShrinesInRegionI}.",
+      "worldEventMutationSummary": "{playerName} completed World Event mutation: changed cells {cellsMutated}/{cellsAffected}.",
       "discoverEnvironment": "{playerName} discovered a new {biome} environment.",
       "expandEnvironment": "{playerName} expanded a {biome} environment.",
       "enterSanctuary": "{playerName} entered {sanctuary}.",

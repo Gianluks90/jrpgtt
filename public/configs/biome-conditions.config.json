@@ -42,6 +42,14 @@
       }
     },
     {
+      "id": "swift-path",
+      "label": "Swift Path",
+      "description": "Improves movement from this cell by allowing enhanced traversal.",
+      "effect": {
+        "type": "movement-enable-diagonal-adjacency"
+      }
+    },
+    {
       "id": "impassable",
       "label": "Impassable",
       "description": "Blocks entry into this cell.",

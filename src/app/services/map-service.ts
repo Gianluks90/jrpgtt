@@ -23,6 +23,21 @@ import { WorldEventRegionTransitionService } from "./world-event-region-transiti
 import { StatusCatalogService } from "./status-catalog-service";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { TilesConfig } from "../models/TilesConfig";
+import { WorldEventMapMutationService } from "./world-event-map-mutation-service";
+
+interface WorldEventLogSummary {
+  eventTitle: string;
+  outcome: "negative" | "positive" | "none";
+  targetBiome: BiomeType;
+  driverBiome: BiomeType;
+  activeShrinesInRegionI: number;
+  cellsAffected: number;
+  cellsMutated: number;
+}
+
+const WORLD_EVENT_ANNOUNCE_DURATION_MS = 2600;
+const WORLD_EVENT_SUMMARY_DURATION_MS = 2200;
+const WORLD_EVENT_PROPAGATION_STEP_MS = 220;
 
 type EnvironmentProgressionEvent = "discover" | "expand";
 
@@ -40,6 +55,7 @@ export class MapService {
     private landmarksService: LandmarksService,
     private playerStatsModifierService: PlayerStatsModifierService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
+    private worldEventMapMutationService: WorldEventMapMutationService,
     private statusCatalogService: StatusCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
   ) { }
@@ -71,6 +87,10 @@ export class MapService {
     let landedSpecialType: "sanctuary" | "landmark" | null = null;
     let movedOnTurn = 0;
     let movedPlayerStatuses: Player["statuses"] = [];
+    let landedMapCell: MapCell | null = null;
+    const worldEventLogContext: { summary: WorldEventLogSummary | null } = {
+      summary: null,
+    };
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
         transaction.get(playerRef),
@@ -137,6 +157,14 @@ export class MapService {
         ...worldState,
       };
       this.worldEventRegionTransitionService.ensureRegionIToIIEventState(nextWorldState);
+      const shouldEmitWorldEvent = this.worldEventRegionTransitionService.shouldEmitRegionIToIIEventOnMove({
+        worldState: nextWorldState,
+        sourceX: player.location.x,
+        targetX,
+        mapSize,
+      });
+
+      let targetCellAfterMutation: MapCell | null = null;
 
       if (!targetCellSnap.exists()) {
         movedToNewCell = true;
@@ -198,9 +226,7 @@ export class MapService {
             landedSpecialType = "landmark";
           }
         }
-
-        transaction.set(mapCellRef, newCell);
-        movedBiome = drawnBiome;
+        targetCellAfterMutation = newCell;
 
         const projectedPlayer: Player = {
           ...player,
@@ -217,7 +243,7 @@ export class MapService {
         });
       } else {
         const cell = targetCellSnap.data() as MapCell;
-        movedBiome = cell.biome;
+        targetCellAfterMutation = cell;
         landedOnSpecialCell = cell.isSpecial === true || isSpecialCellCoordinate(targetX, targetY);
         if (cell.specialType === "sanctuary") {
           landedSpecialType = "sanctuary";
@@ -244,29 +270,100 @@ export class MapService {
         });
       }
 
+      nextWorldState.movedThisTurnByPlayer = {
+        ...movedThisTurnByPlayer,
+        [playerId]: worldState.currentTurn,
+      };
+
+      if (shouldEmitWorldEvent) {
+        const revealedMapCellsById = await this.readRevealedMapCellsById(transaction, gameId, mapSize);
+        if (targetCellAfterMutation) {
+          revealedMapCellsById[targetCellId] = targetCellAfterMutation;
+        }
+
+        const emissionResolution = this.worldEventMapMutationService.resolveOnEmission({
+          worldState: nextWorldState,
+          mapCellsById: revealedMapCellsById,
+          mapSize,
+          currentTurn: nextWorldState.currentTurn,
+        });
+
+        nextWorldState.worldEvent = emissionResolution.nextWorldEvent;
+        const mutationCellIds = emissionResolution.mutationCellIds;
+        const startedAtMs = Date.now();
+        const propagationDurationMs = Math.max(
+          WORLD_EVENT_PROPAGATION_STEP_MS,
+          mutationCellIds.length * WORLD_EVENT_PROPAGATION_STEP_MS,
+        );
+        nextWorldState.worldEvent = {
+          ...nextWorldState.worldEvent,
+          flow: {
+            startedAtMs,
+            announceDurationMs: WORLD_EVENT_ANNOUNCE_DURATION_MS,
+            propagationDurationMs,
+            summaryDurationMs: WORLD_EVENT_SUMMARY_DURATION_MS,
+            mutationCellIds,
+          },
+        };
+
+        if (
+          emissionResolution.nextWorldEvent.primaryOutcome
+          && emissionResolution.nextWorldEvent.targetBiome
+          && emissionResolution.nextWorldEvent.driverBiome
+        ) {
+          worldEventLogContext.summary = {
+            eventTitle: String(emissionResolution.nextWorldEvent.title ?? "").trim(),
+            outcome: emissionResolution.nextWorldEvent.primaryOutcome,
+            targetBiome: emissionResolution.nextWorldEvent.targetBiome,
+            driverBiome: emissionResolution.nextWorldEvent.driverBiome,
+            activeShrinesInRegionI: Math.max(0, Math.floor(Number(emissionResolution.nextWorldEvent.activeShrinesInRegionI ?? 0))),
+            cellsAffected: Math.max(0, Math.floor(Number(emissionResolution.nextWorldEvent.cellsAffected ?? 0))),
+            cellsMutated: Math.max(0, Math.floor(Number(emissionResolution.nextWorldEvent.cellsMutated ?? 0))),
+          };
+        }
+
+        Object.entries(emissionResolution.updatedCellsById).forEach(([cellId, mutatedCell]) => {
+          const mutatedCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", cellId);
+          transaction.set(mutatedCellRef, mutatedCell, { merge: true });
+          if (cellId === targetCellId) {
+            targetCellAfterMutation = mutatedCell;
+          }
+        });
+      }
+
+      if (
+        !shouldEmitWorldEvent
+        && targetCellAfterMutation
+        && targetCellAfterMutation.isSpecial !== true
+        && nextWorldState.worldEvent?.emitted === true
+      ) {
+        const lazyMutation = this.worldEventMapMutationService.resolveMutationForCell({
+          mapCell: targetCellAfterMutation,
+          worldEvent: nextWorldState.worldEvent,
+          mapSize,
+        });
+
+        if (lazyMutation) {
+          const applyResult = this.worldEventMapMutationService.applyMutationToCell(targetCellAfterMutation, lazyMutation);
+          if (applyResult.changed) {
+            targetCellAfterMutation = applyResult.cell;
+            transaction.set(mapCellRef, applyResult.cell, { merge: true });
+          }
+        }
+      }
+
+      if (targetCellAfterMutation) {
+        landedMapCell = targetCellAfterMutation;
+        movedBiome = this.getEffectiveBiome(targetCellAfterMutation);
+        transaction.set(mapCellRef, targetCellAfterMutation, { merge: true });
+      }
+
       transaction.set(playerRef, {
         location: {
           x: targetX,
           y: targetY,
         },
       }, { merge: true });
-
-      nextWorldState.movedThisTurnByPlayer = {
-        ...movedThisTurnByPlayer,
-        [playerId]: worldState.currentTurn,
-      };
-
-      if (this.worldEventRegionTransitionService.shouldEmitRegionIToIIEventOnMove({
-        worldState: nextWorldState,
-        sourceX: player.location.x,
-        targetX,
-        mapSize,
-      })) {
-        nextWorldState.worldEvent = {
-          ...(nextWorldState.worldEvent ?? { title: "Region I -> II", emitted: false }),
-          emitted: true,
-        };
-      }
 
       transaction.set(worldStateRef, nextWorldState);
 
@@ -285,6 +382,22 @@ export class MapService {
       x: targetX,
       y: targetY,
     });
+
+    const worldEventLogSummary = worldEventLogContext.summary;
+    if (worldEventLogSummary) {
+      await this.tryCreateLog(gameId, movingPlayer, "player.worldEventTriggered", {
+        eventTitle: worldEventLogSummary.eventTitle,
+        outcome: worldEventLogSummary.outcome,
+        targetBiome: worldEventLogSummary.targetBiome,
+        driverBiome: worldEventLogSummary.driverBiome,
+        activeShrinesInRegionI: worldEventLogSummary.activeShrinesInRegionI,
+      });
+
+      await this.tryCreateLog(gameId, movingPlayer, "player.worldEventMutationSummary", {
+        cellsAffected: worldEventLogSummary.cellsAffected,
+        cellsMutated: worldEventLogSummary.cellsMutated,
+      });
+    }
 
     const landedBiome = movedBiome as BiomeType | null;
 
@@ -316,7 +429,7 @@ export class MapService {
 
     // RACCOLTA RISORSA CASUALE
     if (landedBiome && !landedOnSpecialCell) {
-      const landedCell = {
+      const landedCell = landedMapCell ?? {
         x: targetX,
         y: targetY,
         biome: landedBiome,
@@ -478,7 +591,7 @@ export class MapService {
 
       const neighborCell = neighborSnap.data() as MapCell;
       if (neighborCell.isSpecial === true) continue;
-      if (neighborCell.biome !== biome) continue;
+      if (this.getEffectiveBiome(neighborCell) !== biome) continue;
 
       adjacentSameBiomeCellIds.add(neighborId);
     }
@@ -519,7 +632,7 @@ export class MapService {
 
           const neighborCell = neighborSnap.data() as MapCell;
           if (neighborCell.isSpecial === true) continue;
-          if (neighborCell.biome !== biome) continue;
+          if (this.getEffectiveBiome(neighborCell) !== biome) continue;
 
           visited.add(neighborId);
           queue.push(neighborId);
@@ -756,7 +869,7 @@ export class MapService {
 
         const neighborCell = neighborSnap.data() as MapCell;
         if (neighborCell.isSpecial === true) continue;
-        if (neighborCell.biome !== sourceCell.biome) continue;
+        if (this.getEffectiveBiome(neighborCell) !== this.getEffectiveBiome(sourceCell)) continue;
 
         queue.push(neighborCell);
       }
@@ -770,7 +883,7 @@ export class MapService {
       return false;
     }
 
-    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    const conditionIds = this.getEffectiveConditionIds(mapCell, tilesConfig);
     return conditionIds.some((conditionId) => {
       return this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect?.type === "movement-enable-diagonal-adjacency";
     });
@@ -781,7 +894,7 @@ export class MapService {
       return false;
     }
 
-    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    const conditionIds = this.getEffectiveConditionIds(mapCell, tilesConfig);
     return conditionIds.some((conditionId) => {
       return this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect?.type === "movement-block-entry";
     });
@@ -793,7 +906,7 @@ export class MapService {
     }
 
     let multiplier = 1;
-    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    const conditionIds = this.getEffectiveConditionIds(mapCell, tilesConfig);
     conditionIds.forEach((conditionId) => {
       const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
       if (!effect || effect.type !== "luck-check-multiplier") {
@@ -821,7 +934,7 @@ export class MapService {
     }
 
     let multiplier = 1;
-    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    const conditionIds = this.getEffectiveConditionIds(mapCell, tilesConfig);
     conditionIds.forEach((conditionId) => {
       const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
       if (!effect || effect.type !== "resource-gain-multiplier") {
@@ -840,6 +953,40 @@ export class MapService {
     });
 
     return Math.max(1, Math.floor(multiplier));
+  }
+
+  private getEffectiveBiome(mapCell: MapCell): BiomeType {
+    return this.worldEventMapMutationService.getEffectiveBiome(mapCell);
+  }
+
+  private getEffectiveConditionIds(mapCell: MapCell, tilesConfig: TilesConfig): string[] {
+    const effectiveBiome = this.getEffectiveBiome(mapCell);
+    const baseConditionIds = tilesConfig.biomes[effectiveBiome]?.conditions ?? [];
+    return this.worldEventMapMutationService.getEffectiveConditionIds(mapCell, baseConditionIds);
+  }
+
+  private async readRevealedMapCellsById(
+    transaction: Transaction,
+    gameId: string,
+    mapSize: number,
+  ): Promise<Record<string, MapCell>> {
+    const safeSize = Math.max(1, Math.floor(mapSize));
+    const cellsById: Record<string, MapCell> = {};
+
+    for (let x = 0; x < safeSize; x += 1) {
+      for (let y = 0; y < safeSize; y += 1) {
+        const id = this.cellId(x, y);
+        const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", id);
+        const cellSnap = await transaction.get(cellRef);
+        if (!cellSnap.exists()) {
+          continue;
+        }
+
+        cellsById[id] = cellSnap.data() as MapCell;
+      }
+    }
+
+    return cellsById;
   }
 
   private isInsideBounds(x: number, y: number, size: number): boolean {

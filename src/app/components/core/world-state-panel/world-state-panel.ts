@@ -92,9 +92,7 @@ export class WorldStatePanel {
       "Crossing from Region I to Region II alerts the forces of evil, triggering a counter-move that may reshape the map. The World Event targets the most revealed biome; the next biome in rank determines the possible effects. For full details, see the rulebook.",
     );
     const worldEvent = this.worldState()?.worldEvent;
-    const worldEventLabel = worldEvent?.emitted === true
-      ? (worldEvent.title?.trim() || "-")
-      : "-";
+    const worldEventLabel = this.buildWorldEventLabel(worldEvent);
     const activePlayer = this.activePlayerLabel();
 
     return [
@@ -142,4 +140,13 @@ export class WorldStatePanel {
       },
     ];
   });
+
+  private buildWorldEventLabel(worldEvent: WorldState["worldEvent"] | undefined): string {
+    if (!worldEvent || worldEvent.emitted !== true) {
+      return "-";
+    }
+
+    const title = worldEvent.title?.trim() || "-";
+    return this.translationService.tOrFallback(title, title);
+  }
 }

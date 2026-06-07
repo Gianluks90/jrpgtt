@@ -9,6 +9,8 @@
     [class.movable-cell]="movable()"
     [class.impassable-cell]="impassable()"
     [class.environment-hover-cell]="hoveredEnvironment()"
+    [class.world-event-mutation-pending]="worldEventMutationPhase() === 'pending'"
+    [class.world-event-mutation-applied]="worldEventMutationPhase() === 'applied'"
     [class]="biome() && !isSanctuaryCell() ? 'biome-' + biome() : ''"
     [style.--env-top-width]="envTopWidth()"
     [style.--env-right-width]="envRightWidth()"

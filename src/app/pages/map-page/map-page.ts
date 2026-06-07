@@ -38,6 +38,8 @@ import { TranslationPipe } from "../../pipes/translation-pipe";
 import { TranslationService } from "../../services/translation-service";
 import { LandmarksService } from "../../services/landmarks-service";
 
+type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
+
 @Component({
   selector: "app-map-page",
   imports: [
@@ -95,8 +97,10 @@ export class MapPage implements OnInit, OnDestroy {
   public mockPlayers = signal<Player[]>([]);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
   public utilitiesExpandedPanel = signal<"inventory" | "followers">("inventory");
-    private static readonly locationInfoResetDelayMs = 10000;
-    private locationInfoResetTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly locationInfoResetDelayMs = 10000;
+  private locationInfoResetTimer: ReturnType<typeof setTimeout> | null = null;
+  private worldEventFlowClockTimer: ReturnType<typeof setInterval> | null = null;
+  private worldEventFlowNowMs = signal<number>(Date.now());
   private lastPendingDialogKey = signal<string | null>(null);
   public latestLogMessage = computed<string>(() => {
     return this.mapPageState.latestEventLogSummary();
@@ -160,10 +164,116 @@ export class MapPage implements OnInit, OnDestroy {
     return fastTravelState.playerId === playerId && this.isFastTravelTransitionRunning();
   });
 
+  public worldEventFlowView = computed<{
+    active: boolean;
+    phase: WorldEventFlowPhase;
+    title: string;
+    description: string;
+    mutationCellIds: string[];
+    propagatedCellsCount: number;
+    totalMutations: number;
+  }>(() => {
+    const worldEvent = this.worldState()?.worldEvent;
+    const flow = worldEvent?.flow;
+    if (!worldEvent || worldEvent.emitted !== true || !flow) {
+      return {
+        active: false,
+        phase: "completed",
+        title: "",
+        description: "",
+        mutationCellIds: [],
+        propagatedCellsCount: 0,
+        totalMutations: 0,
+      };
+    }
+
+    const startedAtMs = Math.max(0, Math.floor(Number(flow.startedAtMs ?? 0)));
+    const announceDurationMs = Math.max(0, Math.floor(Number(flow.announceDurationMs ?? 0)));
+    const propagationDurationMs = Math.max(1, Math.floor(Number(flow.propagationDurationMs ?? 1)));
+    const summaryDurationMs = Math.max(0, Math.floor(Number(flow.summaryDurationMs ?? 0)));
+    const mutationCellIds = Array.isArray(flow.mutationCellIds) ? flow.mutationCellIds : [];
+
+    const elapsedMs = Math.max(0, this.worldEventFlowNowMs() - startedAtMs);
+    const announceEnd = announceDurationMs;
+    const propagationEnd = announceEnd + propagationDurationMs;
+    const summaryEnd = propagationEnd + summaryDurationMs;
+
+    let phase: WorldEventFlowPhase = "completed";
+    if (elapsedMs < announceEnd) {
+      phase = "announcing";
+    } else if (elapsedMs < propagationEnd) {
+      phase = "propagating";
+    } else if (elapsedMs < summaryEnd) {
+      phase = "summary";
+    }
+
+    let propagatedCellsCount = 0;
+    if (phase === "announcing") {
+      propagatedCellsCount = 0;
+    } else if (phase === "propagating") {
+      const propagationElapsed = elapsedMs - announceEnd;
+      const ratio = Math.max(0, Math.min(1, propagationElapsed / propagationDurationMs));
+      propagatedCellsCount = Math.max(0, Math.min(mutationCellIds.length, Math.floor(ratio * mutationCellIds.length)));
+    } else {
+      propagatedCellsCount = mutationCellIds.length;
+    }
+
+    const outcome = this.translationService.tOrFallback(
+      `map.worldPanel.worldEventOutcome.${worldEvent.primaryOutcome ?? "none"}`,
+      worldEvent.primaryOutcome ?? "none",
+    );
+    const targetBiome = worldEvent.targetBiome
+      ? this.translationService.tOrFallback(`map.biomes.${worldEvent.targetBiome}`, worldEvent.targetBiome)
+      : "-";
+    const driverBiome = worldEvent.driverBiome
+      ? this.translationService.tOrFallback(`map.biomes.${worldEvent.driverBiome}`, worldEvent.driverBiome)
+      : "-";
+
+    const title = this.translationService.tOrFallback("map.worldEventFlow.title", "World Event");
+    const descriptionKey = phase === "announcing"
+      ? "map.worldEventFlow.announcing"
+      : phase === "propagating"
+        ? "map.worldEventFlow.propagating"
+        : phase === "summary"
+          ? "map.worldEventFlow.summary"
+          : "map.worldEventFlow.completed";
+    const descriptionFallback = `${outcome} | ${targetBiome}/${driverBiome}`;
+    const description = this.translationService.tOrFallback(descriptionKey, descriptionFallback, {
+      outcome,
+      targetBiome,
+      driverBiome,
+      propagatedCellsCount,
+      totalMutations: mutationCellIds.length,
+    });
+
+    return {
+      active: phase !== "completed",
+      phase,
+      title,
+      description,
+      mutationCellIds,
+      propagatedCellsCount,
+      totalMutations: mutationCellIds.length,
+    };
+  });
+
+  public worldEventMutationCellIds = computed<string[]>(() => {
+    return this.worldEventFlowView().mutationCellIds;
+  });
+
+  public worldEventPropagatedCellsCount = computed<number>(() => {
+    return this.worldEventFlowView().propagatedCellsCount;
+  });
+
+  public isWorldEventFlowLockActive = computed<boolean>(() => {
+    return this.worldEventFlowView().active;
+  });
+
   public canEndTurn = computed<boolean>(() => {
     if (!this.isMyTurn()) return false;
     if (!this.hasMovedOnCurrentTurn()) return false;
     if (this.isMyTravelLockActive()) return false;
+    if (this.isWorldEventFlowLockActive()) return false;
     if (this.mapPageInteractionService.pendingActionId() !== null) return false;
     if (this.myPlayer()?.pendingResourcePickup) return false;
     return true;
@@ -222,7 +332,7 @@ export class MapPage implements OnInit, OnDestroy {
       pendingActionId: this.mapPageInteractionService.pendingActionId(),
     });
 
-    if (!this.isMyTravelLockActive()) {
+    if (!this.isMyTravelLockActive() && !this.isWorldEventFlowLockActive()) {
       return actions;
     }
 
@@ -446,6 +556,7 @@ export class MapPage implements OnInit, OnDestroy {
     void this.biomeConditionCatalogService.loadConfig();
     void this.itemCatalogService.loadConfig();
     void this.followerCatalogService.loadConfig();
+    this.startWorldEventFlowClock();
     effect(() => {
       const player = this.myPlayer();
       const pendingPickup = player?.pendingResourcePickup ?? null;
@@ -482,6 +593,7 @@ export class MapPage implements OnInit, OnDestroy {
 
   public ngOnDestroy(): void {
     this.clearLocationInfoResetTimer();
+    this.stopWorldEventFlowClock();
     this.fastTravelFlowService.reset();
     this.mapPageInteractionService.resetUiState();
     this.mapPageState.destroy();
@@ -567,7 +679,7 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public async onCellClick(cell: MapGridPanelCell): Promise<void> {
-    if (this.isMoving() || this.isMyTravelLockActive()) return;
+    if (this.isMoving() || this.isMyTravelLockActive() || this.isWorldEventFlowLockActive()) return;
 
     this.isMoving.set(true);
     try {
@@ -586,7 +698,7 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public async onCommandActionRequested(actionId: string): Promise<void> {
-    if (this.isMyTravelLockActive()) return;
+    if (this.isMyTravelLockActive() || this.isWorldEventFlowLockActive()) return;
 
     await this.mapPageInteractionService.handleCommandAction({
       actionId,
@@ -621,7 +733,11 @@ export class MapPage implements OnInit, OnDestroy {
       return false;
     }
 
-    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    const effectiveBiome = mapCell.worldEventBiomeOverride ?? mapCell.biome;
+    const conditionIds = Array.from(new Set([
+      ...(tilesConfig.biomes[effectiveBiome]?.conditions ?? []),
+      ...(mapCell.worldEventConditionIds ?? []),
+    ]));
     return conditionIds.some((conditionId) => {
       const definition = this.biomeConditionCatalogService.getCachedCondition(conditionId);
       if (definition?.effect?.type === effectType) {
@@ -915,7 +1031,24 @@ export class MapPage implements OnInit, OnDestroy {
       }
     }
 
-    return this.biomeToLabel(cell.biome);
+    return this.biomeToLabel(cell.worldEventBiomeOverride ?? cell.biome);
+  }
+
+  private startWorldEventFlowClock(): void {
+    this.stopWorldEventFlowClock();
+    this.worldEventFlowNowMs.set(Date.now());
+    this.worldEventFlowClockTimer = setInterval(() => {
+      this.worldEventFlowNowMs.set(Date.now());
+    }, 150);
+  }
+
+  private stopWorldEventFlowClock(): void {
+    if (!this.worldEventFlowClockTimer) {
+      return;
+    }
+
+    clearInterval(this.worldEventFlowClockTimer);
+    this.worldEventFlowClockTimer = null;
   }
 
   private scheduleLocationInfoReset(): void {

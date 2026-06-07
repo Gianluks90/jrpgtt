@@ -29,6 +29,7 @@ export class MapCellComponent {
   public envBottomWidth = input("0px");
   public envLeftWidth = input("0px");
   public hoverIntentProgress = input(0);
+  public worldEventMutationPhase = input<"none" | "pending" | "applied">("none");
 
   public cellClicked = output<void>();
   public cellEntered = output<void>();

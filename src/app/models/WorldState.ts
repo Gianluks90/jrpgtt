@@ -22,6 +22,25 @@ export interface PendingFastTravelState {
 export interface WorldEventState {
     title: string;
     emitted: boolean;
+    emittedAtTurn?: number;
+    targetBiome?: BiomeType;
+    driverBiome?: BiomeType;
+    primaryOutcome?: WorldEventPrimaryOutcome;
+    activeShrinesInRegionI?: number;
+    cellsAffected?: number;
+    cellsMutated?: number;
+    seed?: number;
+    flow?: WorldEventFlowState;
+}
+
+export type WorldEventPrimaryOutcome = "negative" | "positive" | "none";
+
+export interface WorldEventFlowState {
+    startedAtMs: number;
+    announceDurationMs: number;
+    propagationDurationMs: number;
+    summaryDurationMs: number;
+    mutationCellIds: string[];
 }
 
 export interface FollowerMovementBonusState {

@@ -4,6 +4,8 @@ export type EventLogCode =
   | "system.info"
   | "player.move"
   | "player.discoverBiome"
+  | "player.worldEventTriggered"
+  | "player.worldEventMutationSummary"
   | "player.discoverEnvironment"
   | "player.expandEnvironment"
   | "player.enterSanctuary"

@@ -17,6 +17,10 @@ export interface MapCell {
     landmarkDisplayName?: string;
     droppedItems?: InventoryItemEntry[];
     merchantStockByItemId?: Record<string, number>;
+    worldEventOriginalBiome?: BiomeType;
+    worldEventBiomeOverride?: BiomeType;
+    worldEventConditionIds?: string[];
+    worldEventEnemyLevelBonus?: number;
 }
 
 export type BiomeType =

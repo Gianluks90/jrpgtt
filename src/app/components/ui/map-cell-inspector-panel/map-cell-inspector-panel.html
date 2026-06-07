@@ -17,6 +17,7 @@
 
     <p class="summary-item"><span>{{ 'map.cellInspector.region' | t }}</span><strong>{{ currentCellSectorLabel() }}</strong></p>
     <p class="summary-item"><span>{{ 'map.cellInspector.coordinates' | t }}</span><strong>{{ currentCellCoordinatesLabel() }}</strong></p>
+    <p class="summary-item"><span>{{ 'map.cellInspector.transformation' | t }}</span><strong>{{ currentCellTransformationLabel() }}</strong></p>
     <p class="summary-item"><span>{{ 'map.cellInspector.environment' | t }}</span><strong>{{ currentCellEnvironmentLabel() }}</strong></p>
     <p class="summary-item"><span>{{ 'map.cellInspector.enemiesLevel' | t }}</span><strong>{{ currentCellEnemiesLevelLabel() }}</strong></p>
 
@@ -30,6 +31,21 @@
 
     <p class="inspector-section-title">{{ 'map.cellInspector.resources' | t }}</p>
     <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
+
+    <p class="inspector-section-title">{{ 'map.cellInspector.conditions' | t }}</p>
+    @if (currentCellConditions().length === 0) {
+      <p class="inspector-actions-empty">{{ 'map.cellInspector.conditionNone' | t }}</p>
+    } @else {
+      <div class="inspector-actions-list">
+        @for (condition of currentCellConditions(); track condition.id) {
+          <div class="inspector-action-card">
+            <p class="inspector-action-title">{{ condition.label }}</p>
+            <span class="inspector-action-divider"></span>
+            <p class="inspector-action-description">{{ condition.description }}</p>
+          </div>
+        }
+      </div>
+    }
 
     <p class="inspector-section-title">{{ 'map.cellInspector.actions' | t }}</p>
     @if (currentCellActions().length === 0) {

@@ -1,5 +1,5 @@
 import { Component, input } from "@angular/core";
-import { BiomeType } from "../../../models/MapCell";
+import { BiomeType, MapCell } from "../../../models/MapCell";
 import { WorldState } from "../../../models/WorldState";
 
 @Component({
@@ -10,5 +10,17 @@ import { WorldState } from "../../../models/WorldState";
 })
 export class BiomesCounter {
   public worldState = input<WorldState | null>(null);
+  public mapCellsById = input<Record<string, MapCell>>({});
   public biomeOrder: BiomeType[] = ["plains", "forest", "mountain", "water", "desert", "ruins"];
+
+  public countBiome(biome: BiomeType): number {
+    return Object.values(this.mapCellsById()).reduce((total, cell) => {
+      if (!cell || cell.isSpecial === true) {
+        return total;
+      }
+
+      const effectiveBiome = cell.worldEventBiomeOverride ?? cell.biome;
+      return total + (effectiveBiome === biome ? 1 : 0);
+    }, 0);
+  }
 }

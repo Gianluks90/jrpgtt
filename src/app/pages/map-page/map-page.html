@@ -54,10 +54,19 @@
                         [regionIToIIWarning]="regionIToIIWarning()"
                         [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
                         [environmentByCellId]="environmentByCellId()"
+                        [worldEventMutationCellIds]="worldEventMutationCellIds()"
+                        [worldEventPropagatedCellsCount]="worldEventPropagatedCellsCount()"
                         (cellClicked)="onCellClick($event)"
                         (inspectedCellChanged)="onInspectionCellChanged($event)"
                     ></app-map-grid-panel>
-                    <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()"></app-biomes-counter>
+
+                    @if (worldEventFlowView().active) {
+                        <div class="world-event-flow-overlay" role="status" aria-live="polite">
+                            <p class="world-event-flow-title">{{ worldEventFlowView().title }}</p>
+                            <p class="world-event-flow-description">{{ worldEventFlowView().description }}</p>
+                        </div>
+                    }
+                    <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()" [mapCellsById]="mapCellsById()"></app-biomes-counter>
 
                     <div class="map-bottom-hud-row">
                         <section class="map-inline-hud active-cell-block">

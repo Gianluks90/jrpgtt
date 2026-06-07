@@ -58,6 +58,8 @@ export interface MapGridPanelCell {
   isSpecial: boolean;
 }
 
+type WorldEventMutationPhase = "none" | "pending" | "applied";
+
 @Component({
   selector: "app-map-grid-panel",
   imports: [MapCellComponent],
@@ -85,6 +87,8 @@ export class MapGridPanel {
   public tilesConfig = input<TilesConfig | null>(null);
   public environmentByCellId = input.required<Record<string, string[]>>();
   public sanctuaryStylesByElement = input.required<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>();
+  public worldEventMutationCellIds = input<string[]>([]);
+  public worldEventPropagatedCellsCount = input(0);
 
   public cellClicked = output<MapGridPanelCell>();
   public inspectedCellChanged = output<MapGridPanelCell | null>();
@@ -243,8 +247,35 @@ export class MapGridPanel {
     const config = this.tilesConfig();
     if (!config) return false;
 
-    const conditionIds = config.biomes[cell.mapCell.biome]?.conditions ?? [];
+    const effectiveBiome = cell.mapCell.worldEventBiomeOverride ?? cell.mapCell.biome;
+    const conditionIds = Array.from(new Set([
+      ...(config.biomes[effectiveBiome]?.conditions ?? []),
+      ...(cell.mapCell.worldEventConditionIds ?? []),
+    ]));
     return conditionIds.includes("impassable");
+  }
+
+  public worldEventMutationPhaseForCell(cell: MapGridPanelCell): WorldEventMutationPhase {
+    if (!cell.mapCell || cell.mapCell.isSpecial === true) {
+      return "none";
+    }
+
+    const mutationCellIds = this.worldEventMutationCellIds();
+    if (!Array.isArray(mutationCellIds) || mutationCellIds.length === 0) {
+      return "none";
+    }
+
+    const index = mutationCellIds.indexOf(cell.id);
+    if (index < 0) {
+      return "none";
+    }
+
+    const propagated = Math.max(0, Math.floor(Number(this.worldEventPropagatedCellsCount() ?? 0)));
+    if (index < propagated) {
+      return "applied";
+    }
+
+    return "pending";
   }
 
   public dangerOverlayLevel(cell: MapGridPanelCell): 0 | 1 | 2 {
@@ -329,6 +360,14 @@ export class MapGridPanel {
 
   private isSpecialCell(x: number, y: number, mapCell: MapCell | null): boolean {
     return mapCell?.isSpecial === true || isSpecialCellCoordinate(x, y);
+  }
+
+  public effectiveBiomeForCell(cell: MapGridPanelCell): MapCell["biome"] | null {
+    if (!cell.mapCell) {
+      return null;
+    }
+
+    return cell.mapCell.worldEventBiomeOverride ?? cell.mapCell.biome;
   }
 
   private colorsForElement(element: SanctuaryElement): { border: string; glow: string } {

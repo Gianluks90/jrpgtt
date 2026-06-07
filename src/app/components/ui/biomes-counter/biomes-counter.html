@@ -2,7 +2,7 @@
   @for (biome of biomeOrder; track biome) {
     <div class="biome-counter-item" [class]="'biome-counter-item biome-' + biome">
       <span class="biome-swatch" aria-hidden="true"></span>
-      <strong class="biome-count">{{ worldState()?.placedBiomeCount?.[biome] ?? 0 }}</strong>
+      <strong class="biome-count">{{ countBiome(biome) }}</strong>
     </div>
   }
 </div>

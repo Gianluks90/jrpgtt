@@ -31,6 +31,19 @@ export class EventLogService {
             const biome = String(args["biomeLabel"] ?? args["biome"] ?? "a biome");
             return `${playerName} discovered ${biome}.`;
         },
+        "player.worldEventTriggered": ({ playerName, args }) => {
+            const eventTitle = String(args["eventTitleLabel"] ?? args["eventTitle"] ?? "World Event");
+            const outcome = String(args["outcomeLabel"] ?? args["outcome"] ?? "-");
+            const target = String(args["targetBiomeLabel"] ?? args["targetBiome"] ?? "-");
+            const driver = String(args["driverBiomeLabel"] ?? args["driverBiome"] ?? "-");
+            const activeShrines = Number(args["activeShrinesInRegionI"] ?? 0);
+            return `${playerName} triggered ${eventTitle}: ${outcome}. Target ${target}, driver ${driver}, active shrines in Region I: ${activeShrines}.`;
+        },
+        "player.worldEventMutationSummary": ({ playerName, args }) => {
+            const cellsMutated = Number(args["cellsMutated"] ?? 0);
+            const cellsAffected = Number(args["cellsAffected"] ?? 0);
+            return `${playerName} completed World Event mutation: ${cellsMutated}/${cellsAffected} cells changed.`;
+        },
         "player.discoverEnvironment": ({ playerName, args }) => {
             const biome = String(args["biomeLabel"] ?? args["biome"] ?? "a biome");
             return `${playerName} discovered a new ${biome} environment.`;
@@ -352,6 +365,29 @@ export class EventLogService {
                     ? "logs.player.discoverEnvironment"
                     : "logs.player.expandEnvironment";
             return this.translationService.tOrFallback(key, fallback, { ...baseParams, biome });
+        }
+
+        if (code === "player.worldEventTriggered") {
+            const eventTitle = this.resolveWorldEventTitleLabel(args["eventTitle"]);
+            const outcome = this.resolveWorldEventOutcomeLabel(args["outcome"]);
+            const targetBiome = this.resolveBiomeLabel({ biome: args["targetBiome"] });
+            const driverBiome = this.resolveBiomeLabel({ biome: args["driverBiome"] });
+            return this.translationService.tOrFallback("logs.player.worldEventTriggered", fallback, {
+                ...baseParams,
+                eventTitle,
+                outcome,
+                targetBiome,
+                driverBiome,
+                activeShrinesInRegionI: Number(args["activeShrinesInRegionI"] ?? 0),
+            });
+        }
+
+        if (code === "player.worldEventMutationSummary") {
+            return this.translationService.tOrFallback("logs.player.worldEventMutationSummary", fallback, {
+                ...baseParams,
+                cellsMutated: Number(args["cellsMutated"] ?? 0),
+                cellsAffected: Number(args["cellsAffected"] ?? 0),
+            });
         }
 
         if (code === "player.enterSanctuary") {
@@ -743,6 +779,24 @@ export class EventLogService {
         }
 
         return value;
+    }
+
+    private resolveWorldEventOutcomeLabel(value: unknown): string {
+        const normalized = String(value ?? "").toLowerCase().trim();
+        if (normalized === "negative" || normalized === "positive" || normalized === "none") {
+            return this.translationService.tOrFallback(`map.worldPanel.worldEventOutcome.${normalized}`, normalized);
+        }
+
+        return String(value ?? "-");
+    }
+
+    private resolveWorldEventTitleLabel(value: unknown): string {
+        const normalized = String(value ?? "").trim();
+        if (!normalized) {
+            return this.translationService.tOrFallback("map.worldEventTitle.default", "World Event");
+        }
+
+        return this.translationService.tOrFallback(normalized, normalized);
     }
 
     private normalizeTemplateParams(value: unknown): Record<string, string | number> {

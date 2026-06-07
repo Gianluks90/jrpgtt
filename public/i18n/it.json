@@ -25,6 +25,34 @@
         "noGame": "Al momento non sei in una partita. Entra o creane una nuova per iniziare!",
         "actions": {
             "menu": "Menu",
+        "worldEventTitle": {
+            "default": "Evento Mondiale",
+            "none": "Nessun cambiamento",
+            "forest": {
+                "negative": "Espansione",
+                "positive": "Natura rigogliosa"
+            },
+            "desert": {
+                "negative": "Desertificazione",
+                "positive": "Venti favorevoli"
+            },
+            "water": {
+                "negative": "Inondazione",
+                "positive": "Fonte magica"
+            },
+            "plains": {
+                "negative": "Campo di tiro",
+                "positive": "Campo aperto"
+            },
+            "mountain": {
+                "negative": "Terremoto",
+                "positive": "Vena antica"
+            },
+            "ruins": {
+                "negative": "Corruzione antica",
+                "positive": "Archivio perduto"
+            }
+        },
             "newGame": "Nuova partita",
             "joinGame": "Entra in partita",
             "abandon": "Abbandona",
@@ -424,6 +452,13 @@
             "ariaLabel": "Orario",
             "prefix": "Orario"
         },
+        "worldEventFlow": {
+            "title": "Evento mondiale",
+            "announcing": "{outcome}: bersaglio {targetBiome}, responsabile {driverBiome}. Preparazione in corso...",
+            "propagating": "Propagazione mutazioni {propagatedCellsCount}/{totalMutations}...",
+            "summary": "Mutazione completata: {propagatedCellsCount}/{totalMutations} celle aggiornate.",
+            "completed": "Evento mondiale completato."
+        },
         "timeOfDay": {
             "title": "Orario",
             "titleWithRounds": "Orario ({rounds} turni)",
@@ -438,6 +473,12 @@
             "discovered": "Esplorato",
             "activeShrines": "Santuari attivi",
             "worldEvent": "Evento mondiale",
+            "worldEventSummary": "{title} | {outcome} | bersaglio {targetBiome} / responsabile {driverBiome} | mutate {cellsMutated}/{cellsAffected}",
+            "worldEventOutcome": {
+                "negative": "Negativo",
+                "positive": "Positivo",
+                "none": "Nessun cambiamento"
+            },
             "activePlayer": "Turno di",
             "helpTitle": "Aiuto",
             "help": {
@@ -528,6 +569,11 @@
             "info": "Info",
             "region": "Regione",
             "coordinates": "Coordinate XY",
+            "transformation": "Trasformazione",
+            "transformedNo": "No",
+            "transformedFromTo": "Si ({from} -> {to})",
+            "conditions": "Condizioni",
+            "conditionNone": "Nessuna",
             "environment": "Ambiente",
             "enemiesLevel": "Livello nemici",
             "special": "Speciale",
@@ -561,7 +607,31 @@
             "none": "Nessuna",
             "no": "No",
             "yesCells": "Si ({count} caselle)",
-            "unknownBiome": "? ? ?"
+            "unknownBiome": "? ? ?",
+            "conditionLabel": {
+                "hostile-environment": "Ambiente ostile",
+                "regenerating-waters": "Acque rigeneranti",
+                "abundant-resources": "Risorse abbondanti",
+                "open-ground": "Terreno aperto",
+                "swift-path": "Percorso rapido",
+                "impassable": "Invalicabile",
+                "vein-of-plenty": "Vena abbondante",
+                "ancient-knowledge": "Conoscenza antica",
+                "cursed-ground": "Terreno maledetto",
+                "enemy-level-bonus-by-region-value": "Bonus livello nemici per regione"
+            },
+            "conditionDescription": {
+                "hostile-environment": "Infligge danni HP per ogni casella connessa del bioma, salvo protezioni attive.",
+                "regenerating-waters": "Rigenera HP in base alla dimensione dell'ambiente, fino a un limite massimo.",
+                "abundant-resources": "Raddoppia le risorse ottenute da esplorazione e raccolta su questa casella.",
+                "open-ground": "Permette il movimento diagonale da questa casella.",
+                "swift-path": "Migliora lo spostamento da questa casella con attraversamento avanzato.",
+                "impassable": "Impedisce l'ingresso in questa casella.",
+                "vein-of-plenty": "Raddoppia i minerali ottenuti su questa casella.",
+                "ancient-knowledge": "Concede esperienza bonus a fine turno su questa casella.",
+                "cursed-ground": "Riduce l'efficacia dei controlli fortuna su questa casella.",
+                "enemy-level-bonus-by-region-value": "Aumenta il livello dei nemici in base al valore della regione della casella."
+            }
         },
         "labels": {
             "little": "piccolo",
@@ -835,6 +905,8 @@
         "player": {
             "move": "{playerName} si e spostato in {x}, {y}.",
             "discoverBiome": "{playerName} ha scoperto {biome}.",
+            "worldEventTriggered": "{playerName} ha attivato {eventTitle}: {outcome}. Bersaglio {targetBiome}, responsabile {driverBiome}, santuari attivi in Regione I: {activeShrinesInRegionI}.",
+            "worldEventMutationSummary": "{playerName} ha completato la mutazione dell'Evento mondiale: celle mutate {cellsMutated}/{cellsAffected}.",
             "discoverEnvironment": "{playerName} ha scoperto un nuovo ambiente di {biome}.",
             "expandEnvironment": "{playerName} ha espanso un ambiente di {biome}.",
             "enterSanctuary": "{playerName} e entrato in {sanctuary}.",

@@ -12,6 +12,7 @@ import { TranslationPipe } from "../../../pipes/translation-pipe";
 import { WorldState } from "../../../models/WorldState";
 import { ActionDescriptionParams } from "../../../models/ActionCatalog";
 import { getDoctorCostPerUnit, isDoctorActionId } from "../../../consts/safe-place-actions";
+import { BiomeConditionCatalogService } from "../../../services/biome-condition-catalog-service";
 
 @Component({
   selector: "app-map-cell-inspector-panel",
@@ -24,6 +25,7 @@ export class MapCellInspectorPanel {
   private landmarksService = inject(LandmarksService);
   private actionCatalogService = inject(ActionCatalogService);
   private translationService = inject(TranslationService);
+  private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
   public inspectedCell = input<MapGridPanelCell | null>(null);
   public activePlayer = input<Player | null>(null);
   public worldState = input<WorldState | null>(null);
@@ -85,7 +87,69 @@ export class MapCellInspectorPanel {
     const cell = this.currentCell();
     if (!cell) return null;
     if (cell.isSpecial === true && cell.specialType === "sanctuary") return null;
-    return cell.biome;
+    return cell.worldEventBiomeOverride ?? cell.biome;
+  });
+
+  public currentCellTransformationLabel = computed<string>(() => {
+    const cell = this.currentCell();
+    if (!cell || cell.isSpecial === true) {
+      return "-";
+    }
+
+    const effectiveBiome = cell.worldEventBiomeOverride ?? cell.biome;
+    const originalBiome = cell.worldEventOriginalBiome
+      ?? ((cell.worldEventBiomeOverride && cell.worldEventBiomeOverride !== cell.biome) ? cell.biome : null);
+
+    if (!originalBiome || originalBiome === effectiveBiome) {
+      return this.translationService.tOrFallback("map.cellInspector.transformedNo", "No");
+    }
+
+    return this.translationService.tOrFallback("map.cellInspector.transformedFromTo", "Yes ({from} -> {to})", {
+      from: this.biomeToLabel(originalBiome),
+      to: this.biomeToLabel(effectiveBiome),
+    });
+  });
+
+  public currentCellConditionsLabel = computed<string>(() => {
+    const cell = this.currentCell();
+    if (!cell || cell.isSpecial === true) {
+      return this.translationService.tOrFallback("map.cellInspector.none", "None");
+    }
+
+    const effectiveBiome = cell.worldEventBiomeOverride ?? cell.biome;
+    const baseConditionIds = this.tilesConfig()?.biomes[effectiveBiome]?.conditions ?? [];
+    const mergedConditionIds = Array.from(new Set([
+      ...baseConditionIds,
+      ...(Array.isArray(cell.worldEventConditionIds) ? cell.worldEventConditionIds : []),
+    ])).filter((conditionId) => typeof conditionId === "string" && conditionId.trim().length > 0);
+
+    if (mergedConditionIds.length === 0) {
+      return this.translationService.tOrFallback("map.cellInspector.conditionNone", "None");
+    }
+
+    return mergedConditionIds
+      .map((conditionId) => this.conditionIdToLabel(conditionId))
+      .join(", ");
+  });
+
+  public currentCellConditions = computed<Array<{ id: string; label: string; description: string }>>(() => {
+    const cell = this.currentCell();
+    if (!cell || cell.isSpecial === true) {
+      return [];
+    }
+
+    const effectiveBiome = cell.worldEventBiomeOverride ?? cell.biome;
+    const baseConditionIds = this.tilesConfig()?.biomes[effectiveBiome]?.conditions ?? [];
+    const mergedConditionIds = Array.from(new Set([
+      ...baseConditionIds,
+      ...(Array.isArray(cell.worldEventConditionIds) ? cell.worldEventConditionIds : []),
+    ])).filter((conditionId) => typeof conditionId === "string" && conditionId.trim().length > 0);
+
+    return mergedConditionIds.map((conditionId) => ({
+      id: conditionId,
+      label: this.conditionIdToLabel(conditionId),
+      description: this.conditionIdToDescription(conditionId),
+    }));
   });
 
   public currentCellBiomeLabel = computed<string>(() => {
@@ -321,6 +385,19 @@ export class MapCellInspectorPanel {
     }
 
     return this.translationService.tOrFallback("resources.cloth", "Cloth");
+  }
+
+  private conditionIdToLabel(conditionId: string): string {
+    const definition = this.biomeConditionCatalogService.getCachedCondition(conditionId);
+    const fallbackLabel = definition?.label || this.humanizeActionId(conditionId);
+    return this.translationService.tOrFallback(`map.cellInspector.conditionLabel.${conditionId}`, fallbackLabel);
+  }
+
+  private conditionIdToDescription(conditionId: string): string {
+    const definition = this.biomeConditionCatalogService.getCachedCondition(conditionId);
+    const fallbackDescription = definition?.description
+      || this.translationService.tOrFallback("map.common.noDescription", "No description available.");
+    return this.translationService.tOrFallback(`map.cellInspector.conditionDescription.${conditionId}`, fallbackDescription);
   }
 
   private biomeToLabel(biome: BiomeType): string {

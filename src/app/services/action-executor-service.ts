@@ -32,6 +32,7 @@ import { StatusCatalogService } from "./status-catalog-service";
 import { ItemEffectCatalogService } from "./item-effect-catalog-service";
 import { DiscardPileEntry } from "../models/DiscardPile";
 import { GraveyardResurrectRewardsConfigService } from "./graveyard-resurrect-rewards-config-service";
+import { WorldEventMapMutationService } from "./world-event-map-mutation-service";
 
 export interface CapitalEnchantressOutcome {
   rewardId: string;
@@ -126,6 +127,7 @@ export class ActionExecutorService {
     private statusCatalogService: StatusCatalogService,
     private itemEffectCatalogService: ItemEffectCatalogService,
     private worldZonesService: WorldZonesService,
+    private worldEventMapMutationService: WorldEventMapMutationService,
   ) { }
 
   public async endTurn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
@@ -198,13 +200,16 @@ export class ActionExecutorService {
       );
       const mapCellSnap = await transaction.get(mapCellRef);
       const currentCell = mapCellSnap.exists() ? (mapCellSnap.data() as MapCell) : null;
+      const effectiveBiome = currentCell && currentCell.isSpecial !== true
+        ? this.getEffectiveBiome(currentCell)
+        : null;
       const normalizedItems = this.normalizeInventoryItems(player.inventory?.items);
       const normalizedFollowers = this.normalizeFollowers(player.followers);
       let nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
       const pendingDiscardEntries: Array<Omit<DiscardPileEntry, "id" | "discardSeq" | "discardedAt">> = [];
       const itemTurnEffects = this.applyConfiguredItemTurnEffects(
         normalizedItems,
-        currentCell && currentCell.isSpecial !== true ? currentCell.biome : null,
+        effectiveBiome,
       );
       let nextInventoryItems = itemTurnEffects.items;
       let nextInventoryResources = Array.isArray(player.inventory?.resources)
@@ -228,12 +233,12 @@ export class ActionExecutorService {
         statusSnapshot.turnEndHpPercentDelta,
         !statusSnapshot.disableHpRecovery,
       );
-      if (currentCell && currentCell.isSpecial !== true) {
-        const biomeConfig = tilesConfig.biomes[currentCell.biome];
-        const biomeConditionIds = biomeConfig?.conditions ?? [];
+      if (currentCell && currentCell.isSpecial !== true && effectiveBiome) {
+        const biomeConfig = tilesConfig.biomes[effectiveBiome];
+        const biomeConditionIds = this.getEffectiveConditionIds(currentCell, biomeConfig?.conditions ?? []);
 
         if (biomeConditionIds.length > 0) {
-          const environmentSize = await this.computeConnectedBiomeSize(transaction, gameId, currentCell, mapSize);
+          const environmentSize = await this.computeConnectedBiomeSize(transaction, gameId, currentCell, mapSize, effectiveBiome);
           const connectedEnvironmentSize = Math.max(1, environmentSize);
           for (const conditionId of biomeConditionIds) {
             const condition = this.biomeConditionCatalogService.getCondition(conditionId);
@@ -249,7 +254,7 @@ export class ActionExecutorService {
                 biomeConditionLogs.push({
                   code: condition.logCode ?? "player.biomeConditionGainExperience",
                   args: {
-                    biome: currentCell.biome,
+                    biome: effectiveBiome,
                     conditionId,
                     amount: gainAmount,
                     environmentSize: connectedEnvironmentSize,
@@ -293,7 +298,7 @@ export class ActionExecutorService {
               biomeConditionLogs.push({
                 code: condition.logCode ?? "player.biomeConditionDamage",
                 args: {
-                  biome: currentCell.biome,
+                  biome: effectiveBiome,
                   conditionId,
                   damageHp,
                   environmentSize: connectedEnvironmentSize,
@@ -322,7 +327,7 @@ export class ActionExecutorService {
                 biomeConditionLogs.push({
                   code: "player.followerHostileEnvironmentDamage",
                   args: {
-                    biome: currentCell.biome,
+                    biome: effectiveBiome,
                     conditionId,
                     followerId: allyEntry.followerId,
                     followerName: allyDefinition?.name ?? allyEntry.followerId,
@@ -368,7 +373,7 @@ export class ActionExecutorService {
               biomeConditionLogs.push({
                 code: condition.logCode ?? "player.biomeConditionHealing",
                 args: {
-                  biome: currentCell.biome,
+                  biome: effectiveBiome,
                   conditionId,
                   healingHp,
                   environmentSize: connectedEnvironmentSize,
@@ -403,7 +408,7 @@ export class ActionExecutorService {
               biomeConditionLogs.push({
                 code: "player.followerRegeneratingWatersHealing",
                 args: {
-                  biome: currentCell.biome,
+                  biome: effectiveBiome,
                   conditionId,
                   followerId: allyEntry.followerId,
                   followerName: allyDefinition?.name ?? allyEntry.followerId,
@@ -1045,7 +1050,8 @@ export class ActionExecutorService {
         throw new Error("Gathering is available only on biome cells");
       }
 
-      const biomeConfig = tilesConfig.biomes[mapCell.biome];
+      const effectiveBiome = this.getEffectiveBiome(mapCell);
+      const biomeConfig = tilesConfig.biomes[effectiveBiome];
       if (!biomeConfig) {
         throw new Error("Biome configuration not found");
       }
@@ -1158,7 +1164,7 @@ export class ActionExecutorService {
       }
 
       const mapCell = mapCellSnap.data() as MapCell;
-      if (mapCell.isSpecial === true || mapCell.biome !== "forest") {
+      if (mapCell.isSpecial === true || this.getEffectiveBiome(mapCell) !== "forest") {
         throw new Error("You can chop wood only in forests");
       }
 
@@ -1395,7 +1401,8 @@ export class ActionExecutorService {
         throw new Error("Rations can only be consumed on biome cells");
       }
 
-      const biomeConfig = tilesConfig.biomes[mapCell.biome];
+      const effectiveBiome = this.getEffectiveBiome(mapCell);
+      const biomeConfig = tilesConfig.biomes[effectiveBiome];
       if (!biomeConfig || !(biomeConfig.actions ?? []).includes("consume-ration")) {
         throw new Error("Ration can only be consumed in this biome");
       }
@@ -4696,7 +4703,8 @@ export class ActionExecutorService {
     }
 
     let multiplier = 1;
-    const conditionIds = tilesConfig.biomes[mapCell.biome]?.conditions ?? [];
+    const effectiveBiome = this.getEffectiveBiome(mapCell);
+    const conditionIds = this.getEffectiveConditionIds(mapCell, tilesConfig.biomes[effectiveBiome]?.conditions ?? []);
     conditionIds.forEach((conditionId) => {
       const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
       if (!effect || effect.type !== "resource-gain-multiplier") {
@@ -5155,6 +5163,7 @@ export class ActionExecutorService {
     gameId: string,
     startCell: MapCell,
     mapSize: number,
+    targetBiome: MapCell["biome"],
   ): Promise<number> {
     const safeSize = Math.max(1, Math.floor(mapSize));
     const queue: Array<{ x: number; y: number }> = [{ x: startCell.x, y: startCell.y }];
@@ -5180,7 +5189,7 @@ export class ActionExecutorService {
       if (!cellSnap.exists()) continue;
 
       const cell = cellSnap.data() as MapCell;
-      if (cell.isSpecial === true || cell.biome !== startCell.biome) continue;
+      if (cell.isSpecial === true || this.getEffectiveBiome(cell) !== targetBiome) continue;
 
       size += 1;
       queue.push({ x: current.x + 1, y: current.y });
@@ -5202,6 +5211,14 @@ export class ActionExecutorService {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
+  }
+
+  private getEffectiveBiome(mapCell: MapCell): MapCell["biome"] {
+    return this.worldEventMapMutationService.getEffectiveBiome(mapCell);
+  }
+
+  private getEffectiveConditionIds(mapCell: MapCell, baseConditionIds: string[]): string[] {
+    return this.worldEventMapMutationService.getEffectiveConditionIds(mapCell, baseConditionIds);
   }
 
   private isResourceLabel(value: unknown): value is ResourceLabel {

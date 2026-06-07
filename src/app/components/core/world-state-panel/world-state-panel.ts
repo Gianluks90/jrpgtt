@@ -3,10 +3,19 @@ import { Player } from "../../../models/Player";
 import { MapCell } from "../../../models/MapCell";
 import { WorldState } from "../../../models/WorldState";
 import { TranslationService } from "../../../services/translation-service";
+import { UiTooltip } from "../../ui/tooltip/tooltip";
+
+interface WorldSummaryEntry {
+  id: "turn" | "round" | "discovered" | "activeShrines" | "worldEvent" | "activePlayer";
+  label: string;
+  value: string;
+  isActivePlayer: boolean;
+  helpDescription: string | null;
+}
 
 @Component({
   selector: "app-world-state-panel",
-  imports: [],
+  imports: [UiTooltip],
   templateUrl: "./world-state-panel.html",
   styleUrl: "./world-state-panel.scss",
 })
@@ -57,11 +66,31 @@ export class WorldStatePanel {
     return `${clampedSpecial}/${totalSpecial}`;
   });
 
-  public worldSummaryEntries = computed<Array<{ label: string; value: string; isActivePlayer: boolean }>>(() => {
+  public helpTooltipTitle = computed<string>(() => {
+    return this.translationService.tOrFallback("map.worldPanel.helpTitle", "Help");
+  });
+
+  public worldSummaryEntries = computed<WorldSummaryEntry[]>(() => {
     const turn = this.worldState()?.currentTurn ?? 0;
     const round = this.currentRound();
     const discovered = this.discoveredTilesLabel();
     const activeShrines = this.activeSpecialCellsLabel();
+    const turnRoundHelp = this.translationService.tOrFallback(
+      "map.worldPanel.help.turnRound",
+      "A turn is the action performed by a single player. When all players have taken one turn, the round advances.",
+    );
+    const discoveredHelp = this.translationService.tOrFallback(
+      "map.worldPanel.help.discovered",
+      "The map has 100 explorable tiles. Entering an undiscovered tile reveals its biome and any other point of interest on that tile.",
+    );
+    const activeShrinesHelp = this.translationService.tOrFallback(
+      "map.worldPanel.help.activeShrines",
+      "There are four shrines linked to four elements: fire, water, wind and earth. Discovering and activating shrines lets you attune to their element and may grant bonuses. Each active shrine in Region I reduces the impact of the World Event when it is triggered.",
+    );
+    const worldEventHelp = this.translationService.tOrFallback(
+      "map.worldPanel.help.worldEvent",
+      "Crossing from Region I to Region II alerts the forces of evil, triggering a counter-move that may reshape the map. The World Event targets the most revealed biome; the next biome in rank determines the possible effects. For full details, see the rulebook.",
+    );
     const worldEvent = this.worldState()?.worldEvent;
     const worldEventLabel = worldEvent?.emitted === true
       ? (worldEvent.title?.trim() || "-")
@@ -70,34 +99,46 @@ export class WorldStatePanel {
 
     return [
       {
+        id: "turn",
         label: this.translationService.tOrFallback("map.worldPanel.turn", "Turn"),
         value: String(turn),
         isActivePlayer: false,
+        helpDescription: turnRoundHelp,
       },
       {
+        id: "round",
         label: this.translationService.tOrFallback("map.worldPanel.round", "Round"),
         value: String(round),
         isActivePlayer: false,
+        helpDescription: turnRoundHelp,
       },
       {
+        id: "discovered",
         label: this.translationService.tOrFallback("map.worldPanel.discovered", "Discovered"),
         value: discovered,
         isActivePlayer: false,
+        helpDescription: discoveredHelp,
       },
       {
+        id: "activeShrines",
         label: this.translationService.tOrFallback("map.worldPanel.activeShrines", "Active shrines"),
         value: activeShrines,
         isActivePlayer: false,
+        helpDescription: activeShrinesHelp,
       },
       {
+        id: "worldEvent",
         label: this.translationService.tOrFallback("map.worldPanel.worldEvent", "World event"),
         value: worldEventLabel,
         isActivePlayer: false,
+        helpDescription: worldEventHelp,
       },
       {
+        id: "activePlayer",
         label: this.translationService.tOrFallback("map.worldPanel.activePlayer", "Active player"),
         value: activePlayer,
         isActivePlayer: true,
+        helpDescription: null,
       },
     ];
   });

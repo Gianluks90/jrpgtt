@@ -11,6 +11,7 @@ import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
 })
 export class MapCellComponent {
   public revealed = input(false);
+  public desaturated = input(false);
   public special = input(false);
   public specialType = input<SpecialTileType | null>(null);
   public movable = input(false);

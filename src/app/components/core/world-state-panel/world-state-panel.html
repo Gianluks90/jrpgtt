@@ -5,10 +5,25 @@
 
 	<p class="world-summary-line">
 		@for (entry of worldSummaryEntries(); track entry.label) {
-			<span class="world-summary-entry">
-				<span class="world-summary-label">{{ entry.label }}</span>
-				<strong class="world-summary-value" [class.flashing-text]="entry.isActivePlayer">{{ entry.value }}</strong>
-			</span>
+			@if (entry.helpDescription) {
+				<app-ui-tooltip
+					class="world-summary-tooltip"
+					[tooltipId]="'world-panel-help-' + entry.id"
+					[title]="helpTooltipTitle()"
+				>
+					<span tooltipTrigger class="world-summary-entry world-summary-entry-help">
+						<span class="world-summary-label">{{ entry.label }}</span>
+						<strong class="world-summary-value" [class.flashing-text]="entry.isActivePlayer">{{ entry.value }}</strong>
+					</span>
+
+					<span tooltipContent class="world-summary-tooltip-content">{{ entry.helpDescription }}</span>
+				</app-ui-tooltip>
+			} @else {
+				<span class="world-summary-entry">
+					<span class="world-summary-label">{{ entry.label }}</span>
+					<strong class="world-summary-value" [class.flashing-text]="entry.isActivePlayer">{{ entry.value }}</strong>
+				</span>
+			}
 		}
 	</p>
 </div>

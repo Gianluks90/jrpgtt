@@ -3,10 +3,11 @@ import { LuckCheckResult } from "../../../models/LuckCheckResult";
 import { SoundService } from "../../../services/sound-service";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 import { TranslationService } from "../../../services/translation-service";
+import { UiTooltip } from "../tooltip/tooltip";
 
 @Component({
   selector: "app-luck-indicator",
-  imports: [TranslationPipe],
+  imports: [TranslationPipe, UiTooltip],
   templateUrl: "./luck-indicator.html",
   styleUrl: "./luck-indicator.scss",
   standalone: true,

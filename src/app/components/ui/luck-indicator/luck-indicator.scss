@@ -4,6 +4,11 @@
   height: 100%;
 }
 
+app-ui-tooltip.luck-indicator-tooltip {
+  display: block;
+  width: 100%;
+}
+
 .luck-indicator-panel {
   position: relative;
   border: var(--overlay-border);
@@ -11,6 +16,15 @@
   padding: 10px 10px 8px;
   min-height: 52px;
   min-width: 172px;
+  cursor: help;
+}
+
+.luck-tooltip-content {
+  display: block;
+  max-width: 330px;
+  white-space: normal;
+  font-size: 0.6rem;
+  line-height: 1.4;
 }
 
 .luck-indicator-title {

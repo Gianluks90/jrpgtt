@@ -908,6 +908,18 @@ export class MapPageInteractionService {
     }
   }
 
+  public async confirmLeaveGameToHome(): Promise<boolean> {
+    return this.openGenericConfirmDialog({
+      title: this.translationService.tOrFallback("map.interaction.leaveGame.title", "Leave game?"),
+      message: this.translationService.tOrFallback(
+        "map.interaction.leaveGame.message",
+        "You are about to leave the game. You can rejoin at any time, but if other players keep playing you will not witness their turns. They can also vote to skip your turn. Let them know if you are unavailable now.",
+      ),
+      confirmText: this.translationService.tOrFallback("map.interaction.leaveGame.confirm", "Leave"),
+      cancelText: this.translationService.tOrFallback("map.interaction.leaveGame.cancel", "Stay"),
+    });
+  }
+
   private async runNamedAction<T>(
     actionId: string,
     task: () => Promise<T>,

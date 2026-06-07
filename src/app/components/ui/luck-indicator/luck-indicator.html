@@ -1,12 +1,20 @@
-<div class="luck-indicator-panel">
-  <p class="luck-indicator-title">{{ 'map.luck.title' | t }}</p>
-  <div class="luck-indicator-root">
-    <span class="luck-indicator-value-wrap">
-      <span class="luck-indicator-status" [class]="'luck-indicator-status ' + statusClass()">{{ statusLabel() }}</span>
-      <span class="luck-indicator-total-wrap">
-        <span class="luck-indicator-total-current" [class.rolling]="isRolling()">{{ shownTotal() }}</span>
-        <span class="luck-indicator-total-threshold">/{{ shownThreshold() }}</span>
+<app-ui-tooltip
+  class="luck-indicator-tooltip"
+  [tooltipId]="'luck-meter-help'"
+  [title]="'map.luck.helpTitle' | t"
+>
+  <div tooltipTrigger class="luck-indicator-panel">
+    <p class="luck-indicator-title">{{ 'map.luck.title' | t }}</p>
+    <div class="luck-indicator-root">
+      <span class="luck-indicator-value-wrap">
+        <span class="luck-indicator-status" [class]="'luck-indicator-status ' + statusClass()">{{ statusLabel() }}</span>
+        <span class="luck-indicator-total-wrap">
+          <span class="luck-indicator-total-current" [class.rolling]="isRolling()">{{ shownTotal() }}</span>
+          <span class="luck-indicator-total-threshold">/{{ shownThreshold() }}</span>
+        </span>
       </span>
-    </span>
+    </div>
   </div>
-</div>
+
+  <span tooltipContent class="luck-tooltip-content">{{ 'map.luck.helpDescription' | t }}</span>
+</app-ui-tooltip>

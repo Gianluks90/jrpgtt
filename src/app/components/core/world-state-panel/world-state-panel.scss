@@ -59,6 +59,24 @@
     padding: 6px 8px;
 }
 
+app-ui-tooltip.world-summary-tooltip {
+    display: inline-flex;
+    width: auto;
+    min-width: 0;
+}
+
+.world-summary-entry-help {
+    cursor: help;
+}
+
+.world-summary-tooltip-content {
+    display: block;
+    font-size: 0.6rem;
+    line-height: 1.4;
+    max-width: 320px;
+    white-space: normal;
+}
+
 .world-summary-label {
     opacity: 0.68;
 }

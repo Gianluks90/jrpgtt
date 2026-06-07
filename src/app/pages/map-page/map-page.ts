@@ -487,7 +487,10 @@ export class MapPage implements OnInit, OnDestroy {
     this.mapPageState.destroy();
   }
 
-  public onBackHome(): void {
+  public async onBackHome(): Promise<void> {
+    const confirmed = await this.mapPageInteractionService.confirmLeaveGameToHome();
+    if (!confirmed) return;
+
     void this.router.navigate(["/home"]);
   }
 

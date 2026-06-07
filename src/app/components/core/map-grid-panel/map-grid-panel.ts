@@ -231,6 +231,11 @@ export class MapGridPanel {
     return !!mapCell?.biome && !!mapCell?.discoveredBy;
   }
 
+  public isInactiveRevealedSanctuaryCell(cell: MapGridPanelCell): boolean {
+    if (!this.isRevealedCell(cell)) return false;
+    return cell.mapCell?.specialType === "sanctuary" && cell.mapCell.active !== true;
+  }
+
   public isImpassableCell(cell: MapGridPanelCell): boolean {
     if (!this.isRevealedCell(cell)) return false;
     if (cell.isSpecial || !cell.mapCell) return false;

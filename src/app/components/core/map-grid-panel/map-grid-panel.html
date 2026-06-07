@@ -68,6 +68,7 @@
             [special]="cell.isSpecial"
             [specialType]="specialTypeForCell(cell)"
             [revealed]="isRevealedCell(cell)"
+            [desaturated]="isInactiveRevealedSanctuaryCell(cell)"
             [movable]="isMovableCell(cell)"
             [impassable]="isImpassableCell(cell)"
             [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"

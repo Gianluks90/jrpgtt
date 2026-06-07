@@ -428,7 +428,9 @@
             "title": "Orario",
             "titleWithRounds": "Orario ({rounds} turni)",
             "day": "Giorno",
-            "night": "Notte"
+            "night": "Notte",
+            "helpTitle": "Aiuto",
+            "helpDescription": "Ad ogni round il giorno passa alla notte e viceversa. L'ora del giorno influenza alcuni oggetti e creature: quelle attive durante uno specifico orario avranno +1 ai loro parametri."
         },
         "worldPanel": {
             "turn": "Turno",
@@ -436,7 +438,14 @@
             "discovered": "Esplorato",
             "activeShrines": "Santuari attivi",
             "worldEvent": "Evento mondiale",
-            "activePlayer": "Turno di"
+            "activePlayer": "Turno di",
+            "helpTitle": "Aiuto",
+            "help": {
+                "turnRound": "Il turno e l'azione effettuata da un singolo giocatore. Quando tutti hanno effettuato un turno, allora il round avanza.",
+                "discovered": "La mappa e composta per un totale di 100 caselle esplorabili. Entrando in una cella non scoperta viene rivelato il bioma e ogni eventuale altro punto di interesse della cella.",
+                "activeShrines": "Ci sono quattro santuari legati ad altrettanti elementi: fuoco, acqua, aria e terra. Scoprire e attivare i santuari consente di entrare in sintonia con l'elemento che rappresentano, fornendo talvolta anche dei bonus. Ogni santuario attivo nella Regione I riduce l'impatto dell'Evento mondiale quando questo viene eseguito.",
+                "worldEvent": "Passare dalla Regione I alla II mette in allerta le forze del male che eseguiranno la loro contromossa, talvolta ribaltando la situazione della mappa. L'evento mondiale considera il bioma piu rivelato come bersaglio dell'evento; il bioma a seguire determina invece quali saranno i possibili effetti. Per una spiegazione completa, vedere il regolamento."
+            }
         },
         "commands": {
             "title": "Comandi",
@@ -492,6 +501,8 @@
         },
         "luck": {
             "title": "Fortunometro",
+            "helpTitle": "Aiuto",
+            "helpDescription": "Spesso verra generato un numero casuale (esplorando, interagendo con personaggi speciali nei luoghi sicuri, ecc...) che se raggiunge o supera il 100 da luogo ad un 'Colpo di fortuna', permettendo cosi al giocatore di ricevere una ricompensa migliore. Il parametro Fortuna aumenta la possibilita che esca 100.",
             "status": {
                 "success": "Si!",
                 "near": "Quasi",
@@ -691,6 +702,12 @@
                 "title": "Ingresso nella Regione II",
                 "message": "Attraversare questo confine potrebbe attivare un evento mondiale. Vuoi procedere?",
                 "confirm": "Procedi",
+                "cancel": "Resta"
+            },
+            "leaveGame": {
+                "title": "Lasciare la partita?",
+                "message": "Stai per lasciare la partita. Potrai rientrare in qualsiasi momento ma se gli altri giocatori proseguono non assisterai ai loro turni. Inoltre, possono votare per farti saltare il turno. Avvisali se ora non hai tempo.",
+                "confirm": "Esci",
                 "cancel": "Resta"
             },
             "graveyard": {

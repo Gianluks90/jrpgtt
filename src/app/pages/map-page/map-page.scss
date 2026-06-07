@@ -190,6 +190,12 @@
         background: transparent;
         padding: 0;
         min-height: 0;
+        width: 100%;
+    }
+
+    .map-inline-day-night {
+        display: block;
+        min-width: 96px;
     }
 
     .map-inline-day-night::ng-deep .day-night-title {
@@ -201,7 +207,7 @@
         padding: 0;
         gap: 5px;
         min-height: 0;
-        min-width: 72px;
+        min-width: 96px;
         justify-content: center;
     }
 

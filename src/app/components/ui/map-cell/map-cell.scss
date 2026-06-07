@@ -36,6 +36,10 @@
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
+.desaturated-cell.revealed-cell {
+    filter: saturate(0);
+}
+
 .impassable-cell.revealed-cell {
     filter: saturate(0);
 }

@@ -428,7 +428,9 @@
       "title": "Time",
       "titleWithRounds": "Time ({rounds} rounds)",
       "day": "Day",
-      "night": "Night"
+      "night": "Night",
+      "helpTitle": "Help",
+      "helpDescription": "At every round, day switches to night and vice versa. Time of day influences some items and creatures: those active during a specific time gain +1 to their parameters."
     },
     "worldPanel": {
       "turn": "Turn",
@@ -436,7 +438,14 @@
       "discovered": "Discovered",
       "activeShrines": "Active shrines",
       "worldEvent": "World event",
-      "activePlayer": "Active player"
+      "activePlayer": "Active player",
+      "helpTitle": "Help",
+      "help": {
+        "turnRound": "A turn is the action performed by a single player. When all players have taken one turn, the round advances.",
+        "discovered": "The map has 100 explorable tiles. Entering an undiscovered tile reveals its biome and any other point of interest on that tile.",
+        "activeShrines": "There are four shrines linked to four elements: fire, water, wind and earth. Discovering and activating shrines lets you attune to their element and may grant bonuses. Each active shrine in Region I reduces the impact of the World Event when it is triggered.",
+        "worldEvent": "Crossing from Region I to Region II alerts the forces of evil, triggering a counter-move that may reshape the map. The World Event targets the most revealed biome; the next biome in rank determines the possible effects. For full details, see the rulebook."
+      }
     },
     "commands": {
       "title": "Commands",
@@ -492,6 +501,8 @@
     },
     "luck": {
       "title": "Luck-meter",
+      "helpTitle": "Help",
+      "helpDescription": "A random number is often generated (while exploring, when interacting with special characters in safe places, etc.). If it reaches or exceeds 100, it triggers a Lucky Strike and the player receives a better reward. The Luck stat increases the chance of reaching 100.",
       "status": {
         "success": "Yes!",
         "near": "Near",
@@ -691,6 +702,12 @@
         "title": "Entering Region II",
         "message": "Crossing this border may trigger a world event. Do you want to proceed?",
         "confirm": "Proceed",
+        "cancel": "Stay"
+      },
+      "leaveGame": {
+        "title": "Leave game?",
+        "message": "You are about to leave the game. You can rejoin at any time, but if other players keep playing you will not witness their turns. They can also vote to skip your turn. Let them know if you are unavailable now.",
+        "confirm": "Leave",
         "cancel": "Stay"
       },
       "graveyard": {

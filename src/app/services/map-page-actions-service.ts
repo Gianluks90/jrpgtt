@@ -28,6 +28,7 @@ interface BuildCommandActionsInput {
   providedIn: "root",
 })
 export class MapPageActionsService {
+  private readonly sanctuaryActivationMpCost = 3;
   private readonly sanctuaryDonationCost = 5;
 
   constructor(
@@ -78,6 +79,7 @@ export class MapPageActionsService {
 
     const isBusy = input.pendingActionId !== null;
     const hasMoney = (player.inventory?.money ?? 0) >= this.sanctuaryDonationCost;
+    const hasMagic = (player.parameters?.mp?.current ?? 0) >= this.sanctuaryActivationMpCost;
     const worldTurn = input.worldState?.currentTurn ?? 0;
     const isSanctuaryCell = cell.specialType === "sanctuary" && !!cell.sanctuaryElement;
     const landmarkActionIds = this.getConfiguredLandmarkActionIds(cell);
@@ -99,6 +101,7 @@ export class MapPageActionsService {
         const card = this.actionRegistry.buildActionCard(actionId, {
           isBusy,
           hasMoney,
+          hasMagic,
           isMyTurn: input.isMyTurn,
           hasMovedThisTurn: input.hasMovedOnCurrentTurn,
           sanctuaryLabel,
@@ -143,7 +146,7 @@ export class MapPageActionsService {
     }
 
     const fallbackActionIds = cell.active === true
-      ? ["donate-sanctuary", "pray-sanctuary"]
+      ? ["sanctuary"]
       : ["activate-sanctuary"];
 
     if (!tilesConfig) {

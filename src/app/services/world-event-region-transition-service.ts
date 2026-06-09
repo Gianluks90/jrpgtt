@@ -21,9 +21,11 @@ export class WorldEventRegionTransitionService {
   }
 
   public ensureRegionIToIIEventState(worldState: WorldState): void {
+    const previousWorldEvent = worldState.worldEvent;
     worldState.worldEvent = {
-      title: worldState.worldEvent?.title?.trim() || REGION_I_TO_II_WORLD_EVENT_TITLE,
-      emitted: worldState.worldEvent?.emitted === true,
+      ...previousWorldEvent,
+      title: previousWorldEvent?.title?.trim() || REGION_I_TO_II_WORLD_EVENT_TITLE,
+      emitted: previousWorldEvent?.emitted === true,
     };
   }
 

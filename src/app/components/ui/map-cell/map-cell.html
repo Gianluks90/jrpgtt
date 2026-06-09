@@ -1,43 +1,53 @@
 <div
-    class="map-cell"
-    [class.special-cell]="special()"
-    [class.sanctuary-cell]="isSanctuaryCell()"
-    [class.landmark-cell]="isLandmarkCell()"
-    [class.revealed-cell]="revealed()"
-    [class.desaturated-cell]="desaturated()"
-    [class.unrevealed-cell]="!revealed()"
-    [class.movable-cell]="movable()"
-    [class.impassable-cell]="impassable()"
-    [class.environment-hover-cell]="hoveredEnvironment()"
-    [class.world-event-mutation-pending]="worldEventMutationPhase() === 'pending'"
-    [class.world-event-mutation-applied]="worldEventMutationPhase() === 'applied'"
-    [class]="biome() && !isSanctuaryCell() ? 'biome-' + biome() : ''"
-    [style.--env-top-width]="envTopWidth()"
-    [style.--env-right-width]="envRightWidth()"
-    [style.--env-bottom-width]="envBottomWidth()"
-    [style.--env-left-width]="envLeftWidth()"
-    [style.--sanctuary-icon]="sanctuaryStyle()?.iconUrl ? 'url(' + sanctuaryStyle()?.iconUrl + ')' : null"
-    [style.--sanctuary-bg-color]="sanctuaryStyle()?.backgroundColor ?? null"
-    [style.--sanctuary-icon-color]="sanctuaryStyle()?.iconColor ?? null"
-    [style.--landmark-icon]="landmarkIconUrl() ? 'url(' + landmarkIconUrl() + ')' : null"
+    class="map-cell-shell"
+    [class.movable-shell]="movable()"
     (click)="onClick()"
+    (contextmenu)="onContextMenu($event)"
     (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()"
 >
-    @if (hoverIntentProgress() > 0 && hoverIntentProgress() < 100) {
-        <div class="hover-intent-progress" [style.width.%]="hoverIntentProgress()"></div>
-    }
+    <div
+        class="map-cell"
+        [class.special-cell]="special()"
+        [class.sanctuary-cell]="isSanctuaryCell()"
+        [class.landmark-cell]="isLandmarkCell()"
+        [class.revealed-cell]="revealed()"
+        [class.desaturated-cell]="desaturated()"
+        [class.unrevealed-cell]="!revealed()"
+        [class.movable-cell]="movable()"
+        [class.impassable-cell]="impassable()"
+        [class.environment-hover-cell]="hoveredEnvironment()"
+        [class.world-event-mutation-pending]="worldEventMutationPhase() === 'pending'"
+        [class.world-event-mutation-applied]="worldEventMutationPhase() === 'applied'"
+        [class]="biome() && !isSanctuaryCell() ? 'biome-' + biome() : ''"
+        [style.--env-top-width]="envTopWidth()"
+        [style.--env-right-width]="envRightWidth()"
+        [style.--env-bottom-width]="envBottomWidth()"
+        [style.--env-left-width]="envLeftWidth()"
+        [style.--sanctuary-icon]="sanctuaryStyle()?.iconUrl ? 'url(' + sanctuaryStyle()?.iconUrl + ')' : null"
+        [style.--sanctuary-bg-color]="sanctuaryStyle()?.backgroundColor ?? null"
+        [style.--sanctuary-icon-color]="sanctuaryStyle()?.iconColor ?? null"
+        [style.--landmark-icon]="landmarkIconUrl() ? 'url(' + landmarkIconUrl() + ')' : null"
+    >
+        @if (hoverIntentProgress() > 0 && hoverIntentProgress() < 100) {
+            <div class="hover-intent-progress" [style.width.%]="hoverIntentProgress()"></div>
+        }
 
-    @if (revealed() && dangerOverlayLevel() > 0) {
-        <div
-            class="danger-overlay"
-            [class.danger-overlay-strong]="dangerOverlayLevel() === 2"
-        ></div>
-    }
+        @if (revealed() && dangerOverlayLevel() > 0) {
+            <div
+                class="danger-overlay"
+                [class.danger-overlay-strong]="dangerOverlayLevel() === 2"
+            ></div>
+        }
 
-    @if (revealed() && impassable()) {
-        <div class="impassable-cross" aria-hidden="true"></div>
-    }
+        @if (revealed() && hasConditionMarker()) {
+            <div class="condition-marker" aria-hidden="true"></div>
+        }
+
+        @if (revealed() && impassable()) {
+            <div class="impassable-cross" aria-hidden="true"></div>
+        }
+    </div>
 
     @if (players().length > 0) {
         <div class="player-marker-cluster">

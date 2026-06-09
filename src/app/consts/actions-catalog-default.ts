@@ -28,7 +28,7 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       id: "activate-sanctuary",
       ui: {
         label: "Activate",
-        descriptionTemplate: "Offer 5 coins to awaken {sanctuaryLabel}. Gain 2 XP and attune to its element.",
+        descriptionTemplate: "Infuse your magic into {sanctuaryLabel} to activate it and attune to its element.",
         i18n: {
           labelKey: "actions.activateSanctuary.label",
           descriptionKey: "actions.activateSanctuary.description",
@@ -43,6 +43,29 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
           type: "sanctuary-action",
           sanctuaryMode: "activate",
           requiredActive: false,
+        },
+        requiresMyTurn: true,
+      },
+    },
+    {
+      id: "sanctuary",
+      ui: {
+        label: "Sanctuary",
+        descriptionTemplate: "Open the sanctuary and choose one of its available actions.",
+        i18n: {
+          labelKey: "actions.sanctuary.label",
+          descriptionKey: "actions.sanctuary.description",
+        },
+      },
+      flow: {
+        handler: "sanctuary-open",
+        errorMessage: "Error while opening sanctuary actions",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy"],
+        dialog: {
+          type: "sanctuary-action",
+          sanctuaryMode: "actions",
+          requiredActive: true,
         },
         requiresMyTurn: true,
       },

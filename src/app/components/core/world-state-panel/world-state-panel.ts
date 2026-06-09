@@ -1,4 +1,4 @@
-import { Component, computed, input } from "@angular/core";
+import { Component, computed, input, output } from "@angular/core";
 import { Player } from "../../../models/Player";
 import { MapCell } from "../../../models/MapCell";
 import { WorldState } from "../../../models/WorldState";
@@ -11,6 +11,7 @@ interface WorldSummaryEntry {
   value: string;
   isActivePlayer: boolean;
   helpDescription: string | null;
+  clickable: boolean;
 }
 
 @Component({
@@ -31,6 +32,7 @@ export class WorldStatePanel {
   public showTitle = input(false);
   public title = input("World");
   public mobileSidebarTitle = input(false);
+  public worldEventHelpRequested = output<void>();
 
   public activePlayerLabel = computed<string>(() => {
     const activePlayerId = this.worldState()?.activePlayerId;
@@ -102,6 +104,7 @@ export class WorldStatePanel {
         value: String(turn),
         isActivePlayer: false,
         helpDescription: turnRoundHelp,
+        clickable: false,
       },
       {
         id: "round",
@@ -109,6 +112,7 @@ export class WorldStatePanel {
         value: String(round),
         isActivePlayer: false,
         helpDescription: turnRoundHelp,
+        clickable: false,
       },
       {
         id: "discovered",
@@ -116,6 +120,7 @@ export class WorldStatePanel {
         value: discovered,
         isActivePlayer: false,
         helpDescription: discoveredHelp,
+        clickable: false,
       },
       {
         id: "activeShrines",
@@ -123,6 +128,7 @@ export class WorldStatePanel {
         value: activeShrines,
         isActivePlayer: false,
         helpDescription: activeShrinesHelp,
+        clickable: false,
       },
       {
         id: "worldEvent",
@@ -130,6 +136,7 @@ export class WorldStatePanel {
         value: worldEventLabel,
         isActivePlayer: false,
         helpDescription: worldEventHelp,
+        clickable: true,
       },
       {
         id: "activePlayer",
@@ -137,13 +144,24 @@ export class WorldStatePanel {
         value: activePlayer,
         isActivePlayer: true,
         helpDescription: null,
+        clickable: false,
       },
     ];
   });
 
+  public onWorldEventEntryClick(): void {
+    this.worldEventHelpRequested.emit();
+  }
+
   private buildWorldEventLabel(worldEvent: WorldState["worldEvent"] | undefined): string {
     if (!worldEvent || worldEvent.emitted !== true) {
       return "-";
+    }
+
+    if (worldEvent.driverBiome && worldEvent.targetBiome) {
+      const driver = this.translationService.tOrFallback(`map.biomes.${worldEvent.driverBiome}`, worldEvent.driverBiome);
+      const target = this.translationService.tOrFallback(`map.biomes.${worldEvent.targetBiome}`, worldEvent.targetBiome);
+      return `${driver} > ${target}`;
     }
 
     const title = worldEvent.title?.trim() || "-";

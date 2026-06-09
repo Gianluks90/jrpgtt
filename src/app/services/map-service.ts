@@ -24,6 +24,7 @@ import { StatusCatalogService } from "./status-catalog-service";
 import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 import { TilesConfig } from "../models/TilesConfig";
 import { WorldEventMapMutationService } from "./world-event-map-mutation-service";
+import { WorldZonesService } from "./world-zones-service";
 
 interface WorldEventLogSummary {
   eventTitle: string;
@@ -58,6 +59,7 @@ export class MapService {
     private worldEventMapMutationService: WorldEventMapMutationService,
     private statusCatalogService: StatusCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
+    private worldZonesService: WorldZonesService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
@@ -88,15 +90,17 @@ export class MapService {
     let movedOnTurn = 0;
     let movedPlayerStatuses: Player["statuses"] = [];
     let landedMapCell: MapCell | null = null;
+    let movedMapSize = 10;
     const worldEventLogContext: { summary: WorldEventLogSummary | null } = {
       summary: null,
     };
     await runTransaction(this.firebaseService.database, async (transaction) => {
-      const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap] = await Promise.all([
+      const [playerSnap, worldStateSnap, gameMapSnap, targetCellSnap, gameSnap] = await Promise.all([
         transaction.get(playerRef),
         transaction.get(worldStateRef),
         transaction.get(gameMapRef),
         transaction.get(mapCellRef),
+        transaction.get(gameRef),
       ]);
 
       if (!playerSnap.exists()) {
@@ -117,6 +121,7 @@ export class MapService {
       movedOnTurn = worldState.currentTurn ?? 0;
       const gameMap = gameMapSnap.exists() ? gameMapSnap.data() as GameMap : null;
       const mapSize = gameMap?.size ?? 10;
+      movedMapSize = mapSize;
 
       const movedThisTurnByPlayer = worldState.movedThisTurnByPlayer ?? {};
       if (movedThisTurnByPlayer[playerId] === worldState.currentTurn) {
@@ -303,7 +308,46 @@ export class MapService {
             propagationDurationMs,
             summaryDurationMs: WORLD_EVENT_SUMMARY_DURATION_MS,
             mutationCellIds,
+            pendingMutationsByCellId: Object.fromEntries(
+              Object.entries(emissionResolution.updatedCellsById).map(([cellId, mutatedCell]) => [
+                cellId,
+                {
+                  biome: mutatedCell.biome,
+                  ...(mutatedCell.worldEventOriginalBiome ? { worldEventOriginalBiome: mutatedCell.worldEventOriginalBiome } : {}),
+                  ...(mutatedCell.worldEventBiomeOverride ? { worldEventBiomeOverride: mutatedCell.worldEventBiomeOverride } : {}),
+                  ...(Array.isArray(mutatedCell.worldEventConditionIds)
+                    ? { worldEventConditionIds: [...mutatedCell.worldEventConditionIds] }
+                    : {}),
+                  ...(typeof mutatedCell.worldEventEnemyLevelBonus === "number"
+                    ? { worldEventEnemyLevelBonus: mutatedCell.worldEventEnemyLevelBonus }
+                    : {}),
+                },
+              ]),
+            ),
           },
+        };
+
+        const requiredPlayerIds = Array.isArray(nextWorldState.turnOrder)
+          ? nextWorldState.turnOrder.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+          : [];
+        const ownerPlayerId = gameSnap.exists()
+          ? (gameSnap.data() as { ownerId?: unknown }).ownerId
+          : undefined;
+        nextWorldState.requiredActionNotification = {
+          type: "world-event-activated",
+          notificationId: `world-event-activated:${nextWorldState.currentTurn}:${targetX}_${targetY}`,
+          worldEventTitle: String(nextWorldState.worldEvent.title ?? "").trim() || "map.worldEventFlow.title",
+          ...(nextWorldState.worldEvent.primaryOutcome ? { worldEventPrimaryOutcome: nextWorldState.worldEvent.primaryOutcome } : {}),
+          ...(nextWorldState.worldEvent.targetBiome ? { worldEventTargetBiome: nextWorldState.worldEvent.targetBiome } : {}),
+          ...(nextWorldState.worldEvent.driverBiome ? { worldEventDriverBiome: nextWorldState.worldEvent.driverBiome } : {}),
+          worldEventTotalMutations: mutationCellIds.length,
+          activatedByPlayerId: player.id,
+          activatedByPlayerName: player.name,
+          ...(typeof ownerPlayerId === "string" ? { ownerPlayerId } : {}),
+          requiredPlayerIds: requiredPlayerIds.length > 0 ? requiredPlayerIds : [player.id],
+          acknowledgedPlayerIds: [],
+          createdAtMs: startedAtMs,
+          lastActionAtMs: startedAtMs,
         };
 
         if (
@@ -322,13 +366,6 @@ export class MapService {
           };
         }
 
-        Object.entries(emissionResolution.updatedCellsById).forEach(([cellId, mutatedCell]) => {
-          const mutatedCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", cellId);
-          transaction.set(mutatedCellRef, mutatedCell, { merge: true });
-          if (cellId === targetCellId) {
-            targetCellAfterMutation = mutatedCell;
-          }
-        });
       }
 
       if (
@@ -348,6 +385,25 @@ export class MapService {
           if (applyResult.changed) {
             targetCellAfterMutation = applyResult.cell;
             transaction.set(mapCellRef, applyResult.cell, { merge: true });
+
+            const worldEventFlow = nextWorldState.worldEvent?.flow;
+            if (worldEventFlow) {
+              const currentAppliedMutations = worldEventFlow.appliedMutationsByCellId ?? {};
+              worldEventFlow.appliedMutationsByCellId = {
+                ...currentAppliedMutations,
+                [targetCellId]: {
+                  biome: applyResult.cell.biome,
+                  ...(applyResult.cell.worldEventOriginalBiome ? { worldEventOriginalBiome: applyResult.cell.worldEventOriginalBiome } : {}),
+                  ...(applyResult.cell.worldEventBiomeOverride ? { worldEventBiomeOverride: applyResult.cell.worldEventBiomeOverride } : {}),
+                  ...(Array.isArray(applyResult.cell.worldEventConditionIds)
+                    ? { worldEventConditionIds: [...applyResult.cell.worldEventConditionIds] }
+                    : {}),
+                  ...(typeof applyResult.cell.worldEventEnemyLevelBonus === "number"
+                    ? { worldEventEnemyLevelBonus: applyResult.cell.worldEventEnemyLevelBonus }
+                    : {}),
+                },
+              };
+            }
           }
         }
       }
@@ -461,7 +517,8 @@ export class MapService {
     }
 
     if (landedSpecialType === "sanctuary" && movedToNewCell) {
-      gainedExperience += 2;
+      const sanctuaryRegion = this.worldZonesService.getRegionLabelByColumn(targetX, movedMapSize);
+      gainedExperience += sanctuaryRegion === "I" ? 1 : 2;
     }
 
     if (gainedExperience > 0) {

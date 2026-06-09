@@ -42,7 +42,7 @@ export class WorldEventMapMutationService {
     const driverBiome = ranking.find((biome) => biome !== targetBiome) ?? null;
     const activeShrinesInRegionI = this.countActiveShrinesInRegionI(input.mapCellsById, input.mapSize);
     const primaryOutcome = this.rollPrimaryOutcome(seed, activeShrinesInRegionI, "event-summary-primary");
-    const title = this.resolveWorldEventTitle(driverBiome, primaryOutcome);
+    const title = this.resolveWorldEventTitle();
 
     const nextWorldEvent: WorldEventState = {
       ...existingState,
@@ -204,7 +204,7 @@ export class WorldEventMapMutationService {
     const changed =
       nextCell.biome !== cell.biome
       || nextCell.worldEventOriginalBiome !== cell.worldEventOriginalBiome
-      nextCell.worldEventBiomeOverride !== cell.worldEventBiomeOverride
+      || nextCell.worldEventBiomeOverride !== cell.worldEventBiomeOverride
       || (nextCell.worldEventEnemyLevelBonus ?? 0) !== (cell.worldEventEnemyLevelBonus ?? 0)
       || JSON.stringify(nextCell.worldEventConditionIds ?? []) !== JSON.stringify(cell.worldEventConditionIds ?? []);
 
@@ -361,47 +361,7 @@ export class WorldEventMapMutationService {
     return "none";
   }
 
-  private resolveWorldEventTitle(driverBiome: BiomeType | null, outcome: WorldEventPrimaryOutcome): string {
-    if (outcome === "none") {
-      return "map.worldEventTitle.none";
-    }
-
-    if (driverBiome === "forest") {
-      return outcome === "negative"
-        ? "map.worldEventTitle.forest.negative"
-        : "map.worldEventTitle.forest.positive";
-    }
-
-    if (driverBiome === "desert") {
-      return outcome === "negative"
-        ? "map.worldEventTitle.desert.negative"
-        : "map.worldEventTitle.desert.positive";
-    }
-
-    if (driverBiome === "water") {
-      return outcome === "negative"
-        ? "map.worldEventTitle.water.negative"
-        : "map.worldEventTitle.water.positive";
-    }
-
-    if (driverBiome === "plains") {
-      return outcome === "negative"
-        ? "map.worldEventTitle.plains.negative"
-        : "map.worldEventTitle.plains.positive";
-    }
-
-    if (driverBiome === "mountain") {
-      return outcome === "negative"
-        ? "map.worldEventTitle.mountain.negative"
-        : "map.worldEventTitle.mountain.positive";
-    }
-
-    if (driverBiome === "ruins") {
-      return outcome === "negative"
-        ? "map.worldEventTitle.ruins.negative"
-        : "map.worldEventTitle.ruins.positive";
-    }
-
+  private resolveWorldEventTitle(): string {
     return "map.worldEventTitle.default";
   }
 

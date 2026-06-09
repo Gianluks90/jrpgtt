@@ -26,7 +26,6 @@ import { ResourceLabel } from "../models/Resource";
 import {
   SanctuaryActionDialog,
   SanctuaryActionDialogData,
-  SanctuaryActionDialogResult,
 } from "../components/dialogs/action-dialogs/sanctuary-action-dialog/sanctuary-action-dialog";
 import {
   DoctorHealDialog,
@@ -90,6 +89,14 @@ import { SanctuaryTilesConfigEntry, TilesConfig } from "../models/TilesConfig";
 import { DiscardPileDialog } from "../components/dialogs/discard-pile-dialog/discard-pile-dialog";
 import { DiscardPileEntry } from "../models/DiscardPile";
 import { TranslationService } from "./translation-service";
+import { ActionRegistryService } from "./action-registry-service";
+import { CommandPanelAction } from "../components/ui/commands-panel/commands-panel";
+import {
+  WorldEventHelpDialog,
+  WorldEventHelpDialogData,
+  WorldEventHelpDialogRow,
+  WorldEventHelpBiome,
+} from "../components/dialogs/world-event-help-dialog/world-event-help-dialog";
 
 interface HandleCommandActionInput {
   actionId: string;
@@ -125,6 +132,7 @@ export class MapPageInteractionService {
     private graveyardResurrectRewardsConfigService: GraveyardResurrectRewardsConfigService,
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
     private translationService: TranslationService,
+    private actionRegistryService: ActionRegistryService,
   ) {}
 
   public resetUiState(): void {
@@ -133,12 +141,158 @@ export class MapPageInteractionService {
     this.isOpeningLevelUp.set(false);
   }
 
+  public async acknowledgeRequiredActionNotification(gameId: string, player: Player | null): Promise<void> {
+    if (!gameId || !player) return;
+
+    try {
+      await this.actionExecutorService.acknowledgeRequiredActionNotification(gameId, {
+        id: player.id,
+        name: player.name,
+      });
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Unable to confirm required action notification");
+    }
+  }
+
+  public async forceContinueRequiredActionNotification(gameId: string, player: Player | null): Promise<void> {
+    if (!gameId || !player) return;
+
+    try {
+      await this.actionExecutorService.forceContinueRequiredActionNotification(gameId, {
+        id: player.id,
+        name: player.name,
+      });
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Unable to force continue required action notification");
+    }
+  }
+
+  public async clearRequiredActionNotification(gameId: string, notificationId: string): Promise<void> {
+    if (!gameId || !notificationId.trim()) return;
+
+    try {
+      await this.actionExecutorService.clearRequiredActionNotification(gameId, notificationId);
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Unable to clear required action notification");
+    }
+  }
+
   public openLogsDialog(logs: EventLog[]): void {
     this.dialog.open(GameEventsLogDialog, {
       ...DIALOGS_CONFIG,
       data: {
         logs,
       },
+    }).closed.pipe(take(1)).subscribe();
+  }
+
+  public openWorldEventHelpDialog(input: {
+    worldState: WorldState | null;
+    mapCellsById: Record<string, MapCell>;
+  }): void {
+    const worldEvent = input.worldState?.worldEvent;
+    const eventTriggered = worldEvent?.emitted === true;
+    const flow = worldEvent?.flow;
+    const pendingMutations = flow?.pendingMutationsByCellId ?? {};
+    const appliedMutations = flow?.appliedMutationsByCellId ?? {};
+    const sourceMutations = Object.keys(pendingMutations).length > 0 ? pendingMutations : appliedMutations;
+
+    const rows: WorldEventHelpDialogRow[] = Object.entries(sourceMutations)
+      .map(([cellId, mutation]) => {
+        const [xRaw, yRaw] = cellId.split("_");
+        const x = Math.max(0, Math.floor(Number(xRaw ?? 0)));
+        const y = Math.max(0, Math.floor(Number(yRaw ?? 0)));
+        const mapCell = input.mapCellsById[cellId] ?? null;
+
+        const originalBiome = (mapCell?.worldEventOriginalBiome ?? mapCell?.biome ?? mutation.worldEventOriginalBiome ?? mutation.biome) as WorldEventHelpBiome;
+        const mutatedBiome = mutation.biome as WorldEventHelpBiome;
+
+        const changes: string[] = [];
+        if (originalBiome !== mutatedBiome) {
+          changes.push(this.translationService.tOrFallback(
+            "dialogs.worldEventHelp.change.biomeOverride",
+            "Biome overridden: {fromBiome} -> {toBiome}",
+            {
+              fromBiome: this.translationService.tOrFallback(`map.biomes.${originalBiome}`, originalBiome),
+              toBiome: this.translationService.tOrFallback(`map.biomes.${mutatedBiome}`, mutatedBiome),
+            },
+          ));
+        }
+
+        const conditionIds = Array.isArray(mutation.worldEventConditionIds)
+          ? mutation.worldEventConditionIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+          : [];
+        if (conditionIds.length > 0) {
+          const conditionLabels = conditionIds
+            .map((conditionId) => this.translationService.tOrFallback(
+              `map.cellInspector.conditionLabel.${conditionId}`,
+              conditionId,
+            ))
+            .join(", ");
+          changes.push(this.translationService.tOrFallback(
+            "dialogs.worldEventHelp.change.conditions",
+            "Applied conditions: {conditions}",
+            { conditions: conditionLabels },
+          ));
+        }
+
+        const enemyBonus = Math.max(0, Math.floor(Number(mutation.worldEventEnemyLevelBonus ?? 0)));
+        if (enemyBonus > 0) {
+          changes.push(this.translationService.tOrFallback(
+            "dialogs.worldEventHelp.change.enemyLevel",
+            "Enemy level bonus: +{amount}",
+            { amount: enemyBonus },
+          ));
+        }
+
+        return {
+          x,
+          y,
+          cellLabel: this.translationService.tOrFallback(
+            "dialogs.worldEventHelp.cellLabel",
+            "Cell ({x}, {y})",
+            { x: x + 1, y: y + 1 },
+          ),
+          originalBiome,
+          originalBiomeLabel: this.translationService.tOrFallback(`map.biomes.${originalBiome}`, originalBiome),
+          mutatedBiome,
+          mutatedBiomeLabel: this.translationService.tOrFallback(`map.biomes.${mutatedBiome}`, mutatedBiome),
+          changes,
+        };
+      })
+      .sort((left, right) => {
+        if (left.y !== right.y) {
+          return left.y - right.y;
+        }
+        return left.x - right.x;
+      })
+      .map(({ x: _x, y: _y, ...row }) => row);
+
+    const data: WorldEventHelpDialogData = {
+      title: this.translationService.tOrFallback("dialogs.worldEventHelp.title", "World Event Details"),
+      subtitle: this.translationService.tOrFallback(
+        "dialogs.worldEventHelp.subtitle",
+        "Original cell > resolved cell and applied changes.",
+      ),
+      waitingMessage: eventTriggered
+        ? this.translationService.tOrFallback("dialogs.worldEventHelp.noChanges", "No mutations are currently available.")
+        : this.translationService.tOrFallback(
+          "dialogs.worldEventHelp.waiting",
+          "World event not triggered yet. Waiting for someone to enter Region II.",
+        ),
+      noRowsMessage: this.translationService.tOrFallback("dialogs.worldEventHelp.noChanges", "No changes detected."),
+      changesTitle: this.translationService.tOrFallback("dialogs.worldEventHelp.changesTitle", "Changes:"),
+      closeLabel: this.translationService.tOrFallback("dialogs.common.close", "Close"),
+      rows,
+    };
+
+    this.dialog.open(WorldEventHelpDialog, {
+      ...DIALOGS_CONFIG,
+      maxWidth: "760px",
+      data,
     }).closed.pipe(take(1)).subscribe();
   }
 
@@ -291,6 +445,27 @@ export class MapPageInteractionService {
             name: resolvedPlayer.name,
           });
         },
+      });
+      return;
+    }
+
+    if (handler === "sanctuary-open") {
+      const sanctuaryFlow = this.resolveSanctuaryFlowConfig(handler, flow.dialog);
+      if (!sanctuaryFlow) {
+        window.alert(`Action '${input.actionId}' has an invalid sanctuary dialog configuration.`);
+        return;
+      }
+
+      await this.runSanctuaryMenuAction({
+        gameId: input.gameId,
+        myPlayer: player,
+        isMyTurn: input.isMyTurn,
+        worldState: input.worldState,
+        mapCellsById: input.mapCellsById,
+        actionId: input.actionId,
+        mode: sanctuaryFlow.mode,
+        requiredActive: sanctuaryFlow.requiredActive,
+        errorMessage,
       });
       return;
     }
@@ -816,6 +991,8 @@ export class MapPageInteractionService {
   ): { mode: SanctuaryActionDialogData["mode"] | null; requiredActive: boolean } | null {
     const defaultMode: SanctuaryActionDialogData["mode"] | null = handler === "sanctuary-activate"
       ? "activate"
+      : handler === "sanctuary-open"
+        ? "actions"
       : handler === "sanctuary-donate"
         ? "donate"
         : null;
@@ -968,7 +1145,10 @@ export class MapPageInteractionService {
       const confirmed = await this.openSanctuaryActionDialog({
         mode: options.mode,
         sanctuaryElement: cell.sanctuaryElement,
+        sanctuaryActive: cell.active === true,
         playerMoney: player.inventory?.money ?? 0,
+        playerMpCurrent: player.parameters?.mp?.current ?? 0,
+        playerMpMax: player.parameters?.mp?.max ?? player.parameters?.mp?.base ?? 1,
       });
       if (!confirmed) return;
     }
@@ -976,6 +1156,101 @@ export class MapPageInteractionService {
     await this.runNamedAction(options.actionId, async () => {
       await options.execute(player);
     }, options.errorMessage);
+  }
+
+  private async runSanctuaryMenuAction(options: {
+    gameId: string;
+    myPlayer: Player | null;
+    isMyTurn: boolean;
+    worldState: WorldState | null;
+    mapCellsById: Record<string, MapCell>;
+    actionId: string;
+    mode: SanctuaryActionDialogData["mode"] | null;
+    requiredActive: boolean;
+    errorMessage: string;
+  }): Promise<void> {
+    const player = options.myPlayer;
+    const cell = this.getCurrentSanctuaryCell(player, options.mapCellsById);
+    if (!player || !cell || !cell.sanctuaryElement || !options.isMyTurn) return;
+
+    const isStateMismatch = options.requiredActive ? cell.active !== true : cell.active === true;
+    if (isStateMismatch) return;
+
+    if (options.mode !== "actions") return;
+
+    const sanctuaryActions = this.buildSanctuaryDialogActions(player, cell, options.worldState);
+    const selectedActionId = await this.openSanctuaryActionsDialog({
+      mode: "actions",
+      sanctuaryElement: cell.sanctuaryElement,
+      sanctuaryActive: cell.active === true,
+      playerMoney: player.inventory?.money ?? 0,
+      playerMpCurrent: player.parameters?.mp?.current ?? 0,
+      playerMpMax: player.parameters?.mp?.max ?? player.parameters?.mp?.base ?? 1,
+      sanctuaryActions,
+    });
+
+    if (!selectedActionId) return;
+
+    const executor = selectedActionId === "donate-sanctuary"
+      ? async () => {
+        await this.actionExecutorService.donateAtSanctuary(options.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }
+      : selectedActionId === "pray-sanctuary"
+        ? async () => {
+          await this.actionExecutorService.prayAtSanctuary(options.gameId, {
+            id: player.id,
+            name: player.name,
+          });
+        }
+        : null;
+
+    if (!executor) return;
+
+    await this.runNamedAction(selectedActionId, executor, options.errorMessage);
+  }
+
+  private buildSanctuaryDialogActions(
+    player: Player,
+    cell: MapCell,
+    worldState: WorldState | null,
+  ): CommandPanelAction[] {
+    const sanctuaryLabel = this.sanctuaryElementToLabel(cell.sanctuaryElement);
+    const hasMoney = (player.inventory?.money ?? 0) >= 5;
+    const hasMagic = (player.parameters?.mp?.current ?? 0) >= 2;
+    const worldTurn = worldState?.currentTurn ?? 0;
+
+    const donate = this.actionRegistryService.buildActionCard("donate-sanctuary", {
+      isBusy: false,
+      hasMoney,
+      hasMagic,
+      isMyTurn: true,
+      hasMovedThisTurn: true,
+      sanctuaryLabel,
+      player,
+      cell,
+      worldTurn,
+      timeOfDay: worldState?.timeOfDay ?? "day",
+      biome: cell.biome,
+    });
+
+    const pray = this.actionRegistryService.buildActionCard("pray-sanctuary", {
+      isBusy: false,
+      hasMoney,
+      hasMagic,
+      isMyTurn: true,
+      hasMovedThisTurn: true,
+      sanctuaryLabel,
+      player,
+      cell,
+      worldTurn,
+      timeOfDay: worldState?.timeOfDay ?? "day",
+      biome: cell.biome,
+    });
+
+    return [donate, pray].filter((action): action is CommandPanelAction => !!action);
   }
 
   private async runDoctorHealAction(options: {
@@ -1035,11 +1310,52 @@ export class MapPageInteractionService {
   private async openSanctuaryActionDialog(data: SanctuaryActionDialogData): Promise<boolean> {
     const dialogRef = this.dialog.open(SanctuaryActionDialog, {
       ...DIALOGS_CONFIG,
+      width: "92%",
+      maxWidth: "920px",
+      maxHeight: "72vh",
       data,
     });
 
     const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
     return this.isConfirmSanctuaryActionResponse(response);
+  }
+
+  private async openSanctuaryActionsDialog(data: SanctuaryActionDialogData): Promise<string | null> {
+    const dialogRef = this.dialog.open(SanctuaryActionDialog, {
+      ...DIALOGS_CONFIG,
+      width: "92%",
+      maxWidth: "920px",
+      maxHeight: "72vh",
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    if (!this.isConfirmResult(response) || !response.data || typeof response.data !== "object") {
+      return null;
+    }
+
+    const actionId = (response.data as { actionId?: unknown }).actionId;
+    if (typeof actionId !== "string" || !actionId.trim()) {
+      return null;
+    }
+
+    return actionId;
+  }
+
+  private sanctuaryElementToLabel(element?: SanctuaryElement): string {
+    if (element === "water") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.water", "Water Shrine");
+    }
+    if (element === "fire") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.fire", "Fire Shrine");
+    }
+    if (element === "wind") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.wind", "Wind Shrine");
+    }
+    if (element === "earth") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.earth", "Earth Shrine");
+    }
+    return this.translationService.tOrFallback("map.cells.sanctuary.generic", "Elemental Shrine");
   }
 
   private async openDoctorHealDialog(data: DoctorHealDialogData): Promise<DoctorHealDialogResult | null> {
@@ -1125,7 +1441,7 @@ export class MapPageInteractionService {
     return response.result === "confirm";
   }
 
-  private isConfirmSanctuaryActionResponse(response: unknown): response is DialogResponse<SanctuaryActionDialogResult> {
+  private isConfirmSanctuaryActionResponse(response: unknown): response is DialogResponse {
     if (typeof response !== "object" || response === null) return false;
     if (!("result" in response)) return false;
     return response.result === "confirm";

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { collection, doc, getDoc, getDocs, runTransaction, Timestamp, Transaction } from "firebase/firestore";
+import { collection, deleteField, doc, getDoc, getDocs, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { GameMap } from "../models/GameMap";
 import { MapCell, SanctuaryElement } from "../models/MapCell";
 import { InventoryItemEntry } from "../models/Inventory";
@@ -97,6 +97,8 @@ export interface MerchantCheckoutOutcome {
   providedIn: "root",
 })
 export class ActionExecutorService {
+  private readonly sanctuaryActivationMpCost = 3;
+  private readonly sanctuaryPrayerMpCost = 2;
   private readonly sanctuaryDonationCost = 5;
   private readonly capitalEnchantressCost = 5;
   private readonly cityMysticCost = 5;
@@ -637,6 +639,7 @@ export class ActionExecutorService {
         transaction.get(playerRef),
         transaction.get(gameMapRef),
       ]);
+      const gameSnap = await transaction.get(gameRef);
 
       if (!worldStateSnap.exists()) {
         throw new Error("World state not found");
@@ -681,11 +684,20 @@ export class ActionExecutorService {
         throw new Error("Sanctuary element is missing");
       }
 
-      sanctuaryElement = mapCell.sanctuaryElement;
-      const currentMoney = typeof player.inventory?.money === "number" ? player.inventory.money : 0;
-      if (currentMoney < this.sanctuaryDonationCost) {
-        throw new Error("You need 5 coins to activate the sanctuary");
+      const mpCurrent = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+      const mpMax = Math.max(
+        1,
+        Math.floor(Number(
+          typeof player.parameters?.mp?.max === "number"
+            ? player.parameters.mp.max
+            : player.parameters?.mp?.base,
+        )),
+      );
+      if (mpCurrent < this.sanctuaryActivationMpCost) {
+        throw new Error("You need 3 MP to activate the sanctuary");
       }
+
+      sanctuaryElement = mapCell.sanctuaryElement;
 
       transaction.set(mapCellRef, {
         active: true,
@@ -697,18 +709,42 @@ export class ActionExecutorService {
         player.location.y,
         mapSize,
       );
+      const nowMs = Date.now();
+      const requiredPlayerIds = Array.isArray(worldState.turnOrder)
+        ? worldState.turnOrder.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+        : [];
+      const ownerPlayerId = gameSnap.exists()
+        ? (gameSnap.data() as { ownerId?: unknown }).ownerId
+        : undefined;
+      const requiredActionNotification: WorldState["requiredActionNotification"] = {
+        type: "sanctuary-activated",
+        notificationId: `sanctuary-activated:${worldTurn}:${player.location.x}_${player.location.y}`,
+        activatedByPlayerId: actor.id,
+        activatedByPlayerName: actor.name,
+        requiredPlayerIds: requiredPlayerIds.length > 0 ? requiredPlayerIds : [actor.id],
+        acknowledgedPlayerIds: [],
+        createdAtMs: nowMs,
+        lastActionAtMs: nowMs,
+        ...(mapCell.sanctuaryElement ? { sanctuaryElement: mapCell.sanctuaryElement } : {}),
+        ...(typeof ownerPlayerId === "string" ? { ownerPlayerId } : {}),
+      };
+
       transaction.set(worldStateRef, {
         sanctuaryInfluenceByQuadrant: {
           ...(worldState.sanctuaryInfluenceByQuadrant ?? {}),
           [quadrant]: mapCell.sanctuaryElement,
         },
+        requiredActionNotification,
       }, { merge: true });
 
       transaction.set(playerRef, {
         attunedElement: mapCell.sanctuaryElement,
-        inventory: {
-          ...(player.inventory ?? { items: [], resources: [] }),
-          money: currentMoney - this.sanctuaryDonationCost,
+        parameters: {
+          ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: Math.max(0, Math.min(mpMax, mpCurrent - this.sanctuaryActivationMpCost)),
+          },
         },
         actionsUsedThisTurn: this.markActionUsed(player, "activate-sanctuary", worldTurn),
       }, { merge: true });
@@ -719,13 +755,171 @@ export class ActionExecutorService {
       }, { merge: true });
     });
 
-    await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, actor.id, 2);
+    await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, actor.id, 1);
 
     await this.tryCreateLog(gameId, actor, "player.activateSanctuary", {
       sanctuary: sanctuaryElement,
       sanctuaryLabel: this.sanctuaryElementToLabel(sanctuaryElement ?? undefined),
-      spentCoins: this.sanctuaryDonationCost,
-      gainedExperience: 2,
+      spentMp: this.sanctuaryActivationMpCost,
+      gainedExperience: 1,
+    });
+  }
+
+  public async acknowledgeRequiredActionNotification(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const worldStateSnap = await transaction.get(worldStateRef);
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const notification = worldState.requiredActionNotification;
+      if (!notification) {
+        return;
+      }
+
+      if (notification.forcedByOwnerId) {
+        return;
+      }
+
+      const requiredPlayerIds = Array.isArray(notification.requiredPlayerIds)
+        ? notification.requiredPlayerIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+        : [];
+      if (!requiredPlayerIds.includes(actor.id)) {
+        throw new Error("You are not required to acknowledge this notification");
+      }
+
+      const acknowledgedSet = new Set(
+        Array.isArray(notification.acknowledgedPlayerIds)
+          ? notification.acknowledgedPlayerIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+          : [],
+      );
+      acknowledgedSet.add(actor.id);
+      const acknowledgedPlayerIds = Array.from(acknowledgedSet);
+      const allAcknowledged = requiredPlayerIds.every((id) => acknowledgedSet.has(id));
+      const updatedNotification: WorldState["requiredActionNotification"] = {
+        ...notification,
+        acknowledgedPlayerIds,
+        lastActionAtMs: Date.now(),
+        ...(allAcknowledged
+          ? { allAcknowledgedAtMs: typeof notification.allAcknowledgedAtMs === "number" ? notification.allAcknowledgedAtMs : Date.now() }
+          : {}),
+      };
+
+      transaction.set(worldStateRef, {
+        requiredActionNotification: updatedNotification,
+      }, { merge: true });
+    });
+  }
+
+  public async forceContinueRequiredActionNotification(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, gameSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(gameRef),
+      ]);
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      const ownerId = gameSnap.exists() ? (gameSnap.data() as { ownerId?: unknown }).ownerId : undefined;
+      if (ownerId !== actor.id) {
+        throw new Error("Only the game owner can force continue");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const notification = worldState.requiredActionNotification;
+      if (!notification) {
+        return;
+      }
+
+      transaction.set(worldStateRef, {
+        requiredActionNotification: {
+          ...notification,
+          lastActionAtMs: Date.now(),
+          forcedByOwnerId: actor.id,
+          forcedAtMs: Date.now(),
+        },
+      }, { merge: true });
+    });
+  }
+
+  public async clearRequiredActionNotification(gameId: string, notificationId: string): Promise<void> {
+    if (!gameId || !notificationId.trim()) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const worldStateSnap = await transaction.get(worldStateRef);
+      if (!worldStateSnap.exists()) {
+        return;
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const notification = worldState.requiredActionNotification;
+      if (!notification) {
+        return;
+      }
+
+      if (notification.notificationId !== notificationId) {
+        return;
+      }
+
+      const allAcknowledgedAtMs = Number(notification.allAcknowledgedAtMs ?? 0);
+      const clearDelayMs = notification.type === "world-event-activated" ? 800 : 3000;
+      const canClearForAllAcknowledged = allAcknowledgedAtMs > 0 && Date.now() >= allAcknowledgedAtMs + clearDelayMs;
+      const canClearForForcedContinue = typeof notification.forcedByOwnerId === "string" && notification.forcedByOwnerId.length > 0;
+      if (!canClearForAllAcknowledged && !canClearForForcedContinue) {
+        return;
+      }
+
+      const nowMs = Date.now();
+      const patch: Partial<WorldState> = {
+        requiredActionNotification: deleteField() as never,
+      };
+
+      if (notification.type === "world-event-activated" && worldState.worldEvent?.flow) {
+        const pendingMutationsByCellId = worldState.worldEvent.flow.pendingMutationsByCellId ?? {};
+        Object.entries(pendingMutationsByCellId).forEach(([cellId, mutation]) => {
+          const mapCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", cellId);
+          transaction.set(mapCellRef, {
+            biome: mutation.biome,
+            ...(mutation.worldEventOriginalBiome ? { worldEventOriginalBiome: mutation.worldEventOriginalBiome } : {}),
+            ...(mutation.worldEventBiomeOverride ? { worldEventBiomeOverride: mutation.worldEventBiomeOverride } : {}),
+            ...(Array.isArray(mutation.worldEventConditionIds)
+              ? { worldEventConditionIds: mutation.worldEventConditionIds }
+              : {}),
+            ...(typeof mutation.worldEventEnemyLevelBonus === "number"
+              ? { worldEventEnemyLevelBonus: mutation.worldEventEnemyLevelBonus }
+              : {}),
+          }, { merge: true });
+        });
+
+        patch.worldEvent = {
+          ...worldState.worldEvent,
+          flow: {
+            ...worldState.worldEvent.flow,
+            startedAtMs: nowMs,
+            pendingMutationsByCellId: {},
+              appliedMutationsByCellId: pendingMutationsByCellId,
+          },
+        };
+      }
+
+      transaction.set(worldStateRef, patch, { merge: true });
     });
   }
 
@@ -868,10 +1062,11 @@ export class ActionExecutorService {
       : 50;
     const luckResult = this.luckService.checkLuck(
       playerLuck * this.resolveLuckBonusMultiplier(playerForLuck.statuses),
-      { successThreshold: minimumPrayerThreshold },
+      { successThreshold: 100 },
     );
+    const prayerAccepted = luckResult.total >= minimumPrayerThreshold;
     const luckyPrayer = luckResult.total >= luckyPrayerThreshold;
-    const healRatio = luckyPrayer ? 0.10 : (luckResult.success ? 0.05 : 0);
+    const healRatio = luckyPrayer ? 0.10 : (prayerAccepted ? 0.05 : 0);
 
     let sanctuaryElement: SanctuaryElement | null = null;
     let healedHp = 0;
@@ -942,6 +1137,19 @@ export class ActionExecutorService {
         throw new Error("Your HP is already full");
       }
 
+      const mpCurrent = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+      const mpMax = Math.max(
+        1,
+        Math.floor(Number(
+          typeof player.parameters?.mp?.max === "number"
+            ? player.parameters.mp.max
+            : player.parameters?.mp?.base,
+        )),
+      );
+      if (mpCurrent < this.sanctuaryPrayerMpCost) {
+        throw new Error(`You need at least ${this.sanctuaryPrayerMpCost} MP to pray at the sanctuary`);
+      }
+
       let nextHpCurrent = hpCurrent;
       if (healRatio > 0) {
         healedHp = Math.max(1, Math.floor(hpMax * healRatio));
@@ -956,6 +1164,10 @@ export class ActionExecutorService {
       transaction.set(playerRef, {
         parameters: {
           ...player.parameters,
+          mp: {
+            ...player.parameters.mp,
+            current: Math.max(0, Math.min(mpMax, mpCurrent - this.sanctuaryPrayerMpCost)),
+          },
           hp: {
             ...player.parameters.hp,
             current: nextHpCurrent,
@@ -977,6 +1189,7 @@ export class ActionExecutorService {
     await this.tryCreateLog(gameId, actor, "player.praySanctuary", {
       sanctuary: sanctuaryElement,
       sanctuaryLabel: this.sanctuaryElementToLabel(sanctuaryElement ?? undefined),
+      spentMp: this.sanctuaryPrayerMpCost,
       healedHp,
       lucky: luckyPrayer,
       minimumThreshold: minimumPrayerThreshold,

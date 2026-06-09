@@ -28,7 +28,7 @@ import { InventoryItemEntry } from "../../models/Inventory";
 import { PlayerStatsModifierService } from "../../services/player-stats-modifier-service";
 import { FastTravelVisualService } from "../../services/fast-travel-visual-service";
 import { FastTravelFlowService } from "../../services/fast-travel-flow-service";
-import { PendingFastTravelState } from "../../models/WorldState";
+import { PendingFastTravelState, RequiredActionNotificationState } from "../../models/WorldState";
 import { WorldEventRegionTransitionService } from "../../services/world-event-region-transition-service";
 import { BiomeConditionCatalogService } from "../../services/biome-condition-catalog-service";
 import { ItemCatalogService } from "../../services/item-catalog-service";
@@ -37,6 +37,7 @@ import { DiscardPileService } from "../../services/discard-pile-service";
 import { TranslationPipe } from "../../pipes/translation-pipe";
 import { TranslationService } from "../../services/translation-service";
 import { LandmarksService } from "../../services/landmarks-service";
+import { RequiredActionNotification, RequiredActionNotificationPlayer } from "../../components/ui/required-action-notification/required-action-notification";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
 
@@ -57,6 +58,7 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     CommandsPanel,
     MapLogPanel,
     TranslationPipe,
+    RequiredActionNotification,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
@@ -95,6 +97,7 @@ export class MapPage implements OnInit, OnDestroy {
   public fastTravelAnimationState = this.fastTravelVisualService.state;
   public isFastTravelTransitionRunning = this.fastTravelVisualService.isTransitionRunning;
   public mockPlayers = signal<Player[]>([]);
+  public isSpecialLocationsCounterHovered = signal(false);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
   public utilitiesExpandedPanel = signal<"inventory" | "followers">("inventory");
   private static readonly locationInfoResetDelayMs = 10000;
@@ -102,6 +105,8 @@ export class MapPage implements OnInit, OnDestroy {
   private worldEventFlowClockTimer: ReturnType<typeof setInterval> | null = null;
   private worldEventFlowNowMs = signal<number>(Date.now());
   private lastPendingDialogKey = signal<string | null>(null);
+  private lastClearedRequiredActionNotificationId = signal<string | null>(null);
+  private requiredActionNotificationSeenAtMsById = signal<Record<string, number>>({});
   public latestLogMessage = computed<string>(() => {
     return this.mapPageState.latestEventLogSummary();
   });
@@ -175,6 +180,19 @@ export class MapPage implements OnInit, OnDestroy {
   }>(() => {
     const worldEvent = this.worldState()?.worldEvent;
     const flow = worldEvent?.flow;
+    const requiredNotification = this.worldState()?.requiredActionNotification;
+    if (requiredNotification?.type === "world-event-activated") {
+      return {
+        active: false,
+        phase: "completed",
+        title: "",
+        description: "",
+        mutationCellIds: [],
+        propagatedCellsCount: 0,
+        totalMutations: 0,
+      };
+    }
+
     if (!worldEvent || worldEvent.emitted !== true || !flow) {
       return {
         active: false,
@@ -269,11 +287,120 @@ export class MapPage implements OnInit, OnDestroy {
     return this.worldEventFlowView().active;
   });
 
+  public requiredActionNotification = computed<RequiredActionNotificationState | null>(() => {
+    const notification = this.worldState()?.requiredActionNotification;
+    if (!notification) {
+      return null;
+    }
+
+    if (notification.forcedByOwnerId) {
+      return null;
+    }
+
+    const allAcknowledgedAtMs = Number(notification.allAcknowledgedAtMs ?? 0);
+    if (allAcknowledgedAtMs > 0 && this.worldEventFlowNowMs() >= allAcknowledgedAtMs + 3000) {
+      return null;
+    }
+
+    return notification;
+  });
+
+  public isRequiredActionNotificationLockActive = computed<boolean>(() => {
+    return this.requiredActionNotification() !== null;
+  });
+
+  public requiredActionNotificationPlayers = computed<RequiredActionNotificationPlayer[]>(() => {
+    const notification = this.requiredActionNotification();
+    if (!notification) {
+      return [];
+    }
+
+    const playersById = new Map(this.players().map((player) => [player.id, player]));
+    const acknowledgedSet = new Set(
+      (notification.acknowledgedPlayerIds ?? []).filter((id): id is string => typeof id === "string" && id.trim().length > 0),
+    );
+    const requiredPlayerIds = (notification.requiredPlayerIds ?? [])
+      .filter((id): id is string => typeof id === "string" && id.trim().length > 0);
+
+    return requiredPlayerIds.map((playerId) => ({
+      id: playerId,
+      name: playersById.get(playerId)?.name ?? playerId,
+      acknowledged: acknowledgedSet.has(playerId),
+    }));
+  });
+
+  public requiredActionNotificationTitle = computed<string>(() => {
+    const notification = this.requiredActionNotification();
+    if (!notification) {
+      return "";
+    }
+
+    if (notification.type === "world-event-activated") {
+      const driverBiome = notification.worldEventDriverBiome
+        ? this.translationService.tOrFallback(`map.biomes.${notification.worldEventDriverBiome}`, notification.worldEventDriverBiome)
+        : this.translationService.tOrFallback("map.worldEventFlow.title", "World Event");
+      const targetBiome = notification.worldEventTargetBiome
+        ? this.translationService.tOrFallback(`map.biomes.${notification.worldEventTargetBiome}`, notification.worldEventTargetBiome)
+        : this.translationService.tOrFallback("map.worldEventFlow.title", "World Event");
+      const eventName = `${driverBiome} > ${targetBiome}`;
+      return this.translationService.tOrFallback(
+        "dialogs.requiredActionNotification.worldEventActivatedTitle",
+        "World Event Activated: {eventName}",
+        { eventName },
+      );
+    }
+
+    return this.sanctuaryElementToLabel(notification.sanctuaryElement);
+  });
+
+  public requiredActionNotificationDescription = computed<string>(() => {
+    const notification = this.requiredActionNotification();
+    if (!notification) {
+      return "";
+    }
+
+    if (notification.type === "world-event-activated") {
+      const playerName = notification.activatedByPlayerName;
+      const flowDescription = this.resolveWorldEventActivationDescription(notification);
+
+      return this.translationService.tOrFallback(
+        "dialogs.requiredActionNotification.worldEventActivatedDescription",
+        "Triggered by {playerName}. {description}",
+        { playerName, description: flowDescription },
+      );
+    }
+
+    const sanctuaryLabel = this.requiredActionNotificationTitle();
+    const playerName = notification.activatedByPlayerName;
+    return this.translationService.tOrFallback(
+      "dialogs.requiredActionNotification.sanctuaryActivatedDescription",
+      `${sanctuaryLabel} has been activated by ${playerName}`,
+      { sanctuaryLabel, playerName },
+    );
+  });
+
+  public requiredActionNotificationOwnerOverrideVisible = computed<boolean>(() => {
+    const notification = this.requiredActionNotification();
+    if (!notification) {
+      return false;
+    }
+
+    const referenceMs = Number(notification.lastActionAtMs ?? notification.createdAtMs ?? 0);
+    const seenAtMs = this.requiredActionNotificationSeenAtMsById()[notification.notificationId] ?? 0;
+    const effectiveAnchorMs = Math.max(referenceMs, seenAtMs);
+    if (effectiveAnchorMs <= 0) {
+      return false;
+    }
+
+    return this.worldEventFlowNowMs() >= effectiveAnchorMs + 5000;
+  });
+
   public canEndTurn = computed<boolean>(() => {
     if (!this.isMyTurn()) return false;
     if (!this.hasMovedOnCurrentTurn()) return false;
     if (this.isMyTravelLockActive()) return false;
     if (this.isWorldEventFlowLockActive()) return false;
+    if (this.isRequiredActionNotificationLockActive()) return false;
     if (this.mapPageInteractionService.pendingActionId() !== null) return false;
     if (this.myPlayer()?.pendingResourcePickup) return false;
     return true;
@@ -332,7 +459,7 @@ export class MapPage implements OnInit, OnDestroy {
       pendingActionId: this.mapPageInteractionService.pendingActionId(),
     });
 
-    if (!this.isMyTravelLockActive() && !this.isWorldEventFlowLockActive()) {
+    if (!this.isMyTravelLockActive() && !this.isWorldEventFlowLockActive() && !this.isRequiredActionNotificationLockActive()) {
       return actions;
     }
 
@@ -580,6 +707,54 @@ export class MapPage implements OnInit, OnDestroy {
     }, { injector: this.injector });
 
     effect(() => {
+      const notification = this.requiredActionNotification();
+      if (!notification) {
+        return;
+      }
+
+      const id = notification.notificationId;
+      if (!id) {
+        return;
+      }
+
+      const seenMap = this.requiredActionNotificationSeenAtMsById();
+      if (seenMap[id]) {
+        return;
+      }
+
+      this.requiredActionNotificationSeenAtMsById.set({
+        ...seenMap,
+        [id]: Date.now(),
+      });
+    }, { injector: this.injector });
+
+    effect(() => {
+      const notification = this.worldState()?.requiredActionNotification;
+      if (!notification) {
+        this.lastClearedRequiredActionNotificationId.set(null);
+        return;
+      }
+
+      const allAcknowledgedAtMs = Number(notification.allAcknowledgedAtMs ?? 0);
+      const clearDelayMs = notification.type === "world-event-activated" ? 800 : 3000;
+      const canClearForAllAcknowledged = allAcknowledgedAtMs > 0
+        && this.worldEventFlowNowMs() >= allAcknowledgedAtMs + clearDelayMs;
+      const canClearForForcedContinue = typeof notification.forcedByOwnerId === "string"
+        && notification.forcedByOwnerId.trim().length > 0;
+      if (!canClearForAllAcknowledged && !canClearForForcedContinue) {
+        return;
+      }
+
+      const notificationId = notification.notificationId;
+      if (!notificationId || this.lastClearedRequiredActionNotificationId() === notificationId) {
+        return;
+      }
+
+      this.lastClearedRequiredActionNotificationId.set(notificationId);
+      void this.mapPageInteractionService.clearRequiredActionNotification(this.gameId, notificationId);
+    }, { injector: this.injector });
+
+    effect(() => {
       this.fastTravelFlowService.sync({
         gameId: this.gameId,
         worldState: this.worldState(),
@@ -608,6 +783,13 @@ export class MapPage implements OnInit, OnDestroy {
 
   public openLogsDialog(): void {
     this.mapPageInteractionService.openLogsDialog(this.eventLogs());
+  }
+
+  public onWorldEventHelpRequested(): void {
+    this.mapPageInteractionService.openWorldEventHelpDialog({
+      worldState: this.worldState(),
+      mapCellsById: this.mapCellsById(),
+    });
   }
 
   public openLocationInfoDialog(): void {
@@ -648,6 +830,10 @@ export class MapPage implements OnInit, OnDestroy {
     this.scheduleLocationInfoReset();
   }
 
+  public onSpecialLocationsCounterHoverChanged(isHovered: boolean): void {
+    this.isSpecialLocationsCounterHovered.set(isHovered);
+  }
+
   public async onResourcePanelClicked(): Promise<void> {
     await this.mapPageInteractionService.openResourceInventoryDialog({
       mode: "manage",
@@ -679,7 +865,7 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public async onCellClick(cell: MapGridPanelCell): Promise<void> {
-    if (this.isMoving() || this.isMyTravelLockActive() || this.isWorldEventFlowLockActive()) return;
+    if (this.isMoving() || this.isMyTravelLockActive() || this.isWorldEventFlowLockActive() || this.isRequiredActionNotificationLockActive()) return;
 
     this.isMoving.set(true);
     try {
@@ -697,8 +883,14 @@ export class MapPage implements OnInit, OnDestroy {
     }
   }
 
+  public onCellContextMenuRequested(cell: MapGridPanelCell): void {
+    this.inspectedCell.set(cell);
+    this.clearLocationInfoResetTimer();
+    this.openLocationInfoDialog();
+  }
+
   public async onCommandActionRequested(actionId: string): Promise<void> {
-    if (this.isMyTravelLockActive() || this.isWorldEventFlowLockActive()) return;
+    if (this.isMyTravelLockActive() || this.isWorldEventFlowLockActive() || this.isRequiredActionNotificationLockActive()) return;
 
     await this.mapPageInteractionService.handleCommandAction({
       actionId,
@@ -717,6 +909,19 @@ export class MapPage implements OnInit, OnDestroy {
       player: this.myPlayer(),
       canOpen: this.canOpenLevelUpDialog(),
     });
+  }
+
+  public onAcknowledgeRequiredActionRequested(playerId: string): void {
+    const myPlayer = this.myPlayer();
+    if (!myPlayer || myPlayer.id !== playerId) {
+      return;
+    }
+
+    void this.mapPageInteractionService.acknowledgeRequiredActionNotification(this.gameId, myPlayer);
+  }
+
+  public onForceContinueRequiredActionRequested(): void {
+    void this.mapPageInteractionService.forceContinueRequiredActionNotification(this.gameId, this.myPlayer());
   }
 
   private cellHasConditionEffect(
@@ -1040,6 +1245,66 @@ export class MapPage implements OnInit, OnDestroy {
     this.worldEventFlowClockTimer = setInterval(() => {
       this.worldEventFlowNowMs.set(Date.now());
     }, 150);
+  }
+
+  private sanctuaryElementToLabel(element: string | undefined): string {
+    if (element === "water") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.water", "Water Shrine");
+    }
+    if (element === "fire") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.fire", "Fire Shrine");
+    }
+    if (element === "wind") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.wind", "Wind Shrine");
+    }
+    if (element === "earth") {
+      return this.translationService.tOrFallback("map.cells.sanctuary.earth", "Earth Shrine");
+    }
+    return this.translationService.tOrFallback("map.cells.sanctuary.generic", "Elemental Shrine");
+  }
+
+  private resolveWorldEventDescriptionFallback(notification: RequiredActionNotificationState): string {
+    const outcome = this.translationService.tOrFallback(
+      `map.worldPanel.worldEventOutcome.${notification.worldEventPrimaryOutcome ?? "none"}`,
+      notification.worldEventPrimaryOutcome ?? "none",
+    );
+    const targetBiome = notification.worldEventTargetBiome
+      ? this.translationService.tOrFallback(`map.biomes.${notification.worldEventTargetBiome}`, notification.worldEventTargetBiome)
+      : "-";
+    const driverBiome = notification.worldEventDriverBiome
+      ? this.translationService.tOrFallback(`map.biomes.${notification.worldEventDriverBiome}`, notification.worldEventDriverBiome)
+      : "-";
+    const totalMutations = Math.max(0, Math.floor(Number(notification.worldEventTotalMutations ?? 0)));
+
+    return this.translationService.tOrFallback(
+      "map.worldEventFlow.summary",
+      `${outcome} | ${targetBiome}/${driverBiome}`,
+      {
+        outcome,
+        targetBiome,
+        driverBiome,
+        propagatedCellsCount: totalMutations,
+        totalMutations,
+      },
+    );
+  }
+
+  private resolveWorldEventActivationDescription(notification: RequiredActionNotificationState): string {
+    const targetBiome = notification.worldEventTargetBiome
+      ? this.translationService.tOrFallback(`map.biomes.${notification.worldEventTargetBiome}`, notification.worldEventTargetBiome)
+      : "-";
+    const driverBiome = notification.worldEventDriverBiome
+      ? this.translationService.tOrFallback(`map.biomes.${notification.worldEventDriverBiome}`, notification.worldEventDriverBiome)
+      : "-";
+
+    return this.translationService.tOrFallback(
+      "map.worldEventFlow.notificationIntro",
+      "Target {targetBiome}, driver {driverBiome}. Confirm to start propagation.",
+      {
+        targetBiome,
+        driverBiome,
+      },
+    );
   }
 
   private stopWorldEventFlowClock(): void {

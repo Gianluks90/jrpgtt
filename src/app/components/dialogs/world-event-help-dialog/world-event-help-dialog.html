@@ -1,0 +1,38 @@
+<dialog-wrapper [title]="title">
+    @if (rows.length === 0) {
+        <p class="info-text">{{ waitingMessage }}</p>
+    } @else {
+        <p class="info-text">{{ subtitle }}</p>
+
+        <div class="rows">
+            @for (row of rows; track row.cellLabel + '-' + $index) {
+                <section class="row-card">
+                    <p class="row-cell-label">{{ row.cellLabel }}</p>
+
+                    <div class="row-main">
+                        <div class="mini-cell" [class]="'biome-' + row.originalBiome">
+                            <span>{{ row.originalBiomeLabel }}</span>
+                        </div>
+                        <span class="row-arrow">&gt;</span>
+                        <div class="mini-cell" [class]="'biome-' + row.mutatedBiome">
+                            <span>{{ row.mutatedBiomeLabel }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row-line"></div>
+
+                    @if (row.changes.length > 0) {
+                        <p class="row-changes-title">{{ changesTitle }}</p>
+                        @for (change of row.changes; track change + '-' + $index) {
+                            <p class="row-change">{{ change }}</p>
+                        }
+                    } @else {
+                        <p class="row-change row-change-none">{{ noRowsMessage }}</p>
+                    }
+                </section>
+            }
+        </div>
+    }
+
+    <text-button dialog-action [text]="closeLabel" (clicked)="close()"></text-button>
+</dialog-wrapper>

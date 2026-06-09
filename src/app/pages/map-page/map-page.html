@@ -1,4 +1,16 @@
 <div class="map-page-main-container">
+    <app-required-action-notification
+        [show]="isRequiredActionNotificationLockActive()"
+        [title]="requiredActionNotificationTitle()"
+        [description]="requiredActionNotificationDescription()"
+        [players]="requiredActionNotificationPlayers()"
+        [localPlayerId]="currentUserId()"
+        [ownerPlayerId]="requiredActionNotification()?.ownerPlayerId ?? null"
+        [allowOwnerOverride]="requiredActionNotificationOwnerOverrideVisible()"
+        (acknowledgeRequested)="onAcknowledgeRequiredActionRequested($event)"
+        (forceContinueRequested)="onForceContinueRequiredActionRequested()"
+    ></app-required-action-notification>
+
     <div class="page-shell">
         <div class="hud hud-world world-header">
             <app-world-state-panel
@@ -9,6 +21,7 @@
                 [totalSpecialCells]="4"
                 [showTitle]="true"
                 [title]="'map.worldTitle' | t"
+                (worldEventHelpRequested)="onWorldEventHelpRequested()"
             ></app-world-state-panel>
         </div>
 
@@ -54,19 +67,20 @@
                         [regionIToIIWarning]="regionIToIIWarning()"
                         [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
                         [environmentByCellId]="environmentByCellId()"
+                        [showSpecialLocationLabels]="isSpecialLocationsCounterHovered()"
                         [worldEventMutationCellIds]="worldEventMutationCellIds()"
                         [worldEventPropagatedCellsCount]="worldEventPropagatedCellsCount()"
                         (cellClicked)="onCellClick($event)"
+                        (cellContextMenuRequested)="onCellContextMenuRequested($event)"
                         (inspectedCellChanged)="onInspectionCellChanged($event)"
                     ></app-map-grid-panel>
 
-                    @if (worldEventFlowView().active) {
-                        <div class="world-event-flow-overlay" role="status" aria-live="polite">
-                            <p class="world-event-flow-title">{{ worldEventFlowView().title }}</p>
-                            <p class="world-event-flow-description">{{ worldEventFlowView().description }}</p>
-                        </div>
-                    }
-                    <app-biomes-counter class="map-floating-biomes-counter" [worldState]="worldState()" [mapCellsById]="mapCellsById()"></app-biomes-counter>
+                    <app-biomes-counter
+                        class="map-floating-biomes-counter"
+                        [worldState]="worldState()"
+                        [mapCellsById]="mapCellsById()"
+                        (specialCounterHoverChanged)="onSpecialLocationsCounterHoverChanged($event)"
+                    ></app-biomes-counter>
 
                     <div class="map-bottom-hud-row">
                         <section class="map-inline-hud active-cell-block">

@@ -387,6 +387,7 @@ export class ActionCatalogService {
 
   private isFlowHandler(value: unknown): value is ActionFlowHandler {
     return value === "end-turn"
+      || value === "sanctuary-open"
       || value === "sanctuary-activate"
       || value === "sanctuary-donate"
       || value === "sanctuary-pray"
@@ -433,6 +434,6 @@ export class ActionCatalogService {
   }
 
   private isSanctuaryDialogMode(value: unknown): value is ActionSanctuaryDialogMode {
-    return value === "activate" || value === "donate";
+    return value === "activate" || value === "donate" || value === "actions";
   }
 }

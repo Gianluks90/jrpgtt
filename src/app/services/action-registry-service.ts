@@ -14,6 +14,7 @@ import { FollowerCatalogService } from "./follower-catalog-service";
 export interface ActionCardContext {
   isBusy: boolean;
   hasMoney: boolean;
+  hasMagic: boolean;
   isMyTurn: boolean;
   hasMovedThisTurn: boolean;
   sanctuaryLabel?: string;
@@ -36,7 +37,7 @@ export class ActionRegistryService {
   ) {}
 
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
-    const { isBusy, hasMoney, isMyTurn, hasMovedThisTurn, sanctuaryLabel, player, cell, timeOfDay } = context;
+    const { isBusy, hasMoney, hasMagic, isMyTurn, hasMovedThisTurn, sanctuaryLabel, player, cell, timeOfDay } = context;
     const actionsUsed = player.actionsUsedThisTurn ?? {};
     const worldTurn = context.worldTurn ?? 0;
     const actionAlreadyUsed = actionsUsed[actionId] === worldTurn;
@@ -50,13 +51,29 @@ export class ActionRegistryService {
         label: this.actionCatalogService.getLabel(actionId, "Activate"),
         description: this.actionCatalogService.getDescription(
           actionId,
-          `Donate 5 coins to activate ${sanctuaryLabel ?? "the shrine"}, gain 2 XP and attune to its element.`,
+          `Infuse your magic into ${sanctuaryLabel ?? "the shrine"} to activate it and attune to its element.`,
           {
             sanctuaryLabel: sanctuaryLabel ?? "the shrine",
           },
         ),
-        moneyCost: 5,
-        disabled: commonDisabled || !hasMoney,
+        magicCost: 3,
+        disabled: commonDisabled || !hasMagic,
+        pending: false,
+      };
+    }
+
+    if (actionId === "sanctuary") {
+      return {
+        id: "sanctuary",
+        label: this.actionCatalogService.getLabel(actionId, "Sanctuary"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          `Open ${sanctuaryLabel ?? "the sanctuary"} and choose an available action.`,
+          {
+            sanctuaryLabel: sanctuaryLabel ?? "the sanctuary",
+          },
+        ),
+        disabled: commonDisabled,
         pending: false,
       };
     }
@@ -68,9 +85,10 @@ export class ActionRegistryService {
         label: this.actionCatalogService.getLabel(actionId, "Donate"),
         description: this.actionCatalogService.getDescription(
           actionId,
-          `Donate 5 coins to shift your attunement to ${sanctuaryLabel ?? "the shrine"}.`,
+          `Donate 5 coins to a Sanctuary Guardian so they can perform the attunement rite with ${sanctuaryLabel ?? "the sanctuary element"}. Gain attunement with ${sanctuaryLabel ?? "that element"}.`,
           {
             sanctuaryLabel: sanctuaryLabel ?? "the shrine",
+            elementLabel: sanctuaryLabel ?? "the sanctuary element",
           },
         ),
         moneyCost: 5,
@@ -81,6 +99,7 @@ export class ActionRegistryService {
 
     if (actionId === "pray-sanctuary") {
       const canPray = !!player.attunedElement && player.attunedElement === cell.sanctuaryElement;
+      const canPayPrayerMp = (player.parameters?.mp?.current ?? 0) >= 2;
       const hpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current)));
       const hpMax = Math.max(
         1,
@@ -90,8 +109,12 @@ export class ActionRegistryService {
       return {
         id: "pray-sanctuary",
         label: this.actionCatalogService.getLabel(actionId, "Pray"),
-        description: this.actionCatalogService.getDescription(actionId, "Recover 5% HP, or 15% on lucky prayer."),
-        disabled: commonDisabled || !canPray || !hasMissingHp,
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "If your prayer is accepted, recover 5% HP, or 10% with a Lucky Strike. Your turn ends.",
+        ),
+        magicCost: 2,
+        disabled: commonDisabled || !canPray || !hasMissingHp || !canPayPrayerMp,
         pending: false,
       };
     }

@@ -126,6 +126,7 @@ export class BiomeConditionCatalogService {
       minDeltaHp?: unknown;
       blockedByStatusKey?: unknown;
       multiplier?: unknown;
+      luckDelta?: unknown;
       flatAmount?: unknown;
       maxLevel?: unknown;
       resourceLabels?: unknown;
@@ -149,9 +150,22 @@ export class BiomeConditionCatalogService {
       }
     }
 
-    if (typed.type === "resource-gain-multiplier" || typed.type === "luck-check-multiplier") {
+    if (typed.type === "resource-gain-multiplier") {
       if (typeof typed.multiplier !== "number" || !Number.isFinite(typed.multiplier) || typed.multiplier <= 0) {
         throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' has invalid effect.multiplier`);
+      }
+    }
+
+    if (typed.type === "luck-check-multiplier") {
+      const hasValidMultiplier = typeof typed.multiplier === "number"
+        && Number.isFinite(typed.multiplier)
+        && typed.multiplier > 0;
+      const hasValidLuckDelta = typeof typed.luckDelta === "number"
+        && Number.isFinite(typed.luckDelta)
+        && typed.luckDelta !== 0;
+
+      if (!hasValidMultiplier && !hasValidLuckDelta) {
+        throw new Error(`Invalid biome conditions catalog: condition '${conditionId}' requires effect.multiplier or effect.luckDelta`);
       }
     }
 
@@ -191,6 +205,7 @@ export class BiomeConditionCatalogService {
       minDeltaHp: typeof typed.minDeltaHp === "number" ? typed.minDeltaHp : undefined,
       blockedByStatusKey: typed.blockedByStatusKey,
       multiplier: typeof typed.multiplier === "number" ? typed.multiplier : undefined,
+      luckDelta: typeof typed.luckDelta === "number" ? typed.luckDelta : undefined,
       flatAmount: typeof typed.flatAmount === "number" ? typed.flatAmount : undefined,
       maxLevel: typeof typed.maxLevel === "number" ? typed.maxLevel : undefined,
       resourceLabels: typed.resourceLabels as ResourceLabel[] | undefined,

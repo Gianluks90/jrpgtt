@@ -1,0 +1,38 @@
+@if (show()) {
+    <div class="required-action-overlay dialog-backdrop">
+        <section class="required-action-band" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+            <h2 class="required-action-title">{{ title() }}</h2>
+
+            <div class="required-action-content">
+                <p class="info-text required-action-description">{{ description() }}</p>
+            </div>
+
+            <div class="required-action-actions">
+                <div class="required-action-player-actions">
+                    @for (player of players(); track player.id) {
+                        <div class="required-action-player-action" [class.required-action-player-action-confirmed]="player.acknowledged">
+                            <text-button
+                                [text]="'dialogs.requiredActionNotification.actions.playerOk' | t: { playerName: player.name }"
+                                [iconUrl]="okIconUrl"
+                                [compact]="true"
+                                [disabled]="!canAcknowledge(player)"
+                                (clicked)="acknowledge(player.id)"
+                            ></text-button>
+                        </div>
+                    }
+                </div>
+
+                @if (showOwnerContinueButton()) {
+                    <div class="required-action-owner-action">
+                        <text-button
+                            [text]="'dialogs.requiredActionNotification.actions.ownerContinue' | t"
+                            [iconUrl]="okIconUrl"
+                            [compact]="true"
+                            (clicked)="forceContinue()"
+                        ></text-button>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+}

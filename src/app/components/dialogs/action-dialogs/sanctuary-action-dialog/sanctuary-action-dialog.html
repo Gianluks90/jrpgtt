@@ -1,43 +1,54 @@
 <dialog-wrapper [title]="title">
-    <div dialog-header-extra class="header-money">
-        <span>{{ playerMoney }}</span>
-        <span class="coin-icon" aria-hidden="true"></span>
+    <div dialog-header-extra class="header-resources">
+        <span class="header-resource-group">
+            <span>{{ playerMoney }}</span>
+            <span class="coin-icon header-coin" aria-hidden="true"></span>
+        </span>
+        <span class="header-divider" aria-hidden="true"></span>
+        <span>{{ playerMpCurrent }}/{{ playerMpMax }} MP</span>
+        <span class="magic-dot" aria-hidden="true"></span>
     </div>
 
-    <p class="info-text">{{ description }}</p>
-    <p class="info-text sanctuary-element">{{ 'dialogs.sanctuary.element' | t: { element: sanctuaryLabel } }}</p>
-
-    <form [formGroup]="form">
-        <div class="form-field">
-            <label for="donatedCoins">{{ 'dialogs.sanctuary.donationAmount' | t }}</label>
-            <input
-                id="donatedCoins"
-                type="number"
-                inputMode="numeric"
-                formControlName="donatedCoins"
-                [min]="donationCost"
-                [max]="donationCost"
-                [placeholder]="'dialogs.sanctuary.placeholder' | t: { cost: donationCost }"
-            />
-            <p class="info-text donate-cost-row">
-                <span>{{ 'dialogs.sanctuary.mustDonateExactly' | t }}</span>
-                <span class="spend-tag">
-                    <span>-{{ donationCost }}</span>
-                    <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
-                </span>
-            </p>
+    <div class="sanctuary-layout">
+        <div class="sanctuary-preview" aria-hidden="true">
+            <app-sanctuary-crystal [active]="sanctuaryActive" [element]="sanctuaryElement"></app-sanctuary-crystal>
         </div>
-    </form>
 
-    @if (donationDisabled) {
-        <p class="error-text">{{ 'dialogs.sanctuary.errors.notEnoughCoins' | t }}</p>
+        <div class="sanctuary-content">
+            <p class="info-text sanctuary-status-description">{{ sanctuaryStatusDescription }}</p>
+
+            @if (mode === 'actions') {
+                <div class="sanctuary-actions-block">
+                    <app-commands-panel
+                        [actions]="sanctuaryActions"
+                        (actionRequested)="onSanctuaryActionRequested($event)"
+                    ></app-commands-panel>
+                </div>
+            } @else {
+                <p class="info-text">{{ 'dialogs.sanctuary.activationInfo' | t }}</p>
+                <div class="benefits-box">
+                    <p class="benefits-title">{{ 'dialogs.sanctuary.benefits.title' | t }}</p>
+                    <ul class="benefits-list">
+                        <li>{{ 'dialogs.sanctuary.benefits.exp' | t }}</li>
+                        <li>{{ 'dialogs.sanctuary.benefits.attunement' | t: { element: sanctuaryLabel } }}</li>
+                        <li>{{ 'dialogs.sanctuary.benefits.spell' | t }}</li>
+                    </ul>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (mode !== 'actions' && activationDisabled) {
+        <p class="error-text">{{ 'dialogs.sanctuary.errors.notEnoughMp' | t: { cost: sanctuaryActivationMpCost } }}</p>
     }
 
-    <text-button
-        dialog-action
-        [text]="confirmLabel"
-        [disabled]="form.invalid || donationDisabled"
-        (clicked)="confirm()"
-    ></text-button>
+    @if (mode !== 'actions') {
+        <text-button
+            dialog-action
+            [text]="confirmLabel"
+            [disabled]="activationDisabled"
+            (clicked)="confirm()"
+        ></text-button>
+    }
     <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

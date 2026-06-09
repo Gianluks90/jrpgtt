@@ -194,6 +194,20 @@ export class PlayerCard {
       );
     }
 
+    const biomeConditionMatch = normalizedReason.match(/^Biome condition \((.+)\)$/i);
+    if (biomeConditionMatch) {
+      const conditionId = biomeConditionMatch[1];
+      const conditionLabel = this.translationService.tOrFallback(
+        `map.cellInspector.conditionLabel.${conditionId}`,
+        conditionId,
+      );
+      return this.translationService.tOrFallback(
+        "playerCard.effectReasons.biomeCondition",
+        "Biome condition ({condition})",
+        { condition: conditionLabel },
+      );
+    }
+
     const followerModifierMatch = normalizedReason.match(/^(.+)\smodifier$/i);
     if (followerModifierMatch) {
       return this.translationService.tOrFallback(

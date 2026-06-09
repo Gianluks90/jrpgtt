@@ -17,6 +17,7 @@ export interface BiomeConditionEffectDefinition {
   minDeltaHp?: number;
   blockedByStatusKey?: string;
   multiplier?: number;
+  luckDelta?: number;
   flatAmount?: number;
   maxLevel?: number;
   resourceLabels?: ResourceLabel[];

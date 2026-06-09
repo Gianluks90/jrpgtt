@@ -5,4 +5,15 @@
       <strong class="biome-count">{{ countBiome(biome) }}</strong>
     </div>
   }
+
+  <div
+    class="biome-counter-item biome-special"
+    (mouseenter)="onSpecialCounterEnter()"
+    (mouseleave)="onSpecialCounterLeave()"
+  >
+    <span class="biome-swatch" aria-hidden="true">
+      <span class="biome-swatch-icon"></span>
+    </span>
+    <strong class="biome-count">{{ countSpecialLocations() }}</strong>
+  </div>
 </div>

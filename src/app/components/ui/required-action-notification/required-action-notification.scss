@@ -1,0 +1,128 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  pointer-events: none;
+}
+
+.required-action-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.required-action-band {
+  position: relative;
+  width: 100vw;
+  min-height: 136px;
+  background-color: var(--bg-color);
+  color: var(--fg-color);
+  border-top: var(--overlay-border);
+  border-bottom: var(--overlay-border);
+  border-left: none;
+  border-right: none;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.required-action-title {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 4px 14px;
+  background-color: var(--bg-color);
+  color: var(--fg-color);
+  text-transform: uppercase;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  max-width: 92vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.required-action-content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.required-action-description {
+  margin: 0;
+  max-width: min(50vw, 860px);
+  text-align: center;
+}
+
+.required-action-actions {
+  display: contents;
+}
+
+.required-action-player-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: absolute;
+  left: 50%;
+  bottom: -18px;
+  transform: translateX(-50%);
+  max-width: 94vw;
+  z-index: 4;
+}
+
+.required-action-player-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: black;
+}
+
+.required-action-owner-action {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.required-action-player-action-confirmed {
+  border-color: color-mix(in srgb, var(--ok-color) 65%, transparent);
+  background: color-mix(in srgb, var(--ok-color) 16%, transparent);
+}
+
+:host ::ng-deep .required-action-player-action-confirmed text-button .text-button,
+:host ::ng-deep .required-action-player-action-confirmed text-button .text-button:disabled {
+  border-color: var(--ok-color);
+  color: var(--ok-color);
+  opacity: 1;
+}
+
+:host ::ng-deep .required-action-player-action-confirmed text-button .text-button .button-icon {
+  background-color: var(--ok-color);
+}
+
+@media screen and (max-width: 900px) {
+  .required-action-band {
+    min-height: 150px;
+    padding: 0 12px;
+  }
+
+  .required-action-description {
+    max-width: 88vw;
+  }
+
+  .required-action-player-actions {
+    bottom: -14px;
+    max-width: 98vw;
+  }
+}

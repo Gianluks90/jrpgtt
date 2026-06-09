@@ -63,6 +63,17 @@
         }
     </div>
 
+    <div class="special-location-labels-layer" aria-hidden="true">
+        @for (overlay of specialLocationLabelOverlays(); track overlay.id) {
+            <span
+                class="special-location-label"
+                [style.left.%]="overlay.leftPercent"
+                [style.top]="overlay.topPx"
+                [style.bottom]="overlay.bottomPx"
+            >{{ overlay.text }}</span>
+        }
+    </div>
+
     @for (cell of cells(); track cell.id) {
         <map-cell
             [special]="cell.isSpecial"
@@ -71,6 +82,7 @@
             [desaturated]="isInactiveRevealedSanctuaryCell(cell)"
             [movable]="isMovableCell(cell)"
             [impassable]="isImpassableCell(cell)"
+            [hasConditionMarker]="hasConditionMarker(cell)"
             [hoveredEnvironment]="isHoveredEnvironmentCell(cell)"
             [dangerOverlayLevel]="dangerOverlayLevel(cell)"
             [biome]="effectiveBiomeForCell(cell)"
@@ -85,6 +97,7 @@
             [envLeftWidth]="environmentBorderWidth(cell, 'left')"
             [hoverIntentProgress]="hoverIntentProgressForCell(cell)"
             (cellClicked)="cellClicked.emit(cell)"
+            (cellContextMenu)="cellContextMenuRequested.emit(cell)"
             (cellEntered)="onCellEnter(cell)"
             (cellLeft)="onCellLeave(cell)"
         ></map-cell>

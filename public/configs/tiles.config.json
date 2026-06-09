@@ -56,7 +56,7 @@
 				"iconColor": "#1a3348",
 				"actions": {
 					"inactive": ["activate-sanctuary"],
-					"active": ["donate-sanctuary", "pray-sanctuary"]
+					"active": ["sanctuary"]
 				}
 			},
 			"fire": {
@@ -70,7 +70,7 @@
 				"iconColor": "#4c281f",
 				"actions": {
 					"inactive": ["activate-sanctuary"],
-					"active": ["donate-sanctuary", "pray-sanctuary"]
+					"active": ["sanctuary"]
 				}
 			},
 			"wind": {
@@ -80,11 +80,11 @@
 					"inactive": "map.cellInspector.sanctuaryDescriptions.wind.inactive"
 				},
 				"iconUrl": "/map-icons/shrine-wind-tile-icon.svg",
-				"backgroundColor": "#556e78",
-				"iconColor": "#34434a",
+				"backgroundColor": "#6c5a95",
+				"iconColor": "#44375f",
 				"actions": {
 					"inactive": ["activate-sanctuary"],
-					"active": ["donate-sanctuary", "pray-sanctuary"]
+					"active": ["sanctuary"]
 				}
 			},
 			"earth": {
@@ -98,7 +98,7 @@
 				"iconColor": "#474230",
 				"actions": {
 					"inactive": ["activate-sanctuary"],
-					"active": ["donate-sanctuary", "pray-sanctuary"]
+					"active": ["sanctuary"]
 				}
 			}
 		}

@@ -69,6 +69,15 @@ app-ui-tooltip.world-summary-tooltip {
     cursor: help;
 }
 
+.world-summary-entry-button {
+    appearance: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
 .world-summary-tooltip-content {
     display: block;
     font-size: 0.6rem;

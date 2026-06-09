@@ -83,7 +83,7 @@
       "description": "Reduces luck checks performed on this cell.",
       "effect": {
         "type": "luck-check-multiplier",
-        "multiplier": 0.8
+        "luckDelta": -2
       }
     },
     {

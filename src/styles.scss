@@ -13,7 +13,7 @@
     --good-color: goldenrod;
     --neutral-color: #6de7d6;
     --bad-color: crimson;
-    --magic-color: blue;
+    --magic-color: rgb(0, 132, 255);
     --coin-color: goldenrod;
     --coin-icon-url: url("/icons/toll_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg");
 
@@ -26,6 +26,7 @@
     font-family: 'Press Start 2P', cursive;
     scrollbar-width: none;
     --webkit-scrollbar: none;
+    text-decoration: none;
 }
 
 html,

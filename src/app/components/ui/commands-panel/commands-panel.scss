@@ -77,6 +77,31 @@
   --coin-icon-size: 11px;
 }
 
+.command-card-magic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 18px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--magic-color) 60%, transparent);
+  background: color-mix(in srgb, var(--magic-color) 16%, transparent);
+}
+
+.command-card-magic-value {
+  font-size: 0.5rem;
+  line-height: 1;
+  color: var(--magic-color);
+}
+
+.command-card-magic-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--magic-color);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--magic-color) 70%, transparent);
+}
+
 .command-card-divider {
   display: block;
   width: 100%;

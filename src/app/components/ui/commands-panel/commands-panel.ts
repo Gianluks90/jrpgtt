@@ -7,6 +7,7 @@ export interface CommandPanelAction {
   description?: string;
   warning?: string;
   moneyCost?: number | null;
+  magicCost?: number | null;
   disabled?: boolean;
   pending?: boolean;
 }

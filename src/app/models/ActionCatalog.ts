@@ -1,5 +1,6 @@
 export type ActionFlowHandler =
   | "end-turn"
+  | "sanctuary-open"
   | "sanctuary-activate"
   | "sanctuary-donate"
   | "sanctuary-pray"
@@ -28,7 +29,7 @@ export type ActionFlowTrigger = "command-panel";
 
 export type ActionDialogType = "none" | "sanctuary-action" | "doctor-heal" | "resource-exchange" | "safe-place-fast-travel" | "merchant-trade";
 
-export type ActionSanctuaryDialogMode = "activate" | "donate";
+export type ActionSanctuaryDialogMode = "activate" | "donate" | "actions";
 
 export type ActionValidatorKey =
   | "my-turn"

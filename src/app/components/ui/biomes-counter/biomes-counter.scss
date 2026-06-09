@@ -55,3 +55,31 @@
 .biome-counter-item.biome-ruins {
   --biome-accent: #8a7d77;
 }
+
+.biome-counter-item.biome-special {
+  --biome-accent: transparent;
+}
+
+.biome-counter-item.biome-special .biome-swatch {
+  border-color: #e8d279;
+  background: transparent;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.biome-counter-item.biome-special .biome-swatch-icon {
+  width: 13px;
+  height: 13px;
+  display: block;
+  background-color: #e8d279;
+  -webkit-mask-image: url("/icons/asterisk_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg");
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-image: url("/icons/asterisk_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg");
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}

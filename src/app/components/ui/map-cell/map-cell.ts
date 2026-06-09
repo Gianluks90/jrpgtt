@@ -16,6 +16,7 @@ export class MapCellComponent {
   public specialType = input<SpecialTileType | null>(null);
   public movable = input(false);
   public impassable = input(false);
+  public hasConditionMarker = input(false);
   public hoveredEnvironment = input(false);
   public dangerOverlayLevel = input<0 | 1 | 2>(0, { alias: "dangerOverlayLevel" });
   public biome = input<BiomeType | null>(null);
@@ -32,11 +33,17 @@ export class MapCellComponent {
   public worldEventMutationPhase = input<"none" | "pending" | "applied">("none");
 
   public cellClicked = output<void>();
+  public cellContextMenu = output<void>();
   public cellEntered = output<void>();
   public cellLeft = output<void>();
 
   public onClick(): void {
     this.cellClicked.emit();
+  }
+
+  public onContextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    this.cellContextMenu.emit();
   }
 
   public onMouseEnter(): void {

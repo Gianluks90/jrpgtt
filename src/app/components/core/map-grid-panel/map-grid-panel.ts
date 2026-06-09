@@ -9,6 +9,7 @@ import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspecto
 import { LandmarksService } from "../../../services/landmarks-service";
 import { WorldZonesService } from "../../../services/world-zones-service";
 import { QuadrantId } from "../../../models/WorldZone";
+import { TranslationService } from "../../../services/translation-service";
 import {
   FastTravelAnimationState,
   FastTravelVisualService,
@@ -49,6 +50,14 @@ interface RegionBoundaryWarningOverlay {
   cellHeightPercent: number;
 }
 
+interface SpecialLocationLabelOverlay {
+  id: string;
+  text: string;
+  leftPercent: number;
+  topPx: string | null;
+  bottomPx: string | null;
+}
+
 export interface MapGridPanelCell {
   x: number;
   y: number;
@@ -70,6 +79,7 @@ export class MapGridPanel {
   private environmentService = inject(EnvironmentService);
   private landmarksService = inject(LandmarksService);
   private worldZonesService = inject(WorldZonesService);
+  private translationService = inject(TranslationService);
   private fastTravelVisualService = inject(FastTravelVisualService);
   private hoverActivationTimer: ReturnType<typeof setTimeout> | null = null;
   private hoverProgressTimer: ReturnType<typeof setInterval> | null = null;
@@ -87,10 +97,12 @@ export class MapGridPanel {
   public tilesConfig = input<TilesConfig | null>(null);
   public environmentByCellId = input.required<Record<string, string[]>>();
   public sanctuaryStylesByElement = input.required<Record<SanctuaryElement, SanctuaryTilesConfigEntry>>();
+  public showSpecialLocationLabels = input(false);
   public worldEventMutationCellIds = input<string[]>([]);
   public worldEventPropagatedCellsCount = input(0);
 
   public cellClicked = output<MapGridPanelCell>();
+  public cellContextMenuRequested = output<MapGridPanelCell>();
   public inspectedCellChanged = output<MapGridPanelCell | null>();
 
   private hoveredCellId = signal<string | null>(null);
@@ -222,6 +234,36 @@ export class MapGridPanel {
     };
   });
 
+  public specialLocationLabelOverlays = computed<SpecialLocationLabelOverlay[]>(() => {
+    if (!this.showSpecialLocationLabels()) {
+      return [];
+    }
+
+    const size = Math.max(1, Math.floor(Number(this.mapSize() ?? 1)));
+    const cellPercent = 100 / size;
+
+    return this.cells()
+      .filter((cell) => cell.isSpecial && this.isRevealedCell(cell) && !!cell.mapCell)
+      .map((cell) => {
+        const oneBasedColumn = cell.x + 1;
+        const placeOnTop = oneBasedColumn % 2 === 1;
+        const topPx = placeOnTop
+          ? `calc((100% / var(--map-size, 10)) * ${cell.y} + 12px)`
+          : null;
+        const bottomPx = !placeOnTop
+          ? `calc((100% / var(--map-size, 10)) * ${size - cell.y - 1} + 12px)`
+          : null;
+
+        return {
+          id: `${cell.id}-special-label`,
+          text: this.specialLocationLabelForCell(cell.mapCell),
+          leftPercent: (cell.x + 0.5) * cellPercent,
+          topPx,
+          bottomPx,
+        };
+      });
+  });
+
   public isMovableCell(cell: MapGridPanelCell): boolean {
     return this.movableCellIds().has(cell.id);
   }
@@ -253,6 +295,22 @@ export class MapGridPanel {
       ...(cell.mapCell.worldEventConditionIds ?? []),
     ]));
     return conditionIds.includes("impassable");
+  }
+
+  public hasConditionMarker(cell: MapGridPanelCell): boolean {
+    if (!this.isRevealedCell(cell)) return false;
+    if (cell.isSpecial || !cell.mapCell) return false;
+
+    const config = this.tilesConfig();
+    if (!config) return false;
+
+    const effectiveBiome = cell.mapCell.worldEventBiomeOverride ?? cell.mapCell.biome;
+    const conditionIds = Array.from(new Set([
+      ...(config.biomes[effectiveBiome]?.conditions ?? []),
+      ...(cell.mapCell.worldEventConditionIds ?? []),
+    ])).filter((id) => typeof id === "string" && id.trim().length > 0);
+
+    return conditionIds.length > 0;
   }
 
   public worldEventMutationPhaseForCell(cell: MapGridPanelCell): WorldEventMutationPhase {
@@ -362,6 +420,35 @@ export class MapGridPanel {
     return mapCell?.isSpecial === true || isSpecialCellCoordinate(x, y);
   }
 
+  private specialLocationLabelForCell(cell: MapCell | null): string {
+    if (!cell || cell.isSpecial !== true) {
+      return this.translationService.tOrFallback("map.cells.unknownCell", "Unknown cell");
+    }
+
+    if (cell.specialType === "landmark") {
+      return this.landmarksService.getLocalizedLandmarkNameFromCell(cell);
+    }
+
+    if (cell.specialType === "sanctuary") {
+      if (cell.sanctuaryElement === "water") {
+        return this.translationService.tOrFallback("map.cells.sanctuaryShort.water", "Shr. Water");
+      }
+      if (cell.sanctuaryElement === "fire") {
+        return this.translationService.tOrFallback("map.cells.sanctuaryShort.fire", "Shr. Fire");
+      }
+      if (cell.sanctuaryElement === "wind") {
+        return this.translationService.tOrFallback("map.cells.sanctuaryShort.wind", "Shr. Wind");
+      }
+      if (cell.sanctuaryElement === "earth") {
+        return this.translationService.tOrFallback("map.cells.sanctuaryShort.earth", "Shr. Earth");
+      }
+
+      return this.translationService.tOrFallback("map.cells.sanctuaryShort.generic", "Elemental Shr.");
+    }
+
+    return this.translationService.tOrFallback("map.cells.unknownCell", "Unknown cell");
+  }
+
   public effectiveBiomeForCell(cell: MapGridPanelCell): MapCell["biome"] | null {
     if (!cell.mapCell) {
       return null;
@@ -387,8 +474,8 @@ export class MapGridPanel {
 
     if (element === "wind") {
       return {
-        border: "rgba(201, 171, 255, 0.72)",
-        glow: "rgba(201, 171, 255, 0.38)",
+        border: "rgba(184, 153, 239, 0.72)",
+        glow: "rgba(184, 153, 239, 0.38)",
       };
     }
 

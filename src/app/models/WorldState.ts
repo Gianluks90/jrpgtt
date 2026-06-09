@@ -41,11 +41,48 @@ export interface WorldEventFlowState {
     propagationDurationMs: number;
     summaryDurationMs: number;
     mutationCellIds: string[];
+    pendingMutationsByCellId?: Record<string, {
+        biome: BiomeType;
+        worldEventOriginalBiome?: BiomeType;
+        worldEventBiomeOverride?: BiomeType;
+        worldEventConditionIds?: string[];
+        worldEventEnemyLevelBonus?: number;
+    }>;
+    appliedMutationsByCellId?: Record<string, {
+        biome: BiomeType;
+        worldEventOriginalBiome?: BiomeType;
+        worldEventBiomeOverride?: BiomeType;
+        worldEventConditionIds?: string[];
+        worldEventEnemyLevelBonus?: number;
+    }>;
 }
 
 export interface FollowerMovementBonusState {
     turn: number;
     amount: number;
+}
+
+export type RequiredActionNotificationType = "sanctuary-activated" | "world-event-activated";
+
+export interface RequiredActionNotificationState {
+    type: RequiredActionNotificationType;
+    notificationId: string;
+    sanctuaryElement?: SanctuaryElement;
+    worldEventTitle?: string;
+    worldEventPrimaryOutcome?: WorldEventPrimaryOutcome;
+    worldEventTargetBiome?: BiomeType;
+    worldEventDriverBiome?: BiomeType;
+    worldEventTotalMutations?: number;
+    activatedByPlayerId: string;
+    activatedByPlayerName: string;
+    ownerPlayerId?: string;
+    requiredPlayerIds: string[];
+    acknowledgedPlayerIds: string[];
+    createdAtMs: number;
+    lastActionAtMs?: number;
+    allAcknowledgedAtMs?: number;
+    forcedByOwnerId?: string;
+    forcedAtMs?: number;
 }
 
 export interface WorldState {
@@ -67,4 +104,5 @@ export interface WorldState {
     nextDiscardSeq?: number;
     sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;
     landmarkTargets?: LandmarkTarget[];
+    requiredActionNotification?: RequiredActionNotificationState;
 }

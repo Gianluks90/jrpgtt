@@ -8,6 +8,7 @@ import { QuadrantId } from "../models/WorldZone";
 import { WorldZonesService } from "./world-zones-service";
 import { StatusCatalogService } from "./status-catalog-service";
 import { FollowerCatalogService } from "./follower-catalog-service";
+import { BiomeConditionCatalogService } from "./biome-condition-catalog-service";
 
 interface PlayerStatsContext {
   player: Player;
@@ -24,6 +25,7 @@ export class PlayerStatsModifierService {
     private worldZonesService: WorldZonesService,
     private statusCatalogService: StatusCatalogService,
     private followerCatalogService: FollowerCatalogService,
+    private biomeConditionCatalogService: BiomeConditionCatalogService,
   ) {}
 
   public computeStats(context: PlayerStatsContext): PlayerComputedStats {
@@ -57,11 +59,42 @@ export class PlayerStatsModifierService {
 
   private collectDeltas(context: PlayerStatsContext): PlayerCharacteristicDelta[] {
     const deltas: PlayerCharacteristicDelta[] = [];
+    this.applyBiomeConditionDeltas(context, deltas);
     this.applyStatusDeltas(context, deltas);
     this.applyFollowerDeltas(context, deltas);
     this.applyLandmarkAlignmentDelta(context, deltas);
     this.applySanctuaryQuadrantAttunementDelta(context, deltas);
     return deltas;
+  }
+
+  private applyBiomeConditionDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
+    const conditionIds = Array.isArray(context.currentCell?.worldEventConditionIds)
+      ? context.currentCell.worldEventConditionIds.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+      : [];
+    if (conditionIds.length === 0) {
+      return;
+    }
+
+    conditionIds.forEach((conditionId) => {
+      const effect = this.biomeConditionCatalogService.getCachedCondition(conditionId)?.effect;
+      if (!effect || effect.type !== "luck-check-multiplier") {
+        return;
+      }
+
+      const luckDelta = typeof effect.luckDelta === "number" && Number.isFinite(effect.luckDelta)
+        ? Math.floor(effect.luckDelta)
+        : 0;
+      if (luckDelta === 0) {
+        return;
+      }
+
+      deltas.push({
+        characteristic: "luck",
+        amount: luckDelta,
+        source: "biome-condition",
+        reason: `Biome condition (${conditionId})`,
+      });
+    });
   }
 
   private applyFollowerDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {

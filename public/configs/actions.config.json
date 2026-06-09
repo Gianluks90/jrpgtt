@@ -46,6 +46,29 @@
       }
     },
     {
+      "id": "sanctuary",
+      "ui": {
+        "label": "Sanctuary",
+        "descriptionTemplate": "Open the sanctuary and choose one of its available actions.",
+        "i18n": {
+          "labelKey": "actions.sanctuary.label",
+          "descriptionKey": "actions.sanctuary.description"
+        }
+      },
+      "flow": {
+        "handler": "sanctuary-open",
+        "errorMessage": "Error while opening sanctuary actions",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy"],
+        "dialog": {
+          "type": "sanctuary-action",
+          "sanctuaryMode": "actions",
+          "requiredActive": true
+        },
+        "requiresMyTurn": true
+      }
+    },
+    {
       "id": "donate-sanctuary",
       "ui": {
         "label": "Donate",

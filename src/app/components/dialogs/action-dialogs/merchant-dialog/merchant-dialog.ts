@@ -1,13 +1,13 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { MerchantDialogOfferRow, MerchantDialogSellRow } from "../../../../models/MerchantCatalog";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { MerchantDialogOfferRow, MerchantDialogSellRow } from "@models/catalog/MerchantCatalog";
 import {
   MerchantCheckoutOperation,
   MerchantCheckoutOutcome,
-} from "../../../../services/action-executor-service";
+} from "@services/gameplay/action-executor-service";
 import { MerchantTradePanel } from "../../../ui/merchant-trade-panel/merchant-trade-panel";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 export interface MerchantDialogData {
   merchantLabel: string;

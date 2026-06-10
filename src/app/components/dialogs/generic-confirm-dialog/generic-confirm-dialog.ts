@@ -1,9 +1,9 @@
 import { Component, Inject } from "@angular/core";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
-import { DialogResponse } from "../../../models/DialogResponse";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { TextButton } from "../../ui/text-button/text-button";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 export interface GenericConfirmDialogData {
   title?: string;

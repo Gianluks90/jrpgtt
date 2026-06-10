@@ -1,11 +1,11 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
-import { RESOURCE_CATALOG } from "../../../../consts/resources-catalog";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { ResourceLabel, ResourceStack } from "../../../../models/Resource";
+import { RESOURCE_CATALOG } from "../../../../consts/catalog/resources-catalog";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { ResourceLabel, ResourceStack } from "@models/world/Resource";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 

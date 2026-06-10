@@ -1,8 +1,8 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 

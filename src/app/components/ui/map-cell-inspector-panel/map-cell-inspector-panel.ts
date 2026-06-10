@@ -1,18 +1,18 @@
 import { Component, computed, inject, input } from "@angular/core";
-import { isSpecialCellCoordinate } from "../../../consts/special-cells";
-import { MapCell, SanctuaryElement, BiomeType } from "../../../models/MapCell";
-import { Player } from "../../../models/Player";
-import { ResourceLabel } from "../../../models/Resource";
-import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesConfig";
+import { isSpecialCellCoordinate } from "../../../consts/gameplay/special-cells";
+import { MapCell, SanctuaryElement, BiomeType } from "@models/world/MapCell";
+import { Player } from "@models/player/Player";
+import { ResourceLabel } from "@models/world/Resource";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfig";
 import { MapGridPanelCell } from "../../core/map-grid-panel/map-grid-panel";
-import { LandmarksService } from "../../../services/landmarks-service";
-import { ActionCatalogService } from "../../../services/action-catalog-service";
-import { TranslationService } from "../../../services/translation-service";
+import { LandmarksService } from "@services/map/landmarks-service";
+import { ActionCatalogService } from "@services/catalog/action-catalog-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { WorldState } from "../../../models/WorldState";
-import { ActionDescriptionParams } from "../../../models/ActionCatalog";
-import { getDoctorCostPerUnit, isDoctorActionId } from "../../../consts/safe-place-actions";
-import { BiomeConditionCatalogService } from "../../../services/biome-condition-catalog-service";
+import { WorldState } from "@models/world/WorldState";
+import { ActionDescriptionParams } from "@models/catalog/ActionCatalog";
+import { getDoctorCostPerUnit, isDoctorActionId } from "../../../consts/gameplay/safe-place-actions";
+import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
 
 @Component({
   selector: "app-map-cell-inspector-panel",

@@ -1,10 +1,10 @@
 import { Component, computed, input } from "@angular/core";
-import { PlayerComputedStats } from "../../../models/PlayerComputedStats";
-import { Player } from "../../../models/Player";
+import { PlayerComputedStats } from "@models/player/PlayerComputedStats";
+import { Player } from "@models/player/Player";
 import { UiTooltip } from "../tooltip/tooltip";
-import { StatusCatalogService } from "../../../services/status-catalog-service";
+import { StatusCatalogService } from "@services/catalog/status-catalog-service";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 interface ActiveEffectRow {
   key: string;

@@ -2,8 +2,8 @@ import { inject } from "@angular/core";
 import { CanActivateFn, Router } from "@angular/router";
 import { getAuth, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { FirebaseService } from "../services/firebase-service";
-import { Game } from "../models/Game";
+import { FirebaseService } from "@services/app/firebase-service";
+import { Game } from "@models/core/Game";
 
 export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);

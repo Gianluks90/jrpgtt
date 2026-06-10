@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, inject } from "@angular/core";
 import { TextButton } from "../../components/ui/text-button/text-button";
-import { AuthService } from "../../services/_index";
+import { AuthService } from "@services/_index";
 import { getAuth, onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { Router } from "@angular/router";
 import { TranslationPipe } from "../../pipes/translation-pipe";

@@ -1,7 +1,7 @@
 import { Component, computed, input } from "@angular/core";
-import { SanctuaryElement } from "../../../models/MapCell";
+import { SanctuaryElement } from "@models/world/MapCell";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: "app-attunement-indicator",

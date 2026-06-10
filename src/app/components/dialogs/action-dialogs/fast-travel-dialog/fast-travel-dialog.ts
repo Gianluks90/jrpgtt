@@ -1,9 +1,9 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { FastTravelRouteOption } from "../../../../services/safe-place-fast-travel-service";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { FastTravelRouteOption } from "@services/map/safe-place-fast-travel-service";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 

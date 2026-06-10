@@ -1,11 +1,11 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../models/DialogResponse";
-import { DiscardPileEntry } from "../../../models/DiscardPile";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 export interface DiscardPileDialogData {
   entries: DiscardPileEntry[];

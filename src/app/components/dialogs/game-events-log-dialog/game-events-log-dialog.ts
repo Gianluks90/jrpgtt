@@ -1,12 +1,12 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { EventLog } from "../../../models/EventLog";
-import { DialogResponse } from "../../../models/DialogResponse";
+import { EventLog } from "@models/ui/EventLog";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
-import { EventLogService } from "../../../services/event-log-service";
+import { TranslationService } from "@services/shared/translation-service";
+import { EventLogService } from "@services/gameplay/event-log-service";
 
 export interface GameEventsLogDialogData {
   logs: EventLog[];

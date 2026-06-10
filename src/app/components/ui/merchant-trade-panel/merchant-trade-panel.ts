@@ -1,10 +1,10 @@
 import { Component, computed, input, output, signal } from "@angular/core";
-import { MerchantDialogOfferRow, MerchantDialogSellRow } from "../../../models/MerchantCatalog";
-import { MerchantCheckoutOperation } from "../../../services/action-executor-service";
+import { MerchantDialogOfferRow, MerchantDialogSellRow } from "@models/catalog/MerchantCatalog";
+import { MerchantCheckoutOperation } from "@services/gameplay/action-executor-service";
 import { DialogWrapper } from "../dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 interface MerchantCartLine {
   operation: "buy" | "sell";

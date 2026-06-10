@@ -1,20 +1,20 @@
 import { Component, computed, inject, input, OnDestroy, output, signal } from "@angular/core";
-import { Player } from "../../../models/Player";
-import { MapCell, SanctuaryElement } from "../../../models/MapCell";
+import { Player } from "@models/player/Player";
+import { MapCell, SanctuaryElement } from "@models/world/MapCell";
 import { MapCellComponent } from "../../ui/map-cell/map-cell";
-import { EnvironmentService, type EdgeDirection } from "../../../services/environment-service";
-import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesConfig";
-import { isSpecialCellCoordinate } from "../../../consts/special-cells";
-import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/map-inspector";
-import { LandmarksService } from "../../../services/landmarks-service";
-import { WorldZonesService } from "../../../services/world-zones-service";
-import { QuadrantId } from "../../../models/WorldZone";
-import { TranslationService } from "../../../services/translation-service";
+import { EnvironmentService, type EdgeDirection } from "@services/map/environment-service";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfig";
+import { isSpecialCellCoordinate } from "../../../consts/gameplay/special-cells";
+import { MAP_CELL_INSPECTION_HOVER_DELAY_MS } from "../../../consts/ui/map-inspector";
+import { LandmarksService } from "@services/map/landmarks-service";
+import { WorldZonesService } from "@services/map/world-zones-service";
+import { QuadrantId } from "@models/world/WorldZone";
+import { TranslationService } from "@services/shared/translation-service";
 import {
   FastTravelAnimationState,
   FastTravelVisualService,
-} from "../../../services/fast-travel-visual-service";
-import { RegionBoundaryWarningState } from "../../../services/world-event-region-transition-service";
+} from "@services/map/fast-travel-visual-service";
+import { RegionBoundaryWarningState } from "@services/map/world-event-region-transition-service";
 
 interface QuadrantInfluenceOverlay {
   id: QuadrantId;

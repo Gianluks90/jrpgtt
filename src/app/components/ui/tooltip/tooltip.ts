@@ -1,5 +1,5 @@
 import { Component, computed, ElementRef, input, signal, viewChild } from "@angular/core";
-import { TooltipVisibilityService } from "../../../services/tooltip-visibility-service";
+import { TooltipVisibilityService } from "@services/ui/tooltip-visibility-service";
 
 let tooltipSequence = 0;
 

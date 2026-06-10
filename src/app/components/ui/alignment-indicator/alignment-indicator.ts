@@ -1,7 +1,7 @@
 import { Component, computed, input } from "@angular/core";
-import { PlayerAlignment } from "../../../models/Player";
+import { PlayerAlignment } from "@models/player/Player";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: "app-alignment-indicator",

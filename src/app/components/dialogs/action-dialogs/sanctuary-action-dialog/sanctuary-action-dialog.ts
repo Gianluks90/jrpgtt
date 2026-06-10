@@ -1,9 +1,9 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { SanctuaryElement } from "../../../../models/MapCell";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { SanctuaryElement } from "@models/world/MapCell";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { CommandPanelAction, CommandsPanel } from "../../../ui/commands-panel/commands-panel";
 import { SanctuaryCrystal } from "../../../ui/sanctuary-crystal/sanctuary-crystal";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";

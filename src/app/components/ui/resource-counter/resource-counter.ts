@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from "@angular/core";
-import { ResourceLabel, ResourceStack } from "../../../models/Resource";
-import { RESOURCE_CATALOG } from "../../../consts/resources-catalog";
-import { TranslationService } from "../../../services/translation-service";
+import { ResourceLabel, ResourceStack } from "@models/world/Resource";
+import { RESOURCE_CATALOG } from "../../../consts/catalog/resources-catalog";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: "app-resource-counter",

@@ -1,10 +1,10 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { GraveyardResurrectRewardDialogRow } from "../../../../models/GraveyardResurrectRewardsConfig";
-import { LuckCheckResult } from "../../../../models/LuckCheckResult";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { GraveyardResurrectRewardDialogRow } from "@models/catalog/GraveyardResurrectRewardsConfig";
+import { LuckCheckResult } from "@models/ui/LuckCheckResult";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 

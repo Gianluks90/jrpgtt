@@ -1035,14 +1035,14 @@
         },
         "campGatherer": {
             "label": "Raccoglitore",
-            "description": "Campo: ottieni 1 legname e 1 minerale, poi termina il turno.",
+            "description": "Esci a raccogliere risorse con un'abitante del posto. Ottieni 1 legname e 1 minerale, poi termina il turno.",
             "warning": {
                 "capacity": "Capienza inventario insufficiente: servono {requiredSlots} slot liberi, disponibili {availableSlots}."
             }
         },
         "campHunter": {
             "label": "Cacciatore",
-            "description": "Campo: ottieni 1 cibo e 1 stoffa, poi termina il turno.",
+            "description": "Esci a caccia con un'abitante del posto. Ottieni 1 cibo e 1 stoffa, poi termina il turno.",
             "warning": {
                 "capacity": "Capienza inventario insufficiente: servono {requiredSlots} slot liberi, disponibili {availableSlots}."
             }
@@ -1076,11 +1076,11 @@
             "description": "Riposa al Castello: ripristina il 50% HP, paga 10 monete, poi termina il turno (giorno e notte)."
         },
         "castleTrainer": {
-            "label": "Addestratore",
+            "label": "Lezione di scherma",
             "description": "Allena Forza al Castello. Costo {trainingCost} monete (3 x livello), ottieni +1 FOR permanente, termini il turno e salti il prossimo."
         },
         "academyTrainer": {
-            "label": "Addestratore",
+            "label": "Lezione di magia",
             "description": "Allena Magia all'Accademia. Costo {trainingCost} monete (3 x livello), ottieni +1 MAG permanente, termini il turno e salti il prossimo."
         },
         "academyMerchant": {
@@ -1092,7 +1092,7 @@
             "description": "Scambia risorse 1:1 dall'Artigiano del Villaggio, poi termina il turno."
         },
         "graveyardResurrect": {
-            "label": "Resuscita",
+            "label": "Rito di resurrezione",
             "description": "Prova a resuscitare un seguace morto dalla pila degli scarti tramite una prova fortuna. Gli esiti possono essere pericolosi."
         },
         "templeSendDevotee": {
@@ -1119,11 +1119,11 @@
         },
         "regen": {
             "label": "Rigenerazione",
-            "description": "Cura una piccola quantita alla fine di ogni turno."
+            "description": "Cura una piccola quantità alla fine di ogni turno."
         },
         "minified": {
             "label": "Miniaturizzato",
-            "description": "Trasforma il bersaglio in topo. Le statistiche primarie vanno a 1, recupero HP/MP disabilitato e uso oggetti bloccato."
+            "description": "Trasforma il bersaglio in topo. Le statistiche primarie diventano 1, recupero HP/MP disabilitato e uso oggetti bloccato."
         },
         "silence": {
             "label": "Silenzio",

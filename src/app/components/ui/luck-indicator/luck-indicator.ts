@@ -1,8 +1,8 @@
 import { Component, Injector, OnDestroy, computed, effect, inject, input, signal } from "@angular/core";
-import { LuckCheckResult } from "../../../models/LuckCheckResult";
-import { SoundService } from "../../../services/sound-service";
+import { LuckCheckResult } from "@models/ui/LuckCheckResult";
+import { SoundService } from "@services/ui/sound-service";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { UiTooltip } from "../tooltip/tooltip";
 
 @Component({

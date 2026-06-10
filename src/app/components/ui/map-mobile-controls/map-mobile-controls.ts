@@ -3,10 +3,10 @@ import { NgTemplateOutlet } from "@angular/common";
 import { CdkMenu, CdkMenuTrigger } from "@angular/cdk/menu";
 import { TextButton } from "../text-button/text-button";
 import { WorldStatePanel } from "../../core/world-state-panel/world-state-panel";
-import { WorldState } from "../../../models/WorldState";
-import { Player } from "../../../models/Player";
-import { MapCell } from "../../../models/MapCell";
-import { SidebarService } from "../../../services/sidebar-service";
+import { WorldState } from "@models/world/WorldState";
+import { Player } from "@models/player/Player";
+import { MapCell } from "@models/world/MapCell";
+import { SidebarService } from "@services/ui/sidebar-service";
 
 @Component({
   selector: "app-map-mobile-controls",

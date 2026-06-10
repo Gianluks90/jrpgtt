@@ -2,7 +2,7 @@ import { Component, Inject } from "@angular/core";
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
-import { DialogResponse } from "../../../models/DialogResponse";
+import { DialogResponse } from "@models/ui/DialogResponse";
 
 export type WorldEventHelpBiome = "plains" | "forest" | "mountain" | "water" | "desert" | "ruins";
 

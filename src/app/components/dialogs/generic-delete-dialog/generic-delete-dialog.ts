@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { DialogRef } from "@angular/cdk/dialog";
-import { DialogResponse } from "../../../models/DialogResponse";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { TextButton } from "../../ui/text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 

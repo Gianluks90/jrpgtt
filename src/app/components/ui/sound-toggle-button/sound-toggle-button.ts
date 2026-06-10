@@ -1,6 +1,6 @@
 import { Component, inject } from "@angular/core";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { SoundService } from "../../../services/sound-service";
+import { SoundService } from "@services/ui/sound-service";
 
 @Component({
   selector: "sound-toggle-button",

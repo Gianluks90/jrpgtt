@@ -1,17 +1,17 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../models/DialogResponse";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { MapGridPanelCell } from "../../core/map-grid-panel/map-grid-panel";
-import { Player } from "../../../models/Player";
-import { MapCell, BiomeType, SanctuaryElement } from "../../../models/MapCell";
-import { ResourceLabel } from "../../../models/Resource";
-import { SanctuaryTilesConfigEntry, TilesConfig } from "../../../models/TilesConfig";
+import { Player } from "@models/player/Player";
+import { MapCell, BiomeType, SanctuaryElement } from "@models/world/MapCell";
+import { ResourceLabel } from "@models/world/Resource";
+import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfig";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
 import { MapCellInspectorPanel } from "../../ui/map-cell-inspector-panel/map-cell-inspector-panel";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
-import { WorldState } from "../../../models/WorldState";
+import { TranslationService } from "@services/shared/translation-service";
+import { WorldState } from "@models/world/WorldState";
 
 export interface LocationInfoDialogData {
   title: string;

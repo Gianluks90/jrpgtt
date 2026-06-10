@@ -1,6 +1,6 @@
 import { Component, input, output } from "@angular/core";
-import { BiomeType, MapCell } from "../../../models/MapCell";
-import { WorldState } from "../../../models/WorldState";
+import { BiomeType, MapCell } from "@models/world/MapCell";
+import { WorldState } from "@models/world/WorldState";
 
 @Component({
   selector: "app-biomes-counter",

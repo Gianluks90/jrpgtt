@@ -1,10 +1,10 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject, signal } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { ResourceLabel, ResourceStack } from "../../../../models/Resource";
-import { RESOURCE_CATALOG } from "../../../../consts/resources-catalog";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { ResourceLabel, ResourceStack } from "@models/world/Resource";
+import { RESOURCE_CATALOG } from "../../../../consts/catalog/resources-catalog";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 

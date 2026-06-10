@@ -1,0 +1,768 @@
+import { Injectable } from "@angular/core";
+import {
+  BAD_PLACE_ACTIONS_BY_LANDMARK,
+  LANDMARK_ALIGNMENT_PREFIX,
+  LANDMARK_CATEGORY_DEFINITIONS,
+  LANDMARK_CATEGORY_ORDER,
+  LANDMARK_DEFINITIONS,
+  MID_PLACE_ACTIONS_BY_LANDMARK,
+  MID_LANDMARK_ALIGNMENT_DISTRIBUTION,
+  SAFE_LANDMARK_BIOME_SUFFIXES,
+  isKnownLandmarkCategory,
+} from "../../consts/catalog/landmarks-catalog";
+import { SAFE_PLACE_ACTIONS_BY_LANDMARK, SafePlaceLandmarkId } from "../../consts/gameplay/safe-place-actions";
+import { SPECIAL_CELLS } from "../../consts/gameplay/special-cells";
+import { BiomeType, MapCell } from "@models/world/MapCell";
+import {
+  LandmarkAlignmentModifier,
+  LandmarkCategory,
+  LandmarkCategoryDefinition,
+  LandmarkDefinition,
+  LandmarkTarget,
+} from "@models/world/Landmark";
+import { LandmarksConfig } from "@models/world/LandmarksConfig";
+import { LandmarkPlacementConfig } from "@models/core/MapConfig";
+import { QuadrantId } from "@models/world/WorldZone";
+import { LandmarksConfigService } from "@services/catalog/landmarks-config-service";
+import { WorldZonesService } from "@services/map/world-zones-service";
+import { TranslationService } from "@services/shared/translation-service";
+
+interface PlacementCoordinate {
+  x: number;
+  y: number;
+}
+
+interface LandmarkPlacementCandidate {
+  quadrantId: QuadrantId;
+  categoryOrder: LandmarkCategory[];
+  selectedCoordinates: PlacementCoordinate[];
+}
+
+type PlacementSpacingMode = "strict-gap" | "allow-diagonal-touch";
+
+@Injectable({
+  providedIn: "root",
+})
+export class LandmarksService {
+  private readonly quadrantOrder: QuadrantId[] = ["Q1", "Q2", "Q3", "Q4"];
+
+  private readonly defaultPlacementConfig: Required<LandmarkPlacementConfig> = {
+    maxPlacementAttempts: 40,
+    alignmentThreshold: 3,
+    overflowPenaltyMultiplier: 4,
+    targetMinimumManhattanDistance: 4,
+    minDistancePenaltyMultiplier: 1,
+  };
+
+  constructor(
+    private worldZonesService: WorldZonesService,
+    private landmarksConfigService: LandmarksConfigService,
+    private translationService: TranslationService,
+  ) {}
+
+  public async loadConfig(): Promise<LandmarksConfig> {
+    return this.landmarksConfigService.loadConfig();
+  }
+
+  public async generateLandmarkTargets(
+    mapSize: number,
+    excludedCoordinates: Array<{ x: number; y: number }>,
+    placementConfig?: LandmarkPlacementConfig,
+  ): Promise<LandmarkTarget[]> {
+    const config = await this.landmarksConfigService.loadConfig();
+    const scoring = this.resolvePlacementConfig(placementConfig);
+    let bestCandidate: LandmarkPlacementCandidate[] | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (let attempt = 0; attempt < scoring.maxPlacementAttempts; attempt++) {
+      const candidate = this.tryBuildPlacementCandidate(mapSize, excludedCoordinates, config);
+      if (!candidate) {
+        continue;
+      }
+
+      const score = this.scorePlacementCandidate(candidate, scoring);
+      if (score < bestScore) {
+        bestScore = score;
+        bestCandidate = candidate;
+      }
+
+      if (score <= 0) {
+        break;
+      }
+    }
+
+    if (!bestCandidate) {
+      throw new Error("Could not generate landmark targets with the current constraints");
+    }
+
+    const definitionsByCategory = this.buildDefinitionsByCategory(this.getDefinitions(config));
+    const categoryIndices: Partial<Record<LandmarkCategory, number>> = {};
+    const midAlignmentPool = this.shuffleArray([...this.getMidAlignmentDistribution(config)]);
+    let midAlignmentIndex = 0;
+
+    const targets: LandmarkTarget[] = [];
+    for (const quadrantPlacement of bestCandidate) {
+      quadrantPlacement.categoryOrder.forEach((category, index) => {
+        const coordinate = quadrantPlacement.selectedCoordinates[index];
+        if (!coordinate) return;
+
+        const landmarkDefinition = this.pickDefinitionForCategory(category, definitionsByCategory, categoryIndices);
+
+        let alignmentModifier: LandmarkAlignmentModifier | undefined;
+        if (landmarkDefinition.usesAlignmentModifier) {
+          alignmentModifier = midAlignmentPool[midAlignmentIndex % Math.max(1, midAlignmentPool.length)] ?? "neutral";
+          midAlignmentIndex += 1;
+        }
+
+        const target: LandmarkTarget = {
+          x: coordinate.x,
+          y: coordinate.y,
+          landmarkId: landmarkDefinition.id,
+          category,
+          quadrantId: quadrantPlacement.quadrantId,
+        };
+
+        if (alignmentModifier) {
+          target.alignmentModifier = alignmentModifier;
+        }
+
+        targets.push(target);
+      });
+    }
+
+    return targets;
+  }
+
+  private resolvePlacementConfig(config: LandmarkPlacementConfig | undefined): Required<LandmarkPlacementConfig> {
+    const maxPlacementAttempts = this.normalizePositiveInt(
+      config?.maxPlacementAttempts,
+      this.defaultPlacementConfig.maxPlacementAttempts,
+    );
+    const alignmentThreshold = this.normalizePositiveInt(
+      config?.alignmentThreshold,
+      this.defaultPlacementConfig.alignmentThreshold,
+    );
+    const overflowPenaltyMultiplier = this.normalizePositiveInt(
+      config?.overflowPenaltyMultiplier,
+      this.defaultPlacementConfig.overflowPenaltyMultiplier,
+    );
+    const targetMinimumManhattanDistance = this.normalizePositiveInt(
+      config?.targetMinimumManhattanDistance,
+      this.defaultPlacementConfig.targetMinimumManhattanDistance,
+    );
+    const minDistancePenaltyMultiplier = this.normalizePositiveInt(
+      config?.minDistancePenaltyMultiplier,
+      this.defaultPlacementConfig.minDistancePenaltyMultiplier,
+    );
+
+    return {
+      maxPlacementAttempts,
+      alignmentThreshold,
+      overflowPenaltyMultiplier,
+      targetMinimumManhattanDistance,
+      minDistancePenaltyMultiplier,
+    };
+  }
+
+  private tryBuildPlacementCandidate(
+    mapSize: number,
+    excludedCoordinates: Array<{ x: number; y: number }>,
+    config: LandmarksConfig,
+  ): LandmarkPlacementCandidate[] | null {
+    const excluded = new Set<string>([
+      ...excludedCoordinates.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
+      ...SPECIAL_CELLS.map((coordinate) => this.cellId(coordinate.x, coordinate.y)),
+    ]);
+
+    const categoryOrder = this.getCategoryOrder(config);
+    const placement: LandmarkPlacementCandidate[] = [];
+
+    for (const quadrantId of this.quadrantOrder) {
+      const availableCoordinates = this.buildQuadrantCandidates(quadrantId, mapSize, excluded);
+      if (availableCoordinates.length < categoryOrder.length) {
+        return null;
+      }
+
+      const selectedCoordinates = this.selectLandmarkCoordinatesForQuadrant(availableCoordinates, categoryOrder.length);
+      if (selectedCoordinates.length < categoryOrder.length) {
+        return null;
+      }
+
+      for (const coordinate of selectedCoordinates) {
+        excluded.add(this.cellId(coordinate.x, coordinate.y));
+      }
+
+      placement.push({
+        quadrantId,
+        categoryOrder: [...categoryOrder],
+        selectedCoordinates,
+      });
+    }
+
+    return placement;
+  }
+
+  private scorePlacementCandidate(
+    candidate: LandmarkPlacementCandidate[],
+    scoring: Required<LandmarkPlacementConfig>,
+  ): number {
+    const coordinates = candidate.flatMap((entry) => entry.selectedCoordinates);
+    const byMainDiagonal = new Map<number, number>();
+    const bySecondaryDiagonal = new Map<number, number>();
+    const byColumn = new Map<number, number>();
+    const byRow = new Map<number, number>();
+
+    for (const coordinate of coordinates) {
+      byMainDiagonal.set(coordinate.x - coordinate.y, (byMainDiagonal.get(coordinate.x - coordinate.y) ?? 0) + 1);
+      bySecondaryDiagonal.set(coordinate.x + coordinate.y, (bySecondaryDiagonal.get(coordinate.x + coordinate.y) ?? 0) + 1);
+      byColumn.set(coordinate.x, (byColumn.get(coordinate.x) ?? 0) + 1);
+      byRow.set(coordinate.y, (byRow.get(coordinate.y) ?? 0) + 1);
+    }
+
+    let penalty = 0;
+    penalty += this.sumAlignmentPenalties(
+      byMainDiagonal.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+    penalty += this.sumAlignmentPenalties(
+      bySecondaryDiagonal.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+    penalty += this.sumAlignmentPenalties(
+      byColumn.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+    penalty += this.sumAlignmentPenalties(
+      byRow.values(),
+      scoring.alignmentThreshold,
+      scoring.overflowPenaltyMultiplier,
+    );
+
+    const minDistance = this.minimumManhattanDistance(coordinates);
+    if (Number.isFinite(minDistance)) {
+      penalty += Math.max(0, scoring.targetMinimumManhattanDistance - minDistance) * scoring.minDistancePenaltyMultiplier;
+    }
+
+    return penalty;
+  }
+
+  private sumAlignmentPenalties(
+    counts: Iterable<number>,
+    threshold: number,
+    overflowPenaltyMultiplier: number,
+  ): number {
+    let penalty = 0;
+    for (const count of counts) {
+      if (count <= threshold) continue;
+      const overflow = count - threshold;
+      penalty += overflow * overflow * overflowPenaltyMultiplier;
+    }
+    return penalty;
+  }
+
+  private normalizePositiveInt(value: unknown, fallback: number): number {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return fallback;
+    }
+
+    const normalized = Math.floor(numeric);
+    if (normalized <= 0) {
+      return fallback;
+    }
+
+    return normalized;
+  }
+
+  private minimumManhattanDistance(coordinates: PlacementCoordinate[]): number {
+    if (coordinates.length < 2) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    let minDistance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < coordinates.length; i++) {
+      for (let j = i + 1; j < coordinates.length; j++) {
+        const first = coordinates[i];
+        const second = coordinates[j];
+        const distance = Math.abs(first.x - second.x) + Math.abs(first.y - second.y);
+        minDistance = Math.min(minDistance, distance);
+      }
+    }
+
+    return minDistance;
+  }
+
+  public findTargetAtCoordinate(targets: LandmarkTarget[] | undefined, x: number, y: number): LandmarkTarget | null {
+    if (!Array.isArray(targets) || targets.length === 0) return null;
+    return targets.find((target) => target.x === x && target.y === y) ?? null;
+  }
+
+  public async buildLandmarkDisplayName(target: LandmarkTarget, biome: BiomeType): Promise<string> {
+    const config = await this.landmarksConfigService.loadConfig();
+    const definition = this.getDefinitionByIdFromDefinitions(target.landmarkId, this.getDefinitions(config));
+    if (!definition) {
+      return this.translationService.tOrFallback("map.cells.unknownLandmark", "Unknown Landmark");
+    }
+
+    const baseName = this.translationService.tOrFallback(
+      `map.landmarks.names.${definition.id}`,
+      definition.baseName,
+    );
+
+    if (target.category === "safe") {
+      const suffix = this.getSafeBiomeSuffixes(config)[biome];
+      const localizedAffix = this.translationService.tOrFallback(
+        `map.landmarks.safeBiomeAffixes.${biome}.${suffix.kind}`,
+        suffix.value,
+      );
+      return this.getLocalizedSafeLandmarkName({
+        landmarkId: definition.id,
+        biome,
+        baseName,
+        fallbackAffix: localizedAffix,
+        fallbackKind: suffix.kind,
+      });
+    }
+
+    if (target.category === "mid") {
+      const alignmentPrefixes = this.getAlignmentPrefixes(config);
+      const alignment = target.alignmentModifier ?? "neutral";
+      const modifier = this.translationService.tOrFallback(
+        `map.landmarks.alignmentPrefixes.${alignment}`,
+        alignmentPrefixes[alignment],
+      );
+      return this.getLocalizedMidLandmarkName({
+        landmarkId: definition.id,
+        alignment,
+        baseName,
+        fallbackPrefix: modifier,
+      });
+    }
+
+    return baseName;
+  }
+
+  public getLocalizedLandmarkNameFromCell(cell: MapCell | null | undefined): string {
+    if (!cell || cell.specialType !== "landmark") {
+      return this.translationService.tOrFallback("map.cells.unknownLandmark", "Unknown Landmark");
+    }
+
+    const baseName = this.getLocalizedLandmarkBaseName(cell.landmarkId);
+    if (cell.landmarkCategory === "safe") {
+      const biome = cell.biome;
+      if (!biome) {
+        return baseName;
+      }
+
+      const config = this.landmarksConfigService.getCachedConfig();
+      const suffix = this.getSafeBiomeSuffixes(config)[biome];
+      const localizedAffix = this.translationService.tOrFallback(
+        `map.landmarks.safeBiomeAffixes.${biome}.${suffix.kind}`,
+        suffix.value,
+      );
+      return this.getLocalizedSafeLandmarkName({
+        landmarkId: cell.landmarkId ?? "",
+        biome,
+        baseName,
+        fallbackAffix: localizedAffix,
+        fallbackKind: suffix.kind,
+      });
+    }
+
+    if (cell.landmarkCategory === "mid") {
+      const alignment = cell.landmarkAlignmentModifier ?? "neutral";
+      const config = this.landmarksConfigService.getCachedConfig();
+      const fallbackPrefix = this.getAlignmentPrefixes(config)[alignment];
+      const modifier = this.translationService.tOrFallback(
+        `map.landmarks.alignmentPrefixes.${alignment}`,
+        fallbackPrefix,
+      );
+      return this.getLocalizedMidLandmarkName({
+        landmarkId: cell.landmarkId ?? "",
+        alignment,
+        baseName,
+        fallbackPrefix: modifier,
+      });
+    }
+
+    return baseName;
+  }
+
+  public getCategoryDefinition(category: LandmarkCategory): LandmarkCategoryDefinition | null {
+    if (!isKnownLandmarkCategory(category)) {
+      return null;
+    }
+
+    const categories = this.getCategoryDefinitionsMap(this.landmarksConfigService.getCachedConfig());
+    const configCategory = categories[category];
+    if (configCategory) {
+      return configCategory;
+    }
+
+    return LANDMARK_CATEGORY_DEFINITIONS[category];
+  }
+
+  public getCategoryIconUrl(category: LandmarkCategory | undefined): string | null {
+    if (!category) return null;
+    return this.getCategoryDefinition(category)?.iconUrl ?? null;
+  }
+
+  public getDefinitionById(landmarkId: string | undefined): LandmarkDefinition | null {
+    if (!landmarkId) return null;
+
+    const config = this.landmarksConfigService.getCachedConfig();
+    return this.getDefinitionByIdFromDefinitions(landmarkId, this.getDefinitions(config));
+  }
+
+  public getCategoryLabel(category: LandmarkCategory | undefined): string {
+    if (!category) {
+      return this.translationService.tOrFallback("map.landmarks.categories.unknown", "Unknown");
+    }
+
+    const fallback = this.getCategoryDefinition(category)?.label ?? category;
+    return this.translationService.tOrFallback(`map.landmarks.categories.${category}`, fallback);
+  }
+
+  public getSafePlaceActionIds(landmarkId: string | undefined): string[] {
+    return this.getLandmarkActionIds(landmarkId, "safe");
+  }
+
+  public getLandmarkActionIdsForCell(cell: MapCell | null | undefined): string[] {
+    if (!cell) {
+      return [];
+    }
+
+    const hasLandmarkHints = cell.specialType === "landmark"
+      || cell.isSpecial === true
+      || (typeof cell.landmarkId === "string" && cell.landmarkId.trim().length > 0)
+      || (typeof cell.landmarkDisplayName === "string" && cell.landmarkDisplayName.trim().length > 0)
+      || typeof cell.landmarkCategory === "string";
+
+    if (!hasLandmarkHints || cell.specialType === "sanctuary") {
+      return [];
+    }
+
+    const inferredLandmarkId = this.resolveLandmarkIdFromCell(cell);
+    if (!inferredLandmarkId) {
+      return [];
+    }
+
+    const inferredCategory = cell.landmarkCategory ?? this.resolveLandmarkCategoryFromId(inferredLandmarkId);
+    if (!inferredCategory) {
+      return [];
+    }
+
+    return this.getLandmarkActionIds(inferredLandmarkId, inferredCategory);
+  }
+
+  public getLandmarkActionIds(landmarkId: string | undefined, category: LandmarkCategory | undefined): string[] {
+    if (!landmarkId || !category) {
+      return [];
+    }
+
+    const cached = this.landmarksConfigService.getCachedConfig();
+    const configuredActions = category === "safe"
+      ? cached?.safePlaceActionsByLandmark?.[landmarkId]
+      : category === "mid"
+        ? cached?.midPlaceActionsByLandmark?.[landmarkId]
+        : cached?.badPlaceActionsByLandmark?.[landmarkId];
+
+    if (Array.isArray(configuredActions)) {
+      return configuredActions.filter((actionId) => typeof actionId === "string" && actionId.trim().length > 0);
+    }
+
+    if (category === "safe" && this.isSafeLandmarkId(landmarkId)) {
+      return [...SAFE_PLACE_ACTIONS_BY_LANDMARK[landmarkId]];
+    }
+
+    if (category === "mid") {
+      return [...(MID_PLACE_ACTIONS_BY_LANDMARK[landmarkId] ?? [])];
+    }
+
+    if (category === "bad") {
+      return [...(BAD_PLACE_ACTIONS_BY_LANDMARK[landmarkId] ?? [])];
+    }
+
+    return [];
+  }
+
+  private buildQuadrantCandidates(
+    quadrantId: QuadrantId,
+    mapSize: number,
+    excluded: Set<string>,
+  ): PlacementCoordinate[] {
+    const bounds = this.worldZonesService.getQuadrantBounds(quadrantId, mapSize);
+    const candidates: PlacementCoordinate[] = [];
+
+    for (let y = bounds.startY; y < bounds.startY + bounds.size; y++) {
+      for (let x = bounds.startX; x < bounds.startX + bounds.size; x++) {
+        if (x === 0 || x === mapSize - 1) continue;
+        const id = this.cellId(x, y);
+        if (excluded.has(id)) continue;
+        candidates.push({ x, y });
+      }
+    }
+
+    return candidates;
+  }
+
+  private selectLandmarkCoordinatesForQuadrant(
+    candidates: PlacementCoordinate[],
+    requiredCount: number,
+  ): PlacementCoordinate[] {
+    const strictSelection = this.trySelectSpacedCoordinates(candidates, requiredCount, "strict-gap");
+    if (strictSelection.length === requiredCount) {
+      return strictSelection;
+    }
+
+    return this.trySelectSpacedCoordinates(candidates, requiredCount, "allow-diagonal-touch");
+  }
+
+  private trySelectSpacedCoordinates(
+    candidates: PlacementCoordinate[],
+    requiredCount: number,
+    spacingMode: PlacementSpacingMode,
+  ): PlacementCoordinate[] {
+    const shuffled = this.shuffleArray(candidates);
+    return this.selectSpacedCoordinatesBacktracking(shuffled, requiredCount, spacingMode, []);
+  }
+
+  private selectSpacedCoordinatesBacktracking(
+    pool: PlacementCoordinate[],
+    requiredCount: number,
+    spacingMode: PlacementSpacingMode,
+    selected: PlacementCoordinate[],
+  ): PlacementCoordinate[] {
+    if (selected.length === requiredCount) {
+      return selected;
+    }
+
+    if (pool.length === 0) {
+      return [];
+    }
+
+    for (let index = 0; index < pool.length; index++) {
+      const candidate = pool[index];
+      const isCompatible = selected.every((placed) => {
+        return this.areCoordinatesCompatible(placed, candidate, spacingMode);
+      });
+      if (!isCompatible) continue;
+
+      const nextSelected = [...selected, candidate];
+      const nextPool = pool.slice(index + 1);
+      const result = this.selectSpacedCoordinatesBacktracking(nextPool, requiredCount, spacingMode, nextSelected);
+      if (result.length === requiredCount) {
+        return result;
+      }
+    }
+
+    return [];
+  }
+
+  private areCoordinatesCompatible(
+    first: PlacementCoordinate,
+    second: PlacementCoordinate,
+    spacingMode: PlacementSpacingMode,
+  ): boolean {
+    const deltaX = Math.abs(first.x - second.x);
+    const deltaY = Math.abs(first.y - second.y);
+    const chebyshevDistance = Math.max(deltaX, deltaY);
+    const manhattanDistance = deltaX + deltaY;
+
+    if (spacingMode === "strict-gap") {
+      return chebyshevDistance >= 2;
+    }
+
+    return manhattanDistance >= 2;
+  }
+
+  private buildDefinitionsByCategory(definitions: LandmarkDefinition[]): Record<string, LandmarkDefinition[]> {
+    const grouped: Record<string, LandmarkDefinition[]> = {};
+
+    for (const definition of definitions) {
+      const bucket = grouped[definition.category] ?? [];
+      bucket.push(definition);
+      grouped[definition.category] = bucket;
+    }
+
+    for (const category of Object.keys(grouped)) {
+      grouped[category] = this.shuffleArray(grouped[category]);
+    }
+
+    return grouped;
+  }
+
+  private pickDefinitionForCategory(
+    category: LandmarkCategory,
+    grouped: Record<string, LandmarkDefinition[]>,
+    indices: Partial<Record<LandmarkCategory, number>>,
+  ): LandmarkDefinition {
+    const pool = grouped[category] ?? [];
+    if (pool.length === 0) {
+      throw new Error(`Landmark catalog for category '${category}' is empty`);
+    }
+
+    const index = indices[category] ?? 0;
+    const definition = pool[index % pool.length];
+    indices[category] = index + 1;
+    return definition;
+  }
+
+  private getCategoryOrder(config: LandmarksConfig | null): LandmarkCategory[] {
+    if (!config?.categoryOrder || config.categoryOrder.length === 0) {
+      return [...LANDMARK_CATEGORY_ORDER];
+    }
+
+    return [...config.categoryOrder];
+  }
+
+  private getDefinitions(config: LandmarksConfig | null): LandmarkDefinition[] {
+    if (!config?.definitions || config.definitions.length === 0) {
+      return [...LANDMARK_DEFINITIONS];
+    }
+
+    return [...config.definitions];
+  }
+
+  private getMidAlignmentDistribution(config: LandmarksConfig | null): LandmarkAlignmentModifier[] {
+    if (!config?.midAlignmentDistribution || config.midAlignmentDistribution.length === 0) {
+      return [...MID_LANDMARK_ALIGNMENT_DISTRIBUTION];
+    }
+
+    return [...config.midAlignmentDistribution];
+  }
+
+  private getSafeBiomeSuffixes(config: LandmarksConfig | null) {
+    if (!config?.safeBiomeSuffixes) {
+      return SAFE_LANDMARK_BIOME_SUFFIXES;
+    }
+
+    return config.safeBiomeSuffixes;
+  }
+
+  private getAlignmentPrefixes(config: LandmarksConfig | null) {
+    if (!config?.alignmentPrefixes) {
+      return LANDMARK_ALIGNMENT_PREFIX;
+    }
+
+    return config.alignmentPrefixes;
+  }
+
+  private getCategoryDefinitionsMap(config: LandmarksConfig | null): Record<string, LandmarkCategoryDefinition> {
+    if (!config?.categories) {
+      return LANDMARK_CATEGORY_DEFINITIONS;
+    }
+
+    return config.categories;
+  }
+
+  private getDefinitionByIdFromDefinitions(
+    landmarkId: string,
+    definitions: LandmarkDefinition[],
+  ): LandmarkDefinition | null {
+    return definitions.find((definition) => definition.id === landmarkId) ?? null;
+  }
+
+  private resolveLandmarkCategoryFromId(landmarkId: string): LandmarkCategory | null {
+    const definition = this.getDefinitionById(landmarkId);
+    return definition?.category ?? null;
+  }
+
+  private resolveLandmarkIdFromCell(cell: MapCell): string | null {
+    const directId = typeof cell.landmarkId === "string" ? cell.landmarkId.trim() : "";
+    if (directId.length > 0) {
+      return directId;
+    }
+
+    const displayName = typeof cell.landmarkDisplayName === "string"
+      ? cell.landmarkDisplayName.trim().toLowerCase()
+      : "";
+    if (!displayName) {
+      return null;
+    }
+
+    const definitions = this.getDefinitions(this.landmarksConfigService.getCachedConfig());
+    const matched = definitions.find((definition) => {
+      const localizedBaseName = this.translationService.tOrFallback(
+        `map.landmarks.names.${definition.id}`,
+        definition.baseName,
+      ).toLowerCase();
+      return displayName.includes(definition.id.toLowerCase())
+        || displayName.includes(definition.baseName.toLowerCase())
+        || displayName.includes(localizedBaseName);
+    });
+
+    return matched?.id ?? null;
+  }
+
+  private isSafeLandmarkId(value: string): value is SafePlaceLandmarkId {
+    return value === "capital" || value === "city" || value === "village" || value === "camp";
+  }
+
+  private getLocalizedLandmarkBaseName(landmarkId: string | undefined): string {
+    if (!landmarkId) {
+      return this.translationService.tOrFallback("map.cells.unknownLandmark", "Unknown Landmark");
+    }
+
+    const definition = this.getDefinitionById(landmarkId);
+    const fallbackBase = definition?.baseName ?? landmarkId;
+    return this.translationService.tOrFallback(`map.landmarks.names.${landmarkId}`, fallbackBase);
+  }
+
+  private getLocalizedSafeLandmarkName(input: {
+    landmarkId: string;
+    biome: BiomeType;
+    baseName: string;
+    fallbackAffix: string;
+    fallbackKind: "prefix" | "suffix";
+  }): string {
+    const explicitName = this.translationService.tOrFallback(
+      `map.landmarks.safeNames.${input.landmarkId}.${input.biome}`,
+      "",
+    ).trim();
+
+    if (explicitName) {
+      return explicitName;
+    }
+
+    return input.fallbackKind === "prefix"
+      ? `${input.fallbackAffix} ${input.baseName}`
+      : `${input.baseName} ${input.fallbackAffix}`;
+  }
+
+  private getLocalizedMidLandmarkName(input: {
+    landmarkId: string;
+    alignment: LandmarkAlignmentModifier;
+    baseName: string;
+    fallbackPrefix: string;
+  }): string {
+    const explicitName = this.translationService.tOrFallback(
+      `map.landmarks.midNames.${input.landmarkId}.${input.alignment}`,
+      "",
+    ).trim();
+
+    if (explicitName) {
+      return explicitName;
+    }
+
+    return input.fallbackPrefix ? `${input.fallbackPrefix} ${input.baseName}` : input.baseName;
+  }
+
+  private shuffleArray<T>(items: T[]): T[] {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const randomIndex = Math.floor(Math.random() * (i + 1));
+      const current = shuffled[i];
+      shuffled[i] = shuffled[randomIndex];
+      shuffled[randomIndex] = current;
+    }
+    return shuffled;
+  }
+
+  private cellId(x: number, y: number): string {
+    return `${x}_${y}`;
+  }
+}

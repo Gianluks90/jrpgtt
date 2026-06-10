@@ -1,7 +1,7 @@
 import { Component, inject, input, signal } from "@angular/core";
 import { TextButton } from "../text-button/text-button";
 import { IconButton } from "../icon-button/icon-button";
-import { SidebarService } from "../../../services/sidebar-service";
+import { SidebarService } from "@services/ui/sidebar-service";
 
 @Component({
   selector: "sidebar-wrapper",

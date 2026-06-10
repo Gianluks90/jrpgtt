@@ -1,7 +1,7 @@
 import { Component, Injector, OnDestroy, computed, effect, inject, input, signal } from "@angular/core";
-import { DAY_NIGHT_ROUNDS_PER_TOGGLE } from "../../../consts/day-night-cycle";
-import { TimeOfDay, WorldState } from "../../../models/WorldState";
-import { TranslationService } from "../../../services/translation-service";
+import { DAY_NIGHT_ROUNDS_PER_TOGGLE } from "../../../consts/gameplay/day-night-cycle";
+import { TimeOfDay, WorldState } from "@models/world/WorldState";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: "app-day-night-cycle-panel",

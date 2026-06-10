@@ -1,9 +1,9 @@
 import { Component, computed, input, output } from "@angular/core";
-import { Player } from "../../../models/Player";
-import { PlayerComputedStats } from "../../../models/PlayerComputedStats";
+import { Player } from "@models/player/Player";
+import { PlayerComputedStats } from "@models/player/PlayerComputedStats";
 import { PlayerCard } from "../player-card/player-card";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { TranslationService } from "../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: "app-map-players-panel",

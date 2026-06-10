@@ -1,7 +1,7 @@
 import { CdkMenu, CdkMenuTrigger } from "@angular/cdk/menu";
 import { Component, inject } from "@angular/core";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
-import { LanguageCode, TranslationService } from "../../../services/translation-service";
+import { LanguageCode, TranslationService } from "@services/shared/translation-service";
 import { TextButton } from "../text-button/text-button";
 
 @Component({

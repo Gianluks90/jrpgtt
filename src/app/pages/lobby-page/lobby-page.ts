@@ -1,22 +1,22 @@
 import { Component, computed, effect, inject, Injector, OnDestroy, OnInit, signal, WritableSignal } from "@angular/core";
 import { Dialog } from "@angular/cdk/dialog";
 import { getAuth } from "firebase/auth";
-import { GameService } from "../../services/game-service";
-import { Game } from "../../models/Game";
+import { GameService } from "@services/app/game-service";
+import { Game } from "@models/core/Game";
 import { TextButton } from "../../components/ui/text-button/text-button";
 import { GenericDeleteDialog } from "../../components/dialogs/generic-delete-dialog/generic-delete-dialog";
 import { GenericConfirmDialog } from "../../components/dialogs/generic-confirm-dialog/generic-confirm-dialog";
-import { DIALOGS_CONFIG } from "../../consts/dialog-configs";
-import { DialogResponse } from "../../models/DialogResponse";
+import { DIALOGS_CONFIG } from "../../consts/ui/dialog-configs";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { take } from "rxjs";
 import { ActivatedRoute, Router } from "@angular/router";
 import { GameSettingsDialog, GameSettingsDialogData } from "../../components/dialogs/game-settings-dialog/game-settings-dialog";
-import { PlayerService, PlayerSetupData } from "../../services/player-service";
-import { Player, PlayerAlignment } from "../../models/Player";
+import { PlayerService, PlayerSetupData } from "@services/player/player-service";
+import { Player, PlayerAlignment } from "@models/player/Player";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
 import { IconButton } from "../../components/ui/icon-button/icon-button";
 import { TranslationPipe } from "../../pipes/translation-pipe";
-import { TranslationService } from "../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: "app-lobby-page",

@@ -15,8 +15,8 @@ import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 import { mergeGeometries, mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { SANCTUARY_CRYSTAL_CONFIG } from "../../../consts/sanctuary-crystal-config";
-import { SanctuaryElement } from "../../../models/MapCell";
+import { SANCTUARY_CRYSTAL_CONFIG } from "../../../consts/gameplay/sanctuary-crystal-config";
+import { SanctuaryElement } from "@models/world/MapCell";
 
 @Component({
   selector: "app-sanctuary-crystal",

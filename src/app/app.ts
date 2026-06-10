@@ -2,8 +2,8 @@ import { Component, effect, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { SoundService } from './services/sound-service';
-import { TranslationService } from './services/translation-service';
+import { SoundService } from "@services/ui/sound-service";
+import { TranslationService } from "@services/shared/translation-service";
 
 @Component({
   selector: 'app-root',

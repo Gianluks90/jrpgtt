@@ -1,8 +1,8 @@
 import { Component, computed, input, output } from "@angular/core";
-import { Player } from "../../../models/Player";
-import { MapCell } from "../../../models/MapCell";
-import { WorldState } from "../../../models/WorldState";
-import { TranslationService } from "../../../services/translation-service";
+import { Player } from "@models/player/Player";
+import { MapCell } from "@models/world/MapCell";
+import { WorldState } from "@models/world/WorldState";
+import { TranslationService } from "@services/shared/translation-service";
 import { UiTooltip } from "../../ui/tooltip/tooltip";
 
 interface WorldSummaryEntry {

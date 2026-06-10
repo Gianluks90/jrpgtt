@@ -1,7 +1,7 @@
 import { Component, input, output } from "@angular/core";
-import { BiomeType, SpecialTileType } from "../../../models/MapCell";
-import { Player } from "../../../models/Player";
-import { SanctuaryTilesConfigEntry } from "../../../models/TilesConfig";
+import { BiomeType, SpecialTileType } from "@models/world/MapCell";
+import { Player } from "@models/player/Player";
+import { SanctuaryTilesConfigEntry } from "@models/world/TilesConfig";
 
 @Component({
   selector: "map-cell",

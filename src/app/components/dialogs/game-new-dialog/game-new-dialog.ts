@@ -1,9 +1,9 @@
 import { Component } from "@angular/core";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { DialogRef } from "@angular/cdk/dialog";
-import { DialogResponse } from "../../../models/DialogResponse";
+import { DialogResponse } from "@models/ui/DialogResponse";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
-import { GAME_DEFAULT_CONFIG } from "../../../consts/game-default-config";
+import { GAME_DEFAULT_CONFIG } from "../../../consts/gameplay/game-default-config";
 import { TextButton } from "../../ui/text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 

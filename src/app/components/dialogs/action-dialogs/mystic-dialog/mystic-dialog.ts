@@ -1,11 +1,11 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { ChangeDetectorRef, Component, Inject } from "@angular/core";
-import { DialogResponse } from "../../../../models/DialogResponse";
-import { LuckCheckResult } from "../../../../models/LuckCheckResult";
-import { MysticRewardDialogRow } from "../../../../models/MysticRewardsConfig";
-import { CityMysticOutcome } from "../../../../services/action-executor-service";
+import { DialogResponse } from "@models/ui/DialogResponse";
+import { LuckCheckResult } from "@models/ui/LuckCheckResult";
+import { MysticRewardDialogRow } from "@models/catalog/MysticRewardsConfig";
+import { CityMysticOutcome } from "@services/gameplay/action-executor-service";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
-import { TranslationService } from "../../../../services/translation-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../../ui/text-button/text-button";
 

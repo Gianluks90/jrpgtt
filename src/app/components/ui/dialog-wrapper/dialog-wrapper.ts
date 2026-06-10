@@ -1,5 +1,5 @@
 import { Component, input } from "@angular/core";
-import { LuckCheckResult } from "../../../models/LuckCheckResult";
+import { LuckCheckResult } from "@models/ui/LuckCheckResult";
 import { LuckIndicator } from "../luck-indicator/luck-indicator";
 
 @Component({

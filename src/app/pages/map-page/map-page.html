@@ -107,6 +107,11 @@
                 [latestMessage]="latestLogMessage()"
                 (openLogsRequested)="openLogsDialog()"
             ></app-map-log-panel>
+            <rulebook-button
+                class="footer-rulebook-button"
+                [ariaLabel]="'ui.rulebook.openAriaLabel' | t"
+                (clicked)="openRulebookDialog()"
+            ></rulebook-button>
             <icon-button
                 class="footer-home-button"
                 iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"

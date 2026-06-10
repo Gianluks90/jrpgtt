@@ -32,6 +32,8 @@ import { DiscardPileService } from "@services/gameplay/discard-pile-service";
 import { TranslationPipe } from "../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
 import { RequiredActionNotification, RequiredActionNotificationPlayer } from "../../components/ui/required-action-notification/required-action-notification";
+import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-button";
+import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
 
@@ -51,6 +53,7 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     MapLogPanel,
     TranslationPipe,
     RequiredActionNotification,
+    RulebookButton,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
@@ -73,6 +76,7 @@ export class MapPage implements OnInit, OnDestroy {
   private followerCatalogService = inject(FollowerCatalogService);
   private discardPileService = inject(DiscardPileService);
   private translationService = inject(TranslationService);
+  private rulebookDialogService = inject(RulebookDialogService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -623,6 +627,10 @@ export class MapPage implements OnInit, OnDestroy {
 
   public openLogsDialog(): void {
     this.mapPageInteractionService.openLogsDialog(this.eventLogs());
+  }
+
+  public openRulebookDialog(): void {
+    this.rulebookDialogService.open();
   }
 
   public onWorldEventHelpRequested(): void {

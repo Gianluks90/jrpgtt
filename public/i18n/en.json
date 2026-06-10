@@ -9,6 +9,9 @@
     },
     "sound": {
       "toggleAriaLabel": "Toggle sounds on or off"
+    },
+    "rulebook": {
+      "openAriaLabel": "Open rulebook"
     }
   },
   "landing": {
@@ -167,6 +170,19 @@
     "eventLog": {
       "title": "Event Log",
       "empty": "No events yet."
+    },
+    "rulebook": {
+      "title": "Rulebook",
+      "loading": "Loading...",
+      "empty": "No pages available.",
+      "loadIndexError": "Unable to load rulebook index.",
+      "loadPageError": "Unable to load the selected page.",
+      "pages": {
+        "intro": "Introduction",
+        "new-game": "New Game",
+        "join-game": "Join Game",
+        "player": "Player"
+      }
     },
     "discardPile": {
       "title": "Discard Pile ({count})",

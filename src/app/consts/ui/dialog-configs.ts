@@ -35,3 +35,11 @@ export const MERCHANT_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     maxWidth: '760px',
 };
+
+export const RULEBOOK_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    width: 'calc(100vw - 96px)',
+    height: 'calc(100vh - 96px)',
+    maxWidth: '1200px',
+    maxHeight: 'calc(100vh - 96px)',
+};

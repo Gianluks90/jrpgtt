@@ -1,0 +1,18 @@
+[
+  {
+    "pageId": 1,
+    "labelKey": "dialogs.rulebook.pages.intro"
+  },
+  {
+    "pageId": 2,
+    "labelKey": "dialogs.rulebook.pages.new-game"
+  },
+  {
+    "pageId": 3,
+    "labelKey": "dialogs.rulebook.pages.join-game"
+  },
+  {
+    "pageId": 4,
+    "labelKey": "dialogs.rulebook.pages.player"
+  }
+]

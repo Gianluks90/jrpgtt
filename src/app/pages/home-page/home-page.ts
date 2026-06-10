@@ -21,10 +21,12 @@ import { TranslationPipe } from "../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
 import { LanguageMenu } from "../../components/ui/language-menu/language-menu";
 import { SoundToggleButton } from "../../components/ui/sound-toggle-button/sound-toggle-button";
+import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-button";
+import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
 
 @Component({
   selector: "app-home-page",
-  imports: [TextButton, ActionMenu, TranslationPipe, LanguageMenu, SoundToggleButton],
+  imports: [TextButton, ActionMenu, TranslationPipe, LanguageMenu, SoundToggleButton, RulebookButton],
   templateUrl: "./home-page.html",
   styleUrl: "./home-page.scss",
 })
@@ -36,6 +38,7 @@ export class HomePage implements OnInit {
   public router = inject(Router);
   public dialog = inject(Dialog);
   public translationService = inject(TranslationService);
+  private rulebookDialogService = inject(RulebookDialogService);
   public readonly appVersion = APP_VERSION;
 
   public myGame: WritableSignal<Game | null> = this.gameService.myGame;
@@ -215,5 +218,9 @@ export class HomePage implements OnInit {
       if (navigated) return;
       console.warn("Navigation cancelled", { gameId: game.id, target, status: game.status });
     });
+  }
+
+  public openRulebookDialog(): void {
+    this.rulebookDialogService.open();
   }
 }

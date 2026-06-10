@@ -234,7 +234,17 @@
         display: inline-flex;
     }
 
+    .footer-rulebook-button {
+        align-self: stretch;
+        display: inline-flex;
+    }
+
     .footer-home-button::ng-deep .icon-button {
+        width: 58px;
+        height: 58px;
+    }
+
+    .footer-rulebook-button::ng-deep .rulebook-button {
         width: 58px;
         height: 58px;
     }

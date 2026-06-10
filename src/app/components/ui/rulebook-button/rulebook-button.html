@@ -1,0 +1,8 @@
+<button
+    type="button"
+    class="rulebook-button"
+    [attr.aria-label]="ariaLabel()"
+    (click)="onClick()"
+>
+    <span class="button-icon" [style.mask]="'url(' + iconUrl() + ') no-repeat center / contain'"></span>
+</button>

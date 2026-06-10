@@ -1,0 +1,36 @@
+<dialog-wrapper [title]="'dialogs.rulebook.title' | t">
+    <div class="rulebook-layout">
+        <nav class="rulebook-sidenav" [attr.aria-label]="'dialogs.rulebook.title' | t">
+            @if (isLoadingIndex()) {
+                <p class="info-text">{{ 'dialogs.rulebook.loading' | t }}</p>
+            } @else if (loadingError()) {
+                <p class="info-text">{{ loadingError() }}</p>
+            } @else if (entries().length === 0) {
+                <p class="info-text">{{ 'dialogs.rulebook.empty' | t }}</p>
+            } @else {
+                @for (entry of entries(); track entry.pageId; let i = $index) {
+                    <button
+                        type="button"
+                        class="rulebook-entry-button"
+                        [class.rulebook-entry-button-active]="selectedEntryIndex() === i"
+                        (click)="selectEntry(i)"
+                    >
+                        {{ entry.labelKey | t }}
+                    </button>
+                }
+            }
+        </nav>
+
+        <section class="rulebook-content" [attr.aria-label]="'dialogs.rulebook.title' | t">
+            @if (isLoadingPage()) {
+                <p class="info-text">{{ 'dialogs.rulebook.loading' | t }}</p>
+            } @else if (loadingError()) {
+                <p class="info-text">{{ loadingError() }}</p>
+            } @else {
+                <article class="rulebook-markdown" [innerHTML]="renderedHtml()"></article>
+            }
+        </section>
+    </div>
+
+    <text-button dialog-action [text]="'dialogs.common.close' | t" (clicked)="close()"></text-button>
+</dialog-wrapper>

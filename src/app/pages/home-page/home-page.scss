@@ -79,6 +79,13 @@
         bottom: 16px;
         z-index: 20;
     }
+
+    .rulebook-button-anchor {
+        position: absolute;
+        right: 24px;
+        bottom: 24px;
+        z-index: 21;
+    }
 }
 
 h1.app-title {
@@ -120,6 +127,11 @@ h1.app-title {
         & > .mobile-actions-container {
             right: 14px;
             bottom: 14px;
+        }
+
+        .rulebook-button-anchor {
+            right: 14px;
+            bottom: 70px;
         }
     }
 }

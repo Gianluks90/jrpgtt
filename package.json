@@ -22,6 +22,7 @@
     "@angular/router": "^21.2.0",
     "firebase": "^12.13.0",
     "firebase-tools": "^15.18.0",
+    "marked": "^13.0.3",
     "rxjs": "~7.8.0",
     "three": "^0.184.0",
     "tslib": "^2.3.0"

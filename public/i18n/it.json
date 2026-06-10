@@ -9,6 +9,9 @@
         },
         "sound": {
             "toggleAriaLabel": "Attiva o disattiva i suoni"
+        },
+        "rulebook": {
+            "openAriaLabel": "Apri regolamento"
         }
     },
     "landing": {
@@ -167,6 +170,19 @@
         "eventLog": {
             "title": "Registro Eventi",
             "empty": "Nessun evento per ora."
+        },
+        "rulebook": {
+            "title": "Regolamento",
+            "loading": "Caricamento in corso...",
+            "empty": "Nessuna pagina disponibile.",
+            "loadIndexError": "Impossibile caricare l'indice del regolamento.",
+            "loadPageError": "Impossibile caricare la pagina selezionata.",
+            "pages": {
+                "intro": "Introduzione",
+                "new-game": "Nuova partita",
+                "join-game": "Entrare in partita",
+                "player": "Il giocatore"
+            }
         },
         "discardPile": {
             "title": "Pila degli Scarti ({count})",

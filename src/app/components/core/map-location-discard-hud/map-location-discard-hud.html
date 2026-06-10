@@ -1,0 +1,27 @@
+<div class="map-bottom-hud-row">
+  <section class="map-inline-hud active-cell-block">
+    <div class="map-inline-hud-content active-cell-content">
+      <p class="active-cell-context">{{ locationInfoContextLabel() }}</p>
+      <p class="active-cell-name">{{ locationInfoCellName() }}</p>
+    </div>
+    <icon-button
+      class="map-inline-hud-tail active-cell-info-button"
+      iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+      [ariaLabel]="'map.locationInfo.openAria' | t"
+      (clicked)="onLocationInfoClicked()"
+    ></icon-button>
+  </section>
+
+  <section class="map-inline-hud discard-pile-block">
+    <div class="map-inline-hud-content discard-pile-content">
+      <p class="active-cell-context">{{ 'map.discardPile.title' | t }}</p>
+      <p class="active-cell-name">{{ discardPileCount() }}</p>
+    </div>
+    <icon-button
+      class="map-inline-hud-tail active-cell-info-button"
+      iconUrl="./icons/search_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+      [ariaLabel]="'map.discardPile.openAria' | t"
+      (clicked)="onDiscardPileClicked()"
+    ></icon-button>
+  </section>
+</div>

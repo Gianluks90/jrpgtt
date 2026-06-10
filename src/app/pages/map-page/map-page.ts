@@ -4,27 +4,22 @@ import { Player } from "@models/player/Player";
 import { BiomeEnvironment, EnvironmentService } from "@services/map/environment-service";
 import { IconButton } from "../../components/ui/icon-button/icon-button";
 import { MapGridPanel, type MapGridPanelCell } from "../../components/core/map-grid-panel/map-grid-panel";
-import { ResourceCounter } from "../../components/ui/resource-counter/resource-counter";
-import { MoneyCounter } from "../../components/ui/money-counter/money-counter";
 import { LuckIndicator } from "../../components/ui/luck-indicator/luck-indicator";
-import { AttunementIndicator } from "../../components/ui/attunement-indicator/attunement-indicator";
-import { AlignmentIndicator } from "../../components/ui/alignment-indicator/alignment-indicator";
 import { BiomesCounter } from "../../components/ui/biomes-counter/biomes-counter";
 import { CommandPanelAction, CommandsPanel } from "../../components/ui/commands-panel/commands-panel";
 import { MapPlayersPanel } from "../../components/ui/map-players-panel/map-players-panel";
 import { MapLogPanel } from "../../components/ui/map-log-panel/map-log-panel";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
+import { MapPlayerUtilitiesPanel } from "../../components/core/map-player-utilities-panel/map-player-utilities-panel";
+import { MapLocationDiscardHud } from "../../components/core/map-location-discard-hud/map-location-discard-hud";
 import { MapPageStateService } from "@services/map/map-page-state-service";
 import { MapPageLayoutService } from "@services/map/map-page-layout-service";
 import { MapPageActionsService } from "@services/map/map-page-actions-service";
 import { MapPageInteractionService } from "@services/map/map-page-interaction-service";
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/gameplay/inventory-config";
-import { PlayerFollowerEntry } from "@models/player/Follower";
-import { ItemDefinition } from "@models/catalog/ItemCatalog";
 import { PlayerComputedStats } from "@models/player/PlayerComputedStats";
 import { MapCell } from "@models/world/MapCell";
-import { InventoryItemEntry } from "@models/player/Inventory";
 import { PlayerStatsModifierService } from "@services/player/player-stats-modifier-service";
 import { FastTravelVisualService } from "@services/map/fast-travel-visual-service";
 import { FastTravelFlowService } from "@services/map/fast-travel-flow-service";
@@ -36,7 +31,6 @@ import { FollowerCatalogService } from "@services/catalog/follower-catalog-servi
 import { DiscardPileService } from "@services/gameplay/discard-pile-service";
 import { TranslationPipe } from "../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
-import { LandmarksService } from "@services/map/landmarks-service";
 import { RequiredActionNotification, RequiredActionNotificationPlayer } from "../../components/ui/required-action-notification/required-action-notification";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
@@ -48,10 +42,8 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     MapPlayersPanel,
     MapGridPanel,
     WorldStatePanel,
-    ResourceCounter,
-    MoneyCounter,
-    AlignmentIndicator,
-    AttunementIndicator,
+    MapPlayerUtilitiesPanel,
+    MapLocationDiscardHud,
     LuckIndicator,
     DayNightCyclePanel,
     BiomesCounter,
@@ -81,7 +73,6 @@ export class MapPage implements OnInit, OnDestroy {
   private followerCatalogService = inject(FollowerCatalogService);
   private discardPileService = inject(DiscardPileService);
   private translationService = inject(TranslationService);
-  private landmarksService = inject(LandmarksService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -99,7 +90,6 @@ export class MapPage implements OnInit, OnDestroy {
   public mockPlayers = signal<Player[]>([]);
   public isSpecialLocationsCounterHovered = signal(false);
   public inspectedCell = signal<MapGridPanelCell | null>(null);
-  public utilitiesExpandedPanel = signal<"inventory" | "followers">("inventory");
   private static readonly locationInfoResetDelayMs = 10000;
   private locationInfoResetTimer: ReturnType<typeof setTimeout> | null = null;
   private worldEventFlowClockTimer: ReturnType<typeof setInterval> | null = null;
@@ -406,13 +396,6 @@ export class MapPage implements OnInit, OnDestroy {
     return true;
   });
 
-  public resourceCount = computed<number>(() => {
-    const resources = this.myPlayer()?.inventory?.resources ?? [];
-    return resources.reduce((total, resource) => {
-      return total + Math.max(0, Math.floor(Number(resource.quantity ?? 0)));
-    }, 0);
-  });
-
   public resourceCapacity = computed<number>(() => {
     const configured = this.myPlayer()?.inventory?.resourceCapacity;
     if (typeof configured === "number" && Number.isFinite(configured)) {
@@ -474,149 +457,6 @@ export class MapPage implements OnInit, OnDestroy {
     const activePlayerId = this.worldState()?.activePlayerId;
     if (!activePlayerId) return null;
     return this.players().find((player) => player.id === activePlayerId) ?? null;
-  });
-
-  public locationInfoCellName = computed<string>(() => {
-    const hoveredCell = this.inspectedCell();
-    if (hoveredCell) {
-      return this.resolveCellNameFromCoordinates(hoveredCell.x, hoveredCell.y);
-    }
-
-    const activePlayer = this.activePlayer();
-    if (!activePlayer) return "-";
-    return this.resolveCellNameFromCoordinates(activePlayer.location.x, activePlayer.location.y);
-  });
-
-  public locationInfoContextLabel = computed<string>(() => {
-    if (this.inspectedCell()) {
-      return this.translationService.tOrFallback("map.locationInfo.contextObserving", "Observing cell");
-    }
-
-    return this.translationService.tOrFallback("map.locationInfo.contextActivePlayer", "Active player in");
-  });
-
-  public discardPileCount = computed<number>(() => {
-    const rawCount = Number(this.worldState()?.nextDiscardSeq ?? 0);
-    if (!Number.isFinite(rawCount)) {
-      return 0;
-    }
-
-    return Math.max(0, Math.floor(rawCount));
-  });
-
-  public visibleInventoryItems = computed<Array<{
-    itemId: string;
-    name: string;
-    sellValue: number | null;
-    description: string;
-    occupiesSpace: boolean;
-    uses: {
-      current: number;
-      max: number;
-      slots: boolean[];
-    } | null;
-    labels: Array<{
-      text: string;
-      tone: "neutral" | "positive" | "negative";
-    }>;
-  }>>(() => {
-    const items = this.normalizeInventoryItems(this.myPlayer()?.inventory?.items);
-    return items.map((entry) => {
-      const definition = this.itemCatalogService.getCachedItemById(entry.itemId);
-      const sellValue = definition ? this.itemCatalogService.getSellValue(definition) : 0;
-      const labels = definition ? this.buildInventoryLabels(definition) : [];
-      const uses = definition ? this.buildInventoryUses(entry, definition) : null;
-      return {
-        itemId: entry.itemId,
-        name: definition ? this.itemCatalogService.getLocalizedName(definition) : entry.itemId,
-        sellValue: sellValue > 0 ? sellValue : null,
-        description: (definition ? this.itemCatalogService.getLocalizedDescription(definition).trim() : "")
-          || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
-        occupiesSpace: definition?.occupiesSpace === true,
-        uses,
-        labels,
-      };
-    });
-  });
-
-  public visibleInventoryOccupiedSlots = computed<number>(() => {
-    return this.visibleInventoryItems().reduce((total, item) => {
-      return total + (item.occupiesSpace ? 1 : 0);
-    }, 0);
-  });
-
-  public visibleInventoryCapacity = computed<number>(() => {
-    const configured = this.myPlayer()?.inventory?.itemCapacity;
-    const alliesBonus = this.getFollowersItemCapacityBonus(this.myPlayer()?.followers);
-    if (typeof configured === "number" && Number.isFinite(configured)) {
-      return Math.max(1, Math.floor(configured)) + alliesBonus;
-    }
-
-    return 4 + alliesBonus;
-  });
-
-  public visibleFollowers = computed<Array<{
-    followerId: string;
-    name: string;
-    category: string;
-    description: string;
-    hpCurrent: number;
-    hpMax: number;
-    hpPercent: number;
-    labels: Array<{
-      text: string;
-      tone: "neutral" | "positive" | "negative";
-    }>;
-  }>>(() => {
-    const followers = this.normalizePlayerFollowers(this.myPlayer()?.followers);
-    return followers
-      .filter((entry) => entry.state !== "discarded")
-      .map((entry) => {
-        const definition = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-        const hpMax = typeof definition?.maxHp === "number" ? Math.max(1, Math.floor(definition.maxHp)) : 1;
-        const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
-        return {
-          followerId: entry.followerId,
-          name: entry.nameOverride ?? (definition ? this.followerCatalogService.getLocalizedName(definition) : entry.followerId),
-          category: String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase(),
-          description: (definition ? this.followerCatalogService.getLocalizedDescription(definition).trim() : "")
-            || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
-          hpCurrent,
-          hpMax,
-          hpPercent: Math.max(0, Math.min(100, Math.floor((hpCurrent / hpMax) * 100))),
-          labels: [
-            {
-              text: `${String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase()}`,
-              tone: "neutral",
-            },
-            ...(definition ? this.buildFollowerLabels(definition.parameterModifiers ?? []) : []),
-          ],
-        };
-      });
-  });
-
-  public discardedFollowersCount = computed<number>(() => {
-    return this.normalizePlayerFollowers(this.myPlayer()?.followers)
-      .filter((entry) => entry.state === "discarded")
-      .length;
-  });
-
-  public collapsedInventorySummary = computed<string>(() => {
-    const names = this.visibleInventoryItems().map((item) => item.name.trim()).filter((name) => name.length > 0);
-    if (names.length === 0) {
-      return this.translationService.tOrFallback("map.inventory.none", "no items");
-    }
-
-    return names.join(", ");
-  });
-
-  public collapsedFollowersSummary = computed<string>(() => {
-    const names = this.visibleFollowers().map((follower) => follower.name.trim()).filter((name) => name.length > 0);
-    if (names.length === 0) {
-      return this.translationService.tOrFallback("map.followers.none", "no followers");
-    }
-
-    return names.join(", ");
   });
 
   public movableCellIds = computed<Set<string>>(() => {
@@ -792,9 +632,9 @@ export class MapPage implements OnInit, OnDestroy {
     });
   }
 
-  public openLocationInfoDialog(): void {
+  public openLocationInfoDialog(titleOverride?: string): void {
     this.mapPageInteractionService.openLocationInfoDialog({
-      title: this.locationInfoCellName(),
+      title: titleOverride ?? this.translationService.tOrFallback("map.cells.unknownCell", "Unknown cell"),
       inspectedCell: this.inspectedCell(),
       activePlayer: this.activePlayer(),
       worldState: this.worldState(),
@@ -843,22 +683,6 @@ export class MapPage implements OnInit, OnDestroy {
     });
   }
 
-  public isInventoryExpanded(): boolean {
-    return this.utilitiesExpandedPanel() === "inventory";
-  }
-
-  public isFollowersExpanded(): boolean {
-    return this.utilitiesExpandedPanel() === "followers";
-  }
-
-  public onInventoryPanelToggle(): void {
-    this.utilitiesExpandedPanel.set("inventory");
-  }
-
-  public onFollowersPanelToggle(): void {
-    this.utilitiesExpandedPanel.set("followers");
-  }
-
   private async syncMockPlayersForLayout(): Promise<void> {
     const parsed = await this.mapPageLayoutService.loadMockPlayersForLayout();
     this.mockPlayers.set(parsed);
@@ -886,7 +710,7 @@ export class MapPage implements OnInit, OnDestroy {
   public onCellContextMenuRequested(cell: MapGridPanelCell): void {
     this.inspectedCell.set(cell);
     this.clearLocationInfoResetTimer();
-    this.openLocationInfoDialog();
+    this.openLocationInfoDialog(undefined);
   }
 
   public async onCommandActionRequested(actionId: string): Promise<void> {
@@ -953,215 +777,6 @@ export class MapPage implements OnInit, OnDestroy {
     });
   }
 
-  private normalizeInventoryItems(rawItems: unknown): InventoryItemEntry[] {
-    if (!Array.isArray(rawItems)) {
-      return [];
-    }
-
-    const items: InventoryItemEntry[] = [];
-    rawItems.forEach((entry) => {
-      if (typeof entry === "string" && entry.trim()) {
-        items.push({ itemId: entry.trim() });
-        return;
-      }
-
-      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-        return;
-      }
-
-      const itemId = (entry as { itemId?: unknown }).itemId;
-      if (typeof itemId !== "string" || !itemId.trim()) {
-        return;
-      }
-
-      const rawCurrentCharges = (entry as { currentCharges?: unknown }).currentCharges;
-      const currentCharges = typeof rawCurrentCharges === "number" && Number.isFinite(rawCurrentCharges)
-        ? Math.max(0, Math.floor(rawCurrentCharges))
-        : undefined;
-
-      items.push({
-        itemId: itemId.trim(),
-        ...(typeof currentCharges === "number" ? { currentCharges } : {}),
-      });
-    });
-
-    return items;
-  }
-
-  private biomeToLabel(biome: MapCell["biome"]): string {
-    if (biome === "plains") return this.translationService.tOrFallback("map.biomes.plains", "Plains");
-    if (biome === "forest") return this.translationService.tOrFallback("map.biomes.forest", "Forest");
-    if (biome === "mountain") return this.translationService.tOrFallback("map.biomes.mountain", "Mountain");
-    if (biome === "water") return this.translationService.tOrFallback("map.biomes.water", "Water");
-    if (biome === "desert") return this.translationService.tOrFallback("map.biomes.desert", "Desert");
-    return this.translationService.tOrFallback("map.biomes.ruins", "Ruins");
-  }
-
-  private buildInventoryLabels(item: ItemDefinition): Array<{
-    text: string;
-    tone: "neutral" | "positive" | "negative";
-  }> {
-    const labels: Array<{
-      text: string;
-      tone: "neutral" | "positive" | "negative";
-    }> = [];
-
-    if (item.occupiesSpace !== true) {
-      labels.push({
-        text: this.translationService.tOrFallback("map.labels.little", "little"),
-        tone: "neutral",
-      });
-    }
-
-    const scopeLabels = this.buildModifierScopeLabels(item.parameterModifiers ?? []);
-    scopeLabels.forEach((scopeLabel) => {
-      labels.push({
-        text: scopeLabel,
-        tone: "neutral",
-      });
-    });
-
-    const parameterModifiers = item.parameterModifiers ?? [];
-    parameterModifiers.forEach((modifier) => {
-      const sign = modifier.amount >= 0 ? "+" : "";
-      const parameterLabel = modifier.parameter === "strength"
-        ? "STR"
-        : modifier.parameter === "magic"
-          ? "MAG"
-          : "LCK";
-      labels.push({
-        text: `${sign}${modifier.amount} ${parameterLabel}`,
-        tone: modifier.amount >= 0 ? "positive" : "negative",
-      });
-    });
-
-    return labels;
-  }
-
-  private buildInventoryUses(entry: InventoryItemEntry, item: ItemDefinition): {
-    current: number;
-    max: number;
-    slots: boolean[];
-  } | null {
-    const maxCharges = typeof item.maxCharges === "number" && Number.isFinite(item.maxCharges)
-      ? Math.max(1, Math.floor(item.maxCharges))
-      : null;
-    if (!maxCharges) {
-      return null;
-    }
-
-    const rawCurrentCharges = Number(entry.currentCharges);
-    const currentCharges = Number.isFinite(rawCurrentCharges)
-      ? Math.max(0, Math.min(maxCharges, Math.floor(rawCurrentCharges)))
-      : maxCharges;
-
-    return {
-      current: currentCharges,
-      max: maxCharges,
-      slots: Array.from({ length: maxCharges }, (_value, index) => index < currentCharges),
-    };
-  }
-
-  private buildModifierScopeLabels(modifiers: NonNullable<ItemDefinition["parameterModifiers"]>): string[] {
-    const labels = new Set<string>();
-
-    modifiers.forEach((modifier) => {
-      const scopes = modifier.scopes ?? [];
-      scopes.forEach((scope) => {
-        if (scope === "always") return;
-        if (scope === "fight-only") {
-          labels.add(this.translationService.tOrFallback("map.labels.fightOnly", "fight only"));
-          return;
-        }
-        if (scope === "day-only") {
-          labels.add(this.translationService.tOrFallback("map.labels.dayOnly", "day only"));
-          return;
-        }
-        labels.add(this.translationService.tOrFallback("map.labels.nightOnly", "night only"));
-      });
-    });
-
-    return Array.from(labels);
-  }
-
-  private buildFollowerLabels(modifiers: Array<{
-    parameter: "strength" | "magic" | "luck";
-    amount: number;
-    scopes: Array<"always" | "fight-only" | "day-only" | "night-only">;
-  }>): Array<{
-    text: string;
-    tone: "neutral" | "positive" | "negative";
-  }> {
-    const labels: Array<{
-      text: string;
-      tone: "neutral" | "positive" | "negative";
-    }> = [];
-
-    const scopeLabels = this.buildModifierScopeLabels(modifiers);
-    scopeLabels.forEach((scopeLabel) => {
-      labels.push({
-        text: scopeLabel,
-        tone: "neutral",
-      });
-    });
-
-    modifiers.forEach((modifier) => {
-      const sign = modifier.amount >= 0 ? "+" : "";
-      const parameterLabel = modifier.parameter === "strength"
-        ? "STR"
-        : modifier.parameter === "magic"
-          ? "MAG"
-          : "LCK";
-
-      labels.push({
-        text: `${sign}${modifier.amount} ${parameterLabel}`,
-        tone: modifier.amount >= 0 ? "positive" : "negative",
-      });
-    });
-
-    return labels;
-  }
-
-  private normalizePlayerFollowers(rawFollowers: unknown): PlayerFollowerEntry[] {
-    if (!Array.isArray(rawFollowers)) {
-      return [];
-    }
-
-    const followers: PlayerFollowerEntry[] = [];
-    rawFollowers.forEach((entry) => {
-      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-        return;
-      }
-
-      const followerId = (entry as { followerId?: unknown }).followerId;
-      if (typeof followerId !== "string" || !followerId.trim()) {
-        return;
-      }
-
-      const hpCurrent = Math.max(0, Math.floor(Number((entry as { hpCurrent?: unknown }).hpCurrent ?? 0)));
-      const state = (entry as { state?: unknown }).state === "discarded" ? "discarded" : "active";
-
-      const rawNameOverride = (entry as { nameOverride?: unknown }).nameOverride;
-      const nameOverride = typeof rawNameOverride === "string" && rawNameOverride.trim().length > 0
-        ? rawNameOverride.trim()
-        : undefined;
-
-      const rawCategoryOverride = (entry as { categoryOverride?: unknown }).categoryOverride;
-      const categoryOverride = typeof rawCategoryOverride === "string" && rawCategoryOverride.trim().length > 0
-        ? rawCategoryOverride.trim().toLowerCase()
-        : undefined;
-
-      followers.push({
-        followerId: followerId.trim(),
-        hpCurrent,
-        state,
-        ...(nameOverride ? { nameOverride } : {}),
-        ...(categoryOverride ? { categoryOverride } : {}),
-      });
-    });
-
-    return followers;
-  }
 
   private getCurrentTurnMovementBonus(): number {
     const worldState = this.worldState();
@@ -1177,66 +792,6 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     return Math.max(0, Math.floor(Number(movementBonus.amount ?? 0)));
-  }
-
-  private getFollowersItemCapacityBonus(rawFollowers: unknown): number {
-    const followers = this.normalizePlayerFollowers(rawFollowers);
-    return followers.reduce((total, entry) => {
-      if (entry.state === "discarded") {
-        return total;
-      }
-
-      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) {
-        return total;
-      }
-
-      const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-      if (!follower) {
-        return total;
-      }
-
-      const itemCapacityBonus = Number(follower.itemCapacityBonus ?? 0);
-      if (!Number.isFinite(itemCapacityBonus)) {
-        return total;
-      }
-
-      return total + Math.max(0, Math.floor(itemCapacityBonus));
-    }, 0);
-  }
-
-  private capitalize(value: string): string {
-    if (!value) return value;
-    return value.charAt(0).toUpperCase() + value.slice(1);
-  }
-
-  private resolveCellNameFromCoordinates(x: number, y: number): string {
-    const cellId = `${x}_${y}`;
-    const cell = this.mapCellsById()[cellId] ?? null;
-    if (!cell) return this.translationService.tOrFallback("map.cells.unknownCell", "Unknown cell");
-
-    if (cell.isSpecial === true) {
-      if (cell.specialType === "landmark") {
-        return this.landmarksService.getLocalizedLandmarkNameFromCell(cell);
-      }
-
-      if (cell.specialType === "sanctuary") {
-        if (cell.sanctuaryElement === "water") {
-          return this.translationService.tOrFallback("map.cells.sanctuary.water", "Water Shrine");
-        }
-        if (cell.sanctuaryElement === "fire") {
-          return this.translationService.tOrFallback("map.cells.sanctuary.fire", "Fire Shrine");
-        }
-        if (cell.sanctuaryElement === "wind") {
-          return this.translationService.tOrFallback("map.cells.sanctuary.wind", "Wind Shrine");
-        }
-        if (cell.sanctuaryElement === "earth") {
-          return this.translationService.tOrFallback("map.cells.sanctuary.earth", "Earth Shrine");
-        }
-        return this.translationService.tOrFallback("map.cells.sanctuary.generic", "Elemental Shrine");
-      }
-    }
-
-    return this.biomeToLabel(cell.worldEventBiomeOverride ?? cell.biome);
   }
 
   private startWorldEventFlowClock(): void {

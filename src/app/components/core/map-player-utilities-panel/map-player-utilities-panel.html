@@ -1,0 +1,136 @@
+<app-alignment-indicator [alignment]="player()?.alignment ?? 'neutral'"></app-alignment-indicator>
+<app-attunement-indicator [element]="player()?.attunedElement ?? null"></app-attunement-indicator>
+
+<section
+  class="hud utility-panel player-inventory-block"
+  [class.utility-panel-expanded]="isInventoryExpanded()"
+  [class.utility-panel-collapsed]="!isInventoryExpanded()"
+  (click)="onInventoryPanelToggle()"
+>
+  <p class="hud-title">{{ 'map.inventory.title' | t: { used: visibleInventoryOccupiedSlots(), capacity: visibleInventoryCapacity() } }}</p>
+
+  @if (isInventoryExpanded()) {
+    <div class="inventory-list" [class.inventory-list-empty]="visibleInventoryItems().length === 0">
+      @if (visibleInventoryItems().length === 0) {
+        <p class="inventory-empty inventory-empty-centered">{{ 'map.inventory.noItems' | t }}</p>
+      } @else {
+        @for (item of visibleInventoryItems(); track item.itemId + $index) {
+          <div class="inventory-item-row">
+            <div class="inventory-item-header">
+              <p class="inventory-item-title">{{ item.name }}</p>
+              @if (item.sellValue !== null) {
+                <span class="inventory-item-sell-value">
+                  <span>{{ item.sellValue }}</span>
+                  <span class="coin-icon inventory-item-sell-icon" aria-hidden="true"></span>
+                </span>
+              }
+            </div>
+            <div class="inventory-item-line"></div>
+
+            <p class="inventory-item-description">{{ item.description }}</p>
+
+            @if (item.uses) {
+              <div class="inventory-item-uses">
+                <p class="inventory-item-uses-title">{{ 'map.inventory.uses' | t }}</p>
+                <div class="inventory-item-uses-row">
+                  <div class="inventory-item-uses-slots">
+                    @for (slotFilled of item.uses.slots; track $index) {
+                      <span class="inventory-item-uses-slot" [class.inventory-item-uses-slot-filled]="slotFilled"></span>
+                    }
+                  </div>
+                  <span class="inventory-item-uses-counter">{{ item.uses.current }}/{{ item.uses.max }}</span>
+                </div>
+              </div>
+            }
+
+            @if (item.labels.length > 0) {
+              <div class="inventory-item-keywords">
+                @for (label of item.labels; track label.text + $index) {
+                  <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+  } @else {
+    <div class="utility-panel-collapsed-content">
+      <p class="utility-panel-collapsed-label">{{ collapsedInventorySummary() }}</p>
+      <icon-button
+        class="utility-panel-expand-icon"
+        iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+        [ariaLabel]="'map.inventory.expandAria' | t"
+        (clicked)="onInventoryPanelToggle()"
+      ></icon-button>
+    </div>
+  }
+</section>
+
+<section
+  class="hud utility-panel player-followers-block"
+  [class.utility-panel-expanded]="isFollowersExpanded()"
+  [class.utility-panel-collapsed]="!isFollowersExpanded()"
+  (click)="onFollowersPanelToggle()"
+>
+  <p class="hud-title">{{ 'map.followers.title' | t: { count: visibleFollowers().length } }}</p>
+
+  @if (isFollowersExpanded()) {
+    <div class="inventory-list" [class.inventory-list-empty]="visibleFollowers().length === 0">
+      @if (visibleFollowers().length === 0) {
+        <p class="inventory-empty inventory-empty-centered">{{ 'map.followers.noFollowers' | t }}</p>
+      } @else {
+        @for (follower of visibleFollowers(); track follower.followerId + $index) {
+          <div class="inventory-item-row">
+            <div class="inventory-item-header">
+              <p class="inventory-item-title">{{ follower.name }}</p>
+            </div>
+            <div class="inventory-item-line"></div>
+
+            <div class="follower-hp-section">
+              <div class="follower-hp-label-row">
+                <span>HP</span>
+                <span>{{ follower.hpCurrent }}/{{ follower.hpMax }}</span>
+              </div>
+              <div class="follower-hp-bar" [class.follower-hp-bar-full]="follower.hpPercent === 100">
+                <div class="follower-hp-fill" [style.width.%]="follower.hpPercent"></div>
+              </div>
+            </div>
+
+            <p class="inventory-item-description">{{ follower.description }}</p>
+
+            @if (follower.labels.length > 0) {
+              <div class="inventory-item-keywords">
+                @for (label of follower.labels; track label.text + $index) {
+                  <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+
+      @if (discardedFollowersCount() > 0) {
+        <p class="inventory-empty">{{ 'map.followers.discardedCount' | t: { count: discardedFollowersCount() } }}</p>
+      }
+    </div>
+  } @else {
+    <div class="utility-panel-collapsed-content">
+      <p class="utility-panel-collapsed-label">{{ collapsedFollowersSummary() }}</p>
+      <icon-button
+        class="utility-panel-expand-icon"
+        iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+        [ariaLabel]="'map.followers.expandAria' | t"
+        (clicked)="onFollowersPanelToggle()"
+      ></icon-button>
+    </div>
+  }
+</section>
+
+<app-resource-counter
+  [resources]="player()?.inventory?.resources || []"
+  [currentCount]="resourceCount()"
+  [maxCount]="resourceCapacity()"
+  (panelClicked)="onResourcePanelClicked()"
+></app-resource-counter>
+<app-money-counter [money]="player()?.inventory?.money || 0"></app-money-counter>

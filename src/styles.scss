@@ -19,6 +19,15 @@
 
     --warning-color: goldenrod;
     --error-color: crimson;
+
+    --crt-page-contrast: 1.2;
+    --crt-page-brightness: 0.88;
+    --crt-page-saturation: 1;
+    --crt-vignette-strength: 0.8;
+    --crt-scanline-bright: 0.15;
+    --crt-scanline-dark: 0.32;
+    --crt-flicker-min: 0;
+    --crt-flicker-max: 0;
 }
 
 * {
@@ -42,6 +51,52 @@ body {
     // background: linear-gradient(90deg, #060042 0%, #0000ca 100%);
     color: var(--fg-color);
     font-size: 16px;
+}
+
+body.crt-overlay-enabled {
+    filter: contrast(var(--crt-page-contrast)) brightness(var(--crt-page-brightness)) saturate(var(--crt-page-saturation));
+}
+
+body.crt-overlay-enabled::before,
+body.crt-overlay-enabled::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+}
+
+body.crt-overlay-enabled::before {
+    z-index: 2147483000;
+    background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0) 36%, rgba(0, 0, 0, var(--crt-vignette-strength)) 100%),
+        repeating-linear-gradient(
+            to right,
+            rgba(255, 0, 0, 0.038) 0px,
+            rgba(255, 0, 0, 0.038) 1px,
+            rgba(0, 255, 255, 0.028) 2px,
+            rgba(0, 255, 255, 0.028) 3px,
+            transparent 4px,
+            transparent 6px
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(255, 255, 255, var(--crt-scanline-bright)) 0px,
+            rgba(255, 255, 255, var(--crt-scanline-bright)) 1px,
+            rgba(0, 0, 0, var(--crt-scanline-dark)) 2px,
+            rgba(0, 0, 0, var(--crt-scanline-dark)) 4px
+        );
+    mix-blend-mode: screen;
+    opacity: 0.92;
+    animation: crt-scan-drift 10s linear infinite;
+}
+
+body.crt-overlay-enabled::after {
+    z-index: 2147483001;
+    background:
+        linear-gradient(90deg, rgba(255, 0, 0, 0.08), rgba(0, 255, 255, 0.06)),
+        radial-gradient(circle at center, rgba(0, 0, 0, 0) 56%, rgba(0, 0, 0, 0.72) 100%);
+    opacity: 0.66;
+    animation: crt-flicker 110ms steps(2) infinite;
 }
 
 input,
@@ -120,5 +175,26 @@ form {
     }
     100% {
         opacity: 1;
+    }
+}
+
+@keyframes crt-flicker {
+    0% {
+        opacity: var(--crt-flicker-min);
+    }
+    50% {
+        opacity: var(--crt-flicker-max);
+    }
+    100% {
+        opacity: calc(var(--crt-flicker-min) + 0.04);
+    }
+}
+
+@keyframes crt-scan-drift {
+    0% {
+        transform: translateY(0px);
+    }
+    100% {
+        transform: translateY(4px);
     }
 }

@@ -10,6 +10,9 @@
     "sound": {
       "toggleAriaLabel": "Toggle sounds on or off"
     },
+    "crt": {
+      "toggleAriaLabel": "Toggle CRT screen overlay on or off"
+    },
     "rulebook": {
       "openAriaLabel": "Open rulebook"
     }
@@ -157,6 +160,14 @@
       "description": "Update game name and maximum number of players. You can adjust these settings from the lobby while the game is waiting.",
       "save": "Save"
     },
+    "mapSettings": {
+      "title": "Map Settings",
+      "description": "Toggle gameplay presentation options.",
+      "soundOn": "Sound: ON",
+      "soundOff": "Sound: OFF",
+      "crtOn": "CRT Overlay: ON",
+      "crtOff": "CRT Overlay: OFF"
+    },
     "genericDelete": {
       "title": "Delete?",
       "message": "Are you sure you want to delete this? This action cannot be undone.",
@@ -181,7 +192,7 @@
         "intro": "Introduction",
         "new-game": "New Game",
         "join-game": "Join Game",
-        "player": "Player"
+        "player": "Character"
       }
     },
     "discardPile": {
@@ -567,7 +578,8 @@
       "openAria": "Open resource inventory"
     },
     "actions": {
-      "home": "Home"
+      "home": "Home",
+      "settings": "Settings"
     },
     "alignment": {
       "title": "Alignment"

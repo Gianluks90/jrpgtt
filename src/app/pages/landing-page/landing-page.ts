@@ -6,10 +6,11 @@ import { Router } from "@angular/router";
 import { TranslationPipe } from "../../pipes/translation-pipe";
 import { LanguageMenu } from "../../components/ui/language-menu/language-menu";
 import { SoundToggleButton } from "../../components/ui/sound-toggle-button/sound-toggle-button";
+import { CrtToggleButton } from "../../components/ui/crt-toggle-button/crt-toggle-button";
   
 @Component({
   selector: "app-landing-page",
-  imports: [TextButton, TranslationPipe, LanguageMenu, SoundToggleButton],
+  imports: [TextButton, TranslationPipe, LanguageMenu, SoundToggleButton, CrtToggleButton],
   templateUrl: "./landing-page.html",
   styleUrl: "./landing-page.scss",
 })

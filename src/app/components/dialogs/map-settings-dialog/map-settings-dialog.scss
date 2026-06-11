@@ -1,0 +1,14 @@
+.map-settings-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.map-settings-actions text-button {
+    width: 100%;
+}
+
+.map-settings-actions text-button::ng-deep .text-button {
+    width: 100%;
+}

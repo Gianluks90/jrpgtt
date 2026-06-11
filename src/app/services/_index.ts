@@ -43,6 +43,8 @@ export * from "./player/player-stats-modifier-service";
 export * from "./player/player-turn-effects-service";
 export * from "./shared/translation-service";
 export * from "./ui/breakpoint-service";
+export * from "./ui/crt-overlay-service";
+export * from "./ui/map-settings-dialog-service";
 export * from "./ui/rulebook-dialog-service";
 export * from "./ui/sidebar-service";
 export * from "./ui/sound-service";

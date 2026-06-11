@@ -23,10 +23,11 @@ import { LanguageMenu } from "../../components/ui/language-menu/language-menu";
 import { SoundToggleButton } from "../../components/ui/sound-toggle-button/sound-toggle-button";
 import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-button";
 import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
+import { CrtToggleButton } from "../../components/ui/crt-toggle-button/crt-toggle-button";
 
 @Component({
   selector: "app-home-page",
-  imports: [TextButton, ActionMenu, TranslationPipe, LanguageMenu, SoundToggleButton, RulebookButton],
+  imports: [TextButton, ActionMenu, TranslationPipe, LanguageMenu, SoundToggleButton, CrtToggleButton, RulebookButton],
   templateUrl: "./home-page.html",
   styleUrl: "./home-page.scss",
 })

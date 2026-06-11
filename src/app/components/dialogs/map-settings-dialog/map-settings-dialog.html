@@ -1,0 +1,21 @@
+<dialog-wrapper [title]="'dialogs.mapSettings.title' | t">
+    <p class="info-text">{{ 'dialogs.mapSettings.description' | t }}</p>
+
+    <div class="map-settings-actions">
+        <text-button
+            [text]="(isSoundEnabled() ? 'dialogs.mapSettings.soundOn' : 'dialogs.mapSettings.soundOff') | t"
+            [iconUrl]="isSoundEnabled() ? './icons/volume_up_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/no_sound_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
+            [fullWidth]="true"
+            (clicked)="toggleSound()"
+        ></text-button>
+
+        <text-button
+            [text]="(isCrtEnabled() ? 'dialogs.mapSettings.crtOn' : 'dialogs.mapSettings.crtOff') | t"
+            [iconUrl]="isCrtEnabled() ? './icons/tv_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg' : './icons/tv_off_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg'"
+            [fullWidth]="true"
+            (clicked)="toggleCrt()"
+        ></text-button>
+    </div>
+
+    <text-button dialog-action [text]="'dialogs.common.close' | t" (clicked)="close()"></text-button>
+</dialog-wrapper>

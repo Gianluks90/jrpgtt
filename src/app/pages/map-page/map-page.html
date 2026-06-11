@@ -113,8 +113,14 @@
                 (clicked)="openRulebookDialog()"
             ></rulebook-button>
             <icon-button
+                class="footer-settings-button"
+                iconUrl="./icons/settings_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                [ariaLabel]="'map.actions.settings' | t"
+                (clicked)="openMapSettingsDialog()"
+            ></icon-button>
+            <icon-button
                 class="footer-home-button"
-                iconUrl="./icons/home_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+                iconUrl="./icons/home_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                 [ariaLabel]="'map.actions.home' | t"
                 (clicked)="onBackHome()"
             ></icon-button>

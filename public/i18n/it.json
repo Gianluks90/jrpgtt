@@ -10,6 +10,9 @@
         "sound": {
             "toggleAriaLabel": "Attiva o disattiva i suoni"
         },
+        "crt": {
+            "toggleAriaLabel": "Attiva o disattiva l'overlay CRT"
+        },
         "rulebook": {
             "openAriaLabel": "Apri regolamento"
         }
@@ -157,6 +160,14 @@
             "description": "Aggiorna nome partita e numero massimo di giocatori. Puoi modificare queste impostazioni dalla lobby finche la partita e in attesa.",
             "save": "Salva"
         },
+        "mapSettings": {
+            "title": "Impostazioni Mappa",
+            "description": "Attiva o disattiva le opzioni di presentazione del gameplay.",
+            "soundOn": "Audio: ATTIVO",
+            "soundOff": "Audio: SPENTO",
+            "crtOn": "Overlay CRT: ATTIVO",
+            "crtOff": "Overlay CRT: SPENTO"
+        },
         "genericDelete": {
             "title": "Eliminare?",
             "message": "Confermi di voler eliminare questo elemento? Questa azione non puo essere annullata.",
@@ -181,7 +192,7 @@
                 "intro": "Introduzione",
                 "new-game": "Nuova partita",
                 "join-game": "Entrare in partita",
-                "player": "Il giocatore"
+                "player": "Il personaggio"
             }
         },
         "discardPile": {
@@ -567,7 +578,8 @@
             "openAria": "Apri inventario risorse"
         },
         "actions": {
-            "home": "Home"
+            "home": "Home",
+            "settings": "Impostazioni"
         },
         "alignment": {
             "title": "Allineamento"

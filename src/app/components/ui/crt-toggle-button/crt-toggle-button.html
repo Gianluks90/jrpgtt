@@ -1,0 +1,15 @@
+<button
+    type="button"
+    class="crt-toggle-button"
+    [attr.aria-label]="'ui.crt.toggleAriaLabel' | t"
+    (click)="toggleCrtOverlay()"
+>
+    <span
+        class="button-icon"
+        [style.mask]="(
+            isEnabled()
+                ? 'url(./icons/tv_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg)'
+                : 'url(./icons/tv_off_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg)'
+        ) + ' no-repeat center / contain'"
+    ></span>
+</button>

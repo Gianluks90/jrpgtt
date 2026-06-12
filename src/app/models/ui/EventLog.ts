@@ -32,7 +32,8 @@ export type EventLogCode =
   | "player.discardResource"
   | "player.pendingPickupCancelled"
   | "player.swapResource"
-  | "player.resolvePendingPickup";
+  | "player.resolvePendingPickup"
+  | "player.castSpellDiagonal";
 
 export interface EventLog {
   id: string;

@@ -138,6 +138,7 @@ export class MapService {
 
       const targetCellId = this.cellId(targetX, targetY);
       const movementBonus = this.getFollowerMovementBonus(worldState, player.id);
+      const spellDiagonal = (worldState.diagonalMovementByPlayer ?? {})[player.id] === worldState.currentTurn;
       const isAllowed = await this.canMoveToTarget(
         transaction,
         gameId,
@@ -146,6 +147,7 @@ export class MapService {
         mapSize,
         tilesConfig,
         movementBonus,
+        spellDiagonal,
       );
       if (!isAllowed) {
         throw new Error("Invalid movement for current environment");
@@ -279,6 +281,12 @@ export class MapService {
         ...movedThisTurnByPlayer,
         [playerId]: worldState.currentTurn,
       };
+
+      if (spellDiagonal) {
+        const nextDiagonal = { ...(worldState.diagonalMovementByPlayer ?? {}) };
+        delete nextDiagonal[playerId];
+        nextWorldState.diagonalMovementByPlayer = nextDiagonal;
+      }
 
       if (shouldEmitWorldEvent) {
         const revealedMapCellsById = await this.readRevealedMapCellsById(transaction, gameId, mapSize);
@@ -845,6 +853,7 @@ export class MapService {
     mapSize: number,
     tilesConfig: TilesConfig,
     movementBonus = 0,
+    spellDiagonal = false,
   ): Promise<boolean> {
     const source = player.location;
     const sourceCellId = this.cellId(source.x, source.y);
@@ -852,7 +861,7 @@ export class MapService {
     const sourceCellSnap = await transaction.get(sourceCellRef);
     const sourceCell = sourceCellSnap.exists() ? sourceCellSnap.data() as MapCell : null;
 
-    const includeDiagonalAdjacency = this.hasDiagonalMovementCondition(sourceCell, tilesConfig);
+    const includeDiagonalAdjacency = spellDiagonal || this.hasDiagonalMovementCondition(sourceCell, tilesConfig);
     if (this.environmentService.isAdjacentCellId(source.x, source.y, targetCellId, includeDiagonalAdjacency)) {
       return true;
     }

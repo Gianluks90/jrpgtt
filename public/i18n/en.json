@@ -467,12 +467,12 @@
         "activate": "Activating the sanctuary grants 1 XP, binds your character to the sanctuary element and marks the sanctuary quadrant under that elemental influence.",
         "donate": "Donating 5 coins to an active sanctuary shifts your attunement to its element if you are currently attuned to a different one."
       },
-      "activationInfo": "Activate the Sanctuary by consuming 3 MP to attune to its corresponding element and gain a spell. More info about attunement is available in the Rulebook. Spells are not available yet, so you do not gain one right now.",
+      "activationInfo": "Activate the Sanctuary by consuming 3 MP to attune to its corresponding element and gain its associated spell. More info about attunement is available in the Rulebook.",
       "benefits": {
         "title": "Benefits",
         "exp": "+1 exp",
         "attunement": "attunement: {element}",
-        "spell": "learn the spell \"X\""
+        "spell": "learn the spell \"{spellName}\""
       },
       "errors": {
         "notEnoughCoins": "You do not have enough coins for this action.",
@@ -566,8 +566,9 @@
       "none": "no spells",
       "warning": {
         "notMyTurn": "Available only during your turn.",
-        "cooldown": "On cooldown for {turns} more turns.",
-        "notEnoughMp": "Not enough MP."
+        "cooldown": "Available in {turns} turns.",
+        "notEnoughMp": "Not enough MP.",
+        "mustCastBeforeMove": "Must be cast before moving."
       },
       "errors": {
         "notFound": "Spell not found.",
@@ -1047,7 +1048,8 @@
       "castSpellHeal": "{playerName} cast {spellName}, healed {healedHp} HP and spent {spentMp} MP.",
       "castSpellStatus": "{playerName} cast {spellName}, applied {statusKey} for {durationTurns} turns and spent {spentMp} MP.",
       "castSpellTeleport": "{playerName} cast {spellName}, teleported to {targetX}, {targetY} and spent {spentMp} MP.",
-      "castSpellTransform": "{playerName} cast {spellName}, transformed cell {x}, {y} into {biome} and spent {spentMp} MP."
+      "castSpellTransform": "{playerName} cast {spellName}, transformed cell {x}, {y} into {biome} and spent {spentMp} MP.",
+      "castSpellDiagonal": "{playerName} cast {spellName}, enabling diagonal movement (−{spentMp} MP)."
     }
   },
   "actions": {
@@ -1171,21 +1173,21 @@
     }
   },
   "spells": {
-    "windShift": {
-      "name": "Wind Shift",
-      "description": "Teleport to an explored tile within {range} orthogonal cells. Counts as your movement for this turn."
+    "fly": {
+      "name": "Fly",
+      "description": "Enables diagonal movement for this turn. Must be cast before moving."
     },
-    "earthMend": {
-      "name": "Earth Mend",
-      "description": "Restore {healing} HP to yourself. Power scales with Magic."
+    "healingWaters": {
+      "name": "Healing Waters",
+      "description": "Apply Nutrition to yourself."
     },
-    "fireRigene": {
-      "name": "Rigene",
-      "description": "Apply Regeneration to yourself for {duration} turns. Duration scales with Magic."
+    "innerFire": {
+      "name": "Inner Fire",
+      "description": "Apply Bravery to yourself for 1 turn. Increases Strength by 1."
     },
-    "waterFlood": {
-      "name": "Flood",
-      "description": "Transform your current non-special tile into Water permanently. The page disintegrates after cast."
+    "reinvigorate": {
+      "name": "Reinvigorate",
+      "description": "Restore HP equal to your current Magic value."
     }
   },
   "statuses": {

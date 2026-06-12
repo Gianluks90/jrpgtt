@@ -1305,6 +1305,9 @@ export class MapPageInteractionService {
     if (isStateMismatch) return;
 
     if (options.mode) {
+      const rewardSpell = options.mode === "activate"
+        ? this.spellCatalogService.getSanctuaryRewardSpell(cell.sanctuaryElement)
+        : null;
       const confirmed = await this.openSanctuaryActionDialog({
         mode: options.mode,
         sanctuaryElement: cell.sanctuaryElement,
@@ -1312,6 +1315,7 @@ export class MapPageInteractionService {
         playerMoney: player.inventory?.money ?? 0,
         playerMpCurrent: player.parameters?.mp?.current ?? 0,
         playerMpMax: player.parameters?.mp?.max ?? player.parameters?.mp?.base ?? 1,
+        rewardSpellName: rewardSpell ? this.spellCatalogService.getLocalizedName(rewardSpell) : undefined,
       });
       if (!confirmed) return;
     }

@@ -19,6 +19,7 @@ export interface SanctuaryActionDialogData {
   playerMpCurrent: number;
   playerMpMax: number;
   sanctuaryActions?: CommandPanelAction[];
+  rewardSpellName?: string;
 }
 
 @Component({
@@ -36,6 +37,7 @@ export class SanctuaryActionDialog {
   public readonly playerMpCurrent: number;
   public readonly playerMpMax: number;
   public readonly sanctuaryActions: CommandPanelAction[];
+  public readonly rewardSpellName: string;
 
   constructor(
     private dialogRef: DialogRef<DialogResponse>,
@@ -49,6 +51,7 @@ export class SanctuaryActionDialog {
     this.playerMpCurrent = Math.max(0, Math.floor(Number(data.playerMpCurrent ?? 0)));
     this.playerMpMax = Math.max(1, Math.floor(Number(data.playerMpMax ?? 1)));
     this.sanctuaryActions = Array.isArray(data.sanctuaryActions) ? data.sanctuaryActions : [];
+    this.rewardSpellName = typeof data.rewardSpellName === "string" && data.rewardSpellName.trim() ? data.rewardSpellName.trim() : "";
   }
 
   public get title(): string {

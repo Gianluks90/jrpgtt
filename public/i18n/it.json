@@ -467,12 +467,12 @@
                 "activate": "Attivare il santuario garantisce 1 XP, lega il personaggio all'elemento del santuario e segna il quadrante del santuario sotto quell'influenza elementale.",
                 "donate": "Donare 5 monete a un santuario attivo sposta la tua sintonia al suo elemento se sei attualmente in sintonia con un elemento diverso."
             },
-            "activationInfo": "Attiva il Santuario consumando 3 MP per sintonizzarti con l'elemento corrispondente e ottenere una magia. Maggiori info sulla sintonia nel Regolamento. Al momento non ottieni ancora una magia.",
+            "activationInfo": "Attiva il Santuario consumando 3 MP per sintonizzarti con l'elemento corrispondente e ottenere la magia associata. Maggiori info sulla sintonia nel Regolamento.",
             "benefits": {
                 "title": "Benefici dell'attivazione",
                 "exp": "+1 exp",
                 "attunement": "Sintonia: {element}",
-                "spell": "Apprendi la magia \"X\""
+                "spell": "Apprendi la magia \"{spellName}\""
             },
             "errors": {
                 "notEnoughCoins": "Non hai abbastanza monete per questa azione.",
@@ -566,8 +566,9 @@
             "none": "Nessun incantesimo",
             "warning": {
                 "notMyTurn": "Disponibile solo durante il tuo turno.",
-                "cooldown": "In recupero per altri {turns} turni.",
-                "notEnoughMp": "MP insufficienti."
+                "cooldown": "Disponibile tra {turns} turni.",
+                "notEnoughMp": "MP insufficienti.",
+                "mustCastBeforeMove": "Deve essere lanciato prima di muoversi."
             },
             "errors": {
                 "notFound": "Incantesimo non trovato.",
@@ -1047,7 +1048,8 @@
             "castSpellHeal": "{playerName} ha lanciato {spellName}, recuperato {healedHp} HP e speso {spentMp} MP.",
             "castSpellStatus": "{playerName} ha lanciato {spellName}, applicato {statusKey} per {durationTurns} turni e speso {spentMp} MP.",
             "castSpellTeleport": "{playerName} ha lanciato {spellName}, teletrasportandosi in {targetX}, {targetY} e spendendo {spentMp} MP.",
-            "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP."
+            "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP.",
+            "castSpellDiagonal": "{playerName} ha lanciato {spellName}, abilitando il movimento diagonale (−{spentMp} MP)."
         }
     },
     "actions": {
@@ -1171,21 +1173,21 @@
         }
     },
     "spells": {
-        "windShift": {
-            "name": "Soffio del vento",
-            "description": "Teletrasportati su una casella esplorata entro {range} caselle ortogonali. Conta come movimento di questo turno."
+        "fly": {
+            "name": "Volare",
+            "description": "Abilita il movimento diagonale per questo turno. Deve essere lanciato prima di muoversi."
         },
-        "earthMend": {
-            "name": "Rammendo della terra",
-            "description": "Ripristina {healing} HP su di te. La potenza scala con Magia."
+        "healingWaters": {
+            "name": "Acqua curativa",
+            "description": "Applica Nutrimento su di te."
         },
-        "fireRigene": {
-            "name": "Rigene",
-            "description": "Applica Rigenerazione su di te per {duration} turni. La durata scala con Magia."
+        "innerFire": {
+            "name": "Fuoco dentro",
+            "description": "Applica Coraggio su di te per 1 turno. Aumenta Forza di 1."
         },
-        "waterFlood": {
-            "name": "Inondazione",
-            "description": "Trasforma permanentemente la tua casella corrente non speciale in Acqua. La pagina si disintegra dopo il lancio."
+        "reinvigorate": {
+            "name": "Rinvigorimento",
+            "description": "Ripristina HP pari al tuo valore di Magia attuale."
         }
     },
     "statuses": {

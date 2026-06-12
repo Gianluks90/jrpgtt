@@ -195,6 +195,11 @@ export class EventLogService {
             const source = this.getActionSourceLabel("eliminate-zombie", "Zombie");
             return `${playerName} used ${source} and eliminated the active zombie.`;
         },
+        "player.castSpellDiagonal": ({ playerName, args }) => {
+            const spellName = String(args["spellName"] ?? "spell");
+            const spentMp = Number(args["spentMp"] ?? 0);
+            return `${playerName} cast ${spellName}, enabling diagonal movement (−${spentMp} MP).`;
+        },
         "player.merchantBuy": ({ playerName, args }) => {
             const source = this.getActionSourceLabel(String(args["actionId"] ?? "city-merchant"), "Merchant");
             const itemName = String(args["itemName"] ?? "item");

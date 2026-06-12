@@ -715,6 +715,13 @@ export class ActionExecutorService {
         throw new Error("Not enough MP");
       }
 
+      const currentCellRef = doc(
+        this.firebaseService.database, "games", gameId, "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const currentCellSnap = await transaction.get(currentCellRef);
+      const currentCell = currentCellSnap.exists() ? (currentCellSnap.data() as MapCell) : null;
+
       const nextWorldState: WorldState = {
         ...worldState,
       };
@@ -729,7 +736,8 @@ export class ActionExecutorService {
         parameters: nextParameters,
       };
 
-      const magicValue = Math.max(0, Math.floor(Number(player.parameters.magic.current ?? player.parameters.magic.base ?? 0)));
+      const effectiveStats = this.playerStatsModifierService.computeStats({ player, currentCell, worldState, mapSize });
+      const magicValue = effectiveStats.effective.magic;
       const scalar = this.spellCatalogService.computeEffectScalar(spell, magicValue);
 
       if (spell.effect.type === "heal-self") {
@@ -778,6 +786,20 @@ export class ActionExecutorService {
           statusKey: statusDefinition.key,
           durationTurns: scalar,
         };
+      }
+
+      if (spell.effect.type === "enable-diagonal-movement") {
+        const movedThisTurnByPlayer = worldState.movedThisTurnByPlayer ?? {};
+        if (movedThisTurnByPlayer[actor.id] === worldTurn) {
+          throw new Error("Fly must be cast before moving");
+        }
+
+        nextWorldState.diagonalMovementByPlayer = {
+          ...(worldState.diagonalMovementByPlayer ?? {}),
+          [actor.id]: worldTurn,
+        };
+
+        logCode = "player.castSpellDiagonal";
       }
 
       if (spell.effect.type === "teleport-explored-orthogonal") {

@@ -102,11 +102,15 @@ export class MapPageActionsService {
         const isCoolingDown = blockedUntilTurn > worldTurn;
         const cooldownTurnsLeft = isCoolingDown ? blockedUntilTurn - worldTurn : 0;
 
+        const requiresNotMoved = spell.effect.type === "enable-diagonal-movement";
+
         let warning: string | undefined;
         if (!input.isMyTurn && spell.timing === "my-turn") {
           warning = this.translationService.tOrFallback("map.spells.warning.notMyTurn", "Available only during your turn.");
-        } else if (isCoolingDown) {
-          warning = this.translationService.tOrFallback("map.spells.warning.cooldown", "On cooldown for {turns} more turns.", {
+        } else if (requiresNotMoved && input.hasMovedOnCurrentTurn) {
+          warning = this.translationService.tOrFallback("map.spells.warning.mustCastBeforeMove", "Must be cast before moving.");
+        } else if (isCoolingDown && cooldownTurnsLeft > 1) {
+          warning = this.translationService.tOrFallback("map.spells.warning.cooldown", "Available in {turns} turns.", {
             turns: cooldownTurnsLeft,
           });
         } else if (currentMp < spell.mpCost) {
@@ -115,6 +119,7 @@ export class MapPageActionsService {
 
         const disabled = isBusy
           || (spell.timing === "my-turn" && !input.isMyTurn)
+          || (requiresNotMoved && input.hasMovedOnCurrentTurn)
           || isCoolingDown
           || currentMp < spell.mpCost
           || !!player.pendingResourcePickup;

@@ -7,7 +7,8 @@ export type SpellEffectType =
   | "heal-self"
   | "teleport-explored-orthogonal"
   | "transform-current-cell-biome"
-  | "apply-status-self";
+  | "apply-status-self"
+  | "enable-diagonal-movement";
 
 export interface SpellCatalogI18nKeys {
   nameKey?: string;

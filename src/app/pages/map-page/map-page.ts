@@ -516,7 +516,8 @@ export class MapPage implements OnInit, OnDestroy {
 
     const currentCellId = `${current.location.x}_${current.location.y}`;
     const currentCell = this.mapCellsById()[currentCellId] ?? null;
-    const allowDiagonalFromCurrent = this.cellHasConditionEffect(currentCell, "movement-enable-diagonal-adjacency", ["open-ground"]);
+    const spellDiagonal = (this.worldState()?.diagonalMovementByPlayer ?? {})[current.id] === this.worldState()?.currentTurn;
+    const allowDiagonalFromCurrent = spellDiagonal || this.cellHasConditionEffect(currentCell, "movement-enable-diagonal-adjacency", ["open-ground"]);
 
     const targets = this.environmentService.getMovableCellIdsForPlayer(
       current,

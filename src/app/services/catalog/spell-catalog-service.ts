@@ -264,6 +264,7 @@ export class SpellCatalogService {
       && typed.type !== "teleport-explored-orthogonal"
       && typed.type !== "transform-current-cell-biome"
       && typed.type !== "apply-status-self"
+      && typed.type !== "enable-diagonal-movement"
     ) {
       throw new Error(`Invalid spell catalog configuration: spell '${spellId}' has invalid effect.type`);
     }

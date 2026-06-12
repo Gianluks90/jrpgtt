@@ -6,10 +6,11 @@ import { IconButton } from "../../components/ui/icon-button/icon-button";
 import { MapGridPanel, type MapGridPanelCell } from "../../components/core/map-grid-panel/map-grid-panel";
 import { LuckIndicator } from "../../components/ui/luck-indicator/luck-indicator";
 import { BiomesCounter } from "../../components/ui/biomes-counter/biomes-counter";
-import { CommandPanelAction, CommandsPanel } from "../../components/ui/commands-panel/commands-panel";
+import { CommandPanelAction } from "../../components/ui/commands-panel/commands-panel";
 import { MapPlayersPanel } from "../../components/ui/map-players-panel/map-players-panel";
 import { MapLogPanel } from "../../components/ui/map-log-panel/map-log-panel";
 import { WorldStatePanel } from "../../components/core/world-state-panel/world-state-panel";
+import { MapUtilitiesPanel } from "../../components/core/map-utilities-panel/map-utilities-panel";
 import { MapPlayerUtilitiesPanel } from "../../components/core/map-player-utilities-panel/map-player-utilities-panel";
 import { MapLocationDiscardHud } from "../../components/core/map-location-discard-hud/map-location-discard-hud";
 import { MapPageStateService } from "@services/map/map-page-state-service";
@@ -18,6 +19,7 @@ import { MapPageActionsService } from "@services/map/map-page-actions-service";
 import { MapPageInteractionService } from "@services/map/map-page-interaction-service";
 import { DayNightCyclePanel } from "../../components/ui/day-night-cycle-panel/day-night-cycle-panel";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/gameplay/inventory-config";
+import { DEFAULT_SPELLBOOK_CAPACITY } from "../../consts/player/spellbook-config";
 import { PlayerComputedStats } from "@models/player/PlayerComputedStats";
 import { MapCell } from "@models/world/MapCell";
 import { PlayerStatsModifierService } from "@services/player/player-stats-modifier-service";
@@ -50,7 +52,7 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     LuckIndicator,
     DayNightCyclePanel,
     BiomesCounter,
-    CommandsPanel,
+    MapUtilitiesPanel,
     MapLogPanel,
     TranslationPipe,
     RequiredActionNotification,
@@ -123,6 +125,24 @@ export class MapPage implements OnInit, OnDestroy {
 
   public isSinglePlayerSidebar = computed<boolean>(() => {
     return this.players().length <= 1;
+  });
+
+  public spellCount = computed<number>(() => {
+    const spells = this.myPlayer()?.spellbook?.spells;
+    if (!Array.isArray(spells)) {
+      return 0;
+    }
+
+    return spells.filter((entry) => typeof entry?.spellId === "string" && entry.spellId.trim().length > 0).length;
+  });
+
+  public spellCapacity = computed<number>(() => {
+    const configuredCapacity = this.myPlayer()?.spellbook?.capacity;
+    if (typeof configuredCapacity === "number" && Number.isFinite(configuredCapacity)) {
+      return Math.max(1, Math.floor(configuredCapacity));
+    }
+
+    return DEFAULT_SPELLBOOK_CAPACITY;
   });
 
   public isMyTurn = computed<boolean>(() => {
@@ -459,6 +479,30 @@ export class MapPage implements OnInit, OnDestroy {
     }));
   });
 
+  public spellActions = computed<CommandPanelAction[]>(() => {
+    const actions = this.mapPageActionsService.buildSpellActions({
+      player: this.myPlayer(),
+      mapCellsById: this.mapCellsById(),
+      tilesConfig: this.tilesConfig(),
+      biomeResourcesByBiome: this.biomeResourcesByBiome(),
+      worldState: this.worldState(),
+      isMyTurn: this.isMyTurn(),
+      hasMovedOnCurrentTurn: this.hasMovedOnCurrentTurn(),
+      canEndTurn: this.canEndTurn(),
+      pendingActionId: this.mapPageInteractionService.pendingActionId(),
+    });
+
+    if (!this.isMyTravelLockActive() && !this.isWorldEventFlowLockActive() && !this.isRequiredActionNotificationLockActive()) {
+      return actions;
+    }
+
+    return actions.map((action) => ({
+      ...action,
+      disabled: true,
+      pending: false,
+    }));
+  });
+
   public activePlayer = computed<Player | null>(() => {
     const activePlayerId = this.worldState()?.activePlayerId;
     if (!activePlayerId) return null;
@@ -738,6 +782,20 @@ export class MapPage implements OnInit, OnDestroy {
       canEndTurn: this.canEndTurn(),
       worldState: this.worldState(),
       mapCellsById: this.mapCellsById(),
+    });
+  }
+
+  public async onSpellActionRequested(actionId: string): Promise<void> {
+    if (this.isMyTravelLockActive() || this.isWorldEventFlowLockActive() || this.isRequiredActionNotificationLockActive()) return;
+
+    await this.mapPageInteractionService.handleSpellAction({
+      spellId: actionId,
+      gameId: this.gameId,
+      myPlayer: this.myPlayer(),
+      isMyTurn: this.isMyTurn(),
+      worldState: this.worldState(),
+      mapCellsById: this.mapCellsById(),
+      mapSize: this.mapSize(),
     });
   }
 

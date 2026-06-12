@@ -37,13 +37,15 @@
                     (openLevelUpRequested)="onOpenLevelUpDialog()"
                 ></app-map-players-panel>
 
-                <section class="hud sidebar-block commands-block">
-                    <p class="hud-title">{{ 'map.commands.title' | t }}</p>
-                    <app-commands-panel
-                        [actions]="commandActions()"
-                        (actionRequested)="onCommandActionRequested($event)"
-                    ></app-commands-panel>
-                </section>
+                <app-map-utilities-panel
+                    class="sidebar-utilities-panel"
+                    [commandActions]="commandActions()"
+                    [spellActions]="spellActions()"
+                    [spellCount]="spellCount()"
+                    [spellCapacity]="spellCapacity()"
+                    (commandActionRequested)="onCommandActionRequested($event)"
+                    (spellActionRequested)="onSpellActionRequested($event)"
+                ></app-map-utilities-panel>
 
                 <app-luck-indicator class="sidebar-luck-meter" [result]="myPlayer()?.lastLuckCheck || null"></app-luck-indicator>
             </aside>

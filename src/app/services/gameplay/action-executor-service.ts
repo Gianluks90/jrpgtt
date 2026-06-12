@@ -5,6 +5,7 @@ import { MapCell, SanctuaryElement } from "@models/world/MapCell";
 import { InventoryItemEntry } from "@models/player/Inventory";
 import { PlayerFollowerEntry } from "@models/player/Follower";
 import { Player, PlayerStatus } from "@models/player/Player";
+import { PlayerSpellEntry } from "@models/player/Spellbook";
 import { ResourceLabel, ResourceStack } from "@models/world/Resource";
 import { WorldState } from "@models/world/WorldState";
 import { EventLogService } from "@services/gameplay/event-log-service";
@@ -33,6 +34,8 @@ import { ItemEffectCatalogService } from "@services/catalog/item-effect-catalog-
 import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { GraveyardResurrectRewardsConfigService } from "@services/catalog/graveyard-resurrect-rewards-config-service";
 import { WorldEventMapMutationService } from "@services/map/world-event-map-mutation-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import { DEFAULT_SPELLBOOK_CAPACITY } from "../../consts/player/spellbook-config";
 
 export interface CapitalEnchantressOutcome {
   rewardId: string;
@@ -130,6 +133,7 @@ export class ActionExecutorService {
     private itemEffectCatalogService: ItemEffectCatalogService,
     private worldZonesService: WorldZonesService,
     private worldEventMapMutationService: WorldEventMapMutationService,
+    private spellCatalogService: SpellCatalogService,
   ) { }
 
   public async endTurn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
@@ -622,10 +626,285 @@ export class ActionExecutorService {
     });
   }
 
+  public async castSpell(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: {
+      spellId: string;
+      target?: {
+        x: number;
+        y: number;
+      } | null;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const spellId = String(payload.spellId ?? "").trim();
+    if (!spellId) {
+      throw new Error("Invalid spell");
+    }
+
+    await Promise.all([
+      this.spellCatalogService.loadConfig(),
+      this.statusCatalogService.loadConfig(),
+    ]);
+
+    const spell = this.spellCatalogService.getSpell(spellId);
+    if (!spell) {
+      throw new Error("Spell not found");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let logCode = "player.castSpell";
+    let logArgs: Record<string, unknown> = {
+      spellName: this.spellCatalogService.getLocalizedName(spell),
+      spentMp: spell.mpCost,
+    };
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap, gameMapSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+        transaction.get(gameMapRef),
+      ]);
+
+      if (!worldStateSnap.exists()) {
+        throw new Error("World state not found");
+      }
+
+      if (!playerSnap.exists()) {
+        throw new Error("Player not found");
+      }
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const player = playerSnap.data() as Player;
+      const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+      const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      if (player.pendingResourcePickup) {
+        throw new Error("Resolve pending resource pickup before casting a spell");
+      }
+
+      const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+      const spellEntry = knownSpells.find((entry) => entry.spellId === spell.id);
+      if (!spellEntry) {
+        throw new Error("You do not know this spell");
+      }
+
+      const blockedUntilTurn = Math.max(0, Math.floor(Number(spellEntry.blockedUntilTurn ?? 0)));
+      if (blockedUntilTurn > worldTurn) {
+        throw new Error("This spell is on cooldown");
+      }
+
+      const mpCurrent = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+      const mpMax = Math.max(
+        1,
+        Math.floor(Number(typeof player.parameters?.mp?.max === "number" ? player.parameters.mp.max : player.parameters?.mp?.base)),
+      );
+      if (mpCurrent < spell.mpCost) {
+        throw new Error("Not enough MP");
+      }
+
+      const nextWorldState: WorldState = {
+        ...worldState,
+      };
+      let nextParameters: Player["parameters"] = {
+        ...player.parameters,
+        mp: {
+          ...player.parameters.mp,
+          current: Math.max(0, Math.min(mpMax, mpCurrent - spell.mpCost)),
+        },
+      };
+      const nextPlayerPatch: Partial<Player> = {
+        parameters: nextParameters,
+      };
+
+      const magicValue = Math.max(0, Math.floor(Number(player.parameters.magic.current ?? player.parameters.magic.base ?? 0)));
+      const scalar = this.spellCatalogService.computeEffectScalar(spell, magicValue);
+
+      if (spell.effect.type === "heal-self") {
+        const hpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
+        const hpMax = Math.max(
+          1,
+          Math.floor(Number(typeof player.parameters.hp.max === "number" ? player.parameters.hp.max : player.parameters.hp.base)),
+        );
+        const healedHp = Math.max(0, Math.min(hpMax - hpCurrent, scalar));
+
+        nextParameters = {
+          ...nextParameters,
+          hp: {
+            ...player.parameters.hp,
+            current: hpCurrent + healedHp,
+          },
+        };
+        nextPlayerPatch.parameters = nextParameters;
+
+        logCode = "player.castSpellHeal";
+        logArgs = {
+          ...logArgs,
+          healedHp,
+        };
+      }
+
+      if (spell.effect.type === "apply-status-self") {
+        const statusKey = typeof spell.effect.statusKey === "string" ? spell.effect.statusKey : "";
+        const statusDefinition = this.statusCatalogService.getCachedStatus(statusKey);
+        if (!statusDefinition) {
+          throw new Error("Invalid spell status effect");
+        }
+
+        const nextStatuses = this.upsertStatus(this.normalizeStatuses(player.statuses), {
+          key: statusDefinition.key,
+          label: statusDefinition.label,
+          description: statusDefinition.description,
+          durationTurns: scalar,
+          ...(statusDefinition.effectKey ? { effectKey: statusDefinition.effectKey } : {}),
+        });
+        nextPlayerPatch.statuses = nextStatuses;
+
+        logCode = "player.castSpellStatus";
+        logArgs = {
+          ...logArgs,
+          statusKey: statusDefinition.key,
+          durationTurns: scalar,
+        };
+      }
+
+      if (spell.effect.type === "teleport-explored-orthogonal") {
+        if (!payload.target) {
+          throw new Error("Teleport target is required");
+        }
+
+        const movedThisTurnByPlayer = worldState.movedThisTurnByPlayer ?? {};
+        if (movedThisTurnByPlayer[actor.id] === worldTurn) {
+          throw new Error("Teleport can only be used before your standard movement");
+        }
+
+        const targetX = Math.max(0, Math.floor(Number(payload.target.x ?? 0)));
+        const targetY = Math.max(0, Math.floor(Number(payload.target.y ?? 0)));
+        if (!this.isInsideBounds(targetX, targetY, mapSize)) {
+          throw new Error("Target cell is out of bounds");
+        }
+
+        const targetDistance = Math.abs(targetX - player.location.x) + Math.abs(targetY - player.location.y);
+        if (targetDistance <= 0 || targetDistance > scalar) {
+          throw new Error("Teleport target is out of range");
+        }
+
+        const targetCellRef = doc(
+          this.firebaseService.database,
+          "games",
+          gameId,
+          "mapCells",
+          this.cellId(targetX, targetY),
+        );
+        const targetCellSnap = await transaction.get(targetCellRef);
+        if (!targetCellSnap.exists()) {
+          throw new Error("Target cell is not explored");
+        }
+
+        nextPlayerPatch.location = {
+          x: targetX,
+          y: targetY,
+        };
+        nextWorldState.movedThisTurnByPlayer = {
+          ...movedThisTurnByPlayer,
+          [actor.id]: worldTurn,
+        };
+
+        logCode = "player.castSpellTeleport";
+        logArgs = {
+          ...logArgs,
+          targetX: targetX + 1,
+          targetY: targetY + 1,
+          range: scalar,
+        };
+      }
+
+      if (spell.effect.type === "transform-current-cell-biome") {
+        const currentCellRef = doc(
+          this.firebaseService.database,
+          "games",
+          gameId,
+          "mapCells",
+          this.cellId(player.location.x, player.location.y),
+        );
+        const currentCellSnap = await transaction.get(currentCellRef);
+        if (!currentCellSnap.exists()) {
+          throw new Error("You are not standing on a revealed cell");
+        }
+
+        const currentCell = currentCellSnap.data() as MapCell;
+        if (currentCell.isSpecial === true) {
+          throw new Error("This spell cannot transform special cells");
+        }
+
+        const targetBiome = typeof spell.effect.biome === "string" ? spell.effect.biome : "";
+        if (!targetBiome) {
+          throw new Error("Invalid transform biome");
+        }
+
+        transaction.set(currentCellRef, {
+          biome: targetBiome,
+          worldEventBiomeOverride: deleteField(),
+          worldEventConditionIds: deleteField(),
+          worldEventEnemyLevelBonus: deleteField(),
+        }, { merge: true });
+
+        logCode = "player.castSpellTransform";
+        logArgs = {
+          ...logArgs,
+          biome: targetBiome,
+          x: player.location.x + 1,
+          y: player.location.y + 1,
+        };
+      }
+
+      const nextSpellEntries = knownSpells
+        .map((entry) => ({ ...entry }))
+        .filter((entry) => entry.spellId !== spell.id);
+
+      if (spell.consumableOnCast !== true) {
+        const cooldownTurns = Math.max(0, Math.floor(Number(spell.cooldownTurns ?? 0)));
+        const blockedTurn = cooldownTurns > 0 ? worldTurn + cooldownTurns : 0;
+        nextSpellEntries.push({
+          ...spellEntry,
+          ...(blockedTurn > 0 ? { blockedUntilTurn: blockedTurn } : { blockedUntilTurn: undefined }),
+        });
+      }
+
+      nextPlayerPatch.spellbook = {
+        spells: this.normalizePlayerSpellEntries(nextSpellEntries),
+        capacity: this.getSpellbookCapacity(player),
+      };
+
+      transaction.set(playerRef, nextPlayerPatch, { merge: true });
+      transaction.set(worldStateRef, nextWorldState);
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, logCode, logArgs);
+  }
+
   public async activateSanctuary(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
     if (!gameId || !actor.id) {
       throw new Error("Invalid action payload");
     }
+
+    await this.spellCatalogService.loadConfig();
 
     const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
@@ -699,6 +978,30 @@ export class ActionExecutorService {
 
       sanctuaryElement = mapCell.sanctuaryElement;
 
+      const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+      const knownSpellIds = new Set(knownSpells.map((entry) => entry.spellId));
+      const configuredCapacity = this.getSpellbookCapacity(player);
+      const occupiedSlots = knownSpells.reduce((total, entry) => {
+        return total + (entry.occupiesSlot === false ? 0 : 1);
+      }, 0);
+      const sanctuarySpell = this.spellCatalogService.getSanctuaryRewardSpell(mapCell.sanctuaryElement);
+      const canLearnSanctuarySpell = sanctuarySpell
+        && !knownSpellIds.has(sanctuarySpell.id)
+        && (
+          sanctuarySpell.occupiesSlot === false
+          || occupiedSlots < configuredCapacity
+        );
+
+      const nextSpellbookEntries = [...knownSpells];
+      if (canLearnSanctuarySpell && sanctuarySpell) {
+        nextSpellbookEntries.push({
+          spellId: sanctuarySpell.id,
+          source: "sanctuary",
+          occupiesSlot: sanctuarySpell.occupiesSlot !== false,
+          grantedBySanctuaryElement: mapCell.sanctuaryElement,
+        });
+      }
+
       transaction.set(mapCellRef, {
         active: true,
       }, { merge: true });
@@ -745,6 +1048,10 @@ export class ActionExecutorService {
             ...player.parameters.mp,
             current: Math.max(0, Math.min(mpMax, mpCurrent - this.sanctuaryActivationMpCost)),
           },
+        },
+        spellbook: {
+          spells: this.normalizePlayerSpellEntries(nextSpellbookEntries),
+          capacity: configuredCapacity,
         },
         actionsUsedThisTurn: this.markActionUsed(player, "activate-sanctuary", worldTurn),
       }, { merge: true });
@@ -4618,11 +4925,64 @@ export class ActionExecutorService {
   }
 
   private resolveNextMpCurrentAfterTurnAdvance(player: Player, actorId: string, nextWorldState: WorldState): number {
-    if (nextWorldState.activePlayerId !== actorId) {
-      return player.parameters.mp.current;
+    void actorId;
+    void nextWorldState;
+    // MP regeneration is resolved when ending the turn.
+    return this.resolveMpRecoveredOnTurnStart(player);
+  }
+
+  private getSpellbookCapacity(player: Player): number {
+    const configured = player.spellbook?.capacity;
+    if (typeof configured === "number" && Number.isFinite(configured)) {
+      return Math.max(1, Math.floor(configured));
     }
 
-    return this.resolveMpRecoveredOnTurnStart(player);
+    return DEFAULT_SPELLBOOK_CAPACITY;
+  }
+
+  private normalizePlayerSpellEntries(rawEntries: unknown): PlayerSpellEntry[] {
+    if (!Array.isArray(rawEntries)) {
+      return [];
+    }
+
+    const normalized: PlayerSpellEntry[] = [];
+    const seen = new Set<string>();
+
+    rawEntries.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const typedEntry = entry as PlayerSpellEntry;
+      if (typeof typedEntry.spellId !== "string" || typedEntry.spellId.trim().length === 0) {
+        return;
+      }
+
+      const spellId = typedEntry.spellId.trim();
+      if (seen.has(spellId)) {
+        return;
+      }
+
+      const blockedUntilTurn = typeof typedEntry.blockedUntilTurn === "number" && Number.isFinite(typedEntry.blockedUntilTurn)
+        ? Math.max(0, Math.floor(typedEntry.blockedUntilTurn))
+        : undefined;
+
+      normalized.push({
+        spellId,
+        ...(typeof typedEntry.source === "string" ? { source: typedEntry.source } : {}),
+        ...(typeof blockedUntilTurn === "number" ? { blockedUntilTurn } : {}),
+        ...(typeof typedEntry.occupiesSlot === "boolean" ? { occupiesSlot: typedEntry.occupiesSlot } : {}),
+        ...(typeof typedEntry.grantedBySanctuaryElement === "string" ? { grantedBySanctuaryElement: typedEntry.grantedBySanctuaryElement } : {}),
+      });
+
+      seen.add(spellId);
+    });
+
+    return normalized;
+  }
+
+  private isInsideBounds(x: number, y: number, mapSize: number): boolean {
+    return x >= 0 && y >= 0 && x < mapSize && y < mapSize;
   }
 
   private resolveMpRecoveredOnTurnStart(player: Player): number {

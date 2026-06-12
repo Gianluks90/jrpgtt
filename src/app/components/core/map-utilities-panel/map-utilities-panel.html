@@ -1,0 +1,53 @@
+<section
+  class="hud utility-panel commands-block"
+  [class.utility-panel-expanded]="isCommandsExpanded()"
+  [class.utility-panel-collapsed]="!isCommandsExpanded()"
+  (click)="onCommandsPanelToggle()"
+>
+  <p class="hud-title">{{ 'map.commands.title' | t }}</p>
+
+  @if (isCommandsExpanded()) {
+    <app-commands-panel
+      [actions]="commandActions()"
+      [emptyStateKey]="'map.commands.empty'"
+      (actionRequested)="onCommandActionRequested($event)"
+    ></app-commands-panel>
+  } @else {
+    <div class="utility-panel-collapsed-content">
+      <p class="utility-panel-collapsed-label">{{ collapsedCommandsSummary() }}</p>
+      <icon-button
+        class="utility-panel-expand-icon"
+        iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+        [ariaLabel]="'map.commands.expandAria' | t"
+        (clicked)="onCommandsPanelToggle()"
+      ></icon-button>
+    </div>
+  }
+</section>
+
+<section
+  class="hud utility-panel spells-block"
+  [class.utility-panel-expanded]="isSpellsExpanded()"
+  [class.utility-panel-collapsed]="!isSpellsExpanded()"
+  (click)="onSpellsPanelToggle()"
+>
+  <p class="hud-title">{{ 'map.spells.title' | t: { count: spellCount(), capacity: spellCapacity() } }}</p>
+
+  @if (isSpellsExpanded()) {
+    <app-commands-panel
+      [actions]="spellActions()"
+      [emptyStateKey]="'map.spells.empty'"
+      (actionRequested)="onSpellActionRequested($event)"
+    ></app-commands-panel>
+  } @else {
+    <div class="utility-panel-collapsed-content">
+      <p class="utility-panel-collapsed-label">{{ collapsedSpellsSummary() }}</p>
+      <icon-button
+        class="utility-panel-expand-icon"
+        iconUrl="./icons/expand_content_20dp_E3E3E3_FILL1_wght400_GRAD0_opsz20.svg"
+        [ariaLabel]="'map.spells.expandAria' | t"
+        (clicked)="onSpellsPanelToggle()"
+      ></icon-button>
+    </div>
+  }
+</section>

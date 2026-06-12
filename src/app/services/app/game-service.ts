@@ -10,6 +10,8 @@ import { BiomePlacementCount, WorldState } from "@models/world/WorldState";
 import { PLAYER_SETUP_BASE_HP, PLAYER_STARTING_MONEY } from "../../consts/player/player-defaults";
 import { DEFAULT_ITEM_INVENTORY_CAPACITY, DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/gameplay/inventory-config";
 import { InventoryItemEntry } from "@models/player/Inventory";
+import { PlayerSpellbook, PlayerSpellEntry } from "@models/player/Spellbook";
+import { DEFAULT_SPELLBOOK_CAPACITY } from "../../consts/player/spellbook-config";
 import { LandmarksService } from "@services/map/landmarks-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
 
@@ -377,6 +379,7 @@ export class GameService {
       const spawnCellRef = doc(mapCellsCollectionRef, this.cellId(spawn.x, spawn.y));
       const player = setupContext.players.find((candidate) => candidate.id === spawn.playerId);
       const inventory = player?.inventory;
+      const spellbook = this.normalizeSpellbook(player?.spellbook);
 
       batch.set(playerRef, {
         location: {
@@ -397,6 +400,7 @@ export class GameService {
             ? Math.max(1, Math.floor(inventory.itemCapacity))
             : DEFAULT_ITEM_INVENTORY_CAPACITY,
         },
+        spellbook,
       }, { merge: true });
 
       const spawnBiome = this.drawBiome(setupContext.worldState);
@@ -444,6 +448,10 @@ export class GameService {
         itemCapacity: DEFAULT_ITEM_INVENTORY_CAPACITY,
       },
       followers: [],
+      spellbook: {
+        spells: [],
+        capacity: DEFAULT_SPELLBOOK_CAPACITY,
+      },
       actionsUsedThisTurn: {},
       statuses: [],
       pendingResourcePickup: null,
@@ -576,6 +584,63 @@ export class GameService {
     });
 
     return nextItems;
+  }
+
+  private normalizeSpellbook(rawSpellbook: unknown): PlayerSpellbook {
+    const typed = rawSpellbook && typeof rawSpellbook === "object" && !Array.isArray(rawSpellbook)
+      ? rawSpellbook as { spells?: unknown; capacity?: unknown }
+      : {};
+
+    const normalizedSpells = this.normalizeSpellEntries(typed.spells);
+    const capacity = typeof typed.capacity === "number" && Number.isFinite(typed.capacity)
+      ? Math.max(1, Math.floor(typed.capacity))
+      : DEFAULT_SPELLBOOK_CAPACITY;
+
+    return {
+      spells: normalizedSpells,
+      capacity,
+    };
+  }
+
+  private normalizeSpellEntries(rawEntries: unknown): PlayerSpellEntry[] {
+    if (!Array.isArray(rawEntries)) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    const normalized: PlayerSpellEntry[] = [];
+
+    rawEntries.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const typedEntry = entry as PlayerSpellEntry;
+      if (typeof typedEntry.spellId !== "string" || typedEntry.spellId.trim().length === 0) {
+        return;
+      }
+
+      const spellId = typedEntry.spellId.trim();
+      if (seen.has(spellId)) {
+        return;
+      }
+
+      const blockedUntilTurn = typeof typedEntry.blockedUntilTurn === "number" && Number.isFinite(typedEntry.blockedUntilTurn)
+        ? Math.max(0, Math.floor(typedEntry.blockedUntilTurn))
+        : undefined;
+
+      normalized.push({
+        spellId,
+        ...(typeof typedEntry.source === "string" ? { source: typedEntry.source } : {}),
+        ...(typeof blockedUntilTurn === "number" ? { blockedUntilTurn } : {}),
+        ...(typeof typedEntry.occupiesSlot === "boolean" ? { occupiesSlot: typedEntry.occupiesSlot } : {}),
+        ...(typeof typedEntry.grantedBySanctuaryElement === "string" ? { grantedBySanctuaryElement: typedEntry.grantedBySanctuaryElement } : {}),
+      });
+
+      seen.add(spellId);
+    });
+
+    return normalized;
   }
 
   private emptyBiomePlacementCount(): BiomePlacementCount {

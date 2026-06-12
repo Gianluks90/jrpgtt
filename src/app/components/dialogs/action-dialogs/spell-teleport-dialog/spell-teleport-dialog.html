@@ -1,0 +1,31 @@
+<dialog-wrapper [title]="'dialogs.spellTeleport.title' | t: { spellName: spellName }">
+    <p class="info-text">{{ 'dialogs.spellTeleport.description' | t: { range: maxRange } }}</p>
+
+    @if (options.length === 0) {
+        <p class="error-text">{{ 'dialogs.spellTeleport.noTargets' | t }}</p>
+    } @else {
+        <div class="targets-list">
+            @for (target of options; track target.cellId) {
+                <button
+                    type="button"
+                    class="target-option"
+                    [class.selected]="selectedCellId === target.cellId"
+                    (click)="selectTarget(target.cellId)"
+                >
+                    <span class="target-top-row">
+                        <span class="target-title">{{ target.biomeLabel }}</span>
+                        <span class="target-coordinates">{{ 'dialogs.spellTeleport.coordinates' | t: { x: target.x + 1, y: target.y + 1 } }}</span>
+                    </span>
+                </button>
+            }
+        </div>
+    }
+
+    <text-button
+        dialog-action
+        [text]="'dialogs.spellTeleport.confirm' | t"
+        [disabled]="!selectedOption"
+        (clicked)="confirm()"
+    ></text-button>
+    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
+</dialog-wrapper>

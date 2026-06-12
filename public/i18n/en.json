@@ -222,6 +222,14 @@
       "confirmInfo": "Confirming ends your turn and you will skip one additional turn before arrival.",
       "confirmRoute": "Confirm route"
     },
+    "spellTeleport": {
+      "title": "{spellName}: select destination",
+      "description": "Choose one explored cell within {range} orthogonal tiles.",
+      "coordinates": "Coordinates: {x}, {y}",
+      "confirm": "Cast",
+      "noTargets": "No valid destination available.",
+      "fallbackSpellName": "Spell"
+    },
     "resourceExchange": {
       "title": "Resource exchange",
       "description": "Exchange resources 1:1 with the village craftsman. Confirming this action ends your turn.",
@@ -547,7 +555,28 @@
       "title": "Commands",
       "executing": "Executing...",
       "noDescription": "-",
-      "empty": "No actions available for this position."
+      "empty": "No actions available for this position.",
+      "expandAria": "Expand commands",
+      "none": "no commands"
+    },
+    "spells": {
+      "title": "Spells ({count}/{capacity})",
+      "empty": "No spells available.",
+      "expandAria": "Expand spells",
+      "none": "no spells",
+      "warning": {
+        "notMyTurn": "Available only during your turn.",
+        "cooldown": "On cooldown for {turns} more turns.",
+        "notEnoughMp": "Not enough MP."
+      },
+      "errors": {
+        "notFound": "Spell not found.",
+        "notKnown": "You do not know this spell.",
+        "cooldown": "This spell is on cooldown.",
+        "notEnoughMp": "Not enough MP to cast this spell.",
+        "noTeleportTargets": "No valid explored target is available for this spell.",
+        "cast": "Error while casting spell."
+      }
     },
     "locationInfo": {
       "contextObserving": "Observing cell",
@@ -1013,7 +1042,12 @@
       "discardResource": "{playerName} discarded 1 {resource}.",
       "pendingPickupCancelled": "{playerName} cancelled collecting pending {resource}.",
       "swapResource": "{playerName} discarded {droppedResource} and collected {gainedResource}.",
-      "resolvePendingPickup": "{playerName} collected pending {resource}."
+      "resolvePendingPickup": "{playerName} collected pending {resource}.",
+      "castSpell": "{playerName} cast {spellName} and spent {spentMp} MP.",
+      "castSpellHeal": "{playerName} cast {spellName}, healed {healedHp} HP and spent {spentMp} MP.",
+      "castSpellStatus": "{playerName} cast {spellName}, applied {statusKey} for {durationTurns} turns and spent {spentMp} MP.",
+      "castSpellTeleport": "{playerName} cast {spellName}, teleported to {targetX}, {targetY} and spent {spentMp} MP.",
+      "castSpellTransform": "{playerName} cast {spellName}, transformed cell {x}, {y} into {biome} and spent {spentMp} MP."
     }
   },
   "actions": {
@@ -1134,6 +1168,24 @@
     "eliminateZombie": {
       "label": "Eliminate zombie",
       "description": "Destroy your zombie companion and end your turn."
+    }
+  },
+  "spells": {
+    "windShift": {
+      "name": "Wind Shift",
+      "description": "Teleport to an explored tile within {range} orthogonal cells. Counts as your movement for this turn."
+    },
+    "earthMend": {
+      "name": "Earth Mend",
+      "description": "Restore {healing} HP to yourself. Power scales with Magic."
+    },
+    "fireRigene": {
+      "name": "Rigene",
+      "description": "Apply Regeneration to yourself for {duration} turns. Duration scales with Magic."
+    },
+    "waterFlood": {
+      "name": "Flood",
+      "description": "Transform your current non-special tile into Water permanently. The page disintegrates after cast."
     }
   },
   "statuses": {

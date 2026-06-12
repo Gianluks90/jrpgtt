@@ -1,0 +1,1 @@
+export const DEFAULT_SPELLBOOK_CAPACITY = 4;

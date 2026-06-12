@@ -11,6 +11,8 @@ import { ActionCatalogService } from "@services/catalog/action-catalog-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
 import { TranslationService } from "@services/shared/translation-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import { PlayerSpellEntry } from "@models/player/Spellbook";
 
 interface BuildCommandActionsInput {
   player: Player | null;
@@ -38,6 +40,7 @@ export class MapPageActionsService {
     private itemCatalogService: ItemCatalogService,
     private followerCatalogService: FollowerCatalogService,
     private translationService: TranslationService,
+    private spellCatalogService: SpellCatalogService,
   ) {}
 
   public buildCommandActions(input: BuildCommandActionsInput): CommandPanelAction[] {
@@ -68,6 +71,65 @@ export class MapPageActionsService {
     });
 
     return [...actions, ...this.collectPositionActions(input)];
+  }
+
+  public buildSpellActions(input: BuildCommandActionsInput): CommandPanelAction[] {
+    const player = input.player;
+    if (!player) {
+      return [];
+    }
+
+    const worldTurn = Math.max(0, Math.floor(Number(input.worldState?.currentTurn ?? 0)));
+    const isBusy = input.pendingActionId !== null;
+    const currentMp = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+    const magicValue = Math.max(0, Math.floor(Number(player.parameters?.magic?.current ?? player.parameters?.magic?.base ?? 0)));
+    const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+
+    return knownSpells
+      .map((entry) => {
+        const spell = this.spellCatalogService.getSpell(entry.spellId);
+        if (!spell) {
+          return null;
+        }
+
+        const scalar = this.spellCatalogService.computeEffectScalar(spell, magicValue);
+        const description = this.spellCatalogService.getLocalizedDescription(spell)
+          .replaceAll("{range}", String(scalar))
+          .replaceAll("{healing}", String(scalar))
+          .replaceAll("{duration}", String(scalar));
+
+        const blockedUntilTurn = Math.max(0, Math.floor(Number(entry.blockedUntilTurn ?? 0)));
+        const isCoolingDown = blockedUntilTurn > worldTurn;
+        const cooldownTurnsLeft = isCoolingDown ? blockedUntilTurn - worldTurn : 0;
+
+        let warning: string | undefined;
+        if (!input.isMyTurn && spell.timing === "my-turn") {
+          warning = this.translationService.tOrFallback("map.spells.warning.notMyTurn", "Available only during your turn.");
+        } else if (isCoolingDown) {
+          warning = this.translationService.tOrFallback("map.spells.warning.cooldown", "On cooldown for {turns} more turns.", {
+            turns: cooldownTurnsLeft,
+          });
+        } else if (currentMp < spell.mpCost) {
+          warning = this.translationService.tOrFallback("map.spells.warning.notEnoughMp", "Not enough MP.");
+        }
+
+        const disabled = isBusy
+          || (spell.timing === "my-turn" && !input.isMyTurn)
+          || isCoolingDown
+          || currentMp < spell.mpCost
+          || !!player.pendingResourcePickup;
+
+        return {
+          id: spell.id,
+          label: this.spellCatalogService.getLocalizedName(spell),
+          description,
+          warning,
+          magicCost: spell.mpCost,
+          disabled,
+          pending: input.pendingActionId === spell.id,
+        } as CommandPanelAction;
+      })
+      .filter((action): action is CommandPanelAction => action !== null);
   }
 
   private collectPositionActions(input: BuildCommandActionsInput): CommandPanelAction[] {
@@ -223,5 +285,42 @@ export class MapPageActionsService {
 
   private cellId(x: number, y: number): string {
     return `${x}_${y}`;
+  }
+
+  private normalizePlayerSpellEntries(rawEntries: unknown): PlayerSpellEntry[] {
+    if (!Array.isArray(rawEntries)) {
+      return [];
+    }
+
+    const normalized: PlayerSpellEntry[] = [];
+    const seen = new Set<string>();
+
+    rawEntries.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const typedEntry = entry as PlayerSpellEntry;
+      if (typeof typedEntry.spellId !== "string" || typedEntry.spellId.trim().length === 0) {
+        return;
+      }
+
+      const spellId = typedEntry.spellId.trim();
+      if (seen.has(spellId)) {
+        return;
+      }
+
+      normalized.push({
+        spellId,
+        ...(typeof typedEntry.source === "string" ? { source: typedEntry.source } : {}),
+        ...(typeof typedEntry.blockedUntilTurn === "number" ? { blockedUntilTurn: Math.max(0, Math.floor(typedEntry.blockedUntilTurn)) } : {}),
+        ...(typeof typedEntry.occupiesSlot === "boolean" ? { occupiesSlot: typedEntry.occupiesSlot } : {}),
+        ...(typeof typedEntry.grantedBySanctuaryElement === "string" ? { grantedBySanctuaryElement: typedEntry.grantedBySanctuaryElement } : {}),
+      });
+
+      seen.add(spellId);
+    });
+
+    return normalized;
   }
 }

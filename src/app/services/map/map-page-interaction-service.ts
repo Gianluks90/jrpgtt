@@ -91,6 +91,13 @@ import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { TranslationService } from "@services/shared/translation-service";
 import { ActionRegistryService } from "@services/gameplay/action-registry-service";
 import { CommandPanelAction } from "../../components/ui/commands-panel/commands-panel";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import {
+  SpellTeleportDialog,
+  SpellTeleportDialogData,
+  SpellTeleportDialogResult,
+  SpellTeleportTargetOption,
+} from "../../components/dialogs/action-dialogs/spell-teleport-dialog/spell-teleport-dialog";
 import {
   WorldEventHelpDialog,
   WorldEventHelpDialogData,
@@ -106,6 +113,16 @@ interface HandleCommandActionInput {
   canEndTurn: boolean;
   worldState: WorldState | null;
   mapCellsById: Record<string, MapCell>;
+}
+
+interface HandleSpellActionInput {
+  spellId: string;
+  gameId: string;
+  myPlayer: Player | null;
+  isMyTurn: boolean;
+  worldState: WorldState | null;
+  mapCellsById: Record<string, MapCell>;
+  mapSize: number;
 }
 
 @Injectable({
@@ -133,6 +150,7 @@ export class MapPageInteractionService {
     private worldEventRegionTransitionService: WorldEventRegionTransitionService,
     private translationService: TranslationService,
     private actionRegistryService: ActionRegistryService,
+    private spellCatalogService: SpellCatalogService,
   ) {}
 
   public resetUiState(): void {
@@ -401,6 +419,151 @@ export class MapPageInteractionService {
     }
 
     await this.executeCommandActionFlow(flow, input);
+  }
+
+  public async handleSpellAction(input: HandleSpellActionInput): Promise<void> {
+    const player = input.myPlayer;
+    if (!player || !input.isMyTurn) {
+      return;
+    }
+
+    if (this.pendingActionId() !== null) {
+      return;
+    }
+
+    await this.spellCatalogService.loadConfig();
+    const spell = this.spellCatalogService.getSpell(input.spellId);
+    if (!spell) {
+      window.alert(this.translationService.tOrFallback("map.spells.errors.notFound", "Spell not found."));
+      return;
+    }
+
+    const playerSpellEntry = (player.spellbook?.spells ?? []).find((entry) => entry.spellId === spell.id);
+    if (!playerSpellEntry) {
+      window.alert(this.translationService.tOrFallback("map.spells.errors.notKnown", "You do not know this spell."));
+      return;
+    }
+
+    const worldTurn = Math.max(0, Math.floor(Number(input.worldState?.currentTurn ?? 0)));
+    if (Math.max(0, Math.floor(Number(playerSpellEntry.blockedUntilTurn ?? 0))) > worldTurn) {
+      window.alert(this.translationService.tOrFallback("map.spells.errors.cooldown", "This spell is on cooldown."));
+      return;
+    }
+
+    const mpCurrent = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+    if (mpCurrent < spell.mpCost) {
+      window.alert(this.translationService.tOrFallback("map.spells.errors.notEnoughMp", "Not enough MP to cast this spell."));
+      return;
+    }
+
+    let target: { x: number; y: number } | null = null;
+    if (spell.effect.type === "teleport-explored-orthogonal") {
+      const options = this.buildSpellTeleportOptions({
+        player,
+        mapCellsById: input.mapCellsById,
+        mapSize: input.mapSize,
+        spellId: spell.id,
+      });
+
+      if (options.length === 0) {
+        window.alert(this.translationService.tOrFallback(
+          "map.spells.errors.noTeleportTargets",
+          "No valid explored target is available for this spell.",
+        ));
+        return;
+      }
+
+      const teleportDialogResult = await this.openSpellTeleportDialog({
+        spellName: this.spellCatalogService.getLocalizedName(spell),
+        maxRange: this.spellCatalogService.computeEffectScalar(
+          spell,
+          Math.max(0, Math.floor(Number(player.parameters.magic.current ?? player.parameters.magic.base ?? 0))),
+        ),
+        options,
+      });
+
+      if (!teleportDialogResult) {
+        return;
+      }
+
+      target = {
+        x: teleportDialogResult.targetX,
+        y: teleportDialogResult.targetY,
+      };
+    }
+
+    await this.runNamedAction(spell.id, async () => {
+      await this.actionExecutorService.castSpell(input.gameId, {
+        id: player.id,
+        name: player.name,
+      }, {
+        spellId: spell.id,
+        target,
+      });
+    }, this.translationService.tOrFallback("map.spells.errors.cast", "Error while casting spell."));
+  }
+
+  private buildSpellTeleportOptions(input: {
+    player: Player;
+    mapCellsById: Record<string, MapCell>;
+    mapSize: number;
+    spellId: string;
+  }): SpellTeleportTargetOption[] {
+    const spell = this.spellCatalogService.getSpell(input.spellId);
+    if (!spell || spell.effect.type !== "teleport-explored-orthogonal") {
+      return [];
+    }
+
+    const magicValue = Math.max(
+      0,
+      Math.floor(Number(input.player.parameters.magic.current ?? input.player.parameters.magic.base ?? 0)),
+    );
+    const range = this.spellCatalogService.computeEffectScalar(spell, magicValue);
+
+    const options: SpellTeleportTargetOption[] = [];
+    Object.entries(input.mapCellsById).forEach(([cellId, cell]) => {
+      if (!cell || typeof cell !== "object") {
+        return;
+      }
+
+      if (cell.x === input.player.location.x && cell.y === input.player.location.y) {
+        return;
+      }
+
+      const inBounds = cell.x >= 0 && cell.y >= 0 && cell.x < input.mapSize && cell.y < input.mapSize;
+      if (!inBounds) {
+        return;
+      }
+
+      const distance = Math.abs(cell.x - input.player.location.x) + Math.abs(cell.y - input.player.location.y);
+      if (distance <= 0 || distance > range) {
+        return;
+      }
+
+      const biomeLabel = this.translationService.tOrFallback(`map.biomes.${cell.biome}`, cell.biome);
+      options.push({
+        cellId,
+        x: cell.x,
+        y: cell.y,
+        biomeLabel,
+      });
+    });
+
+    return options;
+  }
+
+  private async openSpellTeleportDialog(data: SpellTeleportDialogData): Promise<SpellTeleportDialogResult | null> {
+    const dialogRef = this.dialog.open(SpellTeleportDialog, {
+      ...FAST_TRAVEL_DIALOG_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    if (!this.isConfirmResult(response) || !response.data) {
+      return null;
+    }
+
+    return response.data as SpellTeleportDialogResult;
   }
 
   private async executeCommandActionFlow(

@@ -1,5 +1,5 @@
 <div class="commands-panel-root">
-	<div class="commands-list">
+	<div class="commands-list" [class.commands-list-empty]="actions().length === 0">
 		@for (action of actions(); track action.id) {
 			<button
 				type="button"
@@ -40,7 +40,7 @@
 		}
 
 		@if (actions().length === 0) {
-			<p class="commands-empty-state">{{ 'map.commands.empty' | t }}</p>
+			<p class="commands-empty-state">{{ emptyStateKey() | t }}</p>
 		}
 	</div>
 </div>

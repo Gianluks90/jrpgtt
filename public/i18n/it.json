@@ -222,6 +222,14 @@
             "confirmInfo": "Confermando termini il turno e ne salterai uno aggiuntivo prima dell'arrivo.",
             "confirmRoute": "Conferma tratta"
         },
+        "spellTeleport": {
+            "title": "{spellName}: seleziona destinazione",
+            "description": "Scegli una casella esplorata entro {range} caselle ortogonali.",
+            "coordinates": "Coordinate: {x}, {y}",
+            "confirm": "Lancia",
+            "noTargets": "Nessuna destinazione valida disponibile.",
+            "fallbackSpellName": "Incantesimo"
+        },
         "resourceExchange": {
             "title": "Scambio risorse",
             "description": "Scambia risorse 1:1 con l'artigiano del villaggio. Confermare questa azione termina il turno.",
@@ -547,7 +555,28 @@
             "title": "Comandi",
             "executing": "Esecuzione...",
             "noDescription": "-",
-            "empty": "Nessuna azione disponibile in questa posizione."
+            "empty": "Nessuna azione disponibile in questa posizione.",
+            "expandAria": "Espandi comandi",
+            "none": "nessun comando"
+        },
+        "spells": {
+            "title": "Incantesimi ({count}/{capacity})",
+            "empty": "Nessun incantesimo.",
+            "expandAria": "Espandi incantesimi",
+            "none": "Nessun incantesimo",
+            "warning": {
+                "notMyTurn": "Disponibile solo durante il tuo turno.",
+                "cooldown": "In recupero per altri {turns} turni.",
+                "notEnoughMp": "MP insufficienti."
+            },
+            "errors": {
+                "notFound": "Incantesimo non trovato.",
+                "notKnown": "Non conosci questo incantesimo.",
+                "cooldown": "Questo incantesimo e in recupero.",
+                "notEnoughMp": "MP insufficienti per lanciare questo incantesimo.",
+                "noTeleportTargets": "Nessuna destinazione esplorata valida per questo incantesimo.",
+                "cast": "Errore durante il lancio dell'incantesimo."
+            }
         },
         "locationInfo": {
             "contextObserving": "Osservazione cella",
@@ -1013,7 +1042,12 @@
             "discardResource": "{playerName} ha scartato 1 {resource}.",
             "pendingPickupCancelled": "{playerName} ha annullato la raccolta in sospeso di {resource}.",
             "swapResource": "{playerName} ha scartato {droppedResource} e raccolto {gainedResource}.",
-            "resolvePendingPickup": "{playerName} ha raccolto la risorsa in sospeso {resource}."
+            "resolvePendingPickup": "{playerName} ha raccolto la risorsa in sospeso {resource}.",
+            "castSpell": "{playerName} ha lanciato {spellName} e speso {spentMp} MP.",
+            "castSpellHeal": "{playerName} ha lanciato {spellName}, recuperato {healedHp} HP e speso {spentMp} MP.",
+            "castSpellStatus": "{playerName} ha lanciato {spellName}, applicato {statusKey} per {durationTurns} turni e speso {spentMp} MP.",
+            "castSpellTeleport": "{playerName} ha lanciato {spellName}, teletrasportandosi in {targetX}, {targetY} e spendendo {spentMp} MP.",
+            "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP."
         }
     },
     "actions": {
@@ -1134,6 +1168,24 @@
         "eliminateZombie": {
             "label": "Elimina zombie",
             "description": "Distruggi il tuo compagno zombie e termina il turno."
+        }
+    },
+    "spells": {
+        "windShift": {
+            "name": "Soffio del vento",
+            "description": "Teletrasportati su una casella esplorata entro {range} caselle ortogonali. Conta come movimento di questo turno."
+        },
+        "earthMend": {
+            "name": "Rammendo della terra",
+            "description": "Ripristina {healing} HP su di te. La potenza scala con Magia."
+        },
+        "fireRigene": {
+            "name": "Rigene",
+            "description": "Applica Rigenerazione su di te per {duration} turni. La durata scala con Magia."
+        },
+        "waterFlood": {
+            "name": "Inondazione",
+            "description": "Trasforma permanentemente la tua casella corrente non speciale in Acqua. La pagina si disintegra dopo il lancio."
         }
     },
     "statuses": {

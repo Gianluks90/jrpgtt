@@ -21,6 +21,7 @@ export interface CommandPanelAction {
 })
 export class CommandsPanel {
   public actions = input<CommandPanelAction[]>([]);
+  public emptyStateKey = input<string>("map.commands.empty");
 
   public actionRequested = output<string>();
 

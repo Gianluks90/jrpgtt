@@ -4,6 +4,7 @@ import { LuckCheckResult } from "@models/ui/LuckCheckResult";
 import { SanctuaryElement } from "@models/world/MapCell";
 import { ResourceLabel } from "@models/world/Resource";
 import { PlayerFollowerEntry } from "@models/player/Follower";
+import { PlayerSpellbook } from "@models/player/Spellbook";
 
 export type PlayerStatusKey = "nutrition" | (string & {});
 export type PlayerAlignment = "evil" | "neutral" | "good";
@@ -41,6 +42,7 @@ export interface Player {
     actionsUsedThisTurn?: Record<string, number>;
     statuses?: PlayerStatus[];
     pendingResourcePickup?: PendingResourcePickup | null;
+    spellbook?: PlayerSpellbook;
 }
 
 export interface PlayerLocation {

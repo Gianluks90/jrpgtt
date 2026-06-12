@@ -8,6 +8,7 @@ import { PlayerFollowerEntry } from "@models/player/Follower";
 import { BiomeType, MapCell, SanctuaryElement } from "@models/world/MapCell";
 import { InventoryItemEntry } from "@models/player/Inventory";
 import { Player } from "@models/player/Player";
+import { PlayerSpellEntry } from "@models/player/Spellbook";
 import { ResourceLabel } from "@models/world/Resource";
 import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfig";
 import { WorldState } from "@models/world/WorldState";
@@ -22,6 +23,8 @@ import { TilesConfigService } from "@services/catalog/tiles-config-service";
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
 import { StatusCatalogService } from "@services/catalog/status-catalog-service";
 import { TranslationService } from "@services/shared/translation-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import { DEFAULT_SPELLBOOK_CAPACITY } from "../../consts/player/spellbook-config";
 
 @Injectable({
   providedIn: "root",
@@ -121,6 +124,7 @@ export class MapPageStateService {
     private tilesConfigService: TilesConfigService,
     private landmarksConfigService: LandmarksConfigService,
     private actionCatalogService: ActionCatalogService,
+    private spellCatalogService: SpellCatalogService,
     private followerCatalogService: FollowerCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private statusCatalogService: StatusCatalogService,
@@ -146,6 +150,7 @@ export class MapPageStateService {
     void this.loadBiomeResourcesConfig();
     void this.loadLandmarksConfig();
     void this.loadActionCatalog();
+    void this.loadSpellCatalog();
     void this.loadFollowersCatalog();
     void this.loadBiomeConditionsCatalog();
     void this.loadStatusesCatalog();
@@ -221,6 +226,8 @@ export class MapPageStateService {
             items: normalizedItems,
             itemCapacity: normalizedItemCapacity,
           };
+
+          nextPlayer.spellbook = this.normalizePlayerSpellbook(rawPlayer.spellbook);
 
 
           if (
@@ -318,6 +325,14 @@ export class MapPageStateService {
   private async loadActionCatalog(): Promise<void> {
     try {
       await this.actionCatalogService.loadConfig();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  private async loadSpellCatalog(): Promise<void> {
+    try {
+      await this.spellCatalogService.loadConfig();
     } catch (error) {
       console.error(error);
     }
@@ -424,6 +439,67 @@ export class MapPageStateService {
     });
 
     return nextItems;
+  }
+
+  private normalizePlayerSpellbook(rawSpellbook: unknown): {
+    spells: PlayerSpellEntry[];
+    capacity: number;
+  } {
+    const typed = rawSpellbook && typeof rawSpellbook === "object" && !Array.isArray(rawSpellbook)
+      ? rawSpellbook as { spells?: unknown; capacity?: unknown }
+      : {};
+
+    const capacity = typeof typed.capacity === "number" && Number.isFinite(typed.capacity)
+      ? Math.max(1, Math.floor(typed.capacity))
+      : DEFAULT_SPELLBOOK_CAPACITY;
+
+    const spells = this.normalizePlayerSpellEntries(typed.spells);
+
+    return {
+      spells,
+      capacity,
+    };
+  }
+
+  private normalizePlayerSpellEntries(rawEntries: unknown): PlayerSpellEntry[] {
+    if (!Array.isArray(rawEntries)) {
+      return [];
+    }
+
+    const seen = new Set<string>();
+    const normalized: PlayerSpellEntry[] = [];
+
+    rawEntries.forEach((entry) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        return;
+      }
+
+      const typedEntry = entry as PlayerSpellEntry;
+      if (typeof typedEntry.spellId !== "string" || typedEntry.spellId.trim().length === 0) {
+        return;
+      }
+
+      const spellId = typedEntry.spellId.trim();
+      if (seen.has(spellId)) {
+        return;
+      }
+
+      const blockedUntilTurn = typeof typedEntry.blockedUntilTurn === "number" && Number.isFinite(typedEntry.blockedUntilTurn)
+        ? Math.max(0, Math.floor(typedEntry.blockedUntilTurn))
+        : undefined;
+
+      normalized.push({
+        spellId,
+        ...(typeof typedEntry.source === "string" ? { source: typedEntry.source } : {}),
+        ...(typeof blockedUntilTurn === "number" ? { blockedUntilTurn } : {}),
+        ...(typeof typedEntry.occupiesSlot === "boolean" ? { occupiesSlot: typedEntry.occupiesSlot } : {}),
+        ...(typeof typedEntry.grantedBySanctuaryElement === "string" ? { grantedBySanctuaryElement: typedEntry.grantedBySanctuaryElement } : {}),
+      });
+
+      seen.add(spellId);
+    });
+
+    return normalized;
   }
 
   private normalizePlayerFollowers(rawFollowers: unknown): PlayerFollowerEntry[] {

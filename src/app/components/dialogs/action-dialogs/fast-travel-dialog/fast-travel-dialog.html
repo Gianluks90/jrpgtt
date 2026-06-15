@@ -1,56 +1,133 @@
-<dialog-wrapper [title]="'dialogs.fastTravel.title' | t">
+<dialog-wrapper [title]="'dialogs.fastTravel.title' | t" [hideActions]="true">
     <div dialog-header-extra class="header-money">
         <span>{{ playerMoney }}</span>
         <span class="coin-icon" aria-hidden="true"></span>
     </div>
 
-    <p class="info-text">{{ 'dialogs.fastTravel.startingFrom' | t: { origin: originName } }}</p>
-    <p class="info-text">{{ 'dialogs.fastTravel.routeCostInfo' | t }}</p>
+    <div class="fast-travel-layout">
 
-    @if (routes.length === 0) {
-        <p class="error-text">{{ 'dialogs.fastTravel.noDestinations' | t }}</p>
-    } @else {
-        <div class="routes-list">
-            @for (route of routes; track route.cellId) {
-                <button
-                    type="button"
-                    class="route-option"
-                    [class.selected]="selectedRouteCellId === route.cellId"
-                    (click)="selectRoute(route.cellId)"
-                >
-                    <span class="route-top-row">
-                        <span class="route-title">{{ route.destinationName }}</span>
-                        <span class="route-cost-tag">
-                            <span>-{{ route.cost }}</span>
-                            <span class="coin-icon route-cost-icon" aria-hidden="true"></span>
-                        </span>
-                    </span>
-                    <span class="route-divider" aria-hidden="true"></span>
-                    <span class="route-meta">{{ 'dialogs.fastTravel.coordinates' | t: { x: route.x + 1, y: route.y + 1 } }}</span>
-                    @if (isTooExpensive(route)) {
-                        <span class="route-warning">{{ 'dialogs.fastTravel.notEnoughCoinsRoute' | t }}</span>
+        <!-- ── Left: journey strip + route list ── -->
+        <div class="fast-travel-left">
+            <p class="flavor-text">{{ 'dialogs.fastTravel.flavorText' | t }}</p>
+            <p class="info-text">{{ 'dialogs.fastTravel.description' | t }}</p>
+            <div class="journey-strip">
+                <span class="journey-node journey-node--origin">{{ originName }}</span>
+                <span class="journey-arrows" aria-hidden="true">›&nbsp;›&nbsp;›</span>
+                <span class="journey-node journey-node--dest">{{ selectedRoute?.destinationName ?? '—' }}</span>
+            </div>
+
+            @if (routes.length === 0) {
+                <p class="error-text">{{ 'dialogs.fastTravel.noDestinations' | t }}</p>
+            } @else {
+                <div class="routes-list">
+                    @for (route of routes; track route.cellId) {
+                        <button
+                            type="button"
+                            class="route-option"
+                            [class.selected]="selectedRouteCellId === route.cellId"
+                            [class.too-expensive]="isTooExpensive(route)"
+                            (click)="selectRoute(route.cellId)"
+                        >
+                            <span class="route-top-row">
+                                <span class="route-title">{{ route.destinationName }}</span>
+                                <span class="route-cost-tag">
+                                    <span>−{{ route.cost }}</span>
+                                    <span class="coin-icon route-cost-icon" aria-hidden="true"></span>
+                                </span>
+                            </span>
+                            <span class="route-meta">{{ 'dialogs.fastTravel.coordinates' | t: { x: route.x + 1, y: route.y + 1 } }}</span>
+                            @if (isTooExpensive(route)) {
+                                <span class="route-warning">{{ 'dialogs.fastTravel.notEnoughCoinsRoute' | t }}</span>
+                            }
+                        </button>
                     }
-                </button>
+                </div>
+            }
+
+            @if (selectedRoute && !canConfirm) {
+                <p class="error-text">{{ 'dialogs.fastTravel.selectedRouteTooExpensive' | t: { cost: selectedRoute.cost, money: playerMoney } }}</p>
             }
         </div>
-    }
 
-    @if (selectedRoute && !canConfirm) {
-        <p class="error-text">{{ 'dialogs.fastTravel.selectedRouteTooExpensive' | t: { cost: selectedRoute.cost, money: playerMoney } }}</p>
-    }
+        <!-- ── Right: grid mini-map + buttons ── -->
+        <div class="fast-travel-right">
+            <svg
+                [attr.viewBox]="'0 0 ' + SVG_WIDTH + ' ' + SVG_HEIGHT"
+                class="travel-map"
+                aria-hidden="true"
+            >
+                <!-- Grid lines -->
+                @for (i of gridIndices; track i) {
+                    <line class="grid-line"
+                        [attr.x1]="PAD + i * CELL" [attr.y1]="PAD_TOP"
+                        [attr.x2]="PAD + i * CELL" [attr.y2]="SVG_HEIGHT - PAD"
+                    />
+                    <line class="grid-line"
+                        [attr.x1]="PAD" [attr.y1]="PAD_TOP + i * CELL"
+                        [attr.x2]="SVG_WIDTH - PAD" [attr.y2]="PAD_TOP + i * CELL"
+                    />
+                }
 
-    @if (selectedRoute && canConfirm) {
-        <p class="info-text">
-            {{ 'dialogs.fastTravel.destination' | t: { destination: selectedRoute.destinationName } }}
-            {{ 'dialogs.fastTravel.confirmInfo' | t }}
-        </p>
-    }
+                <!-- Region dividers -->
+                <line class="region-divider"
+                    [attr.x1]="PAD + regionBoundary1 * CELL" [attr.y1]="PAD_TOP"
+                    [attr.x2]="PAD + regionBoundary1 * CELL" [attr.y2]="SVG_HEIGHT - PAD"
+                />
+                <line class="region-divider"
+                    [attr.x1]="PAD + regionBoundary2 * CELL" [attr.y1]="PAD_TOP"
+                    [attr.x2]="PAD + regionBoundary2 * CELL" [attr.y2]="SVG_HEIGHT - PAD"
+                />
 
-    <text-button
-        dialog-action
-        [text]="'dialogs.fastTravel.confirmRoute' | t"
-        [disabled]="!canConfirm"
-        (clicked)="confirm()"
-    ></text-button>
-    <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
+                <!-- Region labels -->
+                <text class="region-label" [attr.x]="regionLabel1X" [attr.y]="regionLabelY">I</text>
+                <text class="region-label" [attr.x]="regionLabel2X" [attr.y]="regionLabelY">II</text>
+                <text class="region-label" [attr.x]="regionLabel3X" [attr.y]="regionLabelY">III</text>
+
+                <!-- Travel line origin → selected -->
+                @if (selectedCx !== null && selectedCy !== null) {
+                    <line class="travel-line"
+                        [attr.x1]="originCx" [attr.y1]="originCy"
+                        [attr.x2]="selectedCx" [attr.y2]="selectedCy"
+                    />
+                }
+
+                <!-- Destination cell markers (rendered before origin so origin stays on top) -->
+                @for (route of routes; track route.cellId) {
+                    <rect
+                        class="dest-cell"
+                        [class.dest-cell--selected]="selectedRouteCellId === route.cellId"
+                        [class.dest-cell--expensive]="isTooExpensive(route)"
+                        [attr.x]="cx(route.x)" [attr.y]="cy(route.y)"
+                        [attr.width]="cellInner" [attr.height]="cellInner"
+                        (click)="selectRoute(route.cellId)"
+                    ><title>{{ route.destinationName }}</title></rect>
+                }
+
+                <!-- Origin cell marker (on top) -->
+                <rect
+                    class="origin-cell"
+                    [attr.x]="cx(originX)" [attr.y]="cy(originY)"
+                    [attr.width]="cellInner" [attr.height]="cellInner"
+                ><title>{{ originName }}</title></rect>
+            </svg>
+
+            <div class="map-actions">
+                <button class="confirm-button" [disabled]="!canConfirm" (click)="confirm()">
+                    <span>{{ 'dialogs.fastTravel.confirmRoute' | t }}</span>
+                    @if (selectedRoute) {
+                        <span class="spend-tag">
+                            <span>−{{ selectedRoute.cost }}</span>
+                            <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
+                        </span>
+                    }
+                </button>
+                <text-button
+                    [text]="'dialogs.common.cancel' | t"
+                    [fullWidth]="true"
+                    (clicked)="close()"
+                ></text-button>
+            </div>
+        </div>
+
+    </div>
 </dialog-wrapper>

@@ -9,6 +9,7 @@ import {
   MERCHANT_DIALOG_CONFIG,
   RESOURCE_INVENTORY_DIALOG_CONFIG,
   RESOURCE_EXCHANGE_DIALOG_CONFIG,
+  VARIABLE_REWARD_DIALOG_CONFIG,
 } from "../../consts/ui/dialog-configs";
 import { GameEventsLogDialog } from "../../components/dialogs/game-events-log-dialog/game-events-log-dialog";
 import { MapService } from "@services/map/map-service";
@@ -966,6 +967,8 @@ export class MapPageInteractionService {
       const routes = this.safePlaceFastTravelService.buildRoutes(originCell, input.mapCellsById);
       const dialogResult = await this.openFastTravelDialog({
         originName: this.safePlaceFastTravelService.getSafePlaceName(originCell),
+        originX: originCell.x,
+        originY: originCell.y,
         playerMoney: player.inventory?.money ?? 0,
         routes,
       });
@@ -1557,7 +1560,7 @@ export class MapPageInteractionService {
 
   private async openEnchantressDialog(data: EnchantressDialogData): Promise<void> {
     const dialogRef = this.dialog.open(EnchantressDialog, {
-      ...ENCHANTRESS_DIALOG_CONFIG,
+      ...VARIABLE_REWARD_DIALOG_CONFIG,
       data,
     });
 
@@ -1566,7 +1569,7 @@ export class MapPageInteractionService {
 
   private async openMysticDialog(data: MysticDialogData): Promise<void> {
     const dialogRef = this.dialog.open(MysticDialog, {
-      ...ENCHANTRESS_DIALOG_CONFIG,
+      ...VARIABLE_REWARD_DIALOG_CONFIG,
       data,
     });
 

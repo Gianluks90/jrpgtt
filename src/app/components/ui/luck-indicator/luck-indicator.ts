@@ -19,6 +19,7 @@ export class LuckIndicator implements OnDestroy {
 
   public result = input<LuckCheckResult | null>(null);
   public animateFirstResult = input<boolean>(false);
+  public successOnly = input<boolean>(false);
   public isRolling = signal(false);
 
   private displayedResult = signal<LuckCheckResult | null>(null);
@@ -50,6 +51,7 @@ export class LuckIndicator implements OnDestroy {
     const result = this.displayedResult();
     if (!result) return "-";
     if (result.success) return this.translationService.tOrFallback("map.luck.status.success", "Yes!");
+    if (this.successOnly()) return "-";
     if (result.nearSuccess) return this.translationService.tOrFallback("map.luck.status.near", "Near");
     return this.translationService.tOrFallback("map.luck.status.fail", "Nope");
   });
@@ -59,6 +61,7 @@ export class LuckIndicator implements OnDestroy {
     const result = this.displayedResult();
     if (!result) return "neutral";
     if (result.success) return "success";
+    if (this.successOnly()) return "neutral";
     if (result.nearSuccess) return "near";
     return "fail";
   });

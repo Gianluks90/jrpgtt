@@ -212,6 +212,8 @@
         },
         "fastTravel": {
             "title": "Viaggio rapido",
+            "flavorText": "Avvicinandoti al carro noti una tabella con le indicazioni e i costi per un viaggio in totale sicurezza...",
+            "description": "Viaggiare tra un luogo sicuro ed un altro costa 1 moneta per casella ortogonale, fino a un massimo di 15. Arriverai nel turno successivo.",
             "safePlace": "Luogo sicuro",
             "startingFrom": "Stai partendo da {origin}.",
             "routeCostInfo": "Il costo del tragitto e 1 moneta per ogni casella ortogonale, fino a un massimo di 15.",
@@ -221,7 +223,7 @@
             "selectedRouteTooExpensive": "La tratta selezionata costa {cost} monete, ma ne possiedi solo {money}.",
             "destination": "Destinazione: {destination}.",
             "confirmInfo": "Confermando termini il turno e ne salterai uno aggiuntivo prima dell'arrivo.",
-            "confirmRoute": "Conferma tratta"
+            "confirmRoute": "Viaggia"
         },
         "spellTeleport": {
             "title": "{spellName}: seleziona destinazione",
@@ -271,7 +273,8 @@
         },
         "mystic": {
             "title": "Mistico della Citta",
-            "offerInfo": "Offri esattamente {cost} monete per lasciare che il Mistico entri nella tua mente.",
+            "flavorText": "Un anziano mistico avvolto in vesti logore ti invita a sederti accanto a lui, offrendoti di svelare i segreti nascosti nella tua mente...",
+            "offerInfo": "Lascia che il Mistico sondi la tua mente al costo di {cost} monete e scopri cosa ha da rivelarti.",
             "result": "Risultato:",
             "actions": {
                 "pay": "Paga",
@@ -279,11 +282,11 @@
             },
             "rewards": {
                 "alignmentEvil": {
-                    "label": "Spostamento mentale: Malvagio",
+                    "label": "Cambio di allineamento: Malvagio",
                     "preview": "Il tuo allineamento diventa Malvagio"
                 },
                 "alignmentNeutral": {
-                    "label": "Spostamento mentale: Neutrale",
+                    "label": "Cambio di allineamento: Neutrale",
                     "preview": "Il tuo allineamento diventa Neutrale"
                 },
                 "ignored": {
@@ -310,7 +313,8 @@
         },
         "enchantress": {
             "title": "Incantatrice della Capitale",
-            "offerInfo": "Offri esattamente {cost} monete per estrarre il tuo destino.",
+            "flavorText": "Una giovane incantatrice mescola le sue antiche e misteriose carte mentre ti dice di avvicinarti...",
+            "offerInfo": "Al costo di {cost} monete potrai scoprire il tuo destino.",
             "result": "Risultato:",
             "actions": {
                 "pay": "Paga",

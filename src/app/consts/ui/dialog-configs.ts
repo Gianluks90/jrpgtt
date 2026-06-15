@@ -23,12 +23,21 @@ export const RESOURCE_INVENTORY_DIALOG_CONFIG = {
 
 export const FAST_TRAVEL_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
-    maxWidth: '680px',
+    width: '92%',
+    maxWidth: '780px',
+    maxHeight: '72vh',
 };
 
 export const ENCHANTRESS_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     maxWidth: '560px',
+};
+
+export const VARIABLE_REWARD_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    width: '92%',
+    maxWidth: '780px',
+    maxHeight: '72vh',
 };
 
 export const MERCHANT_DIALOG_CONFIG = {

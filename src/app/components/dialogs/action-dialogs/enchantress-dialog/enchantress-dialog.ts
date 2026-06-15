@@ -7,6 +7,7 @@ import { DialogResponse } from "@models/ui/DialogResponse";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
+import { LuckIndicator } from "../../../ui/luck-indicator/luck-indicator";
 import { TextButton } from "../../../ui/text-button/text-button";
 
 export interface EnchantressDialogData {
@@ -18,7 +19,7 @@ export interface EnchantressDialogData {
 
 @Component({
   selector: "app-enchantress-dialog",
-  imports: [DialogWrapper, TextButton, TranslationPipe],
+  imports: [DialogWrapper, LuckIndicator, TextButton, TranslationPipe],
   templateUrl: "./enchantress-dialog.html",
   styleUrl: "./enchantress-dialog.scss",
 })

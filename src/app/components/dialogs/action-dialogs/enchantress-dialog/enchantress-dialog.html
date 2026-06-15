@@ -1,61 +1,73 @@
-<dialog-wrapper [title]="title" [luckResult]="luckMeterResult" [luckAnimateFirstResult]="true">
+<dialog-wrapper [title]="title" [hideActions]="true">
     <div dialog-header-extra class="header-money">
         <span>{{ playerMoney }}</span>
         <span class="coin-icon" aria-hidden="true"></span>
     </div>
 
-    <p class="info-text">{{ 'dialogs.enchantress.offerInfo' | t: { cost: requiredCost } }}</p>
+    <div class="enchantress-layout">
 
-    <div class="pay-row">
-        <span class="spend-tag">
-            <span>-{{ requiredCost }}</span>
-            <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
-        </span>
-        <text-button
-            [text]="'dialogs.enchantress.actions.pay' | t"
-            [disabled]="!canPay"
-            (clicked)="pay()"
-        ></text-button>
-    </div>
+        <div class="enchantress-left">
+            <p class="flavor-text">{{ 'dialogs.enchantress.flavorText' | t }}</p>
+            <p class="info-text">{{ 'dialogs.enchantress.offerInfo' | t: { cost: requiredCost } }}</p>
 
-    @if (playerMoney < requiredCost) {
-        <p class="error-text">{{ 'dialogs.enchantress.errors.notEnoughCoins' | t }}</p>
-    }
+            @if (playerMoney < requiredCost) {
+                <p class="error-text">{{ 'dialogs.enchantress.errors.notEnoughCoins' | t }}</p>
+            }
+            @if (errorMessage) {
+                <p class="error-text">{{ errorMessage }}</p>
+            }
 
-    @if (errorMessage) {
-        <p class="error-text">{{ errorMessage }}</p>
-    }
-
-    <div class="reward-table">
-        @for (row of rewardsTable; track row.id) {
-            <div
-                class="reward-row"
-                [class.reward-row--highlighted]="isHighlighted(row)"
-                [class.reward-row--pulse]="isPulsing(row)"
-            >
-                <span class="reward-range">{{ row.rangeLabel }}</span>
-                <span class="reward-effect">{{ row.effectLabel }}</span>
+            <div class="left-actions">
+                @if (paid) {
+                    @if (outcome) {
+                        <p class="result-text"><strong>{{ outcome.rewardLabel }}</strong></p>
+                    }
+                    <text-button
+                        [text]="'dialogs.enchantress.actions.continue' | t"
+                        [fullWidth]="true"
+                        [disabled]="!canContinue"
+                        (clicked)="continue()"
+                    ></text-button>
+                } @else {
+                    <button class="pay-button" [disabled]="!canPay" (click)="pay()">
+                        <span>{{ 'dialogs.enchantress.actions.pay' | t }}</span>
+                        <span class="spend-tag">
+                            <span>−{{ requiredCost }}</span>
+                            <span class="coin-icon spend-tag-icon" aria-hidden="true"></span>
+                        </span>
+                    </button>
+                    <text-button
+                        [text]="'dialogs.common.cancel' | t"
+                        [fullWidth]="true"
+                        [disabled]="!canCancel"
+                        (clicked)="close()"
+                    ></text-button>
+                }
             </div>
-        }
+        </div>
+
+        <div class="enchantress-right">
+            <div class="luck-wrapper">
+                <app-luck-indicator
+                    [result]="luckMeterResult"
+                    [animateFirstResult]="true"
+                    [successOnly]="true"
+                ></app-luck-indicator>
+            </div>
+
+            <div class="reward-table">
+                @for (row of rewardsTable; track row.id) {
+                    <div
+                        class="reward-row"
+                        [class.reward-row--highlighted]="isHighlighted(row)"
+                        [class.reward-row--pulse]="isPulsing(row)"
+                    >
+                        <span class="reward-range">{{ row.rangeLabel }}</span>
+                        <span class="reward-effect">{{ row.effectLabel }}</span>
+                    </div>
+                }
+            </div>
+        </div>
+
     </div>
-
-    @if (outcome) {
-        <p class="result-text">
-            {{ 'dialogs.enchantress.result' | t }}
-            <span><strong>{{ outcome.rewardLabel }}</strong></span>
-        </p>
-    }
-
-    <text-button
-        dialog-action
-        [text]="'dialogs.enchantress.actions.continue' | t"
-        [disabled]="!canContinue"
-        (clicked)="continue()"
-    ></text-button>
-    <text-button
-        dialog-action
-        [text]="'dialogs.common.cancel' | t"
-        [disabled]="!canCancel"
-        (clicked)="close()"
-    ></text-button>
 </dialog-wrapper>

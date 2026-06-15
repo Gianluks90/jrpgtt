@@ -7,6 +7,7 @@ import { CityMysticOutcome } from "@services/gameplay/action-executor-service";
 import { TranslationPipe } from "../../../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
 import { DialogWrapper } from "../../../ui/dialog-wrapper/dialog-wrapper";
+import { LuckIndicator } from "../../../ui/luck-indicator/luck-indicator";
 import { TextButton } from "../../../ui/text-button/text-button";
 
 export interface MysticDialogData {
@@ -18,7 +19,7 @@ export interface MysticDialogData {
 
 @Component({
   selector: "app-mystic-dialog",
-  imports: [DialogWrapper, TextButton, TranslationPipe],
+  imports: [DialogWrapper, LuckIndicator, TextButton, TranslationPipe],
   templateUrl: "./mystic-dialog.html",
   styleUrl: "./mystic-dialog.scss",
 })

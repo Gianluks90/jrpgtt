@@ -212,6 +212,8 @@
     },
     "fastTravel": {
       "title": "Fast travel",
+      "flavorText": "Sacred places call to one another... but every step has its price in coins.",
+      "description": "Cost: 1 coin per orthogonal cell, max 15. You will arrive on the next turn.",
       "safePlace": "Safe place",
       "startingFrom": "You are departing from {origin}.",
       "routeCostInfo": "Route cost is 1 coin per orthogonal cell, capped at 15.",
@@ -271,6 +273,7 @@
     },
     "mystic": {
       "title": "City Mystic",
+      "flavorText": "He closes his eyes and opens his mind to the currents of fate...",
       "offerInfo": "Offer exactly {cost} coins to let the Mystic enter your mind.",
       "result": "Result:",
       "actions": {
@@ -310,6 +313,7 @@
     },
     "enchantress": {
       "title": "Capital Enchantress",
+      "flavorText": "She shuffles her ancient cards and beckons you closer...",
       "offerInfo": "Offer exactly {cost} coins to draw your fate.",
       "result": "Result:",
       "actions": {

@@ -5,40 +5,130 @@
   gap: 6px;
 }
 
-.routes-list {
+// ── Layout ──────────────────────────────────────────────────────────────────
+
+.fast-travel-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 14px;
+  min-height: 280px;
+  max-height: min(60vh, 480px);
+  min-width: 0;
+}
+
+.fast-travel-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.fast-travel-right {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 10px 0;
+  min-width: 0;
+}
+
+// ── Texts ────────────────────────────────────────────────────────────────────
+
+.flavor-text {
+  margin: 0;
+  font-size: 0.54rem;
+  font-style: italic;
+  color: color-mix(in srgb, var(--fg-color) 60%, transparent);
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.info-text {
+  margin: 0;
+  font-size: 0.54rem;
+  line-height: 1.35;
+  flex-shrink: 0;
+}
+
+// ── Journey strip ────────────────────────────────────────────────────────────
+
+.journey-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--fg-color) 22%, transparent);
+  background: color-mix(in srgb, var(--bg-color) 78%, black 22%);
+  flex-shrink: 0;
+}
+
+.journey-node {
+  font-size: 0.52rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.journey-node--origin {
+  color: #ffd166;
+}
+
+.journey-node--dest {
+  color: #9fe870;
+  text-align: right;
+}
+
+.journey-arrows {
+  font-size: 0.6rem;
+  color: color-mix(in srgb, var(--fg-color) 55%, transparent);
+  flex-shrink: 0;
+  animation: arrows-flow 1.4s ease-in-out infinite;
+}
+
+@keyframes arrows-flow {
+  0%, 100% { opacity: 0.3; transform: translateX(-1px); }
+  50% { opacity: 0.85; transform: translateX(2px); }
+}
+
+// ── Route list ───────────────────────────────────────────────────────────────
+
+.routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .route-option {
   width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
   color: inherit;
   text-align: left;
-  padding: 8px 10px;
+  padding: 6px 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
+  gap: 3px;
+  flex-shrink: 0;
 
-.route-option:hover {
-  background: rgba(255, 255, 255, 0.11);
-}
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 
-.route-option.selected {
-  border-color: rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.16);
-}
+  &.selected {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.14);
+  }
 
-.route-title {
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
+  &.too-expensive {
+    opacity: 0.6;
+  }
 }
 
 .route-top-row {
@@ -48,12 +138,17 @@
   gap: 8px;
 }
 
+.route-title {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
 .route-cost-tag {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
-  min-height: 18px;
   padding: 1px 5px;
   border: 1px solid color-mix(in srgb, var(--bad-color) 65%, transparent);
   background: color-mix(in srgb, var(--bad-color) 18%, transparent);
@@ -66,24 +161,143 @@
   --coin-icon-size: 11px;
 }
 
-.route-divider {
-  width: 100%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.28);
-}
-
 .route-meta {
-  font-size: 0.55rem;
-  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .route-warning {
-  font-size: 0.5rem;
+  font-size: 0.48rem;
   color: var(--warning-color);
 }
 
 .error-text {
-  margin: 6px 0 8px;
-  font-size: 0.58rem;
+  margin: 0;
+  font-size: 0.54rem;
   color: #f08d8d;
+  flex-shrink: 0;
+}
+
+// ── SVG grid map ─────────────────────────────────────────────────────────────
+
+.travel-map {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: var(--overlay-border, 2px solid rgba(255, 255, 255, 0.5));
+  background: #020202;
+}
+
+.grid-line {
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 0.5;
+  stroke-dasharray: 1 12;
+}
+
+.region-divider {
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.28));
+}
+
+.region-label {
+  fill: rgba(255, 255, 255, 0.75);
+  font-size: 5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  dominant-baseline: auto;
+}
+
+.travel-line {
+  stroke: color-mix(in srgb, var(--fg-color) 48%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 2;
+  stroke-linecap: round;
+  animation: dash-flow 0.7s linear infinite;
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -6; }
+}
+
+.origin-cell {
+  fill: #ffd166;
+}
+
+.dest-cell {
+  fill: color-mix(in srgb, var(--fg-color) 22%, transparent);
+  cursor: pointer;
+  transition: fill 0.1s;
+
+  &:hover {
+    fill: color-mix(in srgb, var(--fg-color) 42%, transparent);
+  }
+
+  &.dest-cell--selected {
+    fill: #9fe870;
+  }
+
+  &.dest-cell--expensive {
+    fill: color-mix(in srgb, var(--bad-color) 40%, transparent);
+  }
+}
+
+// ── Map actions ───────────────────────────────────────────────────────────────
+
+.map-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.confirm-button {
+  background: var(--bg-color);
+  border: thick double var(--fg-color);
+  color: var(--fg-color);
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  font-size: inherit;
+  font-family: inherit;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.spend-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--bad-color) 65%, transparent);
+  background: color-mix(in srgb, var(--bad-color) 18%, transparent);
+  color: color-mix(in srgb, var(--bad-color) 88%, white);
+  font-size: 0.5rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.spend-tag-icon {
+  --coin-icon-size: 11px;
+}
+
+// ── Mobile ────────────────────────────────────────────────────────────────────
+
+@media screen and (max-width: 768px) {
+  .fast-travel-layout {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .fast-travel-right {
+    order: -1;
+  }
 }

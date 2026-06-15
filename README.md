@@ -1,53 +1,129 @@
+# Amulet - Roadmap e note di design
 
+Ultimo aggiornamento: 2026-06-13
 
-# Idee suddivise per categoria
+Questo file raccoglie lo stato generale delle idee di gameplay. Le specifiche piu dettagliate restano nei file in `public/rulebook-ideas/` e nei cataloghi in `public/configs/`.
 
 ## Core Gameplay
 
-- [x] Ogni punto Strength oltre il 3 (valore base) aumenta gli hp del 5% (parsato a intero). Commento: Aggiunge profondità alla crescita del personaggio, bilanciamento da valutare. Difficoltà: Media. Impatto: Medio.
-- [x] Scoprire un nuovo ambiente ricompensa con 1 punto esperienza. Commento: Incentiva l’esplorazione, ottimo per il ritmo di gioco. Difficoltà: Bassa. Impatto: Medio.
-- [x] Per avanzare di livello il player ha bisogno di tanti punti esperienza quanto è il suo livello attuale. Commento: Progressione semplice e scalabile, da testare per evitare stagnazione. Difficoltà: Bassa. Impatto: Medio.
-- [x] Quando il player sale di livello si apre una dialog che chiede quale dei tre parametri aumentare di 1 punto (Strength, Magic, Luck) - la dialog non può essere chiusa (disableClose: true). Commento: Scelta forzata, interessante per coinvolgimento, attenzione all’usabilità. Difficoltà: Media. Impatto: Alto.
-- [x] Si potrebbe includere il ciclo giorno notte che cambia ogni round... al X esimo giorno completo potrebbe succedere qualcosa. Commento: Aggiunge varietà e possibili eventi speciali, da valutare impatto su complessità. Difficoltà: Alta. Impatto: Alto.
-- [ ] Si potrebbe introdurre il meteo (che influenza gli elementi) - strettamente legato al ciclo giorno/notte. Commento: Approfondisce la strategia, ma aumenta la complessità di gestione. Difficoltà: Alta. Impatto: Medio.
-- [x] I nemici incontrati in una casella potrebbero avere un livello pari alla colonna in cui si trovano o a quelle adiacenti per variare le possibilità dei giocatori. Commento: Aumenta la varietà e la difficoltà degli incontri, rende la progressione più dinamica. Difficoltà: Media. Impatto: Medio.
-- [ ] Quando un nemico non viene sconfitto resta nella casella dove è comparso in attesa del prossimo player, il suo marker potrebbe essere un rombo rosso lampeggiante. Commento: Aumenta la tensione e la strategia, aggiunge un feedback visivo chiaro e memorabile. Difficoltà: Media. Impatto: Alto.
-- [ ] Modalità “Evento Globale”: ogni tot turni si attiva un evento che modifica temporaneamente le regole (es. tutti i danni raddoppiati, risorse che valgono il doppio, ecc.). Commento: Rende ogni partita unica e imprevedibile, stimola l’adattamento. Difficoltà: Alta. Impatto: Alto.
-- [ ] Sistema di “Trappole” nascoste: alcune celle possono contenere trappole che si attivano al passaggio, con effetti variabili (perdita risorse, spostamento forzato, ecc.). Commento: Aggiunge rischio e varietà all’esplorazione. Difficoltà: Media. Impatto: Medio.
-- [ ] “Missioni secondarie” casuali: ogni giocatore può ricevere una missione personale segreta che, se completata, dà bonus unici. Commento: Incentiva strategie personali e diversifica gli obiettivi. Difficoltà: Media. Impatto: Medio.
+- [x] Progressione del personaggio: Forza, Magia e Fortuna sono i tre parametri principali.
+  - Forza aumenta gli HP massimi oltre il valore base.
+  - Magia aumenta gli MP massimi oltre il valore base 3.
+  - Fortuna modifica i controlli fortuna ed e sempre piu centrale per eventi, ricompense e magie instabili.
+- [x] Esperienza da esplorazione: scoprire nuovi ambienti assegna esperienza e sostiene il ritmo di avanzamento.
+- [x] Level up: quando l'esperienza raggiunge il livello corrente, il giocatore deve scegliere quale parametro aumentare tramite dialog dedicata.
+- [x] Ciclo giorno/notte: il mondo alterna giorno e notte, con UI dedicata e animazione.
+- [x] Turni e round: la partita procede a turni tra i giocatori, con recupero MP a fine turno.
+- [x] Stati alterati: gli effetti temporanei sono catalogati e visibili finche durano.
+- [x] Danni e cure ambientali: i biomi possono applicare condizioni come deserto ostile e acque rigeneranti.
+- [x] Risorse e raccolta: i biomi forniscono risorse, inclusa `cloth`, con azioni contestuali e modificatori da condizioni.
+- [x] Inventario, oggetti e cariche: gli oggetti possono occupare spazio, modificare parametri, avere valore di vendita o cariche.
+- [x] Alleati/followers: supportano bonus, HP propri, categorie, stati e interazioni con luoghi speciali.
+- [x] Scarti: oggetti, eventi e alleati possono finire in una pila degli scarti consultabile.
+- [ ] Combattimento completo: esiste la base per statistiche, bonus fight-only e scaling dei nemici, ma il sistema JRPG completo resta da consolidare.
+- [ ] Nemici persistenti sulla mappa: se un nemico non viene sconfitto potrebbe restare nella casella come minaccia visibile.
+- [ ] Trappole nascoste: celle con effetti negativi o spostamenti forzati.
+- [ ] Missioni secondarie personali o casuali.
+- [ ] Codex di gioco: enciclopedia progressiva che si popola in base a biomi, luoghi, eventi, nemici, oggetti, follower e magie incontrati durante le partite.
+- [ ] Achievement: obiettivi sbloccabili con ricompense cosmetiche come titoli, appellativi, cornici o piccoli elementi di personalizzazione non meccanici.
 
-## UI
+## Mappa, Luoghi e Movimento
 
-- [x] Una linea, alta massimo 3-4 px allineata alla quinta colonna e una alla settima colonna mostrano la distinzione tra i settori della mappa. Commento: Migliora la leggibilità della mappa. Difficoltà: Bassa. Impatto: Basso.
-- [x] Il colore delle celle nei settori 2 e 3 potrebbe andare via via sbiadendosi oppure scurendosi man mano che si va verso il lato destro della mappa. Commento: Ottima idea per feedback visivo e atmosfera. Difficoltà: Media. Impatto: Medio.
-- [ ] Animazioni per i cambiamenti di stato (es. livello, risorse, condizioni meteo) per aumentare il coinvolgimento. Commento: Rende l’esperienza più immersiva e chiara. Difficoltà: Media. Impatto: Basso.
-- [ ] Durante il proprio turno prima di selezionare il movimento sotto le colonne interessate comparirà l'indicazione del livello dei nemici che si possono incontrare in quelle colonne. Commento: Fornisce informazioni utili per la strategia, migliora la pianificazione. Difficoltà: Media. Impatto: Alto.
-- [x] Aggiungere un'animazione al luck-meter temporizzata per simulare una scelta casuale di numeri (movimento rapido numeri per 1 secondo prima di mostrare il risultato finale). Commento: Aumenta il coinvolgimento e la suspense, rende il sistema di fortuna più tangibile. Difficoltà: Media. Impatto: Medio.
-- [x] Aggiungere un'animazione al cambio di time (day <-> night) con l'icona che scende in basso, sparisce, si sostituisce e risale. Commento: Rende il ciclo giorno/notte più evidente e coinvolgente, migliora l’atmosfera. Difficoltà: Media. Impatto: Medio.
+- [x] Mappa a regioni: la mappa e divisa in tre settori/regioni con feedback visivo.
+- [x] Sbiadimento/scurimento progressivo: le regioni avanzate hanno resa visiva distinta.
+- [x] Fog of war: le celle vengono rivelate esplorando.
+- [x] Luoghi speciali: capitali, citta, villaggi, campi, accademie, castelli, templi, cimiteri, altari e altri landmark sono configurati.
+- [x] Safe places: i luoghi sicuri offrono azioni come attesa, cura, locanda, mercanti, mistico e viaggio rapido.
+- [x] Fast travel: i luoghi sicuri scoperti possono collegarsi tramite viaggio rapido con costo e animazione.
+- [x] Santuari elementali: quattro santuari legati ad Acqua, Fuoco, Aria e Terra possono essere scoperti e attivati.
+- [x] Sintonia elementale: attivare o donare a un santuario permette di sintonizzarsi al suo elemento.
+- [x] Influenza dei santuari: un santuario attivo influenza il quadrante e puo fornire bonus a chi e sintonizzato con lo stesso elemento.
+- [x] Movimento diagonale condizionale: alcune condizioni o magie possono abilitare movimento diagonale.
+- [ ] Indicatore preventivo del livello dei nemici per colonna/regione prima del movimento.
+- [ ] Boss errante: nemico speciale mobile con ricompensa importante.
+- [ ] Mercante misterioso: apparizione casuale con offerte rare o scambi particolari.
 
-## Eventi Speciali
+## Eventi Mondiali
 
-- [ ] La prima volta che un player entra nel settore 2 succede qualcosa. Commento: Evento unico che incentiva l’esplorazione. Difficoltà: Media. Impatto: Medio.
-- [ ] La prima volta che un player entra nel settore 3 succede qualcosa. Commento: Evento unico che incentiva l’esplorazione. Difficoltà: Media. Impatto: Medio.
-- [ ] Le quattro caselle speciali ospiteranno i santuari degli elementi... la prima volta che un player entra in una di queste caselle succede qualcosa. Commento: Eventi unici che incentivano l’esplorazione e la narrazione. Difficoltà: Alta. Impatto: Alto.
-- [ ] Quando si scopre una nuova tessera si pesca anche un elemento di dettaglio che può essere varie cose (es. un punto di interesse, un npc, una missione, niente, una città, ecc...). Commento: Aumenta la varietà e la sorpresa nell’esplorazione, stimola la narrazione emergente. Difficoltà: Media. Impatto: Alto.
-- [ ] “Boss errante”: un nemico speciale che si muove casualmente sulla mappa e offre una ricompensa importante se sconfitto. Commento: Sfida opzionale che aggiunge tensione e ricompense speciali. Difficoltà: Alta. Impatto: Alto.
-- [ ] “Mercante misterioso”: appare casualmente e offre scambi vantaggiosi o oggetti rari. Commento: Offre opportunità di scambio e sorprese durante la partita. Difficoltà: Media. Impatto: Medio.
+- [x] Evento Mondiale Regione I -> Regione II: il primo ingresso confermato in Regione II puo attivare un evento persistente sul mondo.
+- [x] Influenza dei santuari sull'Evento Mondiale: i santuari attivi in Regione I riducono il rischio di esiti negativi e aumentano quelli positivi.
+- [x] Mutazioni dei biomi: l'evento puo trasformare biomi o applicare condizioni permanenti alle celle bersaglio.
+- [x] Bonus nemici da evento: alcune mutazioni possono aumentare il livello dei nemici dell'area.
+- [x] Flusso UI dedicato: annuncio, propagazione, sommario e dialog di dettaglio dell'Evento Mondiale.
+- [x] Log evento: l'esito globale viene registrato nel diario partita.
+- [ ] Eventi globali periodici: effetti temporanei ogni tot round, separati dall'Evento Mondiale di regione.
+- [ ] Eventi unici Regione III: una seconda soglia importante potrebbe cambiare ancora il mondo.
 
 ## Sistema Elementale
 
-- [x] Il santuario dell'elemento determina l'elemento dominante nel suo quadrante. Commento: Sistema interessante per strategia e rigiocabilità. Difficoltà: Media. Impatto: Medio.
-- [x] Un player inizia senza elemento ma può favorirne uno visitando un santuario (visitando un altro santuario è possibile cambiare elemento). Commento: Sistema interessante per strategia e rigiocabilità. Difficoltà: Media. Impatto: Medio.
-- [ ] Potrebbe essere interessante aggiungere una nuova risorsa (tessuto). Commento: Amplia le possibilità di crafting e gestione risorse, da bilanciare con le altre risorse. Difficoltà: Bassa. Impatto: Basso.
-- [ ] Sinergie elementali: se più giocatori favoriscono lo stesso elemento, si sblocca un potere globale temporaneo per tutti. Commento: Stimola la collaborazione e la strategia tra i giocatori. Difficoltà: Alta. Impatto: Alto.
-- [ ] Debolezze elementali dinamiche: ogni giorno/notte cambia la debolezza di un elemento, influenzando le strategie. Commento: Rende la scelta dell’elemento più interessante e variabile. Difficoltà: Media. Impatto: Medio.
-- [ ] Vantaggio e svantaggio elementale: ogni nemico ha un elemento dominante, i personaggi no, ma quando ne ottengono uno hanno vantaggio sull’elemento opposto e svantaggio verso di loro (fuoco-acqua, aria-terra). In combattimento tra opposti si infliggono e subiscono il doppio dei danni. Commento: Aggiunge profondità tattica e incentiva la scelta dell’elemento, rende i combattimenti più strategici e rischiosi. Difficoltà: Media. Impatto: Alto.
+- [x] Ogni santuario e associato a un elemento.
+- [x] Il santuario attivo puo determinare l'influenza elementale del quadrante.
+- [x] Il giocatore puo ottenere o cambiare sintonia elementale tramite santuario.
+- [x] Bonus da sintonia nel quadrante influenzato: Forza, Magia e Fortuna ricevono un bonus quando il giocatore e allineato all'elemento locale.
+- [ ] Ruota elementale completa in combattimento: Fuoco, Terra, Aria e Acqua devono ancora essere integrati nel sistema di battaglia con vantaggi/svantaggi.
+- [ ] Debolezze elementali dinamiche legate a giorno/notte o eventi.
+- [ ] Sinergie elementali tra giocatori sintonizzati allo stesso elemento.
 
-## Accessibilità / Internazionalizzazione
+## Magie
 
-- [ ] Multilingua (i18n) - almeno italiano e inglese. Commento: Fondamentale per ampliare il pubblico. Difficoltà: Media. Impatto: Alto.
-- [ ] Modalità “color blind” per la mappa, con pattern oltre ai colori per distinguere i settori. Commento: Migliora l’accessibilità per tutti i giocatori. Difficoltà: Media. Impatto: Medio.
+- [x] Grimorio del giocatore: i giocatori hanno uno spellbook con capienza configurabile.
+- [x] Magie dei santuari: i quattro santuari possono concedere magie elementali iniziali.
+- [x] Catalogo magie: le magie sono configurabili tramite catalogo e localizzabili.
+- [x] Lancio magie da UI: il pannello comandi espone le magie conosciute e controlla MP, cooldown e timing.
+- [x] Effetti implementati di base: movimento diagonale, stato su se stessi, cura e teletrasporto su celle esplorate.
+- [x] Stati preparati per le magie future: sono stati aggiunti stati visibili come `flying`, `empowered`, `safe-step`, `mana-shield`, `spell-ward`, `petrified`, `anchored`, `fate-sight` e vincoli elementali temporanei.
+- [x] Design delle nuove magie: `public/rulebook-ideas/spells.md` contiene costi, fonti, uso singolo, magie rare, magie da Accademia/Incantatrice e adattamenti da Talisman.
+- [x] Magie subdole: e stata definita una categoria di varianti ripetibili ma poco affidabili, pensate per valorizzare Fortuna.
+- [ ] Mazzo magie generiche e rare: da trasformare in cataloghi effettivi.
+- [ ] Mercante magico dell'Accademia: gia previsto come fonte, ma da popolare con stock reale di magie.
+- [ ] Incantatrice come fonte di magie narrative: da collegare alle magie casuali/rare.
+- [ ] Contraffattore Arcano: servizio futuro per trasformare magie rare a uso singolo in versioni subdole.
+- [ ] Toggle partita per magie subdole: le varianti instabili dovrebbero poter essere abilitate/disabilitate dalle impostazioni avanzate.
+- [ ] Reazioni magiche: Contromagia, Discepolo e simili richiedono una finestra "al momento opportuno".
+- [ ] Effetti globali anti-magia: Distruggi magia richiede uno stato o blocco globale di round.
+- [ ] Controllo eventi futuri: Premonizione e Divinazione richiedono una coda/anteprima degli eventi locali.
 
-# Idee scartate o sospese
+## UI e Accessibilita
 
-- [ ] Mini-mappa dinamica che mostra solo le aree esplorate dal proprio personaggio. Commento: Migliora l’orientamento e il senso di scoperta. Difficoltà: Media. Impatto: Basso.
+- [x] Pannelli principali della mappa: giocatori, utilita, log, stato mondo, ispettore cella.
+- [x] Indicatore sintonia elementale.
+- [x] Indicatore fortuna con animazione.
+- [x] Animazione cambio giorno/notte.
+- [x] Log partita consultabile.
+- [x] Rulebook integrato con pagine localizzate.
+- [x] Multilingua italiano/inglese: sistema i18n, menu lingua e cataloghi principali localizzati.
+- [x] Tooltip e descrizioni per azioni, stati, oggetti, follower e condizioni.
+- [ ] Dialog narrativi piu ricchi: estendere il trattamento visivo dei santuari ad altri elementi importanti come Incantatrice, Mistico, Cimitero, Accademia, Altare, boss ed eventi rari.
+- [ ] Settings di partita avanzati: permettere di attivare/disattivare moduli opzionali come magie subdole, meteo, eventi globali periodici, boss errante, mercante misterioso e altre regole speciali.
+- [ ] Animazioni dedicate per cambiamenti di stato, risorse, danni e guarigioni.
+- [ ] Modalita color blind per mappa e regioni, con pattern oltre ai colori.
+
+## Economia, Mercanti e Luoghi
+
+- [x] Denaro iniziale e costi azione.
+- [x] Mercanti configurabili con categorie accettate e stock esterno.
+- [x] Compra/vendita con carrello e riepilogo.
+- [x] Dottore/guaritore/locanda/castello: servizi di cura e riposo.
+- [x] Mistico e Incantatrice: ricompense variabili tramite configurazione.
+- [x] Cimitero: resurrezione rischiosa dei follower scartati.
+- [x] Tempio e Altare: rilascio/sacrificio follower con cambio allineamento e ricompensa.
+- [ ] Stock magico dell'Accademia da espandere.
+- [ ] Servizi speciali futuri: Contraffattore Arcano, rimozione maledizioni avanzata, rituali rari.
+
+## Idee sospese o da rivalutare
+
+- [ ] Meteo: interessante se legato agli elementi, ma rischia di sovrapporsi a giorno/notte ed Evento Mondiale.
+- [ ] Meteo opzionale: se implementato, dovrebbe essere governato dai settings avanzati di partita.
+- [ ] Mini-mappa dinamica: utile per orientamento, ma al momento non prioritaria.
+- [ ] Missioni segrete personali: buone per rigiocabilita, da progettare dopo combattimento e magie.
+- [ ] Discepolo dotato: tenere come magia leggendaria o ricompensa unica, non come magia normale.
+
+## Riferimenti di design
+
+- Magie e varianti subdole: `public/rulebook-ideas/spells.md`
+- Evento Mondiale: `public/rulebook-ideas/world-event.md`
+- Combattimento JRPG: `public/rulebook-ideas/fight.md`
+- Alleati/followers: `public/rulebook-ideas/followers.md`
+- Stati alterati: `public/configs/statuses.config.json`
+- Magie implementate: `public/configs/spells.config.json`
+- Azioni e luoghi: `public/configs/actions.config.json`, `public/configs/landmarks.config.json`

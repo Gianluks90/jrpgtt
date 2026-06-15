@@ -192,7 +192,8 @@
                 "intro": "Introduzione",
                 "new-game": "Nuova partita",
                 "join-game": "Entrare in partita",
-                "player": "Il personaggio"
+                "player": "Il personaggio",
+                "game": "Come giocare"
             }
         },
         "discardPile": {
@@ -1230,6 +1231,70 @@
         "hexed": {
             "label": "Maleficio",
             "description": "Riduce Magia di 1."
+        },
+        "sleep": {
+            "label": "Sonno",
+            "description": "Salti il prossimo turno."
+        },
+        "protection": {
+            "label": "Protezione",
+            "description": "Riduce il prossimo danno subito."
+        },
+        "invisibility": {
+            "label": "Invisibilità",
+            "description": "Non puoi essere attaccato o bersagliato da incantesimi."
+        },
+        "immobilized": {
+            "label": "Immobilizzato",
+            "description": "Non puoi muoverti."
+        },
+        "flying": {
+            "label": "Volo",
+            "description": "Puoi muoverti in diagonale finché lo stato è attivo."
+        },
+        "empowered": {
+            "label": "Potenziato",
+            "description": "La Magia si aggiunge alla Forza in combattimento."
+        },
+        "safeStep": {
+            "label": "Passo sicuro",
+            "description": "Il prossimo effetto dannoso di casella o ambiente viene ignorato."
+        },
+        "manaShield": {
+            "label": "Scudo del mana",
+            "description": "Il prossimo danno subito può essere ridotto spendendo MP residui."
+        },
+        "spellWard": {
+            "label": "Sigillo",
+            "description": "Il prossimo incantesimo ostile che ti bersaglia viene annullato."
+        },
+        "petrified": {
+            "label": "Pietrificato",
+            "description": "Sei trasformato in pietra e salti il prossimo turno."
+        },
+        "anchored": {
+            "label": "Radicato",
+            "description": "Non puoi muoverti finché lo stato è attivo."
+        },
+        "fateSight": {
+            "label": "Visione del fato",
+            "description": "Puoi intravedere il prossimo risultato casuale rilevante."
+        },
+        "elementalBoundFire": {
+            "label": "Vincolo del Fuoco",
+            "description": "La sintonia temporanea al Fuoco è attiva."
+        },
+        "elementalBoundEarth": {
+            "label": "Vincolo della Terra",
+            "description": "La sintonia temporanea alla Terra è attiva."
+        },
+        "elementalBoundAir": {
+            "label": "Vincolo dell'Aria",
+            "description": "La sintonia temporanea all'Aria è attiva."
+        },
+        "elementalBoundWater": {
+            "label": "Vincolo dell'Acqua",
+            "description": "La sintonia temporanea all'Acqua è attiva."
         },
         "zombified": {
             "label": "Zombie",

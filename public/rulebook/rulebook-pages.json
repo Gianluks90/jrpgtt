@@ -14,5 +14,9 @@
   {
     "pageId": 4,
     "labelKey": "dialogs.rulebook.pages.player"
+  },
+  {
+    "pageId": 5,
+    "labelKey": "dialogs.rulebook.pages.game"
   }
 ]

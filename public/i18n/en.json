@@ -192,7 +192,8 @@
         "intro": "Introduction",
         "new-game": "New Game",
         "join-game": "Join Game",
-        "player": "Character"
+        "player": "Character",
+        "game": "How to play"
       }
     },
     "discardPile": {
@@ -1230,6 +1231,70 @@
     "hexed": {
       "label": "Hexed",
       "description": "Decreases Magic by 1."
+    },
+    "sleep": {
+      "label": "Sleep",
+      "description": "Skip your next turn."
+    },
+    "protection": {
+      "label": "Protection",
+      "description": "Reduces the next incoming damage."
+    },
+    "invisibility": {
+      "label": "Invisibility",
+      "description": "You cannot be attacked or targeted by spells."
+    },
+    "immobilized": {
+      "label": "Immobilized",
+      "description": "You cannot move."
+    },
+    "flying": {
+      "label": "Flying",
+      "description": "You can move diagonally while this status is active."
+    },
+    "empowered": {
+      "label": "Empowered",
+      "description": "Magic is added to Strength in combat."
+    },
+    "safeStep": {
+      "label": "Safe Step",
+      "description": "The next harmful cell or environment effect is ignored."
+    },
+    "manaShield": {
+      "label": "Mana Shield",
+      "description": "The next incoming damage can be reduced by spending remaining MP."
+    },
+    "spellWard": {
+      "label": "Spell Ward",
+      "description": "The next hostile spell targeting you is negated."
+    },
+    "petrified": {
+      "label": "Petrified",
+      "description": "You are turned to stone and skip your next turn."
+    },
+    "anchored": {
+      "label": "Anchored",
+      "description": "You cannot move while this status is active."
+    },
+    "fateSight": {
+      "label": "Fate Sight",
+      "description": "You can glimpse the next relevant random outcome."
+    },
+    "elementalBoundFire": {
+      "label": "Fire Bound",
+      "description": "Temporary fire attunement is active."
+    },
+    "elementalBoundEarth": {
+      "label": "Earth Bound",
+      "description": "Temporary earth attunement is active."
+    },
+    "elementalBoundAir": {
+      "label": "Air Bound",
+      "description": "Temporary air attunement is active."
+    },
+    "elementalBoundWater": {
+      "label": "Water Bound",
+      "description": "Temporary water attunement is active."
     },
     "zombified": {
       "label": "Zombified",

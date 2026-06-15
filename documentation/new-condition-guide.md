@@ -1,88 +1,57 @@
-# Conditions System Guide
+# Guida: Condizione ambientale (Biome Condition)
 
-Guida pratica e completa per creare nuove conditions dei biomi nel gioco.
-
-Questa documentazione e basata sull'architettura reale del progetto.
+Le conditions descrivono la pressione ambientale di un bioma: il danno del deserto, la guarigione delle acque, le risorse abbondanti di una pianura fertile, ecc. Non agiscono sul player nella config, ma vengono applicate automaticamente dal motore di gioco (di solito a fine turno).
 
 ---
 
-# Filosofia del sistema
+## Basta il JSON?
 
-Le conditions descrivono la pressione del mondo.
-
-Non descrivono lo stato del player.
-
-Schema mentale:
-
-```txt
-Biome condition -> Regola gameplay -> Effetto sul player
-```
-
-Esempio reale:
-
-```txt
-hostile-environment -> check in endTurn -> damage HP (se manca nutrition)
-```
+**Sì**, se usi uno dei tipi di effetto già implementati (elencati sotto).
+**No (serve sviluppatore)**, se vuoi un tipo di effetto completamente nuovo.
 
 ---
 
-# Flusso completo di una condition
+## File da toccare
 
-Quando una condition e attiva su un biome:
-
-```txt
-public/configs/biome-conditions.config.json
-↓
-BiomeConditionCatalogService (load + validazione)
-↓
-tiles.config.json
-↓
-TilesConfigService (validazione runtime)
-↓
-MapPageStateService (load config)
-↓
-ActionExecutorService (regola autoritativa)
-↓
-Firestore Transaction
-↓
-EventLogService (opzionale)
-```
-
----
-
-# Regola fondamentale
-
-La UI NON e autoritativa.
-
-Una condition deve essere applicata lato gameplay in `ActionExecutorService`.
-
----
-
-# File principali coinvolti
-
-| File | Ruolo |
+| File | Cosa scrivi |
 |---|---|
-| `public/configs/tiles.config.json` | dichiara le conditions per biome |
-| `public/configs/biome-conditions.config.json` | catalogo JSON delle condizioni (effetti, blocchi, log) |
-| `src/app/services/biome-condition-catalog-service.ts` | load + validazione + lookup condizioni |
-| `src/app/models/TilesConfig.ts` | tipo `conditions: string[]` |
-| `src/app/services/tiles-config-service.ts` | validazione runtime config |
-| `src/app/services/map-page-state-service.ts` | caricamento config in pagina |
-| `src/app/services/action-executor-service.ts` | applicazione regola gameplay |
-| `src/app/services/event-log-service.ts` | formatter log condition-related |
-| `src/app/models/EventLog.ts` | tipi log |
+| `public/configs/biome-conditions.config.json` | Definisci la condition e il suo effetto |
+| `public/configs/tiles.config.json` | Assegna la condition a uno o più biomi |
 
 ---
 
-# Creare una nuova condition
+## Passo 1: Definisci la condition in `biome-conditions.config.json`
+
+Aggiungi un oggetto nell'array `conditions`:
+
+```json
+{
+  "id": "freezing-wind",
+  "label": "Freezing Wind",
+  "description": "Inflicts HP damage at end of turn. Blocked by Warmth.",
+  "logCode": "player.freezingWindDamage",
+  "effect": {
+    "type": "hp-damage-percent-per-connected-cell",
+    "basePercentPerConnectedCell": 0.03,
+    "minDeltaHp": 1,
+    "blockedByStatusKey": "warmth"
+  }
+}
+```
+
+| Campo | Obbligatorio | Note |
+|---|---|---|
+| `id` | sì | Univoco, kebab-case |
+| `label` | sì | Nome visibile |
+| `description` | sì | Descrizione del bioma |
+| `logCode` | no | Codice log per l'evento (deve esistere già in codice) |
+| `effect` | no | Definisce cosa fa la condition (vedi tipi sotto) |
 
 ---
 
-# STEP 1 - Definisci la condition nel biome
+## Passo 2: Assegna la condition a un bioma in `tiles.config.json`
 
-Aggiungi l'id condition dentro il biome corretto in `tiles.config.json`.
-
-Esempio:
+Aggiungi l'id della condition nell'array `conditions` del bioma:
 
 ```json
 "mountain": {
@@ -94,192 +63,179 @@ Esempio:
 }
 ```
 
-Questo NON applica ancora la regola.
-
-Dice solo:
-
-> in questo biome esiste questa pressione ambientale.
+Un bioma può avere più conditions: `"conditions": ["freezing-wind", "ancient-knowledge"]`
 
 ---
 
-# STEP 2 - Valida naming e formato
+## Tipi di effetto disponibili
 
-> Nota localizzativa (dove intervenire)
->
-> - `public/configs/tiles.config.json`: controlla che gli id dentro `conditions` siano coerenti e puliti.
-> - `src/app/services/tiles-config-service.ts`: qui estendi la validazione runtime se vuoi imporre nuove regole di naming/formato.
-> - `src/app/models/TilesConfig.ts`: toccalo solo se cambia il contratto tipizzato (di solito non serve per una nuova condition).
+### `hp-damage-percent-per-connected-cell`
+Infligge danno HP a fine turno, proporzionale al numero di celle connesse del bioma.
 
-`TilesConfigService` valida che `conditions` sia un array di stringhe non vuote.
-
-Best practice naming:
-
-- usa kebab-case: `freezing-wind`
-- usa id descrittivi: `corrosive-fog`, `toxic-rain`
-- evita id ambigui: `bad-weather`
-
----
-
-# STEP 3 - Applica la regola in executor
-
-> Nota localizzativa (dove intervenire)
->
-> - `src/app/services/action-executor-service.ts`: punto principale per applicare la regola gameplay autoritativa.
-> - Trigger `endTurn`: modifica il metodo `endTurn(...)` nello stesso file.
-> - Trigger action-specifica: modifica il metodo action corrispondente nello stesso file.
-> - Trigger su movimento: usa il punto autoritativo del movimento in `src/app/services/map-service.ts` e mantieni la regola gameplay lato service (non in UI).
-
-Scegli il trigger corretto:
-
-- `endTurn` per effetti passivi a fine turno;
-- action specifica per effetti on-use;
-- movimento se l'effetto deve scattare entrando in una cella.
-
-Template standard (autoritativo, config-driven):
-
-```ts
-const biomeConfig = tilesConfig.biomes[currentCell.biome];
-for (const conditionId of biomeConfig?.conditions ?? []) {
-  const condition = this.biomeConditionCatalogService.getCondition(conditionId);
-  const effect = condition?.effect;
-  if (!effect) continue;
-
-  if (effect.blockedByStatusKey && this.hasStatus(currentStatuses, effect.blockedByStatusKey)) {
-    continue;
-  }
-
-  // COMPUTE da parametri JSON
-  // APPLY dentro transaction
+```json
+"effect": {
+  "type": "hp-damage-percent-per-connected-cell",
+  "basePercentPerConnectedCell": 0.03,
+  "minDeltaHp": 1,
+  "blockedByStatusKey": "nutrition"
 }
 ```
 
+| Campo | Note |
+|---|---|
+| `basePercentPerConnectedCell` | % degli HP massimi persa per ogni cella connessa |
+| `minDeltaHp` | Danno minimo garantito (evita risultati a 0) |
+| `blockedByStatusKey` | (opzionale) Status che annulla completamente il danno |
+
+Esempio esistente: `hostile-environment` sul deserto
+
 ---
 
-# STEP 4 - Integra eventuale status di protezione
+### `hp-heal-percent-per-connected-cell`
+Guarisce HP a fine turno, proporzionalmente al numero di celle connesse.
 
-> Nota localizzativa (dove intervenire)
->
-> - `src/app/services/action-executor-service.ts`: aggiungi il check `hasStatus(...)` nello stesso punto in cui applichi la condition.
-> - `src/app/models/Player.ts`: aggiorna `PlayerStatusKey` solo se introduci una nuova chiave status esplicita a livello dominio.
-
-Pattern corretto:
-
-- condition = mondo
-- status = difesa del player
-
-Esempio:
-
-```txt
-Condition: freezing-wind
-Status: warmth
-```
-
-Regola:
-
-```ts
-const currentStatuses = this.normalizeStatuses(player.statuses);
-const hasWarmth = this.hasStatus(currentStatuses, "warmth");
-
-if (hasCondition && !hasWarmth) {
-  // applica penalita
+```json
+"effect": {
+  "type": "hp-heal-percent-per-connected-cell",
+  "basePercentPerConnectedCell": 0.03,
+  "maxPercent": 0.15,
+  "minDeltaHp": 1
 }
 ```
 
----
+| Campo | Note |
+|---|---|
+| `basePercentPerConnectedCell` | % degli HP massimi recuperati per ogni cella connessa |
+| `maxPercent` | Tetto massimo di guarigione per turno (es. 0.15 = mai più del 15%) |
+| `minDeltaHp` | Guarigione minima garantita |
 
-# STEP 5 - Logga l'effetto (se rilevante)
-
-> Nota localizzativa (dove intervenire)
->
-> - `src/app/models/EventLog.ts`: aggiungi il nuovo codice evento nel type `EventLogCode`.
-> - `src/app/services/event-log-service.ts`: aggiungi il formatter testuale del nuovo codice log.
-> - `src/app/services/action-executor-service.ts`: invoca `tryCreateLog(...)` nel punto in cui l'effetto viene realmente applicato.
-
-Se la condition produce un effetto visibile (damage, drain, ecc.), aggiungi log.
-
-In `EventLog.ts`:
-
-```ts
-| "player.freezingWindDamage"
-```
-
-In `EventLogService`:
-
-```ts
-"player.freezingWindDamage": ({ playerName, args }) => {
-  const damageHp = Number(args["damageHp"] ?? 0);
-  return `${playerName} suffered ${damageHp} HP from freezing wind.`;
-},
-```
-
-Nell'executor:
-
-```ts
-await this.tryCreateLog(gameId, actor, "player.freezingWindDamage", {
-  damageHp,
-});
-```
+Esempio esistente: `regenerating-waters` sull'acqua
 
 ---
 
-# Esempio reale gia presente nel progetto
+### `resource-gain-multiplier`
+Moltiplica le risorse guadagnate in questo bioma (raccolta, cell-gather, ecc.).
 
-Condition attuale: `hostile-environment` sul biome desert.
-
-Effetto:
-
-- in `endTurn`, se il player non ha status `nutrition`, subisce danno HP;
-- il danno scala con la size dell'environment connesso;
-- poi viene scritto log `player.hostileEnvironmentDamage`.
-
-Pattern reale semplificato:
-
-```ts
-for (const conditionId of biomeConfig?.conditions ?? []) {
-  const condition = this.biomeConditionCatalogService.getCondition(conditionId);
-  const effect = condition?.effect;
-  if (!effect) continue;
-
-  if (effect.blockedByStatusKey && this.hasStatus(currentStatuses, effect.blockedByStatusKey)) {
-    continue;
-  }
-
-  // delta HP da basePercentPerConnectedCell (+ maxPercent/minDeltaHp)
-  // poi update hp e log
+```json
+"effect": {
+  "type": "resource-gain-multiplier",
+  "multiplier": 2,
+  "resourceLabels": ["minerals"]
 }
 ```
 
----
+| Campo | Note |
+|---|---|
+| `multiplier` | Fattore moltiplicatore (2 = raddoppia) |
+| `resourceLabels` | (opzionale) Lista risorse interessate. Se omesso, vale su tutte |
 
-# Errori da evitare
-
-- Applicare la condition solo nella UI.
-- Dimenticare il check nel path autorevole (executor).
-- Usare nomi non coerenti tra config e codice.
-- Fare update gameplay fuori transaction.
-- Non loggare effetti importanti (debug piu difficile).
-
----
-
-# Checklist completa nuova condition
-
-- [ ] Condition aggiunta nel biome in `tiles.config.json`
-- [ ] Naming condition coerente e stabile
-- [ ] Trigger scelto (end turn / action / move)
-- [ ] Regola implementata in `ActionExecutorService`
-- [ ] Eventuale interazione con status implementata
-- [ ] Update Firestore fatti in transaction
-- [ ] Event log aggiunto (se effetto rilevante)
-- [ ] Testata in game su happy path + error path
+Esempi esistenti:
+- `abundant-resources` — tutte le risorse x2
+- `vein-of-plenty` — solo minerals x2
 
 ---
 
-# Checklist rapida (uso quotidiano)
+### `movement-enable-diagonal-adjacency`
+Abilita il movimento diagonale da questa cella.
 
-- [ ] Aggiungi id condition nel biome
-- [ ] Leggi condition con `(biomeConfig?.conditions ?? []).includes(...)`
-- [ ] Applica effetto nel punto autorevole (executor)
-- [ ] Se serve, proteggi con `hasStatus(...)`
-- [ ] Aggiorna player/world dentro transaction
-- [ ] Logga l'effetto se visibile
-- [ ] Verifica risultato in partita
+```json
+"effect": {
+  "type": "movement-enable-diagonal-adjacency"
+}
+```
+
+Esempi esistenti: `open-ground`, `swift-path`
+
+---
+
+### `movement-block-entry`
+Rende la cella non accessibile al player.
+
+```json
+"effect": {
+  "type": "movement-block-entry"
+}
+```
+
+Esempio esistente: `impassable`
+
+---
+
+### `experience-flat-on-turn-end`
+Assegna XP fissi a fine turno, se il player è in questo bioma.
+
+```json
+"effect": {
+  "type": "experience-flat-on-turn-end",
+  "flatAmount": 2
+}
+```
+
+Esempio esistente: `ancient-knowledge` (+2 XP a fine turno)
+
+---
+
+### `luck-check-multiplier`
+Modifica il valore di fortuna usato nei check effettuati in questo bioma.
+
+```json
+"effect": {
+  "type": "luck-check-multiplier",
+  "luckDelta": -2
+}
+```
+
+| Campo | Note |
+|---|---|
+| `luckDelta` | Negativo = penalizza la fortuna, positivo = la potenzia |
+
+Esempio esistente: `cursed-ground` (-2 fortuna)
+
+---
+
+## Protezione via status (`blockedByStatusKey`)
+
+Alcune conditions possono essere neutralizzate da uno status attivo sul player:
+
+```json
+"effect": {
+  "type": "hp-damage-percent-per-connected-cell",
+  "blockedByStatusKey": "nutrition"
+}
+```
+
+Se il player ha lo status `nutrition` attivo, la condition non si applica per quel turno.
+La key deve corrispondere a una entry in `statuses.config.json`.
+
+---
+
+## Conditions esistenti (riferimento)
+
+| ID | Tipo effetto | Bioma assegnato | Note |
+|---|---|---|---|
+| `hostile-environment` | `hp-damage-percent-per-connected-cell` | desert | Bloccato da `nutrition` |
+| `regenerating-waters` | `hp-heal-percent-per-connected-cell` | water | Max 15% HP per turno |
+| `abundant-resources` | `resource-gain-multiplier` | — | Tutte le risorse x2 |
+| `open-ground` | `movement-enable-diagonal-adjacency` | — | |
+| `swift-path` | `movement-enable-diagonal-adjacency` | — | |
+| `impassable` | `movement-block-entry` | — | |
+| `vein-of-plenty` | `resource-gain-multiplier` | — | Solo minerals x2 |
+| `ancient-knowledge` | `experience-flat-on-turn-end` | — | +2 XP a fine turno |
+| `cursed-ground` | `luck-check-multiplier` | — | -2 fortuna |
+
+---
+
+## Quando serve uno sviluppatore
+
+Se vuoi un tipo di effetto non in lista (es. "blocca l'uso degli spell in questo bioma", "riduce il movimento", ecc.) serve aggiungere il supporto in `src/app/services/gameplay/action-executor-service.ts`.
+
+---
+
+## Checklist
+
+- [ ] Entry aggiunta nell'array `conditions` di `biome-conditions.config.json`
+- [ ] `id` univoco e in kebab-case
+- [ ] Il tipo di effetto (`effect.type`) è tra quelli supportati
+- [ ] Se ha `blockedByStatusKey`: il valore esiste come `key` in `statuses.config.json`
+- [ ] Condition assegnata al/ai biomi voluti in `tiles.config.json`
+- [ ] Verifica in gioco: l'effetto si applica correttamente nel bioma

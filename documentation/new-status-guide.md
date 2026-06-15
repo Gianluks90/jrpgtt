@@ -1,303 +1,274 @@
-# Player Status System Guide
+# Guida: Status del player
 
-Guida pratica e completa per creare nuovi status del player nel gioco.
+Gli status sono condizioni temporanee che si applicano al player per un numero definito di turni. Possono potenziare, indebolire o modificare il comportamento del player in vari modi.
 
-Questa documentazione e basata sull'architettura reale del progetto.
-
----
-
-# Filosofia del sistema
-
-Gli status descrivono lo stato del player.
-
-Non descrivono il mondo.
-
-Schema mentale:
-
-```txt
-Action o regola -> Status applicato al player -> Effetti gameplay nei turni successivi
-```
-
-Esempio reale:
-
-```txt
-consume-ration -> status nutrition -> immunity al danno hostile-environment
-```
+Esempi: `nutrition` (protegge dal deserto), `bravery` (+1 Strength), `poison` (danno a fine turno), `silence` (blocca gli spell).
 
 ---
 
-# Flusso completo di uno status
+## Basta il JSON?
 
-```txt
-public/configs/statuses.config.json
-↓
-StatusCatalogService (load + validazione)
-↓
-ActionExecutorService (grant/refresh status)
-↓
-Firestore Transaction (player.statuses)
-↓
-ActionExecutorService (read status in altre regole)
-↓
-Decrement/cleanup (lifecycle)
-↓
-EventLogService (opzionale)
-```
+**Per definire lo status**: sì, è tutto in `statuses.config.json`.
+**Per applicarlo al player**: dipende. L'unico modo senza codice è tramite uno spell con `effect.type: "apply-status-self"`. Per qualsiasi altra sorgente (un'azione, un evento, una condition) serve uno sviluppatore.
 
 ---
 
-# Struttura dati status
+## File da toccare
 
-Gli status vivono in `player.statuses`.
-
-Formato:
-
-```ts
-{
-  key: "nutrition",
-  label: "Nutrition",
-  description: "Prevents hostile desert damage for this turn.",
-  durationTurns: 1,
-  effectKey: "optional-effect-id",
-}
-```
-
-Campi chiave:
-
-- `key`: id univoco dello status
-- `label`: nome leggibile
-- `description`: descrizione effetto
-- `durationTurns`: durata residua in turni
-- `effectKey` (opzionale): hook per regole future
-
----
-
-# File principali coinvolti
-
-| File | Ruolo |
+| File | Cosa scrivi |
 |---|---|
-| `public/configs/statuses.config.json` | catalogo JSON di label/description/default duration/effectKey |
-| `src/app/services/status-catalog-service.ts` | load + validazione + lookup status |
-| `src/app/models/Player.ts` | tipi `PlayerStatus` e `player.statuses` |
-| `src/app/services/action-executor-service.ts` | grant/read/decrement status |
-| `src/app/services/action-registry-service.ts` | UX conditionale basata su status (non autoritativa) |
-| `src/app/models/EventLog.ts` | tipi log status-related |
-| `src/app/services/event-log-service.ts` | formatter log status-related |
+| `public/configs/statuses.config.json` | Definisci lo status (key, label, durata, effetti) |
+
+Per applicarlo tramite spell (niente codice):
+| File aggiuntivo | Cosa scrivi |
+|---|---|
+| `public/configs/spells.config.json` | Crea uno spell con `effect.type: "apply-status-self"` |
 
 ---
 
-# Utility status disponibili
+## Schema completo
 
-Nel progetto (in `ActionExecutorService`) hai gia helper riutilizzabili:
-
-## normalizeStatuses
-
-Pulisce e normalizza dati invalidi.
-
-```ts
-this.normalizeStatuses(player.statuses)
-```
-
-## hasStatus
-
-Controlla presenza status attivo.
-
-```ts
-this.hasStatus(statuses, "nutrition")
-```
-
-## decrementStatuses
-
-Riduce `durationTurns` e rimuove scaduti.
-
-```ts
-this.decrementStatuses(statuses)
-```
-
-## upsertStatus
-
-Inserisce o refresha status con la stessa key.
-
-```ts
-this.upsertStatus(statuses, nextStatus)
-```
-
----
-
-# Creare un nuovo status
-
----
-
-# STEP 1 - Definisci status key e semantica
-
-Scegli:
-
-- key stabile: `warmth`, `focus`, `bleeding`
-- trigger di applicazione
-- trigger di consumo
-- durata in turni
-
-Esempio:
-
-```txt
-Status key: warmth
-Durata: 2 turni
-Effetto: riduce o annulla danno da freezing-wind
-```
-
----
-
-# STEP 2 - Definisci catalogo JSON e applica lo status in executor
-
-Prima aggiungi/aggiorna la definizione in `public/configs/statuses.config.json`.
-Poi dentro un'azione (o regola) usa `StatusCatalogService` + `upsertStatus(...)`.
-
-Template:
-
-```ts
-await this.statusCatalogService.loadConfig();
-const warmth = this.statusCatalogService.getStatus("warmth");
-if (!warmth) throw new Error("Missing status definition for 'warmth'");
-
-const nextStatuses = this.upsertStatus(this.normalizeStatuses(player.statuses), {
-  key: warmth.key,
-  label: warmth.label,
-  description: warmth.description,
-  durationTurns: warmth.defaultDurationTurns,
-  effectKey: warmth.effectKey,
-});
-
-transaction.set(playerRef, {
-  statuses: nextStatuses,
-}, { merge: true });
-```
-
-Importante:
-
-- sempre dentro transaction;
-- key uguale = refresh durata, non duplicazione.
-
----
-
-# STEP 3 - Usa lo status nelle regole gameplay
-
-Leggi status dove serve (sempre lato executor).
-
-Template:
-
-```ts
-const currentStatuses = this.normalizeStatuses(player.statuses);
-const hasWarmth = this.hasStatus(currentStatuses, "warmth");
-
-if (isFreezingWind && !hasWarmth) {
-  // applica danno o penalita
+```json
+{
+  "key": "warmth",
+  "label": "Warmth",
+  "description": "Protects from freezing damage for this turn.",
+  "defaultDurationTurns": 2,
+  "iconUrl": "/status-icons/buff-icon.svg",
+  "i18n": {
+    "labelKey": "statuses.warmth.label",
+    "descriptionKey": "statuses.warmth.description"
+  },
+  "effects": {
+    "statModifiers": { "strength": 1 }
+  }
 }
 ```
 
+| Campo | Obbligatorio | Note |
+|---|---|---|
+| `key` | sì | Univoco, kebab-case |
+| `label` | sì | Nome visibile |
+| `description` | sì | Descrizione dell'effetto |
+| `defaultDurationTurns` | sì | Durata default in turni |
+| `iconUrl` | sì | Percorso icona (usa quelle già esistenti, vedi sotto) |
+| `i18n` | sì | Chiavi localizzazione |
+| `effects` | no | Effetti applicati automaticamente dal motore (vedi sotto) |
+| `effectKey` | no | Chiave per comportamenti speciali implementati in codice |
+
+### Icone esistenti (riusa quando possibile)
+- `/status-icons/buff-icon.svg` — effetti positivi generici
+- `/status-icons/debuff-icon.svg` — effetti negativi generici
+- `/status-icons/protection-icon.svg` — protezioni e scudi
+- `/status-icons/nutrition-icon.svg` — nutrizione
+- `/status-icons/poison-icon.svg` — veleno
+- `/status-icons/regen-icon.svg` — rigenerazione
+- `/status-icons/lucky-icon.svg` — fortuna
+- `/status-icons/sleep-icon.svg` — sonno
+- `/status-icons/immobilized-icon.svg` — immobilizzato
+- `/status-icons/silence-icon.svg` — silenzio
+- `/status-icons/mouse-icon.svg` — trasformazione
+- `/status-icons/invisility-icon.svg` — invisibilità
+
 ---
 
-# STEP 4 - Gestisci lifecycle e scadenza
+## Effetti automatici (`effects`)
 
-Pattern tipico nel progetto:
+Questi effetti vengono applicati automaticamente dal motore senza codice aggiuntivo.
 
-```ts
-const currentStatuses = this.normalizeStatuses(player.statuses);
-const nextStatuses = this.decrementStatuses(currentStatuses);
+### `turnEndHpPercentDelta`
+Modifica HP in percentuale a fine turno.
+- Negativo = danno (es. `poison`)
+- Positivo = cura (es. `regen`)
 
-transaction.set(playerRef, {
-  statuses: nextStatuses,
-}, { merge: true });
-```
-
-Questo mantiene gli status coerenti a ogni fine turno.
-
----
-
-# STEP 5 - Aggiorna UX e log (se utile)
-
-UX opzionale:
-
-- nel registry puoi disabilitare azioni se uno status e gia attivo;
-- ricordati che e solo UX, non sicurezza.
-
-Pattern reale (`consume-ration`):
-
-```ts
-const hasNutrition = (player.statuses ?? []).some((status) => status.key === "nutrition" && status.durationTurns > 0);
-```
-
-Log opzionale:
-
-In `EventLog.ts`:
-
-```ts
-| "player.gainWarmth"
-```
-
-In `EventLogService`:
-
-```ts
-"player.gainWarmth": ({ playerName, args }) => {
-  const durationTurns = Number(args["durationTurns"] ?? 0);
-  return `${playerName} gained Warmth for ${durationTurns} turns.`;
-},
+```json
+"effects": { "turnEndHpPercentDelta": -0.05 }
 ```
 
 ---
 
-# Esempio reale gia presente nel progetto
+### `statModifiers`
+Modifica temporanea ai parametri del player.
 
-Status attuale: `nutrition`.
+```json
+"effects": {
+  "statModifiers": { "strength": 1 }
+}
+```
 
-Flow reale:
+Parametri supportati: `strength`, `magic`
 
-1) `consume-ration` spende 1 food;
-2) carica definizione `nutrition` da `statuses.config.json` e applica via `upsertStatus`;
-3) in `endTurn`, `hostile-environment` controlla `hasStatus("nutrition")`;
-4) gli status vengono decrementati con `decrementStatuses`.
+---
 
-Snippet semplificato:
+### `luckBonusMultiplier`
+Moltiplica il bonus fortuna applicato nei luck check.
 
-```ts
-const nextStatuses = this.upsertStatus(this.normalizeStatuses(player.statuses), {
-  key: nutritionStatus.key,
-  label: nutritionStatus.label,
-  description: nutritionStatus.description,
-  durationTurns: nutritionStatus.defaultDurationTurns,
-});
+```json
+"effects": { "luckBonusMultiplier": 2 }
 ```
 
 ---
 
-# Errori da evitare
+### `skipTurns`
+Fa saltare un certo numero di turni al player.
 
-- Creare status solo in UI senza check gameplay.
-- Dimenticare `normalizeStatuses` prima dei controlli.
-- Dimenticare il decrement (status infiniti involontari).
-- Duplicare status invece di fare upsert.
-- Usare key incoerenti in punti diversi.
-
----
-
-# Checklist completa nuovo status
-
-- [ ] Definiti key/label/description/durationTurns
-- [ ] Status applicato in `ActionExecutorService` con `upsertStatus`
-- [ ] Status letto nelle regole gameplay con `hasStatus`
-- [ ] Lifecycle gestito con `decrementStatuses`
-- [ ] Update Firestore eseguiti in transaction
-- [ ] UX opzionale aggiornata in registry (se serve)
-- [ ] Event log aggiunto (se rilevante)
-- [ ] Testato in game su happy path + scadenza status
+```json
+"effects": { "skipTurns": 1 }
+```
 
 ---
 
-# Checklist rapida (uso quotidiano)
+### `incomingDamageMultiplier`
+Modifica il danno ricevuto dal player.
+- 0.5 = dimezza il danno
+- 0 = immunità totale
 
-- [ ] Crea key status chiara e stabile
-- [ ] Applica con `upsertStatus(normalizeStatuses(...), status)`
-- [ ] Verifica effetto con `hasStatus(...)` nella regola giusta
-- [ ] Decrementa a fine turno con `decrementStatuses(...)`
-- [ ] Mantieni tutto dentro transaction
-- [ ] Aggiungi log se lo status ha effetto visibile
-- [ ] Verifica in partita: gain, effetto, scadenza
+```json
+"effects": { "incomingDamageMultiplier": 0.5 }
+```
+
+---
+
+### `cannotMove`
+Blocca il movimento del player.
+
+```json
+"effects": { "cannotMove": true }
+```
+
+---
+
+### `disableSpellCasting`
+Impedisce il lancio degli spell.
+
+```json
+"effects": { "disableSpellCasting": true }
+```
+
+---
+
+### `disableMpNaturalRegen`
+Disabilita la rigenerazione naturale degli MP.
+
+```json
+"effects": { "disableMpNaturalRegen": true }
+```
+
+---
+
+### `disableHpRecovery` / `disableMpRecovery`
+Disabilita il recupero di HP e/o MP.
+
+```json
+"effects": { "disableHpRecovery": true, "disableMpRecovery": true }
+```
+
+---
+
+### `disableItemUse`
+Blocca l'uso degli oggetti.
+
+```json
+"effects": { "disableItemUse": true }
+```
+
+---
+
+### `setPrimaryStatsTo`
+Forza tutti i parametri primari (STR, MAGIC, LUCK) a un valore fisso.
+
+```json
+"effects": { "setPrimaryStatsTo": 1 }
+```
+
+---
+
+### `cannotBeAttacked` / `cannotBeTargetedBySpells`
+Rende il player immune agli attacchi e/o agli spell ostili.
+
+```json
+"effects": { "cannotBeAttacked": true, "cannotBeTargetedBySpells": true }
+```
+
+---
+
+## `effectKey` (comportamenti speciali in codice)
+
+Alcuni status usano una stringa `effectKey` per attivare logiche implementate direttamente nel codice del gioco. Non richiedono un campo `effects`.
+
+| effectKey | Comportamento |
+|---|---|
+| `enable-diagonal-movement` | Abilita il movimento diagonale finché lo status è attivo |
+| `add-magic-to-strength-in-combat` | In combattimento, aggiunge Magic a Strength |
+| `ignore-next-harmful-cell-effect` | Ignora il prossimo effetto negativo da cella/bioma |
+| `reduce-next-damage-with-mp` | Riduce il prossimo danno ricevuto spendendo MP residui |
+| `negate-next-hostile-spell` | Nega il prossimo spell ostile ricevuto |
+| `preview-next-random-outcome` | Mostra in anticipo il prossimo risultato casuale |
+| `temporary-attunement-fire` | Sintonizzazione temporanea all'elemento fuoco |
+| `temporary-attunement-earth` | Sintonizzazione temporanea all'elemento terra |
+| `temporary-attunement-air` | Sintonizzazione temporanea all'elemento aria |
+| `temporary-attunement-water` | Sintonizzazione temporanea all'elemento acqua |
+
+Per aggiungere un nuovo `effectKey` serve uno sviluppatore.
+
+---
+
+## Status esistenti (riferimento completo)
+
+| Key | Effetto | Durata |
+|---|---|---|
+| `nutrition` | Blocca danno `hostile-environment` | 1 turno |
+| `poison` | -5% HP a fine turno | 3 turni |
+| `regen` | +5% HP a fine turno | 3 turni |
+| `bravery` | +1 Strength | 1 turno |
+| `weakened` | -1 Strength | 1 turno |
+| `focus` | +1 Magic | 1 turno |
+| `hexed` | -1 Magic | 1 turno |
+| `fortune` | Bonus fortuna x2 | 1 turno |
+| `protection` | Danno ricevuto x0.5 | 1 turno |
+| `silence` | Blocca spell e regen MP naturale | 3 turni |
+| `sleep` | Salta 1 turno | 1 turno |
+| `petrified` | Salta 1 turno | 1 turno |
+| `minified` | Tutti i parametri a 1, blocca items e recovery | 1 turno |
+| `invisibility` | Non attaccabile né prendibile di mira | 1 turno |
+| `immobilized` | Non può muoversi | 1 turno |
+| `anchored` | Non può muoversi | 1 turno |
+| `flying` | Movimento diagonale abilitato | 1 turno |
+| `empowered` | Magic si aggiunge a Strength in combattimento | 1 turno |
+| `safe-step` | Ignora il prossimo effetto negativo da cella | 1 turno |
+| `mana-shield` | Riduce il prossimo danno spendendo MP | 1 turno |
+| `spell-ward` | Nega il prossimo spell ostile ricevuto | 1 turno |
+| `fate-sight` | Anteprima del prossimo risultato casuale | 1 turno |
+| `elemental-bound-fire/earth/air/water` | Sintonizzazione temporanea a un elemento | 1 turno |
+
+---
+
+## Come applicare uno status al player
+
+### Opzione A: Via spell (niente codice)
+Crea uno spell con `effect.type: "apply-status-self"` (vedi [new-spell-guide.md](new-spell-guide.md)).
+
+```json
+"effect": {
+  "type": "apply-status-self",
+  "statusKey": "bravery",
+  "baseDurationTurns": 1,
+  "durationPerMagic": 0
+}
+```
+
+### Opzione B: Via azione o evento (richiede sviluppatore)
+Lo sviluppatore aggiungerà `upsertStatus(...)` nel punto corretto di `src/app/services/gameplay/action-executor-service.ts`.
+
+---
+
+## Checklist
+
+- [ ] Entry aggiunta nell'array `statuses` di `statuses.config.json`
+- [ ] `key` univoca e in kebab-case
+- [ ] `iconUrl` punta a un'icona esistente (vedi lista sopra)
+- [ ] `defaultDurationTurns` appropriato
+- [ ] Se ha `effects`: tutti i campi sono tra quelli supportati
+- [ ] Se ha `effectKey`: la chiave esiste già nel codice (o è stata aggiunta dallo sviluppatore)
+- [ ] Il trigger di applicazione è configurato (spell) o implementato dallo sviluppatore
+- [ ] Verifica in gioco: lo status compare sulla scheda player, dura i turni giusti, l'effetto si applica

@@ -4,6 +4,10 @@ Ultimo aggiornamento: 2026-06-13
 
 Questo file raccoglie lo stato generale delle idee di gameplay. Le specifiche piu dettagliate restano nei file in `public/rulebook-ideas/` e nei cataloghi in `public/configs/`.
 
+## Progetto
+
+- [ ] Rinominare la cartella consts/logs in app-logs o qualcosa del genere perchè altrimenti viene ignorato da git;
+
 ## Core Gameplay
 
 - [x] Progressione del personaggio: Forza, Magia e Fortuna sono i tre parametri principali.

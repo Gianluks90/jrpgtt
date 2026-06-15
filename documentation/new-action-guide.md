@@ -1,179 +1,256 @@
-# Action Catalog Guide
+# Guida: Azione (Action)
 
-Guida aggiornata per aggiungere nuove action nel flusso config-driven.
-Obiettivo: estendere il gameplay senza rompere UI, dispatch e validazioni autoritative.
+Le azioni sono le cose che il player può fare in una cella della mappa: raccogliere risorse, pregare in un santuario, riposare in un landmark, ecc.
 
-## 1. Flusso reale (config -> esecuzione)
+---
 
-Quando l utente clicca una action nel command panel:
+## Basta il JSON?
 
-1. `public/configs/actions.config.json`
-2. `src/app/services/action-catalog-service.ts`
-3. `src/app/services/map-page-actions-service.ts`
-4. `src/app/services/action-registry-service.ts`
-5. `src/app/services/map-page-interaction-service.ts`
-6. `src/app/services/action-executor-service.ts`
-7. `src/app/services/event-log-service.ts`
+**Sì**, se riusi un handler già esistente (vedi lista completa sotto). In questo caso tocchi solo file JSON.
+**No (serve sviluppatore)**, se vuoi che l'azione faccia qualcosa di mai visto nel gioco.
 
-Sintesi:
-- catalogo: metadata UI + flow
-- registry: card UI (label/description/warning/disabled)
-- interaction: dispatch su handler/dialog
-- executor: regole gameplay in transaction (fonte di verita)
-- event log: messaggio finale e source label
+---
 
-Nota fallback:
-- se `actions.config.json` non viene caricato, resta attivo il fallback in `src/app/consts/actions-catalog-default.ts`
+## File da toccare
 
-## 2. Placement della action
+| File | Cosa scrivi |
+|---|---|
+| `public/configs/actions.config.json` | Definizione dell'azione (etichetta, handler, validators) |
+| `public/configs/tiles.config.json` | Placement su biomi e santuari |
+| `public/configs/landmarks.config.json` | Placement su landmark |
 
-Una action deve essere dichiarata sia nel catalogo che nel placement mappa.
+Ogni action deve stare sia nel catalogo che in almeno un placement.
 
-Placement:
-- biome actions: `public/configs/tiles.config.json` -> `biomes.<biome>.actions`
-- safe landmark actions: `public/configs/landmarks.config.json` -> `safePlaceActionsByLandmark.<landmarkId>`
-- sanctuary actions: `public/configs/tiles.config.json` -> `specialTiles.sanctuaries.<element>.actions`
+---
 
-Catalogo behavior:
-- `public/configs/actions.config.json`
+## Dove appare un'azione sulla mappa (placement)
 
-## 3. Schema minimo della action
+### Su un bioma
+In `tiles.config.json`, sezione `biomes.<nome>.actions`:
+```json
+"forest": {
+  "actions": ["cell-gather", "chop-tree"]
+}
+```
+
+### Su un santuario
+In `tiles.config.json`, sezione `specialTiles.sanctuaries.<elemento>.actions`:
+```json
+"water": {
+  "actions": {
+    "inactive": ["activate-sanctuary"],
+    "active": ["sanctuary"]
+  }
+}
+```
+
+### Su un landmark safe (Capital, City, Village, Camp)
+In `landmarks.config.json`, sezione `safePlaceActionsByLandmark`:
+```json
+"capital": ["safe-place-wait", "fast-travel", "capital-doctor"]
+```
+
+### Su un landmark mid (Castle, Temple, ecc.)
+In `landmarks.config.json`, sezione `midPlaceActionsByLandmark`:
+```json
+"castle": ["castle-rest", "castle-trainer"]
+```
+
+### Su un landmark bad (Cave, Dungeon, ecc.)
+In `landmarks.config.json`, sezione `badPlaceActionsByLandmark`:
+```json
+"altar": ["altar-sacrifice"]
+```
+
+---
+
+## Schema in `actions.config.json`
 
 ```json
 {
-  "id": "capital-doctor",
+  "id": "mia-action",
   "ui": {
-    "label": "Doctor",
-    "descriptionTemplate": "Capital: restore 5% HP per treatment. Cost {costPerUnit} coins each ({timeOfDay}), then end turn.",
+    "label": "Etichetta",
+    "descriptionTemplate": "Descrizione visibile al player.",
+    "warningTemplate": "Avviso opzionale (es. slot necessari: {requiredSlots}).",
     "i18n": {
-      "labelKey": "actions.capitalDoctor.label",
-      "descriptionKey": "actions.capitalDoctor.description"
+      "labelKey": "actions.miaAction.label",
+      "descriptionKey": "actions.miaAction.description",
+      "warningKey": "actions.miaAction.warning"
     }
   },
   "flow": {
-    "handler": "safe-place-doctor",
-    "errorMessage": "Error while using capital doctor",
+    "handler": "biome-cell-gather",
+    "errorMessage": "Errore nell'eseguire mia-action",
     "trigger": "command-panel",
     "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
-    "dialog": {
-      "type": "doctor-heal"
-    },
-    "requiresMyTurn": true
+    "requiresMyTurn": true,
+    "requiresCanEndTurn": false
   },
   "log": {
-    "sourceLabel": "Capital Doctor"
+    "sourceLabel": "Mia Action"
   }
 }
 ```
 
-## 4. Enumerazioni supportate (allineate al codice)
+| Campo | Note |
+|---|---|
+| `id` | Univoco, kebab-case |
+| `ui.label` | Etichetta del pulsante |
+| `ui.descriptionTemplate` | Testo descrittivo mostrato al player |
+| `ui.warningTemplate` | (opzionale) Avviso non bloccante |
+| `flow.handler` | Cosa fa l'azione (vedi lista handler sotto) |
+| `flow.trigger` | Sempre `"command-panel"` |
+| `flow.validators` | Condizioni che devono essere vere per abilitarla |
+| `flow.requiresMyTurn` | `true` = visibile solo nel proprio turno |
+| `flow.requiresCanEndTurn` | `true` = richiede la possibilità di finire il turno |
+| `log.sourceLabel` | Etichetta usata nei messaggi del log di gioco |
 
-`flow.trigger`:
-- `command-panel`
+---
 
-`flow.validators`:
-- `my-turn`
-- `moved-this-turn`
-- `not-busy`
-- `action-not-used`
+## Handler disponibili
 
-`flow.dialog.type`:
-- `none`
-- `sanctuary-action`
-- `doctor-heal`
-- `resource-exchange`
-- `safe-place-fast-travel`
+Gli handler definiscono il comportamento dell'azione. Riusa sempre uno esistente quando possibile.
 
-Campi sanctuary dialog:
-- `sanctuaryMode`: `activate` | `donate`
-- `requiredActive`: `true` | `false`
+### Azioni su bioma
 
-Guardie di flusso addizionali:
-- `requiresMyTurn`
-- `requiresCanEndTurn`
+| Handler | Esempio reale | Cosa fa |
+|---|---|---|
+| `biome-cell-gather` | `cell-gather` | Raccoglie una risorsa casuale dal bioma (luck check) |
+| `biome-chop-tree` | `chop-tree` | Taglia legno nella foresta (richiede ascia) |
+| `biome-consume-ration` | `consume-ration` | Consuma 1 razione → applica status `nutrition` |
 
-## 5. Warning UI config-driven
+### Azioni su santuario
 
-Per warning non bloccanti (es. capacita inventario), usare il catalogo:
-- `ui.warningTemplate`
-- `ui.i18n.warningKey`
+| Handler | Esempio reale | Cosa fa |
+|---|---|---|
+| `sanctuary-open` | `sanctuary` | Apre il menu del santuario attivo |
+| `sanctuary-activate` | `activate-sanctuary` | Attiva il santuario (richiede monete) |
+| `sanctuary-donate` | `donate-sanctuary` | Dona al santuario (sposta l'attunement) |
+| `sanctuary-pray` | `pray-sanctuary` | Prega per ricevere guarigione (luck check) |
 
-Esempio:
+### Azioni in safe place (Capital, City, Village, Camp)
+
+| Handler | Esempio reale | Cosa fa |
+|---|---|---|
+| `safe-place-doctor` | `capital-doctor`, `city-healer` | Cura HP a pagamento |
+| `safe-place-enchantress` | `capital-enchantress` | Premio magico variabile |
+| `safe-place-mystic` | `city-mystic` | Carta destino con effetti variabili (allineamento, XP, ecc.) |
+| `safe-place-merchant` | `city-merchant`, `academy-merchant` | Compra e vendi oggetti |
+| `safe-place-inn` | `capital-inn` | Riposo (heal HP + fine turno) |
+| `safe-place-resource-exchange` | `village-craftsman` | Scambia una risorsa con un'altra |
+| `safe-place-wait` | `safe-place-wait` | Aspetta sul posto (simula movimento sulla stessa cella + fine turno) |
+| `safe-place-fast-travel` | `fast-travel` | Prenota viaggio rapido verso altro safe place |
+| `safe-place-camp-gatherer` | `camp-gatherer` | Ottieni risorse raccogliendo dal campo |
+| `safe-place-camp-hunter` | `camp-hunter` | Ottieni risorse cacciando dal campo |
+
+### Azioni in landmark mid/bad
+
+| Handler | Esempio reale | Cosa fa |
+|---|---|---|
+| `graveyard-resurrect` | `graveyard-resurrect` | Tenta di resuscitare un seguace morto |
+| `temple-send-devotee` | `temple-send-devotee` | Invia un devoto (diventa GOOD, ottieni XP) |
+| `altar-sacrifice` | `altar-sacrifice` | Sacrificio (diventa EVIL, ottieni XP) |
+| `landmark-rest` | `castle-rest` | Riposo nel landmark (heal HP + fine turno) |
+| `landmark-trainer` | `castle-trainer`, `academy-trainer` | Allena un parametro a pagamento (fine turno + salta il turno successivo) |
+
+### Azioni seguace
+
+| Handler | Esempio reale | Cosa fa |
+|---|---|---|
+| `follower-feed-horse` | `feed-horse` | Nutre il cavallo → +1 movimento per quel turno |
+| `follower-eliminate-zombie` | `eliminate-zombie` | Elimina lo zombie dal party |
+
+### Altro
+
+| Handler | Esempio reale | Cosa fa |
+|---|---|---|
+| `end-turn` | `end-turn` | Termina il turno del player |
+
+---
+
+## Validators disponibili
+
+Bloccano il pulsante dell'azione se le condizioni non sono soddisfatte.
+
+| Validator | Quando blocca |
+|---|---|
+| `my-turn` | Non è il turno del player |
+| `moved-this-turn` | Il player non si è ancora mosso in questo turno |
+| `not-busy` | Il player sta già eseguendo un'azione |
+| `action-not-used` | Questa stessa azione è già stata usata in questo turno |
+
+---
+
+## Dialog (quando serve una conferma prima di procedere)
+
+Alcune azioni aprono una finestra di dialogo prima di eseguire.
+
+```json
+"flow": {
+  "dialog": { "type": "doctor-heal" }
+}
+```
+
+Tipi di dialog disponibili:
+- `doctor-heal` → seleziona quanti trattamenti acquistare
+- `sanctuary-action` → conferma attivazione/donazione santuario (richiede anche `sanctuaryMode: "activate"` o `"donate"` e `requiredActive: true/false`)
+- `resource-exchange` → seleziona le risorse da scambiare
+- `safe-place-fast-travel` → seleziona la destinazione del viaggio rapido
+
+---
+
+## Avvisi non bloccanti (`warningTemplate`)
+
+Per mostrare un avviso visibile senza disabilitare l'azione:
 
 ```json
 "ui": {
-  "label": "Gatherer",
-  "descriptionTemplate": "Camp: gain 1 timber and 1 minerals, then end turn.",
-  "warningTemplate": "Warning: camp reward needs {requiredSlots} free slots, available {availableSlots}.",
+  "warningTemplate": "Attenzione: servono {requiredSlots} slot liberi, disponibili {availableSlots}.",
   "i18n": {
-    "warningKey": "actions.campGatherer.warning.capacity"
+    "warningKey": "actions.miaAction.warning.capacity"
   }
 }
 ```
 
-## 6. Procedura passo-passo
+---
 
-1. Definisci placement
-- aggiorna `tiles.config.json` o `landmarks.config.json` (o entrambi, se serve).
+## Pattern utili
 
-2. Aggiungi la action al catalogo
-- inserisci entry in `public/configs/actions.config.json`.
-- allinea il fallback in `src/app/consts/actions-catalog-default.ts`.
+### Azione con luck check
+Quasi tutte le azioni di raccolta (cell-gather, pray-sanctuary) usano un luck check interno. Non c'è un campo JSON per controllarlo: è gestito dal codice dell'handler.
 
-3. Verifica handler
-- se riusi handler esistente, salta ai passi successivi.
-- se introduci handler nuovo:
-  - aggiorna `ActionFlowHandler` in `src/app/models/ActionCatalog.ts`
-  - aggiorna `isFlowHandler(...)` in `src/app/services/action-catalog-service.ts`
-  - aggiungi branch in `executeCommandActionFlow(...)` in `src/app/services/map-page-interaction-service.ts`
+### Azione con costo in monete
+Alcune azioni (dottore, albergatore, trainer) deducono monete. Il costo è configurabile nei parametri dell'handler. Chiedi allo sviluppatore dove si trova il config specifico.
 
-4. Costruisci la card UI
-- aggiungi/aggiorna branch in `buildActionCard(...)` in `src/app/services/action-registry-service.ts`
-- usa `commonDisabled` per i validator comuni
-- aggiungi solo i gate specifici dell action
+### Azione che termina il turno
+Gli handler come `safe-place-inn`, `landmark-rest`, `safe-place-camp-gatherer` terminano sempre il turno automaticamente. Non c'è un flag JSON da impostare: dipende dall'implementazione dell'handler.
 
-5. Implementa logica autoritativa
-- aggiungi metodo in `src/app/services/action-executor-service.ts`
-- validazioni minime in transaction:
+---
 
-```ts
-if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
-  throw new Error("It is not your turn");
-}
+## Quando serve uno sviluppatore
 
-this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using this action");
-this.ensureActionAvailable(player, "my-action-id", worldTurn, "You can only use this action once per turn.");
-```
+Se il tuo handler non è in lista, oppure vuoi:
+- Una logica gameplay completamente nuova
+- Un tipo di dialog nuovo
+- Un nuovo codice log
 
-6. Aggiorna log
-- se usi codice log gia esistente: aggiorna solo args dove serve.
-- se aggiungi codice nuovo:
-  - aggiungi type in `src/app/models/EventLog.ts`
-  - aggiungi formatter in `src/app/services/event-log-service.ts`
-  - configura `log.sourceLabel` nel catalogo action
+Lo sviluppatore dovrà intervenire su:
+1. `src/app/models/catalog/ActionCatalog.ts` — aggiunge il tipo handler
+2. `src/app/services/catalog/action-catalog-service.ts` — registra il validator
+3. `src/app/services/map/map-page-interaction-service.ts` — aggiunge il dispatcher
+4. `src/app/services/gameplay/action-registry-service.ts` — costruisce la card UI
+5. `src/app/services/gameplay/action-executor-service.ts` — implementa la logica autoritativa
+6. `src/app/models/ui/EventLog.ts` e `src/app/services/gameplay/event-log-service.ts` — se serve un nuovo codice log
+7. `src/app/consts/catalog/actions-catalog-default.ts` — allinea il fallback
 
-## 7. Errori frequenti
+---
 
-- action presente nel placement ma assente nel catalogo
-- action presente nel catalogo ma non nel placement
-- card UI aggiunta senza branch dispatcher in interaction
-- validazioni solo lato UI, senza enforcement in executor
-- mancato aggiornamento fallback catalog
-- mancato aggiornamento APP_VERSION
+## Checklist (caso base: handler esistente)
 
-## 8. Sanity check finale
-
-1. verifica che la action compaia nella cella corretta
-2. verifica stato enabled/disabled in base ai vincoli
-3. esegui la action e controlla update dati
-4. verifica event log
-5. esegui build
-
-```bash
-npm run build
-```
-
-## 9. Regola d oro
-
-Catalogo e UI guidano il flusso.
-Executor valida e applica sempre la regola gameplay definitiva.
+- [ ] Entry aggiunta in `actions.config.json`
+- [ ] `id` univoco e in kebab-case
+- [ ] Handler è uno tra quelli disponibili in lista
+- [ ] Placement aggiunto nel file corretto (`tiles.config.json` o `landmarks.config.json`)
+- [ ] Validators coerenti con la logica dell'azione
+- [ ] Verifica in gioco: l'azione compare nella cella corretta, è abilitata/disabilitata correttamente, esegue e produce il log

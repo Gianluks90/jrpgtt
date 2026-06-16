@@ -13,7 +13,7 @@ import { ResourceLabel } from "@models/world/Resource";
 import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfig";
 import { WorldState } from "@models/world/WorldState";
 import { EventLog } from "@models/ui/EventLog";
-import { EVENT_LOG_CONFIG } from "../../consts/logs/event-log-config";
+import { EVENT_LOG_CONFIG } from "../../consts/app-logs/event-log-config";
 import { EventLogService } from "@services/gameplay/event-log-service";
 import { ActionCatalogService } from "@services/catalog/action-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";

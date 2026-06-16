@@ -171,27 +171,18 @@
     z-index: 2;
 }
 
-.world-event-mutation-pending::after,
-.world-event-mutation-applied::after {
+.world-event-mutation-pending::after {
     content: "";
     position: absolute;
     inset: 0;
     pointer-events: none;
     z-index: 8;
-}
-
-.world-event-mutation-pending::after {
     background: repeating-linear-gradient(
         45deg,
         rgba(255, 255, 255, 0.14) 0 3px,
         rgba(255, 255, 255, 0.02) 3px 6px
     );
     animation: world-event-pending-pulse 0.9s ease-in-out infinite;
-}
-
-.world-event-mutation-applied::after {
-    background: rgba(255, 255, 255, 0.2);
-    animation: world-event-applied-flash 0.45s ease-out;
 }
 
 @keyframes world-event-pending-pulse {
@@ -203,15 +194,6 @@
     }
     100% {
         opacity: 0.25;
-    }
-}
-
-@keyframes world-event-applied-flash {
-    0% {
-        opacity: 0.9;
-    }
-    100% {
-        opacity: 0;
     }
 }
 

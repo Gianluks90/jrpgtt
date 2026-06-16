@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { addDoc, collection, limit, onSnapshot, orderBy, query, Timestamp, Unsubscribe } from "firebase/firestore";
-import { EVENT_LOG_CONFIG } from "../../consts/logs/event-log-config";
+import { EVENT_LOG_CONFIG } from "../../consts/app-logs/event-log-config";
 import { EventLog, EventLogCode } from "@models/ui/EventLog";
 import { Player } from "@models/player/Player";
 import { ActionCatalogService } from "@services/catalog/action-catalog-service";

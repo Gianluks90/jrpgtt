@@ -1,0 +1,93 @@
+{
+  "enemies": [
+    {
+      "id": "plains-wolf",
+      "name": "Plains Wolf",
+      "nameKey": "catalogs.enemies.plains-wolf.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "both",
+      "baseStrength": 4,
+      "baseMagic": 3,
+      "baseLuck": 1,
+      "loot": ["exp", "resource:food"]
+    },
+    {
+      "id": "forest-goblin",
+      "name": "Forest Goblin",
+      "nameKey": "catalogs.enemies.forest-goblin.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "day",
+      "element": "earth",
+      "baseStrength": 4,
+      "baseMagic": 3,
+      "baseLuck": 1,
+      "loot": ["exp", "gold", "resource:timber"]
+    },
+    {
+      "id": "mountain-troll",
+      "name": "Mountain Troll",
+      "nameKey": "catalogs.enemies.mountain-troll.name",
+      "combatStat": "strength",
+      "levelUpMode": "Equal",
+      "time": "night",
+      "element": "earth",
+      "baseStrength": 5,
+      "baseMagic": 3,
+      "baseLuck": 1,
+      "loot": ["exp", "gold", "resource:minerals"]
+    },
+    {
+      "id": "desert-scorpion",
+      "name": "Desert Scorpion",
+      "nameKey": "catalogs.enemies.desert-scorpion.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "day",
+      "element": "fire",
+      "baseStrength": 4,
+      "baseMagic": 3,
+      "baseLuck": 2,
+      "loot": ["exp", "gold"]
+    },
+    {
+      "id": "ruins-specter",
+      "name": "Ruins Specter",
+      "nameKey": "catalogs.enemies.ruins-specter.name",
+      "combatStat": "magic",
+      "levelUpMode": "Equal",
+      "time": "night",
+      "element": "wind",
+      "baseStrength": 3,
+      "baseMagic": 5,
+      "baseLuck": 2,
+      "loot": ["exp", "gold", "resource:minerals"]
+    },
+    {
+      "id": "water-serpent",
+      "name": "Water Serpent",
+      "nameKey": "catalogs.enemies.water-serpent.name",
+      "combatStat": "strength",
+      "levelUpMode": "Equal",
+      "time": "night",
+      "element": "water",
+      "baseStrength": 4,
+      "baseMagic": 4,
+      "baseLuck": 2,
+      "loot": ["exp", "gold"]
+    },
+    {
+      "id": "lucky-rat",
+      "name": "Lucky Rat",
+      "nameKey": "catalogs.enemies.lucky-rat.name",
+      "combatStat": "strength",
+      "levelUpMode": "Lucky",
+      "time": "both",
+      "baseStrength": 3,
+      "baseMagic": 3,
+      "baseLuck": 3,
+      "loot": ["exp"]
+    }
+  ]
+}

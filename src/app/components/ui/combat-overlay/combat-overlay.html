@@ -1,0 +1,85 @@
+@if (combat(); as state) {
+    <div class="combat-overlay-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="'combat.overlay.ariaLabel' | t">
+        <div class="combat-card">
+            <div class="combat-card-header">
+                <span class="combat-card-label">{{ 'combat.overlay.title' | t }}</span>
+            </div>
+
+            @if (state.phase === 'setup') {
+                <div class="combat-enemy-block">
+                    <p class="enemy-name">{{ state.enemy.name }}
+                        @if (state.enemy.suffix) { <span class="enemy-suffix">{{ state.enemy.suffix }}</span> }
+                    </p>
+                    <p class="enemy-level">{{ 'combat.enemy.level' | t }} {{ state.enemy.level }}</p>
+                    <div class="enemy-stats-row">
+                        <span class="stat-chip">STR {{ state.enemy.strength }}</span>
+                        <span class="stat-chip">MAG {{ state.enemy.magic }}</span>
+                        <span class="stat-chip">LCK {{ state.enemy.luck }}</span>
+                        @if (state.enemy.element) {
+                            <span class="stat-chip stat-chip-element">{{ state.enemy.element }}</span>
+                        }
+                        @if (state.enemy.time !== 'both') {
+                            <span class="stat-chip stat-chip-time">{{ state.enemy.time }}</span>
+                        }
+                    </div>
+                    @if (state.enemy.effect) {
+                        <p class="enemy-effect">{{ state.enemy.effect }}</p>
+                    }
+                </div>
+                <div class="combat-actions">
+                    <text-button [text]="'combat.action.fight' | t" (clicked)="fight()"></text-button>
+                    <text-button [text]="'combat.action.flee' | t" (clicked)="flee()"></text-button>
+                </div>
+            }
+
+            @if (state.phase === 'result' && result) {
+                <div class="combat-outcome-block">
+                    @if (result.outcome === 'player-win') {
+                        <p class="outcome-label outcome-win">{{ 'combat.outcome.win' | t }}</p>
+                    } @else if (result.outcome === 'flee-lucky') {
+                        <p class="outcome-label outcome-flee">{{ 'combat.outcome.fleeLucky' | t }}</p>
+                    } @else if (result.outcome === 'flee') {
+                        <p class="outcome-label outcome-flee">{{ 'combat.outcome.flee' | t }}</p>
+                    } @else if (result.damage === 0) {
+                        <p class="outcome-label outcome-tie">{{ 'combat.outcome.tie' | t }}</p>
+                    } @else {
+                        <p class="outcome-label outcome-loss">{{ 'combat.outcome.loss' | t }}</p>
+                    }
+
+                    <div class="combat-result-rows">
+                        <p class="result-row">
+                            {{ 'combat.result.yourRoll' | t }}: {{ result.playerRoll.total }}
+                            &nbsp;vs&nbsp;
+                            {{ 'combat.result.enemyRoll' | t }}: {{ result.enemyRoll.total }}
+                        </p>
+
+                        @if (result.autoWin) {
+                            <p class="result-row result-tag">{{ 'combat.result.autoWin' | t }}</p>
+                        }
+                        @if (result.playerRoll.critical) {
+                            <p class="result-row result-tag">{{ 'combat.result.criticalHit' | t }}</p>
+                        }
+                        @if (result.damage > 0 && result.outcome !== 'player-win') {
+                            <p class="result-row result-damage">
+                                {{ 'combat.result.hpLost' | t }}: -{{ result.damage }}
+                            </p>
+                        }
+                        @if ((result.xpGained ?? 0) > 0) {
+                            <p class="result-row result-xp">
+                                {{ 'combat.result.xpGained' | t }}: +{{ result.xpGained }}
+                            </p>
+                        }
+                        @if ((result.lootGained?.gold ?? 0) > 0) {
+                            <p class="result-row result-loot">
+                                {{ 'combat.result.goldGained' | t }}: +{{ result.lootGained!.gold }}
+                            </p>
+                        }
+                    </div>
+                </div>
+                <div class="combat-actions">
+                    <text-button [text]="'combat.action.continue' | t" (clicked)="dismiss()"></text-button>
+                </div>
+            }
+        </div>
+    </div>
+}

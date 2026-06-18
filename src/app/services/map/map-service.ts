@@ -25,6 +25,9 @@ import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-
 import { TilesConfig } from "@models/world/TilesConfig";
 import { WorldEventMapMutationService } from "@services/map/world-event-map-mutation-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
+import { EnemyCatalogService } from "@services/catalog/enemy-catalog-service";
+import { EnemiesCatalogConfig } from "@models/catalog/EnemyCatalog";
+import { PlacedExplorationCard } from "@models/exploration/ExplorationCard";
 
 interface WorldEventLogSummary {
   eventTitle: string;
@@ -60,16 +63,17 @@ export class MapService {
     private statusCatalogService: StatusCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private worldZonesService: WorldZonesService,
+    private enemyCatalogService: EnemyCatalogService,
   ) { }
 
-  public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<void> {
-    await Promise.all([
+  public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<MapCell | null> {
+    const [tilesConfig, enemiesConfig] = await Promise.all([
+      this.tilesConfigService.loadConfig(),
+      this.enemyCatalogService.loadConfig().catch(() => null),
       this.landmarksService.loadConfig(),
       this.statusCatalogService.loadConfig(),
       this.biomeConditionCatalogService.loadConfig(),
     ]);
-
-    const tilesConfig = await this.tilesConfigService.loadConfig();
 
     const gameRef = doc(this.firebaseService.database, "games", gameId);
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
@@ -535,6 +539,36 @@ export class MapService {
         amount: gainedExperience,
       });
     }
+
+    // Draw exploration events for newly revealed non-special cells
+    if (movedToNewCell && !landedOnSpecialCell && landedMapCell && enemiesConfig) {
+      const cellSnapshot: MapCell = landedMapCell;
+      const drawnEvents = await this.spawnExplorationEvents(gameId, cellSnapshot, enemiesConfig);
+      if (drawnEvents.length > 0) {
+        landedMapCell = { ...cellSnapshot, explorationEvents: drawnEvents };
+      }
+    }
+
+    return landedMapCell;
+  }
+
+  private async spawnExplorationEvents(
+    gameId: string,
+    cell: MapCell,
+    config: EnemiesCatalogConfig,
+  ): Promise<PlacedExplorationCard[]> {
+    if (!config.enemies.length) return [];
+
+    const worldEventBonus = typeof cell.worldEventEnemyLevelBonus === "number"
+      ? cell.worldEventEnemyLevelBonus : 0;
+    const level = this.enemyCatalogService.computeSpawnLevel(cell.x, worldEventBonus);
+    const entry = config.enemies[Math.floor(Math.random() * config.enemies.length)];
+    const enemy = this.enemyCatalogService.resolveSpawnedEnemy(entry, level);
+
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(cell.x, cell.y));
+    await setDoc(cellRef, { explorationEvents: [enemy] }, { merge: true });
+
+    return [enemy];
   }
 
   private async tryCreateLog(

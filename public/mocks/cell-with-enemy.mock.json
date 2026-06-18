@@ -1,0 +1,25 @@
+{
+  "_description": "Firestore document for a mapCell already containing a placed enemy. Paste this into: games/{gameId}/mapCells/1_1",
+  "x": 1,
+  "y": 1,
+  "biome": "plains",
+  "revealedAtTurn": 1,
+  "discoveredBy": "test-player",
+  "explorationEvents": [
+    {
+      "type": "enemy",
+      "cardId": "forest-goblin",
+      "instanceId": "mock-instance-001",
+      "order": 1,
+      "name": "Forest Goblin",
+      "level": 2,
+      "time": "both",
+      "element": "earth",
+      "combatStat": "strength",
+      "strength": 5,
+      "magic": 3,
+      "luck": 1,
+      "loot": ["exp", "gold", "resource:timber"]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { LandmarkAlignmentModifier, LandmarkCategory, LandmarkTarget } from "@models/world/Landmark";
 import { InventoryItemEntry } from "@models/player/Inventory";
+import { PlacedExplorationCard } from "@models/exploration/ExplorationCard";
 
 export interface MapCell {
     x: number;
@@ -17,6 +18,7 @@ export interface MapCell {
     landmarkDisplayName?: string;
     droppedItems?: InventoryItemEntry[];
     merchantStockByItemId?: Record<string, number>;
+    explorationEvents?: PlacedExplorationCard[];
     worldEventOriginalBiome?: BiomeType;
     worldEventBiomeOverride?: BiomeType;
     worldEventConditionIds?: string[];

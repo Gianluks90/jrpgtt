@@ -13,6 +13,7 @@ Indice delle guide per aggiungere nuovi elementi al gioco.
 | Azione (Action) | [new-action-guide.md](new-action-guide.md) | Sì, se riusi un handler già esistente |
 | Condizione bioma (Condition) | [new-condition-guide.md](new-condition-guide.md) | Sì, se riusi un tipo di effetto già esistente |
 | Status del player | [new-status-guide.md](new-status-guide.md) | Per la definizione sì; per applicarlo serve codice |
+| Nemico (Enemy) | [new-enemy-guide.md](new-enemy-guide.md) | Sì, se riusi un `effect` già implementato |
 
 ## Regola d'oro
 

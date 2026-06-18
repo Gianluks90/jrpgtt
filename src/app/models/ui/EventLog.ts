@@ -33,7 +33,8 @@ export type EventLogCode =
   | "player.pendingPickupCancelled"
   | "player.swapResource"
   | "player.resolvePendingPickup"
-  | "player.castSpellDiagonal";
+  | "player.castSpellDiagonal"
+  | "player.combatResult";
 
 export interface EventLog {
   id: string;

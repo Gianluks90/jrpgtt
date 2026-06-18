@@ -37,6 +37,7 @@ import { RequiredActionNotification, RequiredActionNotificationPlayer } from "..
 import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-button";
 import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
 import { MapSettingsDialogService } from "@services/ui/map-settings-dialog-service";
+import { CombatOverlay } from "../../components/ui/combat-overlay/combat-overlay";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
 
@@ -57,6 +58,7 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     TranslationPipe,
     RequiredActionNotification,
     RulebookButton,
+    CombatOverlay,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",

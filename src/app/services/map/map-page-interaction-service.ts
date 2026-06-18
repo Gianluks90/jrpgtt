@@ -85,6 +85,7 @@ import {
   GenericConfirmDialogData,
 } from "../../components/dialogs/generic-confirm-dialog/generic-confirm-dialog";
 import { WorldEventRegionTransitionService } from "@services/map/world-event-region-transition-service";
+import { ExplorationEventService } from "@services/exploration/exploration-event-service";
 import { LocationInfoDialog } from "../../components/dialogs/location-info-dialog/location-info-dialog";
 import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfig";
 import { DiscardPileDialog } from "../../components/dialogs/discard-pile-dialog/discard-pile-dialog";
@@ -152,6 +153,7 @@ export class MapPageInteractionService {
     private translationService: TranslationService,
     private actionRegistryService: ActionRegistryService,
     private spellCatalogService: SpellCatalogService,
+    private explorationEventService: ExplorationEventService,
   ) {}
 
   public resetUiState(): void {
@@ -389,7 +391,20 @@ export class MapPageInteractionService {
     }
 
     try {
-      await this.mapService.movePlayer(gameId, myPlayer.id, cell.x, cell.y);
+      const landedCell = await this.mapService.movePlayer(gameId, myPlayer.id, cell.x, cell.y);
+      if (
+        landedCell
+        && input.worldState
+        && (landedCell.explorationEvents?.length ?? 0) > 0
+      ) {
+        await this.explorationEventService.handleCellArrival({
+          gameId,
+          player: myPlayer,
+          cell: landedCell,
+          worldState: input.worldState,
+          mapSize: input.mapSize,
+        });
+      }
     } catch (error) {
       console.error(error);
       window.alert(error instanceof Error

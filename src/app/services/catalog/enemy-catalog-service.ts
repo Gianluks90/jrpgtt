@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { EnemyCatalogEntry, EnemiesCatalogConfig } from "@models/catalog/EnemyCatalog";
-import { EnemyCombatStat, EnemyLevelUpMode, EnemyLoot, PlacedEnemyCard } from "@models/exploration/ExplorationCard";
+import { EnemyCombatStat, EnemyLevelUpMode, EnemyLoot, LootToken, PlacedEnemyCard } from "@models/exploration/ExplorationCard";
 import { TranslationService } from "@services/shared/translation-service";
 
 @Injectable({
@@ -261,41 +261,55 @@ export class EnemyCatalogService {
     if (raw.length === 0) return undefined;
 
     const validResources = new Set(["food", "timber", "minerals", "cloth"]);
-    const tokens: string[] = [];
+    const tokens: LootToken[] = [];
 
     for (const item of raw) {
+      if (item !== null && typeof item === "object" && !Array.isArray(item)) {
+        const obj = item as { type?: unknown; dropRate?: unknown };
+        if (typeof obj.type !== "string" || !obj.type.trim()) {
+          throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has loot object with invalid type`);
+        }
+        const dropRate = Number(obj.dropRate);
+        if (!Number.isFinite(dropRate) || dropRate < 0 || dropRate > 1) {
+          throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has loot object with invalid dropRate`);
+        }
+        const type = obj.type.trim();
+        this.validateLootType(type, enemyId, validResources);
+        tokens.push({ type, dropRate });
+        continue;
+      }
+
       if (typeof item !== "string" || !item.trim()) {
         throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has invalid loot token`);
       }
       const token = item.trim();
-
-      if (token === "exp" || token === "gold") {
-        tokens.push(token);
-        continue;
-      }
-
-      if (token.startsWith("resource:")) {
-        const resourceId = token.slice("resource:".length);
-        if (!validResources.has(resourceId)) {
-          throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has unknown resource '${resourceId}'`);
-        }
-        tokens.push(token);
-        continue;
-      }
-
-      if (token.startsWith("item:") || token.startsWith("magic:")) {
-        const id = token.split(":")[1] ?? "";
-        if (!id) {
-          throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has malformed loot token '${token}'`);
-        }
-        tokens.push(token);
-        continue;
-      }
-
-      throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has unknown loot token '${token}'`);
+      this.validateLootType(token, enemyId, validResources);
+      tokens.push(token);
     }
 
     return tokens.length > 0 ? tokens : undefined;
+  }
+
+  private validateLootType(type: string, enemyId: string, validResources: Set<string>): void {
+    if (type === "exp" || type === "gold") return;
+
+    if (type.startsWith("resource:")) {
+      const resourceId = type.slice("resource:".length);
+      if (!validResources.has(resourceId)) {
+        throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has unknown resource '${resourceId}'`);
+      }
+      return;
+    }
+
+    if (type.startsWith("item:") || type.startsWith("magic:")) {
+      const id = type.split(":")[1] ?? "";
+      if (!id) {
+        throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has malformed loot token '${type}'`);
+      }
+      return;
+    }
+
+    throw new Error(`Invalid enemies configuration: enemy '${enemyId}' has unknown loot token '${type}'`);
   }
 
   private isValidLevelUpMode(value: unknown): value is EnemyLevelUpMode {

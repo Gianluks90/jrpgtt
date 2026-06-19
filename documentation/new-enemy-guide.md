@@ -34,7 +34,7 @@ I nemici fanno parte del **Mazzo Esplorazione**. Quando un giocatore entra in un
   "baseStrength": 4,
   "baseMagic": 3,
   "baseLuck": 1,
-  "loot": ["exp", "gold", "resource:timber"],
+  "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:timber", "dropRate": 0.40 }],
   "effect": null
 }
 ```
@@ -115,37 +115,71 @@ Il giocatore ottiene un elemento attunandosi a un santuario. Combattere nel quad
 
 ## Bottino (`loot`)
 
-Il campo `loot` è un array di **token stringa**. Ogni token descrive una ricompensa assegnata al giocatore in caso di vittoria.
+Il campo `loot` è un array di **token**. Ogni token descrive una ricompensa che il giocatore può ottenere in caso di vittoria.
 
+Esistono due formati di token:
+
+**Stringa pura** — drop garantito (sempre assegnato):
 ```json
-"loot": ["exp", "gold", "resource:timber"]
+"exp"
 ```
+
+**Oggetto con drop rate** — drop probabilistico, modificato dalla Fortuna del giocatore:
+```json
+{ "type": "gold", "dropRate": 0.75 }
+```
+
+### Formula drop
+
+```
+tasso_effettivo = min(dropRate + LCK × 0.03, 0.97)
+```
+
+Ogni punto di Fortuna vale **+3%** di probabilità. Il cap è 97% (nessun drop è mai garantito al 100% se ha un dropRate).
+
+**Esempi pratici:**
+
+| LCK | dropRate 0.40 (risorsa) | dropRate 0.75 (oro) |
+|---|---|---|
+| 1 | 43% | 78% |
+| 3 | 49% | 84% |
+| 5 | 55% | 90% |
+| 8 | 64% | 97% (cap) |
 
 ### Token disponibili
 
-| Token | Effetto |
-|---|---|
-| `"exp"` | Assegna XP in base alla regione della cella: Regione I → 1 XP, II → 2 XP, III → 3 XP |
-| `"gold"` | Assegna monete: **2 × numero di colonna** della cella |
-| `"resource:<id>"` | Assegna 1 unità della risorsa specificata. ID validi: `food`, `timber`, `minerals`, `cloth` |
-| `"item:<id>"` | Fa cadere un oggetto sulla cella (carta aggiunta agli eventi della cella) |
-| `"magic:<id>"` | Fa cadere una carta magia sulla cella |
+| Tipo | Formato | Drop rate consigliato | Effetto |
+|---|---|---|---|
+| Esperienza | `"exp"` (stringa) | garantito | XP in base alla regione: I → 1, II → 2, III → 3 |
+| Oro | `{ "type": "gold", "dropRate": 0.75 }` | 0.70–0.80 | Monete: **2 × colonna** della cella |
+| Risorsa | `{ "type": "resource:food", "dropRate": 0.40 }` | 0.35–0.50 | 1 unità. ID validi: `food`, `timber`, `minerals`, `cloth` |
+| Oggetto | `{ "type": "item:<id>", "dropRate": 0.20 }` | 0.10–0.30 | Fa cadere una carta oggetto sulla cella |
+| Magia | `{ "type": "magic:<id>", "dropRate": 0.15 }` | 0.10–0.20 | Fa cadere una carta magia sulla cella |
 
 ### Note
 
 - Se `loot` è assente o vuoto, la vittoria non assegna nessuna ricompensa.
-- I token `item:` e `magic:` referenziano ID dei rispettivi cataloghi esistenti.
-- Un nemico può avere più token nello stesso array (es. exp + gold + risorsa).
-- Non esiste un `loot-configs` separato: il formato è auto-descrittivo nell'entry del nemico.
+- `"exp"` va sempre lasciato come stringa (drop garantito — il giocatore vince sempre XP).
+- I token `item:` e `magic:` referenziano ID dei rispettivi cataloghi.
+- Un nemico può mescolare token garantiti e probabilistici nello stesso array.
 
 ### Esempi
 
 ```json
-"loot": ["exp"]                          // solo esperienza
-"loot": ["exp", "gold"]                  // esperienza e monete
-"loot": ["exp", "resource:food"]         // esperienza e cibo
-"loot": ["exp", "gold", "resource:timber"] // esperienza, monete e legname
-"loot": ["exp", "item:rusty-sword"]      // esperienza e oggetto raro
+"loot": ["exp"]
+// solo esperienza garantita
+
+"loot": ["exp", { "type": "gold", "dropRate": 0.75 }]
+// esperienza garantita + oro al 75%
+
+"loot": ["exp", { "type": "resource:food", "dropRate": 0.40 }]
+// esperienza garantita + cibo al 40%
+
+"loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:timber", "dropRate": 0.40 }]
+// esperienza garantita + oro al 75% + legname al 40%
+
+"loot": ["exp", { "type": "item:rusty-sword", "dropRate": 0.20 }]
+// esperienza garantita + spada arrugginita al 20%
 ```
 
 ---
@@ -196,7 +230,7 @@ Totale = baseStat(combatStat) + luckBonus(LCK) ± elementModifier ± timeModifie
   "baseStrength": 4,
   "baseMagic": 3,
   "baseLuck": 1,
-  "loot": ["exp", "gold", "resource:timber"]
+  "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:timber", "dropRate": 0.40 }]
 }
 ```
 
@@ -213,7 +247,7 @@ Totale = baseStat(combatStat) + luckBonus(LCK) ± elementModifier ± timeModifie
   "baseStrength": 3,
   "baseMagic": 5,
   "baseLuck": 2,
-  "loot": ["exp", "gold", "resource:minerals"]
+  "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:minerals", "dropRate": 0.40 }]
 }
 ```
 
@@ -246,7 +280,7 @@ Totale = baseStat(combatStat) + luckBonus(LCK) ± elementModifier ± timeModifie
   "baseStrength": 6,
   "baseMagic": 4,
   "baseLuck": 2,
-  "loot": ["exp", "gold", "item:ancient-relic"]
+  "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "item:ancient-relic", "dropRate": 0.20 }]
 }
 ```
 

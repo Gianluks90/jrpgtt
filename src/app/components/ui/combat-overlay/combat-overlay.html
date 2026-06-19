@@ -1,3 +1,31 @@
+@if (showSpellDialog()) {
+    <div class="equipment-overlay">
+        <div class="equipment-card">
+            <div class="equipment-card-header">
+                <span class="equipment-card-label">{{ 'combat.spells.title' | t }}</span>
+            </div>
+
+            <div class="spell-options">
+                @for (opt of spellOptions()!; track opt.itemId) {
+                    <label class="spell-option" [class.spell-option-selected]="selectedSpellId() === opt.itemId">
+                        <input type="radio" name="spell" [value]="opt.itemId" (change)="selectSpell(opt.itemId)" [checked]="selectedSpellId() === opt.itemId" hidden>
+                        <span class="equipment-radio spell-radio"></span>
+                        <div class="spell-option-text">
+                            <span class="spell-option-name">{{ itemLabel(opt) }}</span>
+                            <span class="spell-option-desc">{{ spellDescription(opt) }}</span>
+                        </div>
+                        <span class="equipment-option-bonus spell-option-bonus">+{{ opt.bonus }}</span>
+                    </label>
+                }
+            </div>
+
+            <div class="equipment-actions">
+                <text-button [text]="'combat.spells.cast' | t" [disabled]="!selectedSpellId()" (clicked)="castSpell()"></text-button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (showEquipmentSelection()) {
     <div class="equipment-overlay">
         <div class="equipment-card">
@@ -132,6 +160,9 @@
                                 }
                                 @if (confirmedArmorLabel()) {
                                     <span class="modifier-tag modifier-tag-equipment">✓ {{ confirmedArmorLabel() }}</span>
+                                }
+                                @if (confirmedSpellLabel()) {
+                                    <span class="modifier-tag modifier-tag-spell">✓ {{ confirmedSpellLabel() }}</span>
                                 }
                             </div>
 
@@ -279,6 +310,12 @@
                                 (clicked)="fight()">
                             </text-button>
                         </div>
+                        <button class="spell-action-btn"
+                            [disabled]="!hasEligibleSpells() || currentUiPhase() !== 'idle'"
+                            (click)="openSpellDialog()"
+                            [attr.aria-label]="'combat.spells.title' | t">
+                            <span class="spell-action-icon"></span>
+                        </button>
                         <div class="combat-action-col">
                             <text-button
                                 [fullWidth]="true"

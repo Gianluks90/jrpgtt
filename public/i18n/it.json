@@ -940,9 +940,9 @@
             "followerStatus": "Stato di {name} ({status})"
         },
         "stats": {
-            "strengthAbbr": "FORZA",
-            "magicAbbr": "MAGIA",
-            "luckAbbr": "FORTUNA"
+            "strengthAbbr": "FRZ",
+            "magicAbbr": "MAG",
+            "luckAbbr": "FOR"
         },
         "turnLeft": {
             "one": "1 turno rimanente",
@@ -1370,6 +1370,10 @@
             "armorGroup": "Armatura",
             "none": "Nessuno",
             "confirm": "Conferma"
+        },
+        "spells": {
+            "title": "Incantesimi",
+            "cast": "Lancia"
         },
         "outcome": {
             "win": "Vittoria",

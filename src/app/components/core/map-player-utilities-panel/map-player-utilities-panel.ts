@@ -136,10 +136,6 @@ export class MapPlayerUtilitiesPanel {
           hpMax,
           hpPercent: Math.max(0, Math.min(100, Math.floor((hpCurrent / hpMax) * 100))),
           labels: [
-            {
-              text: `${String(entry.categoryOverride ?? definition?.category ?? "unknown").toLowerCase()}`,
-              tone: "neutral",
-            },
             ...(definition ? this.buildFollowerLabels(definition.parameterModifiers ?? []) : []),
           ],
         };
@@ -294,10 +290,10 @@ export class MapPlayerUtilitiesPanel {
     parameterModifiers.forEach((modifier) => {
       const sign = modifier.amount >= 0 ? "+" : "";
       const parameterLabel = modifier.parameter === "strength"
-        ? "STR"
+        ? this.translationService.tOrFallback("playerCard.stats.strengthAbbr", "FRZ")
         : modifier.parameter === "magic"
-          ? "MAG"
-          : "LCK";
+          ? this.translationService.tOrFallback("playerCard.stats.magicAbbr", "MAG")
+          : this.translationService.tOrFallback("playerCard.stats.luckAbbr", "FOR");
       labels.push({
         text: `${sign}${modifier.amount} ${parameterLabel}`,
         tone: modifier.amount >= 0 ? "positive" : "negative",
@@ -355,10 +351,10 @@ export class MapPlayerUtilitiesPanel {
     modifiers.forEach((modifier) => {
       const sign = modifier.amount >= 0 ? "+" : "";
       const parameterLabel = modifier.parameter === "strength"
-        ? "STR"
+        ? this.translationService.tOrFallback("playerCard.stats.strengthAbbr", "FRZ")
         : modifier.parameter === "magic"
-          ? "MAG"
-          : "LCK";
+          ? this.translationService.tOrFallback("playerCard.stats.magicAbbr", "MAG")
+          : this.translationService.tOrFallback("playerCard.stats.luckAbbr", "FOR");
 
       labels.push({
         text: `${sign}${modifier.amount} ${parameterLabel}`,

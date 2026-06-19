@@ -1,6 +1,6 @@
 import { NgClass } from "@angular/common";
 import { Component, OnDestroy, computed, effect, inject, signal } from "@angular/core";
-import { ExplorationEventService, PendingCombatEquipment, CombatEquipmentOption } from "@services/exploration/exploration-event-service";
+import { ExplorationEventService, PendingCombatEquipment, CombatEquipmentOption, CombatSpellOption } from "@services/exploration/exploration-event-service";
 import { SoundService } from "@services/ui/sound-service";
 import { TranslationService } from "@services/shared/translation-service";
 import { CombatOutcome, CombatResult, CombatState } from "@models/exploration/CombatState";
@@ -70,6 +70,11 @@ export class CombatOverlay implements OnDestroy {
   public readonly confirmedArmorLabel = signal<string | null>(null);
   private readonly confirmedEquipmentBonus = signal<number>(0);
 
+  public readonly spellDialogVisible = signal(false);
+  public readonly selectedSpellId = signal<string | null>(null);
+  public readonly confirmedSpellLabel = signal<string | null>(null);
+  private readonly confirmedSpellBonus = signal<number>(0);
+
   private timer1: ReturnType<typeof setTimeout> | null = null;
   private timer2: ReturnType<typeof setTimeout> | null = null;
   private resultTimers: ReturnType<typeof setTimeout>[] = [];
@@ -79,6 +84,9 @@ export class CombatOverlay implements OnDestroy {
   public readonly combat = computed<CombatState | null>(() => this.explorationEventService.pendingCombat());
   public readonly equipmentOptions = computed<PendingCombatEquipment | null>(() => this.explorationEventService.pendingEquipmentOptions());
   public readonly showEquipmentSelection = computed(() => this.equipmentSelectionVisible() && !!this.equipmentOptions());
+  public readonly spellOptions = computed<CombatSpellOption[] | null>(() => this.explorationEventService.pendingSpellOptions());
+  public readonly hasEligibleSpells = computed(() => (this.spellOptions()?.length ?? 0) > 0);
+  public readonly showSpellDialog = computed(() => this.spellDialogVisible() && this.hasEligibleSpells());
 
   public readonly selectedEquipmentBonus = computed(() => {
     const options = this.equipmentOptions();
@@ -100,6 +108,8 @@ export class CombatOverlay implements OnDestroy {
   private readonly activeEquipmentBonus = computed(() =>
     this.equipmentOptions() ? this.selectedEquipmentBonus() : this.confirmedEquipmentBonus()
   );
+
+  private readonly activeSpellBonus = computed(() => this.confirmedSpellBonus());
 
   constructor() {
     effect(() => {
@@ -141,6 +151,44 @@ export class CombatOverlay implements OnDestroy {
 
   public selectArmor(id: string | null): void {
     this.selectedArmorId.set(id);
+  }
+
+  public openSpellDialog(): void {
+    this.spellDialogVisible.set(true);
+  }
+
+  public closeSpellDialog(): void {
+    this.spellDialogVisible.set(false);
+    this.selectedSpellId.set(null);
+  }
+
+  public selectSpell(id: string | null): void {
+    this.selectedSpellId.set(id);
+  }
+
+  public castSpell(): void {
+    const spells = this.spellOptions();
+    const id = this.selectedSpellId();
+    if (id && spells) {
+      const opt = spells.find((s) => s.itemId === id);
+      if (opt) {
+        const label = opt.nameKey
+          ? this.translationService.tOrFallback(opt.nameKey, opt.name)
+          : opt.name;
+        this.confirmedSpellLabel.set(label);
+        this.confirmedSpellBonus.set(opt.bonus);
+        this.explorationEventService.submitSpellBonus(opt.bonus);
+      }
+    }
+    this.spellDialogVisible.set(false);
+    this.selectedSpellId.set(null);
+  }
+
+  public spellDescription(opt: CombatSpellOption): string {
+    if (opt.descriptionKey) {
+      return this.translationService.tOrFallback(opt.descriptionKey, opt.description);
+    }
+    return opt.description;
   }
 
   public confirmEquipment(): void {
@@ -255,7 +303,7 @@ export class CombatOverlay implements OnDestroy {
     const state = this.combat();
     if (!state?.playerSnapshot) return 0;
     if (this.fleeMode()) return state.playerSnapshot.luck;
-    return state.playerSnapshot.statValue + this.playerElementMod() + this.activeEquipmentBonus();
+    return state.playerSnapshot.statValue + this.playerElementMod() + this.activeEquipmentBonus() + this.activeSpellBonus();
   });
 
   public readonly enemyPreRollTotal = computed(() => {
@@ -286,14 +334,16 @@ export class CombatOverlay implements OnDestroy {
     const snap = this.combat()?.playerSnapshot;
     if (!snap) return 0;
     const eqBonus = snap.combatStat === "strength" ? this.activeEquipmentBonus() : 0;
-    return this.playerElementMod() + eqBonus;
+    const spellBonus = snap.combatStat === "strength" ? this.activeSpellBonus() : 0;
+    return this.playerElementMod() + eqBonus + spellBonus;
   });
 
   public readonly playerMagicDelta = computed(() => {
     const snap = this.combat()?.playerSnapshot;
     if (!snap) return 0;
     const eqBonus = snap.combatStat === "magic" ? this.activeEquipmentBonus() : 0;
-    return this.playerElementMod() + eqBonus;
+    const spellBonus = snap.combatStat === "magic" ? this.activeSpellBonus() : 0;
+    return this.playerElementMod() + eqBonus + spellBonus;
   });
 
   public readonly playerLuckDelta = computed(() => {
@@ -353,6 +403,9 @@ export class CombatOverlay implements OnDestroy {
     this.confirmedWeaponLabel.set(null);
     this.confirmedArmorLabel.set(null);
     this.confirmedEquipmentBonus.set(0);
+    this.confirmedSpellLabel.set(null);
+    this.confirmedSpellBonus.set(0);
+    this.spellDialogVisible.set(false);
     this.soundService.fadeOutFightAndStop();
     this.explorationEventService.dismissCombatResult();
   }

@@ -9,13 +9,20 @@ export type ExplorationElement = SanctuaryElement;
 
 /**
  * Loot token formats:
- *   "exp"              → region-based XP (I=1, II=2, III=3)
- *   "gold"             → 2 × cell.x coins
- *   "resource:<id>"    → 1 unit of a resource (food, timber, minerals, cloth)
- *   "item:<id>"        → drops an item card onto the cell
- *   "magic:<id>"       → drops a magic card onto the cell
+ *   "exp"                                      → region-based XP (I=1, II=2, III=3), always guaranteed
+ *   { type: "gold",       dropRate: 0–1 }      → 2 × cell.x coins, luck-scaled
+ *   { type: "resource:*", dropRate: 0–1 }      → 1 unit of a resource, luck-scaled
+ *   { type: "item:*",     dropRate: 0–1 }      → drops an item card, luck-scaled
+ *   { type: "magic:*",    dropRate: 0–1 }      → drops a magic card, luck-scaled
+ *
+ *   Plain strings are treated as guaranteed (dropRate = 1.0).
+ *   Effective rate = min(dropRate + luck × 0.03, 0.97)
  */
-export type LootToken = string;
+export interface LootTokenConfig {
+    type: string;
+    dropRate: number;
+}
+export type LootToken = string | LootTokenConfig;
 export type EnemyLoot = LootToken[];
 
 export interface PlacedEnemyCard {

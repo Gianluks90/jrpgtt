@@ -1981,10 +1981,10 @@ export class MapPageInteractionService {
 
       const sign = amount >= 0 ? "+" : "";
       const parameterLabel = modifier.parameter === "strength"
-        ? "STR"
+        ? this.translationService.tOrFallback("playerCard.stats.strengthAbbr", "FRZ")
         : modifier.parameter === "magic"
-          ? "MAG"
-          : "LCK";
+          ? this.translationService.tOrFallback("playerCard.stats.magicAbbr", "MAG")
+          : this.translationService.tOrFallback("playerCard.stats.luckAbbr", "FOR");
 
       labels.push({
         text: `${sign}${amount} ${parameterLabel}`,

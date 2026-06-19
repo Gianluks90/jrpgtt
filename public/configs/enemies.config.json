@@ -10,7 +10,7 @@
       "baseStrength": 4,
       "baseMagic": 3,
       "baseLuck": 1,
-      "loot": ["exp", "resource:food"]
+      "loot": ["exp", { "type": "resource:food", "dropRate": 0.40 }]
     },
     {
       "id": "forest-goblin",
@@ -23,7 +23,7 @@
       "baseStrength": 4,
       "baseMagic": 3,
       "baseLuck": 1,
-      "loot": ["exp", "gold", "resource:timber"]
+      "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:timber", "dropRate": 0.40 }]
     },
     {
       "id": "mountain-troll",
@@ -36,7 +36,7 @@
       "baseStrength": 5,
       "baseMagic": 3,
       "baseLuck": 1,
-      "loot": ["exp", "gold", "resource:minerals"]
+      "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:minerals", "dropRate": 0.40 }]
     },
     {
       "id": "desert-scorpion",
@@ -49,7 +49,7 @@
       "baseStrength": 4,
       "baseMagic": 3,
       "baseLuck": 2,
-      "loot": ["exp", "gold"]
+      "loot": ["exp", { "type": "gold", "dropRate": 0.75 }]
     },
     {
       "id": "ruins-specter",
@@ -62,7 +62,7 @@
       "baseStrength": 3,
       "baseMagic": 5,
       "baseLuck": 2,
-      "loot": ["exp", "gold", "resource:minerals"]
+      "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:minerals", "dropRate": 0.40 }]
     },
     {
       "id": "water-serpent",
@@ -75,7 +75,7 @@
       "baseStrength": 4,
       "baseMagic": 4,
       "baseLuck": 2,
-      "loot": ["exp", "gold"]
+      "loot": ["exp", { "type": "gold", "dropRate": 0.75 }]
     },
     {
       "id": "lucky-rat",

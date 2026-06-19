@@ -2,7 +2,7 @@ import { Injectable, signal } from "@angular/core";
 import { Player } from "@models/player/Player";
 import { MapCell } from "@models/world/MapCell";
 import { WorldState } from "@models/world/WorldState";
-import { PlacedEnemyCard, PlacedExplorationCard } from "@models/exploration/ExplorationCard";
+import { EnemyLoot, PlacedEnemyCard, PlacedExplorationCard } from "@models/exploration/ExplorationCard";
 import { CombatResult, CombatState } from "@models/exploration/CombatState";
 import { CombatResolverService } from "@services/gameplay/combat-resolver-service";
 import { ExplorationActionService, CommitCombatResultInput } from "@services/exploration/exploration-action-service";
@@ -23,6 +23,16 @@ export interface CombatEquipmentOption {
 export interface PendingCombatEquipment {
   weapons: CombatEquipmentOption[];
   armors: CombatEquipmentOption[];
+}
+
+export interface CombatSpellOption {
+  itemId: string;
+  name: string;
+  nameKey: string;
+  description: string;
+  descriptionKey?: string;
+  bonus: number;
+  parameter: "strength" | "magic";
 }
 
 export interface CombatHydrationContext {
@@ -46,11 +56,13 @@ export interface HandleCellArrivalInput {
 export class ExplorationEventService {
   public readonly pendingCombat = signal<CombatState | null>(null);
   public readonly pendingEquipmentOptions = signal<PendingCombatEquipment | null>(null);
+  public readonly pendingSpellOptions = signal<CombatSpellOption[] | null>(null);
   public readonly explorationFlowActive = signal(false);
 
   private combatActionResolver: ((action: "fight" | "flee") => void) | null = null;
   private combatResultDismissResolver: (() => void) | null = null;
   private equipmentSelectionResolver: ((bonus: number) => void) | null = null;
+  private currentSpellBonus = 0;
 
   constructor(
     private combatResolverService: CombatResolverService,
@@ -86,6 +98,11 @@ export class ExplorationEventService {
   public submitEquipmentSelection(bonus: number): void {
     this.equipmentSelectionResolver?.(bonus);
     this.equipmentSelectionResolver = null;
+  }
+
+  /** Called by the combat dialog when the player casts a spell during idle phase. */
+  public submitSpellBonus(bonus: number): void {
+    this.currentSpellBonus = bonus;
   }
 
   /** Called by the combat dialog when the player dismisses the result screen. */
@@ -134,7 +151,23 @@ export class ExplorationEventService {
           }
         }
 
+        if (playerForEquipment) {
+          const eligibleSpellsH = this.computeEligibleSpells(
+            playerForEquipment,
+            activeCombat.enemy.combatStat,
+            activeCombat.timeOfDay ?? "day",
+          );
+          if (eligibleSpellsH.length > 0) {
+            this.pendingSpellOptions.set(eligibleSpellsH);
+          }
+        }
+        this.currentSpellBonus = 0;
+
         const action = await this.waitForCombatAction();
+        const totalBonusH = equipmentBonus + this.currentSpellBonus;
+        this.currentSpellBonus = 0;
+        this.pendingSpellOptions.set(null);
+
         const snapshot = activeCombat.playerSnapshot!;
         let result: CombatResult;
 
@@ -146,19 +179,19 @@ export class ExplorationEventService {
             quadrantElement: activeCombat.quadrantElement,
             enemy: activeCombat.enemy,
             timeOfDay: activeCombat.timeOfDay ?? "day",
-            playerEquipmentBonus: equipmentBonus,
+            playerEquipmentBonus: totalBonusH,
           });
 
           if (result.outcome === "player-win") {
             const cell = context.getCell(activeCombat.cellId);
             if (cell) {
-              const loot = activeCombat.enemy.loot ?? [];
+              const wonLoot = this.rollLoot(activeCombat.enemy.loot ?? [], snapshot.luck);
               let xpGained = 0;
-              if (loot.includes("exp")) {
+              if (wonLoot.includes("exp")) {
                 const region = this.worldZonesService.getRegionLabelByColumn(cell.x, context.mapSize);
                 xpGained = this.xpByRegion(region);
               }
-              const goldGained = loot.includes("gold") ? 2 * cell.x : 0;
+              const goldGained = wonLoot.includes("gold") ? 2 * cell.x : 0;
               result = {
                 ...result,
                 ...(xpGained > 0 ? { xpGained } : {}),
@@ -249,6 +282,12 @@ export class ExplorationEventService {
       this.pendingEquipmentOptions.set(eligible);
     }
 
+    const eligibleSpells = this.computeEligibleSpells(player, enemy.combatStat, timeOfDay);
+    if (eligibleSpells.length > 0) {
+      this.pendingSpellOptions.set(eligibleSpells);
+    }
+    this.currentSpellBonus = 0;
+
     const combatState: CombatState = {
       combatId: this.generateCombatId(),
       attackingPlayerId: player.id,
@@ -284,6 +323,9 @@ export class ExplorationEventService {
     }
 
     const action = await this.waitForCombatAction();
+    const totalBonus = equipmentBonus + this.currentSpellBonus;
+    this.currentSpellBonus = 0;
+    this.pendingSpellOptions.set(null);
 
     let result;
     if (action === "fight") {
@@ -294,7 +336,7 @@ export class ExplorationEventService {
         quadrantElement,
         enemy,
         timeOfDay,
-        playerEquipmentBonus: equipmentBonus,
+        playerEquipmentBonus: totalBonus,
       });
     } else {
       result = this.combatResolverService.resolveFlee({
@@ -304,15 +346,15 @@ export class ExplorationEventService {
     }
 
     if (result.outcome === "player-win") {
-      const loot = enemy.loot ?? [];
+      const wonLoot = this.rollLoot(enemy.loot ?? [], stats.effective.luck);
 
       let xpGained = 0;
-      if (loot.includes("exp")) {
+      if (wonLoot.includes("exp")) {
         const region = this.worldZonesService.getRegionLabelByColumn(cell.x, mapSize);
         xpGained = this.xpByRegion(region);
       }
 
-      const goldGained = loot.includes("gold") ? 2 * cell.x : 0;
+      const goldGained = wonLoot.includes("gold") ? 2 * cell.x : 0;
 
       result = {
         ...result,
@@ -395,6 +437,42 @@ export class ExplorationEventService {
     return { weapons, armors };
   }
 
+  private computeEligibleSpells(
+    player: Player,
+    combatStat: "strength" | "magic",
+    timeOfDay: TimeOfDay,
+  ): CombatSpellOption[] {
+    const fightScope = combatStat === "strength" ? "fight-only" : "magic-fight-only";
+    const spells: CombatSpellOption[] = [];
+
+    for (const entry of player.inventory?.items ?? []) {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      if (!item || item.category !== "magic") continue;
+
+      const matchingModifiers = (item.parameterModifiers ?? []).filter((mod) => {
+        if (!mod.scopes.includes(fightScope)) return false;
+        if (mod.scopes.includes("day-only") && timeOfDay !== "day") return false;
+        if (mod.scopes.includes("night-only") && timeOfDay !== "night") return false;
+        return true;
+      });
+
+      if (matchingModifiers.length === 0) continue;
+
+      const bonus = matchingModifiers.reduce((sum, mod) => sum + mod.amount, 0);
+      spells.push({
+        itemId: item.id,
+        name: item.name,
+        nameKey: item.nameKey ?? "",
+        description: item.description,
+        ...(item.descriptionKey ? { descriptionKey: item.descriptionKey } : {}),
+        bonus,
+        parameter: combatStat,
+      });
+    }
+
+    return spells;
+  }
+
   private getSortedEvents(cell: MapCell): PlacedExplorationCard[] {
     return [...(cell.explorationEvents ?? [])].sort((a, b) => a.order - b.order);
   }
@@ -404,6 +482,20 @@ export class ExplorationEventService {
       return crypto.randomUUID();
     }
     return `combat-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  }
+
+  private rollLoot(tokens: EnemyLoot, luck: number): string[] {
+    const luckBonus = luck * 0.03;
+    const won: string[] = [];
+    for (const token of tokens) {
+      const { type, dropRate } = typeof token === "string"
+        ? { type: token, dropRate: 1.0 }
+        : token;
+      if (Math.random() < Math.min(dropRate + luckBonus, 0.97)) {
+        won.push(type);
+      }
+    }
+    return won;
   }
 
   private xpByRegion(region: RegionLabel): number {

@@ -1938,7 +1938,7 @@ export class MapPageInteractionService {
     modifiers: Array<{
       parameter: "strength" | "magic" | "luck";
       amount: number;
-      scopes: Array<"always" | "fight-only" | "day-only" | "night-only">;
+      scopes: Array<"always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only">;
     }>,
   ): Array<{ text: string; tone: "neutral" | "positive" | "negative" }> {
     const labels: Array<{ text: string; tone: "neutral" | "positive" | "negative" }> = [
@@ -1952,6 +1952,10 @@ export class MapPageInteractionService {
         if (scope === "always") return;
         if (scope === "fight-only") {
           scopeLabels.add("fight only");
+          return;
+        }
+        if (scope === "magic-fight-only") {
+          scopeLabels.add("magic fight only");
           return;
         }
         if (scope === "day-only") {

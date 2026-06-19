@@ -334,7 +334,7 @@ export class MapPlayerUtilitiesPanel {
   private buildFollowerLabels(modifiers: Array<{
     parameter: "strength" | "magic" | "luck";
     amount: number;
-    scopes: Array<"always" | "fight-only" | "day-only" | "night-only">;
+    scopes: Array<"always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only">;
   }>): Array<{
     text: string;
     tone: "neutral" | "positive" | "negative";
@@ -370,7 +370,7 @@ export class MapPlayerUtilitiesPanel {
   }
 
   private buildModifierScopeLabels(modifiers: Array<{
-    scopes: Array<"always" | "fight-only" | "day-only" | "night-only">;
+    scopes: Array<"always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only">;
   }>): string[] {
     const labels = new Set<string>();
 

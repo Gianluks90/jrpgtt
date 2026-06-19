@@ -11,6 +11,137 @@
     align-items: center;
     justify-content: center;
     padding: 16px;
+    overflow-y: auto;
+}
+
+/* Equipment selection — true dialog-on-dialog overlay */
+.equipment-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1010;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+@keyframes equipment-slide-in {
+    from { opacity: 0; transform: translateY(-20px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.equipment-card {
+    width: 100%;
+    max-width: 560px;
+    height: 350px;
+    background-color: var(--overlay-bg-color);
+    color: var(--overlay-fg-color);
+    border: var(--overlay-border);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px 12px 12px;
+    position: relative;
+    animation: equipment-slide-in 0.28s ease-out;
+}
+
+.equipment-card-header {
+    position: relative;
+    height: 0;
+}
+
+.equipment-card-label {
+    position: absolute;
+    top: -33px;
+    left: 12px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fg-color);
+    background-color: var(--bg-color);
+    padding: 4px 12px;
+}
+
+.equipment-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex-grow: 1;
+}
+
+.equipment-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.equipment-group-label {
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+}
+
+.equipment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.equipment-option {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--overlay-fg-color) 25%, transparent);
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s;
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--overlay-fg-color) 55%, transparent);
+    }
+
+    &.equipment-option-selected {
+        border-color: #f5c518;
+    }
+
+    &.equipment-option-selected .equipment-radio {
+        background-color: #f5c518;
+        border-color: #f5c518;
+        box-shadow: inset 0 0 0 3px var(--overlay-bg-color);
+    }
+}
+
+.equipment-radio {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--overlay-fg-color) 40%, transparent);
+    flex-shrink: 0;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.equipment-option-name {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.equipment-option-bonus {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #9ee6a4;
+    margin-left: auto;
+    padding-left: 10px;
+}
+
+.equipment-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 4px;
 }
 
 .combat-card {
@@ -136,6 +267,10 @@
     margin: 0 0 2px;
 }
 
+.col-header-sep {
+    opacity: 0.4;
+}
+
 /* Name + level row */
 .combatant-namerow {
     display: flex;
@@ -158,14 +293,6 @@
     font-weight: 400;
     opacity: 0.7;
     text-transform: none;
-}
-
-.combatant-lv {
-    font-size: 0.7rem;
-    opacity: 0.55;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
 }
 
 /* Stats grid — mirrors player-card */
@@ -244,6 +371,12 @@
         color: var(--bad-color);
         opacity: 1;
     }
+
+    &.modifier-tag-equipment {
+        color: #f5c518;
+        opacity: 1;
+        border-color: color-mix(in srgb, #f5c518 30%, transparent);
+    }
 }
 
 .modifier-neutral {
@@ -256,7 +389,7 @@
 }
 
 .modifier-icon {
-    display: inline-block;
+    display: block;
     width: 10px;
     height: 10px;
     flex-shrink: 0;

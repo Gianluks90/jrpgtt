@@ -1,3 +1,57 @@
+@if (showEquipmentSelection()) {
+    <div class="equipment-overlay">
+        <div class="equipment-card">
+            <div class="equipment-card-header">
+                <span class="equipment-card-label">{{ 'combat.equipment.title' | t }}</span>
+            </div>
+
+            <div class="equipment-columns">
+                <div class="equipment-group">
+                    <span class="equipment-group-label">{{ 'combat.equipment.weaponGroup' | t }}</span>
+                    <div class="equipment-options">
+                        <label class="equipment-option" [class.equipment-option-selected]="selectedWeaponId() === null">
+                            <input type="radio" name="weapon" [value]="null" (change)="selectWeapon(null)" [checked]="selectedWeaponId() === null" hidden>
+                            <span class="equipment-radio"></span>
+                            <span class="equipment-option-name">{{ 'combat.equipment.none' | t }}</span>
+                        </label>
+                        @for (opt of equipmentOptions()!.weapons; track opt.itemId) {
+                            <label class="equipment-option" [class.equipment-option-selected]="selectedWeaponId() === opt.itemId">
+                                <input type="radio" name="weapon" [value]="opt.itemId" (change)="selectWeapon(opt.itemId)" [checked]="selectedWeaponId() === opt.itemId" hidden>
+                                <span class="equipment-radio"></span>
+                                <span class="equipment-option-name">{{ itemLabel(opt) }}</span>
+                                <span class="equipment-option-bonus">+{{ opt.bonus }}</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="equipment-group">
+                    <span class="equipment-group-label">{{ 'combat.equipment.armorGroup' | t }}</span>
+                    <div class="equipment-options">
+                        <label class="equipment-option" [class.equipment-option-selected]="selectedArmorId() === null">
+                            <input type="radio" name="armor" [value]="null" (change)="selectArmor(null)" [checked]="selectedArmorId() === null" hidden>
+                            <span class="equipment-radio"></span>
+                            <span class="equipment-option-name">{{ 'combat.equipment.none' | t }}</span>
+                        </label>
+                        @for (opt of equipmentOptions()!.armors; track opt.itemId) {
+                            <label class="equipment-option" [class.equipment-option-selected]="selectedArmorId() === opt.itemId">
+                                <input type="radio" name="armor" [value]="opt.itemId" (change)="selectArmor(opt.itemId)" [checked]="selectedArmorId() === opt.itemId" hidden>
+                                <span class="equipment-radio"></span>
+                                <span class="equipment-option-name">{{ itemLabel(opt) }}</span>
+                                <span class="equipment-option-bonus">+{{ opt.bonus }}</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="equipment-actions">
+                <text-button [text]="'combat.equipment.confirm' | t" (clicked)="confirmEquipment()"></text-button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (combat(); as state) {
     <div class="combat-overlay-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="'combat.overlay.ariaLabel' | t">
         <div class="combat-card">
@@ -21,11 +75,10 @@
 
                     <!-- Player column -->
                     <div class="combat-col combat-col-player combat-combatant-card">
-                        <p class="col-header">{{ 'combat.column.player' | t }}</p>
+                        <p class="col-header">{{ 'combat.column.player' | t }}<span class="col-header-sep"> | </span>Lv. {{ state.playerSnapshot?.level ?? '?' }}</p>
                         @if (state.playerSnapshot; as snap) {
                             <div class="combatant-namerow">
                                 <span class="combatant-name">{{ snap.name }}</span>
-                                <span class="combatant-lv">Lv. {{ snap.level }}</span>
                             </div>
 
                             <div class="combatant-stats-grid">
@@ -74,6 +127,12 @@
                                         {{ ('combat.element.' + snap.element) | t }}
                                     </span>
                                 }
+                                @if (confirmedWeaponLabel()) {
+                                    <span class="modifier-tag modifier-tag-equipment">✓ {{ confirmedWeaponLabel() }}</span>
+                                }
+                                @if (confirmedArmorLabel()) {
+                                    <span class="modifier-tag modifier-tag-equipment">✓ {{ confirmedArmorLabel() }}</span>
+                                }
                             </div>
 
                             <div class="combat-total-row"
@@ -108,7 +167,7 @@
 
                     <!-- Enemy column -->
                     <div class="combat-col combat-col-enemy combat-combatant-card">
-                        <p class="col-header">{{ 'combat.column.enemy' | t }}</p>
+                        <p class="col-header">{{ 'combat.column.enemy' | t }}<span class="col-header-sep"> | </span>Lv. {{ state.enemy.level }}</p>
                         <div class="combatant-namerow">
                             <span class="combatant-name">
                                 {{ state.enemy.name }}
@@ -116,7 +175,6 @@
                                     <span class="combatant-suffix">{{ state.enemy.suffix }}</span>
                                 }
                             </span>
-                            <span class="combatant-lv">Lv. {{ state.enemy.level }}</span>
                         </div>
 
                         <div class="combatant-stats-grid">
@@ -211,7 +269,7 @@
                     <div class="combat-actions">
                         <text-button [text]="'combat.action.continue' | t" (clicked)="continueToResults()"></text-button>
                     </div>
-                } @else {
+                } @else if (!equipmentOptions()) {
                     <div class="combat-actions combat-actions-split">
                         <div class="combat-action-col">
                             <text-button

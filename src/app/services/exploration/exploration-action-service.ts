@@ -89,7 +89,7 @@ export class ExplorationActionService {
     });
 
     if (isVictory && (result.xpGained ?? 0) > 0) {
-      await this.playerProgressionService.assignExperience(gameId, player.id, result.xpGained!);
+      await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, player.id, result.xpGained!);
     }
   }
 

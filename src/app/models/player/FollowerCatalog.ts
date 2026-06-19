@@ -1,7 +1,7 @@
 import { BiomeType } from "@models/world/MapCell";
 
 export type FollowerCategory = "companion" | (string & {});
-export type FollowerEffectScope = "always" | "fight-only" | "day-only" | "night-only";
+export type FollowerEffectScope = "always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only";
 export type FollowerParameterKey = "strength" | "magic" | "luck";
 
 export interface FollowerParameterModifier {

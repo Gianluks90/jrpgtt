@@ -1,6 +1,8 @@
 import { NgClass } from "@angular/common";
-import { Component, OnDestroy, computed, inject, signal } from "@angular/core";
-import { ExplorationEventService } from "@services/exploration/exploration-event-service";
+import { Component, OnDestroy, computed, effect, inject, signal } from "@angular/core";
+import { ExplorationEventService, PendingCombatEquipment, CombatEquipmentOption } from "@services/exploration/exploration-event-service";
+import { SoundService } from "@services/ui/sound-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { CombatOutcome, CombatResult, CombatState } from "@models/exploration/CombatState";
 import { ExplorationElement } from "@models/exploration/ExplorationCard";
 import { SanctuaryElement } from "@models/world/MapCell";
@@ -55,16 +57,112 @@ function computeElementMod(
 })
 export class CombatOverlay implements OnDestroy {
   private readonly explorationEventService = inject(ExplorationEventService);
+  private readonly soundService = inject(SoundService);
+  private readonly translationService = inject(TranslationService);
 
   private readonly uiPhase = signal<CombatUiPhase>("idle");
   private readonly combatAction = signal<CombatAction>(null);
   private readonly revealedResultsCount = signal(0);
+  private readonly equipmentSelectionVisible = signal(false);
+  public readonly selectedWeaponId = signal<string | null>(null);
+  public readonly selectedArmorId = signal<string | null>(null);
+  public readonly confirmedWeaponLabel = signal<string | null>(null);
+  public readonly confirmedArmorLabel = signal<string | null>(null);
+  private readonly confirmedEquipmentBonus = signal<number>(0);
 
   private timer1: ReturnType<typeof setTimeout> | null = null;
   private timer2: ReturnType<typeof setTimeout> | null = null;
   private resultTimers: ReturnType<typeof setTimeout>[] = [];
+  private equipmentRevealTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeCombatId: string | null = null;
 
   public readonly combat = computed<CombatState | null>(() => this.explorationEventService.pendingCombat());
+  public readonly equipmentOptions = computed<PendingCombatEquipment | null>(() => this.explorationEventService.pendingEquipmentOptions());
+  public readonly showEquipmentSelection = computed(() => this.equipmentSelectionVisible() && !!this.equipmentOptions());
+
+  public readonly selectedEquipmentBonus = computed(() => {
+    const options = this.equipmentOptions();
+    if (!options) return 0;
+    let bonus = 0;
+    const wId = this.selectedWeaponId();
+    const aId = this.selectedArmorId();
+    if (wId) {
+      const opt = options.weapons.find((w) => w.itemId === wId);
+      if (opt) bonus += opt.bonus;
+    }
+    if (aId) {
+      const opt = options.armors.find((a) => a.itemId === aId);
+      if (opt) bonus += opt.bonus;
+    }
+    return bonus;
+  });
+
+  private readonly activeEquipmentBonus = computed(() =>
+    this.equipmentOptions() ? this.selectedEquipmentBonus() : this.confirmedEquipmentBonus()
+  );
+
+  constructor() {
+    effect(() => {
+      const combatId = this.combat()?.combatId ?? null;
+      if (combatId !== null && combatId !== this.activeCombatId) {
+        this.soundService.playFightLoop();
+      }
+      this.activeCombatId = combatId;
+    });
+
+    effect(() => {
+      const options = this.equipmentOptions();
+      if (options) {
+        this.equipmentRevealTimer = setTimeout(() => {
+          this.equipmentSelectionVisible.set(true);
+        }, 1400);
+      } else {
+        if (this.equipmentRevealTimer !== null) {
+          clearTimeout(this.equipmentRevealTimer);
+          this.equipmentRevealTimer = null;
+        }
+        this.equipmentSelectionVisible.set(false);
+        this.selectedWeaponId.set(null);
+        this.selectedArmorId.set(null);
+      }
+    });
+  }
+
+  public itemLabel(opt: CombatEquipmentOption): string {
+    if (opt.nameKey) {
+      return this.translationService.tOrFallback(opt.nameKey, opt.name);
+    }
+    return opt.name;
+  }
+
+  public selectWeapon(id: string | null): void {
+    this.selectedWeaponId.set(id);
+  }
+
+  public selectArmor(id: string | null): void {
+    this.selectedArmorId.set(id);
+  }
+
+  public confirmEquipment(): void {
+    const options = this.equipmentOptions();
+    const wId = this.selectedWeaponId();
+    const aId = this.selectedArmorId();
+    if (wId && options) {
+      const opt = options.weapons.find((w) => w.itemId === wId);
+      this.confirmedWeaponLabel.set(opt ? this.itemLabel(opt) : null);
+    } else {
+      this.confirmedWeaponLabel.set(null);
+    }
+    if (aId && options) {
+      const opt = options.armors.find((a) => a.itemId === aId);
+      this.confirmedArmorLabel.set(opt ? this.itemLabel(opt) : null);
+    } else {
+      this.confirmedArmorLabel.set(null);
+    }
+    const bonus = this.selectedEquipmentBonus();
+    this.confirmedEquipmentBonus.set(bonus);
+    this.explorationEventService.submitEquipmentSelection(bonus);
+  }
   public readonly currentUiPhase = computed(() => this.uiPhase());
   public readonly fleeMode = computed(() => this.combatAction() === "flee");
 
@@ -157,7 +255,7 @@ export class CombatOverlay implements OnDestroy {
     const state = this.combat();
     if (!state?.playerSnapshot) return 0;
     if (this.fleeMode()) return state.playerSnapshot.luck;
-    return state.playerSnapshot.statValue + this.playerElementMod();
+    return state.playerSnapshot.statValue + this.playerElementMod() + this.activeEquipmentBonus();
   });
 
   public readonly enemyPreRollTotal = computed(() => {
@@ -183,15 +281,19 @@ export class CombatOverlay implements OnDestroy {
     return !!r && r.enemyRoll.total > r.playerRoll.total;
   });
 
-  // Element mod shown on ALL three player stat boxes, not just the active one
+  // Element mod shown on ALL three player stat boxes; equipment bonus only on active combat stat
   public readonly playerStrengthDelta = computed(() => {
-    if (!this.combat()?.playerSnapshot) return 0;
-    return this.playerElementMod();
+    const snap = this.combat()?.playerSnapshot;
+    if (!snap) return 0;
+    const eqBonus = snap.combatStat === "strength" ? this.activeEquipmentBonus() : 0;
+    return this.playerElementMod() + eqBonus;
   });
 
   public readonly playerMagicDelta = computed(() => {
-    if (!this.combat()?.playerSnapshot) return 0;
-    return this.playerElementMod();
+    const snap = this.combat()?.playerSnapshot;
+    if (!snap) return 0;
+    const eqBonus = snap.combatStat === "magic" ? this.activeEquipmentBonus() : 0;
+    return this.playerElementMod() + eqBonus;
   });
 
   public readonly playerLuckDelta = computed(() => {
@@ -215,6 +317,10 @@ export class CombatOverlay implements OnDestroy {
 
   public ngOnDestroy(): void {
     this.clearAllTimers();
+    if (this.equipmentRevealTimer !== null) {
+      clearTimeout(this.equipmentRevealTimer);
+      this.equipmentRevealTimer = null;
+    }
   }
 
   public fight(): void {
@@ -244,6 +350,10 @@ export class CombatOverlay implements OnDestroy {
     this.uiPhase.set("idle");
     this.combatAction.set("dismissed");
     this.revealedResultsCount.set(0);
+    this.confirmedWeaponLabel.set(null);
+    this.confirmedArmorLabel.set(null);
+    this.confirmedEquipmentBonus.set(0);
+    this.soundService.fadeOutFightAndStop();
     this.explorationEventService.dismissCombatResult();
   }
 

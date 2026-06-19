@@ -11,6 +11,7 @@ export interface ResolveFightInput {
   quadrantElement?: SanctuaryElement;
   enemy: PlacedEnemyCard;
   timeOfDay: TimeOfDay;
+  playerEquipmentBonus?: number;
 }
 
 export interface ResolveFleeInput {
@@ -43,15 +44,17 @@ export class CombatResolverService {
     );
     const timeModifier = this.computeTimeModifier(input.enemy.time, input.timeOfDay);
 
+    const equipmentBonus = Math.max(0, Math.floor(Number(input.playerEquipmentBonus ?? 0)));
+
     // On critical (roll = 100), the combat stat is also added to the luck bonus
     const playerEffectiveBonus = playerLuckRoll.critical
-      ? playerLuckRoll.bonus + input.playerCombatStat
+      ? playerLuckRoll.bonus + input.playerCombatStat + equipmentBonus
       : playerLuckRoll.bonus;
     const enemyEffectiveBonus = enemyLuckRoll.critical
       ? enemyLuckRoll.bonus + enemyCombatStatValue
       : enemyLuckRoll.bonus;
 
-    const playerTotal = input.playerCombatStat + playerEffectiveBonus + elementMods.playerMod;
+    const playerTotal = input.playerCombatStat + equipmentBonus + playerEffectiveBonus + elementMods.playerMod;
     const enemyTotal = enemyCombatStatValue + enemyEffectiveBonus + elementMods.enemyMod + timeModifier;
 
     const playerSnap: CombatRollSnapshot = {
@@ -60,7 +63,7 @@ export class CombatResolverService {
       luckBonus: playerEffectiveBonus,
       elementModifier: elementMods.playerMod,
       timeModifier: 0,
-      effectModifier: 0,
+      effectModifier: equipmentBonus,
       total: playerTotal,
       critical: playerLuckRoll.critical,
     };

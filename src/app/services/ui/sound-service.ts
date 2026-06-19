@@ -37,6 +37,7 @@ export class SoundService {
   private removeInteractionListeners: (() => void) | null = null;
   private activeBackgroundMode: BackgroundSoundMode = "none";
   private fadeOutTimer: ReturnType<typeof setInterval> | null = null;
+  private fightFadeOutTimer: ReturnType<typeof setInterval> | null = null;
   public readonly isEnabled = signal(true);
 
   public initialize(): void {
@@ -139,6 +140,57 @@ export class SoundService {
       }
       audio.volume = SOUND_VOLUME_BY_ID[soundId];
     });
+  }
+
+  public playFightLoop(): void {
+    if (!this.isEnabled()) {
+      return;
+    }
+
+    const audio = this.sounds.get("fight");
+    if (!audio) {
+      return;
+    }
+
+    this.clearFightFadeOutTimer();
+    audio.loop = true;
+    audio.volume = SOUND_VOLUME_BY_ID["fight"];
+    audio.currentTime = 0;
+    this.tryPlay("fight", audio);
+  }
+
+  public fadeOutFightAndStop(durationMs = 1500): void {
+    const audio = this.sounds.get("fight");
+    if (!audio) {
+      return;
+    }
+
+    this.clearFightFadeOutTimer();
+
+    if (audio.paused) {
+      return;
+    }
+
+    const safeDurationMs = Math.max(200, Math.floor(durationMs));
+    const stepMs = 100;
+    const totalSteps = Math.max(1, Math.floor(safeDurationMs / stepMs));
+    const startVolume = audio.volume;
+    let currentStep = 0;
+
+    this.fightFadeOutTimer = setInterval(() => {
+      currentStep += 1;
+      const progress = Math.max(0, Math.min(1, currentStep / totalSteps));
+      audio.volume = Math.max(0, startVolume * (1 - progress));
+
+      if (progress < 1) {
+        return;
+      }
+
+      this.clearFightFadeOutTimer();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = SOUND_VOLUME_BY_ID["fight"];
+    }, stepMs);
   }
 
   public syncBackgroundForUrl(url: string): void {
@@ -252,6 +304,15 @@ export class SoundService {
 
     clearInterval(this.fadeOutTimer);
     this.fadeOutTimer = null;
+  }
+
+  private clearFightFadeOutTimer(): void {
+    if (!this.fightFadeOutTimer) {
+      return;
+    }
+
+    clearInterval(this.fightFadeOutTimer);
+    this.fightFadeOutTimer = null;
   }
 
   private switchToNextAsset(soundId: SoundId, audio: HTMLAudioElement): void {

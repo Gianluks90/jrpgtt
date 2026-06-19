@@ -226,7 +226,7 @@ export class FollowerCatalogService {
     rawScopes: unknown,
     followerId: string,
     index: number,
-  ): Array<"always" | "fight-only" | "day-only" | "night-only"> {
+  ): Array<"always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only"> {
     if (typeof rawScopes !== "undefined") {
       if (!Array.isArray(rawScopes) || rawScopes.length === 0) {
         throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid scopes`);
@@ -250,9 +250,10 @@ export class FollowerCatalogService {
     throw new Error(`Invalid followers configuration: follower '${followerId}' modifier at index ${index} has invalid scope`);
   }
 
-  private isValidModifierScope(value: unknown): value is "always" | "fight-only" | "day-only" | "night-only" {
+  private isValidModifierScope(value: unknown): value is "always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only" {
     return value === "always"
       || value === "fight-only"
+      || value === "magic-fight-only"
       || value === "day-only"
       || value === "night-only";
   }

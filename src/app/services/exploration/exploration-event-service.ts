@@ -9,6 +9,21 @@ import { ExplorationActionService, CommitCombatResultInput } from "@services/exp
 import { PlayerStatsModifierService } from "@services/player/player-stats-modifier-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { RegionLabel } from "@models/world/WorldZone";
+import { ItemCatalogService } from "@services/catalog/item-catalog-service";
+import { TimeOfDay } from "@models/world/WorldState";
+
+export interface CombatEquipmentOption {
+  itemId: string;
+  name: string;
+  nameKey: string;
+  bonus: number;
+  parameter: "strength" | "magic";
+}
+
+export interface PendingCombatEquipment {
+  weapons: CombatEquipmentOption[];
+  armors: CombatEquipmentOption[];
+}
 
 export interface CombatHydrationContext {
   getPlayer: () => Player | null;
@@ -30,16 +45,19 @@ export interface HandleCellArrivalInput {
 })
 export class ExplorationEventService {
   public readonly pendingCombat = signal<CombatState | null>(null);
+  public readonly pendingEquipmentOptions = signal<PendingCombatEquipment | null>(null);
   public readonly explorationFlowActive = signal(false);
 
   private combatActionResolver: ((action: "fight" | "flee") => void) | null = null;
   private combatResultDismissResolver: (() => void) | null = null;
+  private equipmentSelectionResolver: ((bonus: number) => void) | null = null;
 
   constructor(
     private combatResolverService: CombatResolverService,
     private explorationActionService: ExplorationActionService,
     private playerStatsModifierService: PlayerStatsModifierService,
     private worldZonesService: WorldZonesService,
+    private itemCatalogService: ItemCatalogService,
   ) {}
 
   /**
@@ -62,6 +80,12 @@ export class ExplorationEventService {
   public submitCombatAction(action: "fight" | "flee"): void {
     this.combatActionResolver?.(action);
     this.combatActionResolver = null;
+  }
+
+  /** Called by the combat dialog when the player confirms equipment selection. */
+  public submitEquipmentSelection(bonus: number): void {
+    this.equipmentSelectionResolver?.(bonus);
+    this.equipmentSelectionResolver = null;
   }
 
   /** Called by the combat dialog when the player dismisses the result screen. */
@@ -94,7 +118,23 @@ export class ExplorationEventService {
     }
 
     if (activeCombat.phase === "setup" && activeCombat.playerSnapshot) {
-      void this.waitForCombatAction().then(async (action) => {
+      void (async () => {
+        const playerForEquipment = context.getPlayer();
+        let equipmentBonus = 0;
+        if (playerForEquipment) {
+          const eligible = this.computeEligibleEquipment(
+            playerForEquipment,
+            activeCombat.enemy.combatStat,
+            activeCombat.timeOfDay ?? "day",
+          );
+          if (eligible.weapons.length > 0 || eligible.armors.length > 0) {
+            this.pendingEquipmentOptions.set(eligible);
+            equipmentBonus = await this.waitForEquipmentSelection();
+            this.pendingEquipmentOptions.set(null);
+          }
+        }
+
+        const action = await this.waitForCombatAction();
         const snapshot = activeCombat.playerSnapshot!;
         let result: CombatResult;
 
@@ -106,6 +146,7 @@ export class ExplorationEventService {
             quadrantElement: activeCombat.quadrantElement,
             enemy: activeCombat.enemy,
             timeOfDay: activeCombat.timeOfDay ?? "day",
+            playerEquipmentBonus: equipmentBonus,
           });
 
           if (result.outcome === "player-win") {
@@ -157,7 +198,7 @@ export class ExplorationEventService {
         await this.explorationActionService.closeCombat(gameId);
         this.pendingCombat.set(null);
         this.explorationFlowActive.set(false);
-      });
+      })();
     }
   }
 
@@ -202,6 +243,12 @@ export class ExplorationEventService {
       ? stats.effective.strength
       : stats.effective.magic;
 
+    const eligible = this.computeEligibleEquipment(player, enemy.combatStat, timeOfDay);
+    const hasEquipment = eligible.weapons.length > 0 || eligible.armors.length > 0;
+    if (hasEquipment) {
+      this.pendingEquipmentOptions.set(eligible);
+    }
+
     const combatState: CombatState = {
       combatId: this.generateCombatId(),
       attackingPlayerId: player.id,
@@ -230,19 +277,24 @@ export class ExplorationEventService {
     await this.explorationActionService.openCombat(gameId, combatState);
     this.pendingCombat.set(combatState);
 
+    let equipmentBonus = 0;
+    if (hasEquipment) {
+      equipmentBonus = await this.waitForEquipmentSelection();
+      this.pendingEquipmentOptions.set(null);
+    }
+
     const action = await this.waitForCombatAction();
 
     let result;
     if (action === "fight") {
-      const playerCombatStat = playerCombatStatValue;
-
       result = this.combatResolverService.resolveFight({
-        playerCombatStat,
+        playerCombatStat: playerCombatStatValue,
         playerLuck: stats.effective.luck,
         playerElement: player.attunedElement,
         quadrantElement,
         enemy,
         timeOfDay,
+        playerEquipmentBonus: equipmentBonus,
       });
     } else {
       result = this.combatResolverService.resolveFlee({
@@ -291,10 +343,56 @@ export class ExplorationEventService {
     });
   }
 
+  private waitForEquipmentSelection(): Promise<number> {
+    return new Promise((resolve) => {
+      this.equipmentSelectionResolver = resolve;
+    });
+  }
+
   private waitForResultDismissal(): Promise<void> {
     return new Promise((resolve) => {
       this.combatResultDismissResolver = resolve;
     });
+  }
+
+  private computeEligibleEquipment(
+    player: Player,
+    combatStat: "strength" | "magic",
+    timeOfDay: TimeOfDay,
+  ): PendingCombatEquipment {
+    const fightScope = combatStat === "strength" ? "fight-only" : "magic-fight-only";
+    const weapons: CombatEquipmentOption[] = [];
+    const armors: CombatEquipmentOption[] = [];
+
+    for (const entry of player.inventory?.items ?? []) {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      if (!item) continue;
+      if (item.category !== "weapon" && item.category !== "armor") continue;
+
+      const matchingModifiers = (item.parameterModifiers ?? []).filter((mod) => {
+        if (!mod.scopes.includes(fightScope)) return false;
+        if (mod.parameter !== combatStat) return false;
+        if (mod.scopes.includes("day-only") && timeOfDay !== "day") return false;
+        if (mod.scopes.includes("night-only") && timeOfDay !== "night") return false;
+        return true;
+      });
+
+      if (matchingModifiers.length === 0) continue;
+
+      const bonus = matchingModifiers.reduce((sum, mod) => sum + mod.amount, 0);
+      const option: CombatEquipmentOption = {
+        itemId: item.id,
+        name: item.name,
+        nameKey: item.nameKey ?? "",
+        bonus,
+        parameter: combatStat,
+      };
+
+      if (item.category === "weapon") weapons.push(option);
+      else armors.push(option);
+    }
+
+    return { weapons, armors };
   }
 
   private getSortedEvents(cell: MapCell): PlacedExplorationCard[] {

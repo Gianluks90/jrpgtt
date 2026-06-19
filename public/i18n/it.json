@@ -1064,7 +1064,13 @@
             "castSpellStatus": "{playerName} ha lanciato {spellName}, applicato {statusKey} per {durationTurns} turni e speso {spentMp} MP.",
             "castSpellTeleport": "{playerName} ha lanciato {spellName}, teletrasportandosi in {targetX}, {targetY} e spendendo {spentMp} MP.",
             "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP.",
-            "castSpellDiagonal": "{playerName} ha lanciato {spellName}, abilitando il movimento diagonale (−{spentMp} MP)."
+            "castSpellDiagonal": "{playerName} ha lanciato {spellName}, abilitando il movimento diagonale (−{spentMp} MP).",
+            "combatResult": {
+                "win": "{playerName} ha sconfitto {enemy} (+{xp} XP).",
+                "loss": "{playerName} è stato sconfitto da {enemy} (−{damage} HP).",
+                "flee": "{playerName} è fuggito da {enemy} (−{damage} HP).",
+                "fleeLucky": "{playerName} è fuggito fortunatamente da {enemy} senza subire danni."
+            }
         }
     },
     "actions": {
@@ -1357,6 +1363,13 @@
             "flee": "Fuggi",
             "continue": "Continua",
             "conclude": "Concludi"
+        },
+        "equipment": {
+            "title": "Equipaggiamento",
+            "weaponGroup": "Arma",
+            "armorGroup": "Armatura",
+            "none": "Nessuno",
+            "confirm": "Conferma"
         },
         "outcome": {
             "win": "Vittoria",

@@ -1,8 +1,8 @@
 import { BiomeType } from "@models/world/MapCell";
 import { PlayerAlignment } from "@models/player/Player";
 
-export type ItemCategory = "magic" | (string & {});
-export type ItemEffectScope = "always" | "fight-only" | "day-only" | "night-only";
+export type ItemCategory = "magic" | "weapon" | "armor" | (string & {});
+export type ItemEffectScope = "always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only";
 export type ItemParameterKey = "strength" | "magic" | "luck";
 
 export interface ItemParameterModifier {

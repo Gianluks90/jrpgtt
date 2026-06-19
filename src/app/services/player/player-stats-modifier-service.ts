@@ -263,7 +263,7 @@ export class PlayerStatsModifierService {
       }));
   }
 
-  private isScopeActive(scopes: Array<"always" | "fight-only" | "day-only" | "night-only">, timeOfDay: WorldState["timeOfDay"]): boolean {
+  private isScopeActive(scopes: Array<"always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only">, timeOfDay: WorldState["timeOfDay"]): boolean {
     if (!Array.isArray(scopes) || scopes.length === 0) {
       return false;
     }

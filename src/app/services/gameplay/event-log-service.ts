@@ -264,6 +264,16 @@ export class EventLogService {
             const resource = String(args["resource"] ?? "resource");
             return `${playerName} collected pending ${resource}.`;
         },
+        "player.combatResult": ({ playerName, args }) => {
+            const enemy = String(args["enemy"] ?? "unknown enemy");
+            const outcome = String(args["outcome"] ?? "");
+            const damage = Number(args["damage"] ?? 0);
+            const xp = Number(args["xp"] ?? 0);
+            if (outcome === "player-win") return `${playerName} defeated ${enemy} (+${xp} XP).`;
+            if (outcome === "player-loss") return `${playerName} was defeated by ${enemy} (−${damage} HP).`;
+            if (outcome === "flee-lucky") return `${playerName} luckily escaped from ${enemy} without taking damage.`;
+            return `${playerName} fled from ${enemy} (−${damage} HP).`;
+        },
     };
 
     constructor(
@@ -676,6 +686,21 @@ export class EventLogService {
                 source,
                 gainedExperience: Math.max(0, Math.floor(Number(args["gainedExperience"] ?? 0))),
             });
+        }
+
+        if (code === "player.combatResult") {
+            const enemy = String(args["enemy"] ?? "unknown enemy");
+            const outcome = String(args["outcome"] ?? "");
+            const damage = Number(args["damage"] ?? 0);
+            const xp = Number(args["xp"] ?? 0);
+            const key = outcome === "player-win"
+                ? "logs.player.combatResult.win"
+                : outcome === "player-loss"
+                    ? "logs.player.combatResult.loss"
+                    : outcome === "flee-lucky"
+                        ? "logs.player.combatResult.fleeLucky"
+                        : "logs.player.combatResult.flee";
+            return this.translationService.tOrFallback(key, fallback, { ...baseParams, enemy, damage, xp });
         }
 
         const genericKey = `logs.${code}`;

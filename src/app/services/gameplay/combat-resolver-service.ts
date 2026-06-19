@@ -43,19 +43,21 @@ export class CombatResolverService {
     );
     const timeModifier = this.computeTimeModifier(input.enemy.time, input.timeOfDay);
 
-    const playerTotal = input.playerCombatStat
-      + playerLuckRoll.bonus
-      + elementMods.playerMod;
+    // On critical (roll = 100), the combat stat is also added to the luck bonus
+    const playerEffectiveBonus = playerLuckRoll.critical
+      ? playerLuckRoll.bonus + input.playerCombatStat
+      : playerLuckRoll.bonus;
+    const enemyEffectiveBonus = enemyLuckRoll.critical
+      ? enemyLuckRoll.bonus + enemyCombatStatValue
+      : enemyLuckRoll.bonus;
 
-    const enemyTotal = enemyCombatStatValue
-      + enemyLuckRoll.bonus
-      + elementMods.enemyMod
-      + timeModifier;
+    const playerTotal = input.playerCombatStat + playerEffectiveBonus + elementMods.playerMod;
+    const enemyTotal = enemyCombatStatValue + enemyEffectiveBonus + elementMods.enemyMod + timeModifier;
 
     const playerSnap: CombatRollSnapshot = {
       baseStat: input.playerCombatStat,
       luckRoll: playerLuckRoll.roll,
-      luckBonus: playerLuckRoll.bonus,
+      luckBonus: playerEffectiveBonus,
       elementModifier: elementMods.playerMod,
       timeModifier: 0,
       effectModifier: 0,
@@ -66,7 +68,7 @@ export class CombatResolverService {
     const enemySnap: CombatRollSnapshot = {
       baseStat: enemyCombatStatValue,
       luckRoll: enemyLuckRoll.roll,
-      luckBonus: enemyLuckRoll.bonus,
+      luckBonus: enemyEffectiveBonus,
       elementModifier: elementMods.enemyMod,
       timeModifier,
       effectModifier: 0,
@@ -74,7 +76,7 @@ export class CombatResolverService {
       critical: enemyLuckRoll.critical,
     };
 
-    // Both critical → tie
+    // Both critical → tie (powers cancel out)
     if (playerLuckRoll.critical && enemyLuckRoll.critical) {
       return {
         outcome: "player-loss",
@@ -85,14 +87,14 @@ export class CombatResolverService {
       };
     }
 
-    // Player critical → auto-win, max damage
+    // Player critical → auto-win, damage from inflated totals
     if (playerLuckRoll.critical) {
-      return this.buildResult("player-win", playerSnap, enemySnap, input.playerCombatStat, true);
+      return this.buildResult("player-win", playerSnap, enemySnap, Math.abs(playerTotal - enemyTotal), true);
     }
 
-    // Enemy critical → auto-loss, max damage
+    // Enemy critical → auto-loss, damage from inflated totals
     if (enemyLuckRoll.critical) {
-      return this.buildResult("player-loss", playerSnap, enemySnap, enemyCombatStatValue, true);
+      return this.buildResult("player-loss", playerSnap, enemySnap, Math.abs(enemyTotal - playerTotal), true);
     }
 
     // Auto-win check based on base stats before modifiers
@@ -140,43 +142,39 @@ export class CombatResolverService {
       ? input.enemy.strength
       : input.enemy.magic;
 
-    const fleeRoll = this.randomIntInclusive(1, 100);
-    const fleeTotal = fleeRoll + Math.max(0, Math.floor(input.playerLuck));
-    const isLucky = fleeTotal >= 100;
+    const playerLuckRoll = this.rollCombatLuck(input.playerLuck);
+    const enemyLuckRoll = this.rollCombatLuck(input.enemy.luck);
 
-    const fullDamage = enemyCombatStatValue;
-    const damage = isLucky ? Math.ceil(fullDamage / 2) : fullDamage;
-    const outcome: CombatOutcome = isLucky ? "flee-lucky" : "flee";
+    const playerFleeTotal = input.playerLuck + playerLuckRoll.bonus;
+    const enemyFleeTotal = input.enemy.luck + enemyLuckRoll.bonus;
+
+    const playerWins = playerFleeTotal > enemyFleeTotal;
+    const outcome: CombatOutcome = playerWins ? "flee-lucky" : "flee";
+    const damage = playerWins ? 0 : Math.ceil(enemyCombatStatValue / 2);
 
     const playerSnap: CombatRollSnapshot = {
-      baseStat: 0,
-      luckRoll: fleeRoll,
-      luckBonus: 0,
+      baseStat: input.playerLuck,
+      luckRoll: playerLuckRoll.roll,
+      luckBonus: playerLuckRoll.bonus,
       elementModifier: 0,
       timeModifier: 0,
       effectModifier: 0,
-      total: fleeTotal,
-      critical: false,
+      total: playerFleeTotal,
+      critical: playerLuckRoll.critical,
     };
 
     const enemySnap: CombatRollSnapshot = {
-      baseStat: enemyCombatStatValue,
-      luckRoll: 0,
-      luckBonus: 0,
+      baseStat: input.enemy.luck,
+      luckRoll: enemyLuckRoll.roll,
+      luckBonus: enemyLuckRoll.bonus,
       elementModifier: 0,
       timeModifier: 0,
       effectModifier: 0,
-      total: enemyCombatStatValue,
-      critical: false,
+      total: enemyFleeTotal,
+      critical: enemyLuckRoll.critical,
     };
 
-    return {
-      outcome,
-      playerRoll: playerSnap,
-      enemyRoll: enemySnap,
-      damage,
-      autoWin: false,
-    };
+    return { outcome, playerRoll: playerSnap, enemyRoll: enemySnap, damage, autoWin: false };
   }
 
   private buildResult(

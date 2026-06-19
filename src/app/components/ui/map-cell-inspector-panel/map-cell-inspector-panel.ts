@@ -13,6 +13,7 @@ import { WorldState } from "@models/world/WorldState";
 import { ActionDescriptionParams } from "@models/catalog/ActionCatalog";
 import { getDoctorCostPerUnit, isDoctorActionId } from "../../../consts/gameplay/safe-place-actions";
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
+import { PlacedExplorationCard } from "@models/exploration/ExplorationCard";
 
 @Component({
   selector: "app-map-cell-inspector-panel",
@@ -164,6 +165,19 @@ export class MapCellInspectorPanel {
     const biome = this.currentCellBiome();
     if (!biome) return this.translationService.tOrFallback("map.cellInspector.unknownBiome", "? ? ?");
     return this.biomeToLabel(biome);
+  });
+
+  public currentCellPlacedCards = computed<Array<{ key: string; title: string; subtitle: string }>>(() => {
+    const events: PlacedExplorationCard[] = this.currentCell()?.explorationEvents ?? [];
+    return events.map((event) => {
+      if (event.type === "enemy") {
+        const name = event.suffix ? `${event.name} ${event.suffix}` : event.name;
+        const typeLabel = this.translationService.tOrFallback("map.cellInspector.cardType.enemy", "Nemico");
+        return { key: event.instanceId, title: name, subtitle: `${typeLabel} · Lv. ${event.level}` };
+      }
+      const typeLabel = this.translationService.tOrFallback(`map.cellInspector.cardType.${event.type}`, event.type);
+      return { key: event.instanceId, title: typeLabel, subtitle: "" };
+    });
   });
 
   public currentCellResourcesLabel = computed<string>(() => {

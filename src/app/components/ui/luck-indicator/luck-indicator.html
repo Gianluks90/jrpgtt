@@ -2,6 +2,7 @@
   class="luck-indicator-tooltip"
   [tooltipId]="'luck-meter-help'"
   [title]="'map.luck.helpTitle' | t"
+  [disabled]="disableTooltip()"
 >
   <div tooltipTrigger class="luck-indicator-panel">
     <p class="luck-indicator-title">{{ 'map.luck.title' | t }}</p>

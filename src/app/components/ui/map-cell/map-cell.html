@@ -44,6 +44,10 @@
             <div class="condition-marker" aria-hidden="true"></div>
         }
 
+        @if (revealed() && hasCards()) {
+            <app-exploration-card-back class="card-marker" size="map-cell" aria-hidden="true"></app-exploration-card-back>
+        }
+
         @if (revealed() && impassable()) {
             <div class="impassable-cross" aria-hidden="true"></div>
         }

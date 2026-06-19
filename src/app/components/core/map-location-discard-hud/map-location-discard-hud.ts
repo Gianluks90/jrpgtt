@@ -1,7 +1,6 @@
 import { Component, computed, input, output } from "@angular/core";
 import { Player } from "@models/player/Player";
 import { MapCell } from "@models/world/MapCell";
-import { WorldState } from "@models/world/WorldState";
 import { LandmarksService } from "@services/map/landmarks-service";
 import { TranslationService } from "@services/shared/translation-service";
 import { MapGridPanelCell } from "../map-grid-panel/map-grid-panel";
@@ -23,11 +22,9 @@ export class MapLocationDiscardHud {
 
   public inspectedCell = input<MapGridPanelCell | null>(null);
   public activePlayer = input<Player | null>(null);
-  public worldState = input<WorldState | null>(null);
   public mapCellsById = input<Record<string, MapCell>>({});
 
   public locationInfoRequested = output<string>();
-  public discardPileRequested = output<void>();
 
   public locationInfoCellName = computed<string>(() => {
     const hoveredCell = this.inspectedCell();
@@ -48,21 +45,8 @@ export class MapLocationDiscardHud {
     return this.translationService.tOrFallback("map.locationInfo.contextActivePlayer", "Active player in");
   });
 
-  public discardPileCount = computed<number>(() => {
-    const rawCount = Number(this.worldState()?.nextDiscardSeq ?? 0);
-    if (!Number.isFinite(rawCount)) {
-      return 0;
-    }
-
-    return Math.max(0, Math.floor(rawCount));
-  });
-
   public onLocationInfoClicked(): void {
     this.locationInfoRequested.emit(this.locationInfoCellName());
-  }
-
-  public onDiscardPileClicked(): void {
-    this.discardPileRequested.emit();
   }
 
   private resolveCellNameFromCoordinates(x: number, y: number): string {

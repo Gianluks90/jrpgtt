@@ -1,11 +1,12 @@
 import { Component, input, output } from "@angular/core";
 import { BiomeType, SpecialTileType } from "@models/world/MapCell";
 import { Player } from "@models/player/Player";
+import { ExplorationCardBack } from "../exploration-card-back/exploration-card-back";
 import { SanctuaryTilesConfigEntry } from "@models/world/TilesConfig";
 
 @Component({
   selector: "map-cell",
-  imports: [],
+  imports: [ExplorationCardBack],
   templateUrl: "./map-cell.html",
   styleUrl: "./map-cell.scss",
 })
@@ -17,6 +18,7 @@ export class MapCellComponent {
   public movable = input(false);
   public impassable = input(false);
   public hasConditionMarker = input(false);
+  public hasCards = input(false);
   public hoveredEnvironment = input(false);
   public dangerOverlayLevel = input<0 | 1 | 2>(0, { alias: "dangerOverlayLevel" });
   public biome = input<BiomeType | null>(null);

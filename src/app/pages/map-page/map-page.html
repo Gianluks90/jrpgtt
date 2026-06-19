@@ -83,15 +83,14 @@
                         [worldState]="worldState()"
                         [mapCellsById]="mapCellsById()"
                         (specialCounterHoverChanged)="onSpecialLocationsCounterHoverChanged($event)"
+                        (discardPileRequested)="openDiscardPileDialog()"
                     ></app-biomes-counter>
 
                     <app-map-location-discard-hud
                         [inspectedCell]="inspectedCell()"
                         [activePlayer]="activePlayer()"
-                        [worldState]="worldState()"
                         [mapCellsById]="mapCellsById()"
                         (locationInfoRequested)="openLocationInfoDialog($event)"
-                        (discardPileRequested)="openDiscardPileDialog()"
                     ></app-map-location-discard-hud>
                 </div>
             </div>

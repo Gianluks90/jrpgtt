@@ -29,6 +29,21 @@
       <p class="inspector-description-value">{{ currentCellSpecialDescription() }}</p>
     }
 
+    @if (currentCellPlacedCards().length > 0) {
+      <p class="inspector-section-title">{{ 'map.cellInspector.onCell' | t }}</p>
+      <div class="inspector-actions-list">
+        @for (card of currentCellPlacedCards(); track card.key) {
+          <div class="inspector-action-card">
+            <p class="inspector-action-title">{{ card.title }}</p>
+            @if (card.subtitle) {
+              <span class="inspector-action-divider"></span>
+              <p class="inspector-action-description">{{ card.subtitle }}</p>
+            }
+          </div>
+        }
+      </div>
+    }
+
     <p class="inspector-section-title">{{ 'map.cellInspector.resources' | t }}</p>
     <p class="inspector-resources-value">{{ currentCellResourcesLabel() }}</p>
 

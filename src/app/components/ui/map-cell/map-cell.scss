@@ -111,6 +111,14 @@
     mask-image: url("/icons/layers_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg");
 }
 
+.card-marker {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    pointer-events: none;
+    z-index: 9;
+}
+
 .special-cell {
     border: 1px solid rgba(235, 210, 118, 0.95);
     box-shadow:

@@ -1,0 +1,58 @@
+:host {
+    display: block;
+}
+
+.card-back {
+    border: 1px solid;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.variant-deck {
+    background: #0c0c0c;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.variant-discard {
+    background: #161616;
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.card-back-letter {
+    font-family: 'Jacquard 12', serif;
+    color: var(--bad-color);
+    line-height: 1;
+    user-select: none;
+}
+
+.card-back-icon {
+    display: block;
+    background-color: rgba(255, 255, 255, 0.28);
+    -webkit-mask-image: url('/icons/close_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg');
+    mask-image: url('/icons/close_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg');
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.size-map-cell {
+    width: 16px;
+    height: 22px;
+
+    .card-back-letter {
+        font-size: 14px;
+    }
+
+    .card-back-icon {
+        width: 10px;
+        height: 10px;
+    }
+}

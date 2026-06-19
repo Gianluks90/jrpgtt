@@ -539,7 +539,7 @@
             "turn": "Turno",
             "round": "Round",
             "discovered": "Esplorato",
-            "activeShrines": "Santuari attivi",
+            "activeShrines": "Santuari",
             "worldEvent": "Evento mondiale",
             "worldEventSummary": "{title} | {outcome} | bersaglio {targetBiome} / responsabile {driverBiome} | mutate {cellsMutated}/{cellsAffected}",
             "worldEventOutcome": {
@@ -722,6 +722,16 @@
                 "ancient-knowledge": "Concede esperienza bonus a fine turno su questa casella.",
                 "cursed-ground": "Riduce l'efficacia dei controlli fortuna su questa casella.",
                 "enemy-level-bonus-by-region-value": "Aumenta il livello dei nemici in base al valore della regione della casella."
+            },
+            "onCell": "Sulla casella",
+            "cardType": {
+                "enemy": "Nemico",
+                "event": "Evento",
+                "place": "Luogo",
+                "stranger": "Straniero",
+                "follower": "Seguace",
+                "item": "Oggetto",
+                "amulet": "Amuleto"
             }
         },
         "labels": {
@@ -1310,5 +1320,64 @@
         "food": "Cibo",
         "minerals": "Minerali",
         "cloth": "Stoffa"
+    },
+    "combat": {
+        "overlay": {
+            "title": "Scontro",
+            "resultsTitle": "Risultati scontro",
+            "ariaLabel": "Dialogo di combattimento"
+        },
+        "column": {
+            "player": "Tu",
+            "enemy": "Nemico"
+        },
+        "player": {
+            "hp": "PV"
+        },
+        "enemy": {
+            "level": "Livello"
+        },
+        "stat": {
+            "strength": "FOR",
+            "magic": "MAG",
+            "luck": "FORT"
+        },
+        "element": {
+            "fire": "Fuoco",
+            "earth": "Terra",
+            "wind": "Vento",
+            "water": "Acqua"
+        },
+        "time": {
+            "day": "Giorno",
+            "night": "Notte"
+        },
+        "action": {
+            "fight": "Combatti",
+            "flee": "Fuggi",
+            "continue": "Continua",
+            "conclude": "Concludi"
+        },
+        "outcome": {
+            "win": "Vittoria",
+            "loss": "Sconfitta",
+            "tie": "Pareggio",
+            "flee": "Fuga con danni",
+            "fleeLucky": "Fuga riuscita"
+        },
+        "result": {
+            "playerRoll": "Il tuo tiro",
+            "enemyRoll": "Tiro nemico",
+            "base": "Base",
+            "luck": "Fortuna",
+            "element": "Elemento",
+            "time": "Orario",
+            "total": "Totale",
+            "autoWin": "Dominio assoluto",
+            "criticalHit": "Colpo critico!",
+            "hpLost": "HP persi",
+            "xpGained": "EXP",
+            "goldGained": "Guadagnato"
+        }
     }
 }

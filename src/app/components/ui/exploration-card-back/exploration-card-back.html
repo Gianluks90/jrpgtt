@@ -1,0 +1,7 @@
+<div class="card-back" [class]="'size-' + size() + ' variant-' + variant()">
+  @if (variant() === 'deck') {
+    <span class="card-back-letter" aria-hidden="true">A</span>
+  } @else {
+    <span class="card-back-icon" aria-hidden="true"></span>
+  }
+</div>

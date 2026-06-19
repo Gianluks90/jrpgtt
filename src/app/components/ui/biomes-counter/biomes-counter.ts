@@ -1,12 +1,14 @@
-import { Component, input, output } from "@angular/core";
+import { Component, computed, input, output } from "@angular/core";
 import { BiomeType, MapCell } from "@models/world/MapCell";
 import { WorldState } from "@models/world/WorldState";
+import { ExplorationCardBack } from "../exploration-card-back/exploration-card-back";
 
 @Component({
   selector: "app-biomes-counter",
   templateUrl: "./biomes-counter.html",
   styleUrl: "./biomes-counter.scss",
   standalone: true,
+  imports: [ExplorationCardBack],
 })
 export class BiomesCounter {
   public worldState = input<WorldState | null>(null);
@@ -33,6 +35,19 @@ export class BiomesCounter {
 
       return total + (cell.isSpecial === true && !!cell.discoveredBy ? 1 : 0);
     }, 0);
+  }
+
+  public explorationDeckCount = computed(() => this.worldState()?.explorationDeck?.length ?? 0);
+
+  public discardPileCount = computed<number>(() => {
+    const rawCount = Number(this.worldState()?.nextDiscardSeq ?? 0);
+    return Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0;
+  });
+
+  public discardPileRequested = output<void>();
+
+  public onDiscardPileClicked(): void {
+    this.discardPileRequested.emit();
   }
 
   public onSpecialCounterEnter(): void {

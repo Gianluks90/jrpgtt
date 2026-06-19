@@ -3,12 +3,19 @@ import { Player } from "@models/player/Player";
 import { MapCell } from "@models/world/MapCell";
 import { WorldState } from "@models/world/WorldState";
 import { PlacedEnemyCard, PlacedExplorationCard } from "@models/exploration/ExplorationCard";
-import { CombatState } from "@models/exploration/CombatState";
+import { CombatResult, CombatState } from "@models/exploration/CombatState";
 import { CombatResolverService } from "@services/gameplay/combat-resolver-service";
 import { ExplorationActionService, CommitCombatResultInput } from "@services/exploration/exploration-action-service";
 import { PlayerStatsModifierService } from "@services/player/player-stats-modifier-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { RegionLabel } from "@models/world/WorldZone";
+
+export interface CombatHydrationContext {
+  getPlayer: () => Player | null;
+  getCell: (cellId: string) => MapCell | null;
+  getWorldState: () => WorldState | null;
+  mapSize: number;
+}
 
 export interface HandleCellArrivalInput {
   gameId: string;
@@ -63,6 +70,97 @@ export class ExplorationEventService {
     this.combatResultDismissResolver = null;
   }
 
+  /**
+   * Restores combat state after a page refresh.
+   * Called from the map page when worldState.activeCombat is found for the current player.
+   */
+  public hydrateFromActiveCombat(
+    gameId: string,
+    activeCombat: CombatState,
+    context: CombatHydrationContext,
+  ): void {
+    if (this.pendingCombat() !== null) return;
+
+    this.pendingCombat.set(activeCombat);
+    this.explorationFlowActive.set(true);
+
+    if (activeCombat.phase === "result" && activeCombat.result) {
+      void this.waitForResultDismissal().then(async () => {
+        await this.explorationActionService.closeCombat(gameId);
+        this.pendingCombat.set(null);
+        this.explorationFlowActive.set(false);
+      });
+      return;
+    }
+
+    if (activeCombat.phase === "setup" && activeCombat.playerSnapshot) {
+      void this.waitForCombatAction().then(async (action) => {
+        const snapshot = activeCombat.playerSnapshot!;
+        let result: CombatResult;
+
+        if (action === "fight") {
+          result = this.combatResolverService.resolveFight({
+            playerCombatStat: snapshot.statValue,
+            playerLuck: snapshot.luck,
+            playerElement: snapshot.element,
+            quadrantElement: activeCombat.quadrantElement,
+            enemy: activeCombat.enemy,
+            timeOfDay: activeCombat.timeOfDay ?? "day",
+          });
+
+          if (result.outcome === "player-win") {
+            const cell = context.getCell(activeCombat.cellId);
+            if (cell) {
+              const loot = activeCombat.enemy.loot ?? [];
+              let xpGained = 0;
+              if (loot.includes("exp")) {
+                const region = this.worldZonesService.getRegionLabelByColumn(cell.x, context.mapSize);
+                xpGained = this.xpByRegion(region);
+              }
+              const goldGained = loot.includes("gold") ? 2 * cell.x : 0;
+              result = {
+                ...result,
+                ...(xpGained > 0 ? { xpGained } : {}),
+                ...(goldGained > 0 ? { goldGained } : {}),
+              };
+            }
+          }
+        } else {
+          result = this.combatResolverService.resolveFlee({
+            playerLuck: snapshot.luck,
+            enemy: activeCombat.enemy,
+          });
+        }
+
+        const resolvedCombat: CombatState = { ...activeCombat, phase: "result", result };
+        this.pendingCombat.set(resolvedCombat);
+
+        await this.waitForResultDismissal();
+
+        const player = context.getPlayer();
+        const cell = context.getCell(activeCombat.cellId);
+        const worldState = context.getWorldState();
+
+        if (player && cell && worldState) {
+          const commitInput: CommitCombatResultInput = {
+            gameId,
+            player,
+            cell,
+            enemy: activeCombat.enemy,
+            result,
+            worldState,
+            mapSize: context.mapSize,
+          };
+          await this.explorationActionService.commitCombatResult(commitInput);
+        }
+
+        await this.explorationActionService.closeCombat(gameId);
+        this.pendingCombat.set(null);
+        this.explorationFlowActive.set(false);
+      });
+    }
+  }
+
   private async resolveEventsInOrder(
     input: HandleCellArrivalInput,
     events: PlacedExplorationCard[],
@@ -93,6 +191,17 @@ export class ExplorationEventService {
   ): Promise<boolean> {
     const { gameId, player, cell, worldState, mapSize } = input;
 
+    const quadrantId = this.worldZonesService.getQuadrantIdByCoordinate(cell.x, cell.y, mapSize);
+    const quadrantElement = worldState.sanctuaryInfluenceByQuadrant?.[quadrantId] ?? undefined;
+    const timeOfDay = worldState.timeOfDay ?? "day";
+
+    const stats = this.playerStatsModifierService.computeStats({
+      player, currentCell: cell, worldState, mapSize,
+    });
+    const playerCombatStatValue = enemy.combatStat === "strength"
+      ? stats.effective.strength
+      : stats.effective.magic;
+
     const combatState: CombatState = {
       combatId: this.generateCombatId(),
       attackingPlayerId: player.id,
@@ -100,6 +209,22 @@ export class ExplorationEventService {
       enemy,
       phase: "setup",
       startedAtMs: Date.now(),
+      timeOfDay,
+      ...(quadrantElement ? { quadrantElement } : {}),
+      playerSnapshot: {
+        name: player.name,
+        level: player.level,
+        strength: stats.effective.strength,
+        magic: stats.effective.magic,
+        combatStat: enemy.combatStat,
+        statValue: playerCombatStatValue,
+        luck: stats.effective.luck,
+        ...(player.attunedElement ? { element: player.attunedElement } : {}),
+        hp: player.parameters.hp.current,
+        maxHp: player.parameters.hp.max ?? player.parameters.hp.base,
+        mp: player.parameters.mp.current,
+        maxMp: player.parameters.mp.max ?? player.parameters.mp.base,
+      },
     };
 
     await this.explorationActionService.openCombat(gameId, combatState);
@@ -107,22 +232,9 @@ export class ExplorationEventService {
 
     const action = await this.waitForCombatAction();
 
-    const quadrantId = this.worldZonesService.getQuadrantIdByCoordinate(cell.x, cell.y, mapSize);
-    const quadrantElement = worldState.sanctuaryInfluenceByQuadrant?.[quadrantId] ?? undefined;
-    const timeOfDay = worldState.timeOfDay ?? "day";
-
-    const stats = this.playerStatsModifierService.computeStats({
-      player,
-      currentCell: cell,
-      worldState,
-      mapSize,
-    });
-
     let result;
     if (action === "fight") {
-      const playerCombatStat = enemy.combatStat === "strength"
-        ? stats.effective.strength
-        : stats.effective.magic;
+      const playerCombatStat = playerCombatStatValue;
 
       result = this.combatResolverService.resolveFight({
         playerCombatStat,

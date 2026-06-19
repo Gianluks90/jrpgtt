@@ -44,14 +44,6 @@
   max-width: min(90vw, 680px);
 }
 
-.discard-pile-block {
-  max-width: min(90vw, 260px);
-}
-
-.discard-pile-content {
-  border-right: 0;
-}
-
 .active-cell-content {
   border-right: 0;
 }
@@ -104,8 +96,7 @@
     gap: 6px;
   }
 
-  .active-cell-block,
-  .discard-pile-block {
+  .active-cell-block {
     max-width: 100%;
     width: 100%;
   }

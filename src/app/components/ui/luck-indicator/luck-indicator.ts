@@ -20,6 +20,7 @@ export class LuckIndicator implements OnDestroy {
   public result = input<LuckCheckResult | null>(null);
   public animateFirstResult = input<boolean>(false);
   public successOnly = input<boolean>(false);
+  public disableTooltip = input<boolean>(false);
   public isRolling = signal(false);
 
   private displayedResult = signal<LuckCheckResult | null>(null);

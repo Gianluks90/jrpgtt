@@ -313,6 +313,11 @@ export class MapGridPanel {
     return conditionIds.length > 0;
   }
 
+  public hasExplorationEvents(cell: MapGridPanelCell): boolean {
+    if (!this.isRevealedCell(cell)) return false;
+    return (cell.mapCell?.explorationEvents?.length ?? 0) > 0;
+  }
+
   public worldEventMutationPhaseForCell(cell: MapGridPanelCell): WorldEventMutationPhase {
     if (!cell.mapCell || cell.mapCell.isSpecial === true) {
       return "none";

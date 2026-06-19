@@ -2,80 +2,396 @@
     <div class="combat-overlay-backdrop" role="dialog" aria-modal="true" [attr.aria-label]="'combat.overlay.ariaLabel' | t">
         <div class="combat-card">
             <div class="combat-card-header">
-                <span class="combat-card-label">{{ 'combat.overlay.title' | t }}</span>
+                <span class="combat-card-label">
+                    {{ (currentUiPhase() === 'results' ? 'combat.overlay.resultsTitle' : 'combat.overlay.title') | t }}
+                </span>
+                @if (combat()?.playerSnapshot; as snap) {
+                    <span class="combat-header-vitals">
+                        <span class="vitals-dot vitals-dot-hp"></span>
+                        HP {{ snap.hp }}/{{ snap.maxHp }}
+                        <span class="vitals-sep">·</span>
+                        <span class="vitals-dot vitals-dot-mp"></span>
+                        MP {{ snap.mp ?? '–' }}/{{ snap.maxMp ?? '–' }}
+                    </span>
+                }
             </div>
 
-            @if (state.phase === 'setup') {
-                <div class="combat-enemy-block">
-                    <p class="enemy-name">{{ state.enemy.name }}
-                        @if (state.enemy.suffix) { <span class="enemy-suffix">{{ state.enemy.suffix }}</span> }
-                    </p>
-                    <p class="enemy-level">{{ 'combat.enemy.level' | t }} {{ state.enemy.level }}</p>
-                    <div class="enemy-stats-row">
-                        <span class="stat-chip">STR {{ state.enemy.strength }}</span>
-                        <span class="stat-chip">MAG {{ state.enemy.magic }}</span>
-                        <span class="stat-chip">LCK {{ state.enemy.luck }}</span>
-                        @if (state.enemy.element) {
-                            <span class="stat-chip stat-chip-element">{{ state.enemy.element }}</span>
-                        }
-                        @if (state.enemy.time !== 'both') {
-                            <span class="stat-chip stat-chip-time">{{ state.enemy.time }}</span>
+            @if (showAnimatedView()) {
+                <div class="combat-columns">
+
+                    <!-- Player column -->
+                    <div class="combat-col combat-col-player combat-combatant-card">
+                        <p class="col-header">{{ 'combat.column.player' | t }}</p>
+                        @if (state.playerSnapshot; as snap) {
+                            <div class="combatant-namerow">
+                                <span class="combatant-name">{{ snap.name }}</span>
+                                <span class="combatant-lv">Lv. {{ snap.level }}</span>
+                            </div>
+
+                            <div class="combatant-stats-grid">
+                                <div class="combatant-stat-box" [class.stat-active]="snap.combatStat === 'strength' && !fleeMode()">
+                                    <span class="combatant-stat-label">{{ 'playerCard.stats.strengthAbbr' | t }}</span>
+                                    <span class="combatant-stat-value">{{ snap.strength }}</span>
+                                    @if (playerStrengthDelta() !== 0) {
+                                        <span class="combatant-stat-delta" [class.stat-delta-pos]="playerStrengthDelta() > 0" [class.stat-delta-neg]="playerStrengthDelta() < 0">
+                                            ({{ deltaSign(playerStrengthDelta()) }}{{ playerStrengthDelta() }})
+                                        </span>
+                                    }
+                                </div>
+                                <div class="combatant-stat-box" [class.stat-active]="snap.combatStat === 'magic' && !fleeMode()">
+                                    <span class="combatant-stat-label">{{ 'playerCard.stats.magicAbbr' | t }}</span>
+                                    <span class="combatant-stat-value">{{ snap.magic }}</span>
+                                    @if (playerMagicDelta() !== 0) {
+                                        <span class="combatant-stat-delta" [class.stat-delta-pos]="playerMagicDelta() > 0" [class.stat-delta-neg]="playerMagicDelta() < 0">
+                                            ({{ deltaSign(playerMagicDelta()) }}{{ playerMagicDelta() }})
+                                        </span>
+                                    }
+                                </div>
+                                <div class="combatant-stat-box" [class.stat-active]="fleeMode()">
+                                    <span class="combatant-stat-label">{{ 'playerCard.stats.luckAbbr' | t }}</span>
+                                    <span class="combatant-stat-value">{{ snap.luck }}</span>
+                                    @if (playerLuckDelta() !== 0) {
+                                        <span class="combatant-stat-delta" [class.stat-delta-pos]="playerLuckDelta() > 0" [class.stat-delta-neg]="playerLuckDelta() < 0">
+                                            ({{ deltaSign(playerLuckDelta()) }}{{ playerLuckDelta() }})
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="modifier-tags-row">
+                                @if (snap.element) {
+                                    <span class="modifier-tag"
+                                        [class.modifier-ok]="playerElementMod() > 0"
+                                        [class.modifier-bad]="playerElementMod() < 0">
+                                        @if (playerElementMod() !== 0) {
+                                            <span class="modifier-icon"
+                                                [style.--mod-icon]="'url(' + modIcon(playerElementMod()) + ')'"
+                                                [class.modifier-icon-ok]="playerElementMod() > 0"
+                                                [class.modifier-icon-bad]="playerElementMod() < 0"></span>
+                                        } @else {
+                                            <span class="modifier-neutral">—</span>
+                                        }
+                                        {{ ('combat.element.' + snap.element) | t }}
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="combat-total-row"
+                                [class.phase-dice]="currentUiPhase() === 'dice-revealed'"
+                                [class.phase-totals]="currentUiPhase() === 'totals-revealed'">
+                                @if (currentUiPhase() === 'totals-revealed') {
+                                    <span class="combat-total-value"
+                                        [class.total-winner]="playerWon()"
+                                        [class.total-loser]="enemyWon()">
+                                        {{ playerFinalTotal() }}
+                                    </span>
+                                } @else {
+                                    <span class="combat-total-value">{{ playerPreRollTotal() }}</span>
+                                    @if (currentUiPhase() === 'dice-revealed') {
+                                        <span class="combat-total-dice combat-total-dice-bonus">+{{ playerLuckBonus() }}</span>
+                                    } @else {
+                                        <span class="combat-total-dice">+?</span>
+                                    }
+                                }
+                            </div>
+
+                            <app-luck-indicator
+                                [result]="playerLuckResult()"
+                                [animateFirstResult]="true"
+                                [successOnly]="true"
+                                [disableTooltip]="true">
+                            </app-luck-indicator>
                         }
                     </div>
-                    @if (state.enemy.effect) {
-                        <p class="enemy-effect">{{ state.enemy.effect }}</p>
+
+                    <div class="combat-col-divider" aria-hidden="true">VS</div>
+
+                    <!-- Enemy column -->
+                    <div class="combat-col combat-col-enemy combat-combatant-card">
+                        <p class="col-header">{{ 'combat.column.enemy' | t }}</p>
+                        <div class="combatant-namerow">
+                            <span class="combatant-name">
+                                {{ state.enemy.name }}
+                                @if (state.enemy.suffix) {
+                                    <span class="combatant-suffix">{{ state.enemy.suffix }}</span>
+                                }
+                            </span>
+                            <span class="combatant-lv">Lv. {{ state.enemy.level }}</span>
+                        </div>
+
+                        <div class="combatant-stats-grid">
+                            <div class="combatant-stat-box" [class.stat-active]="state.enemy.combatStat === 'strength' && !fleeMode()">
+                                <span class="combatant-stat-label">{{ 'playerCard.stats.strengthAbbr' | t }}</span>
+                                <span class="combatant-stat-value">{{ state.enemy.strength }}</span>
+                                @if (enemyStrengthDelta() !== 0) {
+                                    <span class="combatant-stat-delta" [class.stat-delta-pos]="enemyStrengthDelta() > 0" [class.stat-delta-neg]="enemyStrengthDelta() < 0">
+                                        ({{ deltaSign(enemyStrengthDelta()) }}{{ enemyStrengthDelta() }})
+                                    </span>
+                                }
+                            </div>
+                            <div class="combatant-stat-box" [class.stat-active]="state.enemy.combatStat === 'magic' && !fleeMode()">
+                                <span class="combatant-stat-label">{{ 'playerCard.stats.magicAbbr' | t }}</span>
+                                <span class="combatant-stat-value">{{ state.enemy.magic }}</span>
+                                @if (enemyMagicDelta() !== 0) {
+                                    <span class="combatant-stat-delta" [class.stat-delta-pos]="enemyMagicDelta() > 0" [class.stat-delta-neg]="enemyMagicDelta() < 0">
+                                        ({{ deltaSign(enemyMagicDelta()) }}{{ enemyMagicDelta() }})
+                                    </span>
+                                }
+                            </div>
+                            <div class="combatant-stat-box" [class.stat-active]="fleeMode()">
+                                <span class="combatant-stat-label">{{ 'playerCard.stats.luckAbbr' | t }}</span>
+                                <span class="combatant-stat-value">{{ state.enemy.luck }}</span>
+                                @if (enemyLuckDelta() !== 0) {
+                                    <span class="combatant-stat-delta" [class.stat-delta-pos]="enemyLuckDelta() > 0" [class.stat-delta-neg]="enemyLuckDelta() < 0">
+                                        ({{ deltaSign(enemyLuckDelta()) }}{{ enemyLuckDelta() }})
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="modifier-tags-row">
+                            @if (state.enemy.element) {
+                                <span class="modifier-tag"
+                                    [class.modifier-ok]="enemyElementMod() > 0"
+                                    [class.modifier-bad]="enemyElementMod() < 0">
+                                    @if (enemyElementMod() !== 0) {
+                                        <span class="modifier-icon"
+                                            [style.--mod-icon]="'url(' + modIcon(enemyElementMod()) + ')'"
+                                            [class.modifier-icon-ok]="enemyElementMod() > 0"
+                                            [class.modifier-icon-bad]="enemyElementMod() < 0"></span>
+                                    } @else {
+                                        <span class="modifier-neutral">—</span>
+                                    }
+                                    {{ ('combat.element.' + state.enemy.element) | t }}
+                                </span>
+                            }
+                            @if (state.enemy.time !== 'both') {
+                                <span class="modifier-tag"
+                                    [class.modifier-ok]="enemyTimeMod() > 0"
+                                    [class.modifier-bad]="enemyTimeMod() < 0">
+                                    <span class="modifier-icon"
+                                        [style.--mod-icon]="'url(' + modIcon(enemyTimeMod()) + ')'"
+                                        [class.modifier-icon-ok]="enemyTimeMod() > 0"
+                                        [class.modifier-icon-bad]="enemyTimeMod() < 0"></span>
+                                    {{ ('combat.time.' + state.enemy.time) | t }}
+                                </span>
+                            }
+                        </div>
+
+                        <div class="combat-total-row"
+                            [class.phase-dice]="currentUiPhase() === 'dice-revealed'"
+                            [class.phase-totals]="currentUiPhase() === 'totals-revealed'">
+                            @if (currentUiPhase() === 'totals-revealed') {
+                                <span class="combat-total-value"
+                                    [class.total-winner]="enemyWon()"
+                                    [class.total-loser]="playerWon()">
+                                    {{ enemyFinalTotal() }}
+                                </span>
+                            } @else {
+                                <span class="combat-total-value">{{ enemyPreRollTotal() }}</span>
+                                @if (currentUiPhase() === 'dice-revealed') {
+                                    <span class="combat-total-dice combat-total-dice-bonus">+{{ enemyLuckBonus() }}</span>
+                                } @else {
+                                    <span class="combat-total-dice">+?</span>
+                                }
+                            }
+                        </div>
+
+                        <app-luck-indicator
+                            [result]="enemyLuckResult()"
+                            [animateFirstResult]="true"
+                            [successOnly]="true"
+                            [disableTooltip]="true">
+                        </app-luck-indicator>
+                    </div>
+
+                </div>
+
+                @if (currentUiPhase() === 'totals-revealed') {
+                    <div class="combat-actions">
+                        <text-button [text]="'combat.action.continue' | t" (clicked)="continueToResults()"></text-button>
+                    </div>
+                } @else {
+                    <div class="combat-actions combat-actions-split">
+                        <div class="combat-action-col">
+                            <text-button
+                                [fullWidth]="true"
+                                [text]="'combat.action.fight' | t"
+                                [disabled]="currentUiPhase() !== 'idle'"
+                                (clicked)="fight()">
+                            </text-button>
+                        </div>
+                        <div class="combat-action-col">
+                            <text-button
+                                [fullWidth]="true"
+                                [text]="currentUiPhase() === 'idle' ? (('combat.action.flee' | t) + ' ~0–' + fleeMaxDamage() + ' danni') : ('combat.action.flee' | t)"
+                                [disabled]="currentUiPhase() !== 'idle'"
+                                (clicked)="flee()">
+                            </text-button>
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (showResultsPhase()) {
+                <div class="combat-results-phase">
+                    @for (item of visibleResultItems(); track item.id) {
+                        @if (item.type === 'outcome') {
+                            <div class="result-card result-card-outcome">
+                                <span class="result-outcome-label" [ngClass]="outcomeClass(item)">
+                                    {{ outcomeTransKey(item) | t }}
+                                </span>
+                                @if (item.autoWin) {
+                                    <span class="result-sub-tag">{{ 'combat.result.autoWin' | t }}</span>
+                                }
+                                @if (item.critical) {
+                                    <span class="result-sub-tag result-sub-tag-critical">{{ 'combat.result.criticalHit' | t }}</span>
+                                }
+                            </div>
+                            <hr class="result-divider" />
+                        } @else if (item.type === 'damage') {
+                            <div class="result-card result-card-damage">
+                                <span class="result-card-label">{{ 'combat.result.hpLost' | t }}</span>
+                                <span class="result-card-value">–{{ item.value }}</span>
+                            </div>
+                        } @else if (item.type === 'xp') {
+                            <div class="result-card">
+                                <span class="result-card-label">{{ 'combat.result.xpGained' | t }}</span>
+                                <span class="result-card-value">+{{ item.value }}</span>
+                            </div>
+                        } @else if (item.type === 'gold') {
+                            <div class="result-card result-card-gold">
+                                <span class="result-card-label">{{ 'combat.result.goldGained' | t }}</span>
+                                <span class="result-card-value result-card-value-gold">
+                                    {{ item.value }}
+                                    <span class="coin-icon result-coin-icon" aria-hidden="true"></span>
+                                </span>
+                            </div>
+                        }
                     }
                 </div>
-                <div class="combat-actions">
-                    <text-button [text]="'combat.action.fight' | t" (clicked)="fight()"></text-button>
-                    <text-button [text]="'combat.action.flee' | t" (clicked)="flee()"></text-button>
+                <div class="combat-actions combat-actions-conclude">
+                    <text-button
+                        [text]="'combat.action.conclude' | t"
+                        [disabled]="!concludiEnabled()"
+                        (clicked)="dismiss()">
+                    </text-button>
                 </div>
             }
 
-            @if (state.phase === 'result' && result) {
-                <div class="combat-outcome-block">
-                    @if (result.outcome === 'player-win') {
-                        <p class="outcome-label outcome-win">{{ 'combat.outcome.win' | t }}</p>
-                    } @else if (result.outcome === 'flee-lucky') {
-                        <p class="outcome-label outcome-flee">{{ 'combat.outcome.fleeLucky' | t }}</p>
-                    } @else if (result.outcome === 'flee') {
-                        <p class="outcome-label outcome-flee">{{ 'combat.outcome.flee' | t }}</p>
-                    } @else if (result.damage === 0) {
-                        <p class="outcome-label outcome-tie">{{ 'combat.outcome.tie' | t }}</p>
+            @if (showFallbackResult()) {
+                <div class="combat-outcome-row">
+                    @if (result?.outcome === 'player-win') {
+                        <span class="outcome-label outcome-win">{{ 'combat.outcome.win' | t }}</span>
+                    } @else if (result?.outcome === 'flee-lucky') {
+                        <span class="outcome-label outcome-flee">{{ 'combat.outcome.fleeLucky' | t }}</span>
+                    } @else if (result?.outcome === 'flee') {
+                        <span class="outcome-label outcome-flee">{{ 'combat.outcome.flee' | t }}</span>
+                    } @else if (result?.damage === 0) {
+                        <span class="outcome-label outcome-tie">{{ 'combat.outcome.tie' | t }}</span>
                     } @else {
-                        <p class="outcome-label outcome-loss">{{ 'combat.outcome.loss' | t }}</p>
+                        <span class="outcome-label outcome-loss">{{ 'combat.outcome.loss' | t }}</span>
                     }
-
-                    <div class="combat-result-rows">
-                        <p class="result-row">
-                            {{ 'combat.result.yourRoll' | t }}: {{ result.playerRoll.total }}
-                            &nbsp;vs&nbsp;
-                            {{ 'combat.result.enemyRoll' | t }}: {{ result.enemyRoll.total }}
-                        </p>
-
-                        @if (result.autoWin) {
-                            <p class="result-row result-tag">{{ 'combat.result.autoWin' | t }}</p>
-                        }
-                        @if (result.playerRoll.critical) {
-                            <p class="result-row result-tag">{{ 'combat.result.criticalHit' | t }}</p>
-                        }
-                        @if (result.damage > 0 && result.outcome !== 'player-win') {
-                            <p class="result-row result-damage">
-                                {{ 'combat.result.hpLost' | t }}: -{{ result.damage }}
-                            </p>
-                        }
-                        @if ((result.xpGained ?? 0) > 0) {
-                            <p class="result-row result-xp">
-                                {{ 'combat.result.xpGained' | t }}: +{{ result.xpGained }}
-                            </p>
-                        }
-                        @if ((result.lootGained?.gold ?? 0) > 0) {
-                            <p class="result-row result-loot">
-                                {{ 'combat.result.goldGained' | t }}: +{{ result.lootGained!.gold }}
-                            </p>
-                        }
-                    </div>
+                    @if (result?.autoWin) {
+                        <span class="outcome-tag">{{ 'combat.result.autoWin' | t }}</span>
+                    }
+                    @if (result?.playerRoll?.critical) {
+                        <span class="outcome-tag outcome-tag-critical">{{ 'combat.result.criticalHit' | t }}</span>
+                    }
                 </div>
+
+                <div class="combat-columns">
+
+                    <div class="combat-col">
+                        <p class="col-header">{{ 'combat.column.player' | t }}</p>
+                        <div class="roll-rows">
+                            <div class="roll-row">
+                                <span class="roll-label">{{ 'combat.result.base' | t }}</span>
+                                <span class="roll-value">{{ result?.playerRoll?.baseStat }}</span>
+                            </div>
+                            <div class="roll-row">
+                                <span class="roll-label">{{ 'combat.result.luck' | t }} ({{ result?.playerRoll?.luckRoll }})</span>
+                                <span class="roll-value">+{{ result?.playerRoll?.luckBonus }}</span>
+                            </div>
+                            @if ((result?.playerRoll?.elementModifier ?? 0) !== 0) {
+                                <div class="roll-row">
+                                    <span class="roll-label">{{ 'combat.result.element' | t }}</span>
+                                    <span class="roll-value" [class.roll-positive]="(result?.playerRoll?.elementModifier ?? 0) > 0" [class.roll-negative]="(result?.playerRoll?.elementModifier ?? 0) < 0">
+                                        {{ (result?.playerRoll?.elementModifier ?? 0) > 0 ? '+' : '' }}{{ result?.playerRoll?.elementModifier }}
+                                    </span>
+                                </div>
+                            }
+                            @if ((result?.playerRoll?.timeModifier ?? 0) !== 0) {
+                                <div class="roll-row">
+                                    <span class="roll-label">{{ 'combat.result.time' | t }}</span>
+                                    <span class="roll-value" [class.roll-positive]="(result?.playerRoll?.timeModifier ?? 0) > 0" [class.roll-negative]="(result?.playerRoll?.timeModifier ?? 0) < 0">
+                                        {{ (result?.playerRoll?.timeModifier ?? 0) > 0 ? '+' : '' }}{{ result?.playerRoll?.timeModifier }}
+                                    </span>
+                                </div>
+                            }
+                            <div class="roll-row roll-total">
+                                <span class="roll-label">{{ 'combat.result.total' | t }}</span>
+                                <span class="roll-value">{{ result?.playerRoll?.total }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="combat-col-divider" aria-hidden="true"></div>
+
+                    <div class="combat-col">
+                        <p class="col-header">{{ 'combat.column.enemy' | t }}</p>
+                        <div class="roll-rows">
+                            <div class="roll-row">
+                                <span class="roll-label">{{ 'combat.result.base' | t }}</span>
+                                <span class="roll-value">{{ result?.enemyRoll?.baseStat }}</span>
+                            </div>
+                            <div class="roll-row">
+                                <span class="roll-label">{{ 'combat.result.luck' | t }} ({{ result?.enemyRoll?.luckRoll }})</span>
+                                <span class="roll-value">+{{ result?.enemyRoll?.luckBonus }}</span>
+                            </div>
+                            @if ((result?.enemyRoll?.elementModifier ?? 0) !== 0) {
+                                <div class="roll-row">
+                                    <span class="roll-label">{{ 'combat.result.element' | t }}</span>
+                                    <span class="roll-value" [class.roll-positive]="(result?.enemyRoll?.elementModifier ?? 0) > 0" [class.roll-negative]="(result?.enemyRoll?.elementModifier ?? 0) < 0">
+                                        {{ (result?.enemyRoll?.elementModifier ?? 0) > 0 ? '+' : '' }}{{ result?.enemyRoll?.elementModifier }}
+                                    </span>
+                                </div>
+                            }
+                            @if ((result?.enemyRoll?.timeModifier ?? 0) !== 0) {
+                                <div class="roll-row">
+                                    <span class="roll-label">{{ 'combat.result.time' | t }}</span>
+                                    <span class="roll-value" [class.roll-positive]="(result?.enemyRoll?.timeModifier ?? 0) > 0" [class.roll-negative]="(result?.enemyRoll?.timeModifier ?? 0) < 0">
+                                        {{ (result?.enemyRoll?.timeModifier ?? 0) > 0 ? '+' : '' }}{{ result?.enemyRoll?.timeModifier }}
+                                    </span>
+                                </div>
+                            }
+                            <div class="roll-row roll-total">
+                                <span class="roll-label">{{ 'combat.result.total' | t }}</span>
+                                <span class="roll-value">{{ result?.enemyRoll?.total }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="combat-rewards">
+                    @if ((result?.damage ?? 0) > 0 && result?.outcome !== 'player-win') {
+                        <span class="reward-chip reward-damage">
+                            {{ 'combat.result.hpLost' | t }}: -{{ result?.damage }}
+                        </span>
+                    }
+                    @if ((result?.xpGained ?? 0) > 0) {
+                        <span class="reward-chip reward-xp">
+                            {{ 'combat.result.xpGained' | t }}: +{{ result?.xpGained }}
+                        </span>
+                    }
+                    @if ((result?.goldGained ?? 0) > 0) {
+                        <span class="reward-chip reward-gold">
+                            {{ 'combat.result.goldGained' | t }}: +{{ result?.goldGained }}
+                        </span>
+                    }
+                </div>
+
                 <div class="combat-actions">
                     <text-button [text]="'combat.action.continue' | t" (clicked)="dismiss()"></text-button>
                 </div>

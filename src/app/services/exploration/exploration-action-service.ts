@@ -66,7 +66,7 @@ export class ExplorationActionService {
       const damage = Math.max(0, Math.floor(Number(result.damage)));
       const newHp = isTie ? hpCurrent : Math.max(0, hpCurrent - (isVictory ? 0 : damage));
 
-      transaction.set(playerRef, { "parameters.hp.current": Math.min(newHp, hpMax) }, { merge: true });
+      transaction.update(playerRef, { "parameters.hp.current": Math.min(newHp, hpMax) });
 
       if (isVictory) {
         const updatedEvents = this.removeEnemyFromCell(currentCell.explorationEvents ?? [], enemy.instanceId);
@@ -75,7 +75,7 @@ export class ExplorationActionService {
         const goldGained = Math.max(0, Math.floor(Number(result.goldGained ?? 0)));
         if (goldGained > 0) {
           const currentMoney = Math.max(0, Math.floor(Number(currentPlayer.inventory?.money ?? 0)));
-          transaction.set(playerRef, { "inventory.money": currentMoney + goldGained }, { merge: true });
+          transaction.update(playerRef, { "inventory.money": currentMoney + goldGained });
         }
       }
       // Resource loot: deferred to the existing pendingResourcePickup flow

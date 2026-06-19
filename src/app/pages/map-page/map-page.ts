@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, Injector, OnDestroy, OnInit, signal } from "@angular/core";
+import { Component, computed, effect, inject, Injector, OnDestroy, OnInit, signal, untracked } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Player } from "@models/player/Player";
 import { BiomeEnvironment, EnvironmentService } from "@services/map/environment-service";
@@ -38,6 +38,7 @@ import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-but
 import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
 import { MapSettingsDialogService } from "@services/ui/map-settings-dialog-service";
 import { CombatOverlay } from "../../components/ui/combat-overlay/combat-overlay";
+import { ExplorationEventService } from "@services/exploration/exploration-event-service";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
 
@@ -83,6 +84,7 @@ export class MapPage implements OnInit, OnDestroy {
   private translationService = inject(TranslationService);
   private rulebookDialogService = inject(RulebookDialogService);
   private mapSettingsDialogService = inject(MapSettingsDialogService);
+  private explorationEventService = inject(ExplorationEventService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -653,6 +655,23 @@ export class MapPage implements OnInit, OnDestroy {
         worldState: this.worldState(),
         players: this.players(),
         currentUserId: this.currentUserId(),
+      });
+    }, { injector: this.injector });
+
+    effect(() => {
+      const worldState = this.worldState();
+      const currentUserId = this.currentUserId();
+      const activeCombat = worldState?.activeCombat;
+
+      if (!activeCombat) return;
+      if (activeCombat.attackingPlayerId !== currentUserId) return;
+      if (untracked(() => this.explorationEventService.pendingCombat()) !== null) return;
+
+      this.explorationEventService.hydrateFromActiveCombat(this.gameId, activeCombat, {
+        getPlayer: () => this.myPlayer(),
+        getCell: (cellId) => this.mapCellsById()[cellId] ?? null,
+        getWorldState: () => this.worldState(),
+        mapSize: this.mapSize(),
       });
     }, { injector: this.injector });
 

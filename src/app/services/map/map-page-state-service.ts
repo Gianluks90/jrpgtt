@@ -297,6 +297,10 @@ export class MapPageStateService {
     this.unsubscribers = [];
     this.activeGameId = null;
     this.inventoryBackfillRequested.clear();
+    this.players.set([]);
+    this.worldState.set(null);
+    this.mapCellsById.set({});
+    this.mapSize.set(10);
     this.eventLogs.set([]);
   }
 

@@ -54,6 +54,28 @@
           "scope": "always"
         }
       ]
+    },
+    {
+      "id": "unicorn",
+      "name": "Unicorn",
+      "description": "A magical horse surrounded by a shimmering aura.",
+      "nameKey": "catalogs.followers.unicorn.name",
+      "descriptionKey": "catalogs.followers.unicorn.description",
+      "category": "companion",
+      "maxHp": 3,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scope": "always"
+        },
+        {
+          "parameter": "magic",
+          "amount": 1,
+          "scope": "always"
+        }
+      ]
     }
   ]
 }

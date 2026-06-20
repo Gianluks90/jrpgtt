@@ -1,0 +1,415 @@
+.admin-page {
+    min-height: 100%;
+    padding: 24px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.admin-title {
+    margin: 0;
+    font-size: 1.4rem;
+    letter-spacing: 0.05em;
+    color: var(--bad-color);
+}
+
+// ── Access denied ─────────────────────────────────────────────────────────────
+
+.access-denied {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 24px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+.admin-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.admin-tab {
+    font-family: inherit;
+    font-size: 0.65rem;
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--fg-color);
+    border: 1px solid var(--fg-color);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.12s, background 0.12s;
+    letter-spacing: 0.05em;
+
+    &:hover {
+        opacity: 0.8;
+    }
+
+    &.is-active {
+        background: var(--fg-color);
+        color: var(--bg-color, #111);
+        opacity: 1;
+    }
+}
+
+// ── Two-column content ────────────────────────────────────────────────────────
+
+.admin-content {
+    display: grid;
+    grid-template-columns: 360px 1px 1fr;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    align-items: start;
+}
+
+.admin-col-divider {
+    background: var(--fg-color);
+    opacity: 0.2;
+    align-self: stretch;
+    margin: 0 20px;
+}
+
+// ── Form column ───────────────────────────────────────────────────────────────
+
+.admin-form-col {
+    padding-right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.col-title {
+    margin: 0 0 12px;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--bad-color);
+}
+
+.loading-text {
+    margin: 0 0 8px;
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+// ── Form rows ─────────────────────────────────────────────────────────────────
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.form-row-inline {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+
+    .form-col {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .form-checkbox-col {
+        justify-content: flex-end;
+        padding-bottom: 4px;
+    }
+}
+
+.form-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+}
+
+.form-hint {
+    opacity: 0.5;
+    font-size: 0.54rem;
+}
+
+.form-input {
+    font-family: inherit;
+    font-size: 0.65rem;
+    padding: 7px 9px;
+    background: transparent;
+    color: var(--fg-color);
+    border: 1px solid var(--fg-color);
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus {
+        border-color: var(--bad-color);
+    }
+
+    &:disabled,
+    &[disabled] {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+.form-select {
+    cursor: pointer;
+    appearance: auto;
+    background: var(--bg-color, #111);
+    option {
+        background: var(--bg-color, #111);
+        color: var(--fg-color);
+    }
+}
+
+.form-textarea {
+    resize: vertical;
+    line-height: 1.4;
+}
+
+.form-textarea-code {
+    font-family: monospace;
+    font-size: 0.6rem;
+}
+
+.form-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.62rem;
+    cursor: pointer;
+    white-space: nowrap;
+
+    input[type="checkbox"] {
+        accent-color: var(--bad-color);
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+    }
+}
+
+.form-error {
+    font-size: 0.54rem;
+    color: var(--bad-color);
+    letter-spacing: 0.04em;
+}
+
+.form-actions {
+    margin-top: 14px;
+}
+
+// ── Preview column ────────────────────────────────────────────────────────────
+
+.admin-preview-col {
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+}
+
+.admin-json-block,
+.admin-list-block {
+    border: var(--overlay-border, 3px double white);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--fg-color);
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.block-title {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    opacity: 0.8;
+}
+
+// ── JSON preview ──────────────────────────────────────────────────────────────
+
+.json-preview {
+    margin: 0;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 0.58rem;
+    line-height: 1.45;
+    overflow: auto;
+    max-height: 340px;
+    white-space: pre;
+    color: var(--fg-color);
+}
+
+// ── Entries list ──────────────────────────────────────────────────────────────
+
+.filter-input {
+    font-family: inherit;
+    font-size: 0.58rem;
+    padding: 5px 8px;
+    background: transparent;
+    color: var(--fg-color);
+    border: 1px solid var(--fg-color);
+    outline: none;
+    width: 160px;
+
+    &:focus {
+        border-color: var(--bad-color);
+    }
+}
+
+.entries-list {
+    overflow-y: auto;
+    max-height: 220px;
+    display: flex;
+    flex-direction: column;
+}
+
+.entry-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 12px;
+    gap: 10px;
+    font-family: inherit;
+    font-size: 0.58rem;
+    background: transparent;
+    color: var(--fg-color);
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.entry-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.entry-id {
+    opacity: 0.45;
+    font-family: monospace;
+    font-size: 0.54rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.entries-empty {
+    margin: 0;
+    padding: 12px;
+    font-size: 0.58rem;
+    opacity: 0.5;
+    text-align: center;
+}
+
+// ── Buttons ───────────────────────────────────────────────────────────────────
+
+.admin-btn-primary {
+    font-family: inherit;
+    font-size: 0.65rem;
+    padding: 10px 20px;
+    background: var(--fg-color);
+    color: var(--bg-color, #111);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: opacity 0.12s;
+
+    &:hover:not(:disabled) {
+        opacity: 0.85;
+    }
+
+    &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+}
+
+.admin-btn-secondary {
+    font-family: inherit;
+    font-size: 0.6rem;
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--fg-color);
+    border: 1px solid var(--fg-color);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: opacity 0.12s;
+
+    &:hover {
+        opacity: 0.7;
+    }
+}
+
+.admin-btn-copy {
+    font-family: inherit;
+    font-size: 0.56rem;
+    padding: 5px 10px;
+    background: transparent;
+    color: var(--fg-color);
+    border: 1px solid var(--fg-color);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: background 0.12s, color 0.12s;
+    white-space: nowrap;
+
+    &:hover {
+        background: var(--fg-color);
+        color: var(--bg-color, #111);
+    }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+
+@media (max-width: 900px) {
+    .admin-content {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-col-divider {
+        display: none;
+    }
+
+    .admin-preview-col {
+        padding-left: 0;
+        padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .admin-form-col {
+        padding-right: 0;
+    }
+}

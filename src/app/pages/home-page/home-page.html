@@ -32,6 +32,7 @@
                     iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                     (clicked)="openJoinGameDialog()"
                 ></text-button>
+                
                 <text-button [text]="'home.actions.disconnect' | t" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
             } @else {
                 <text-button
@@ -46,6 +47,13 @@
                 ></text-button>
                 <text-button [text]="'home.actions.disconnect' | t" iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg" (clicked)="authService.logout()"></text-button>
             }
+            @if (isAdmin()) {
+                    <text-button
+                        text="Deck Editor"
+                        iconUrl="./icons/layers_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                        (clicked)="onOpenAdmin()"
+                    ></text-button>
+                }
         </div>
     } @else {
         <div class="mobile-actions-container">
@@ -64,6 +72,13 @@
                         iconUrl="./icons/join_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
                         (clicked)="openJoinGameDialog()"
                     ></text-button>
+                    @if (isAdmin()) {
+                        <text-button
+                            text="Deck Editor"
+                            iconUrl="./icons/layers_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"
+                            (clicked)="onOpenAdmin()"
+                        ></text-button>
+                    }
                     <text-button
                         [text]="'home.actions.disconnect' | t"
                         iconUrl="./icons/logout_20dp_E3E3E3_FILL0_wght400_GRAD0_opsz20.svg"

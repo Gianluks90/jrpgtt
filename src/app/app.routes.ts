@@ -27,6 +27,12 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/map-page/map-page').then(m => m.MapPage)
     },
     {
+        title: 'Admin',
+        path: 'admin',
+        canActivate: [authGuard],
+        loadComponent: () => import('./pages/admin-page/admin-page').then(m => m.AdminPage)
+    },
+    {
         path: '**',
         redirectTo: '/home'
     }

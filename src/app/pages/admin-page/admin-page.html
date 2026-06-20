@@ -1,0 +1,325 @@
+<div class="admin-page">
+
+    @if (!isAdmin) {
+        <div class="access-denied">
+            <p>Accesso negato.</p>
+            <button class="admin-btn-secondary" (click)="onBack()">← Home</button>
+        </div>
+    } @else {
+        <div class="admin-header">
+            <button class="admin-btn-secondary admin-back-btn" (click)="onBack()">← Home</button>
+            <h1 class="admin-title">Deck Editor</h1>
+        </div>
+
+        <div class="admin-tabs">
+            @for (tab of tabs; track tab.id) {
+                <button
+                    class="admin-tab"
+                    [class.is-active]="activeTab() === tab.id"
+                    (click)="onTabClick(tab.id)"
+                >{{ tab.label }}</button>
+            }
+        </div>
+
+        <div class="admin-content">
+
+            <!-- Left: Form -->
+            <div class="admin-form-col">
+                <h2 class="col-title">Nuova carta: {{ activeTabLabel() }}</h2>
+
+                @if (isLoading()) {
+                    <p class="loading-text">Caricamento config...</p>
+                }
+
+                <form [formGroup]="form" (ngSubmit)="onAddEntry()" novalidate>
+
+                    <!-- ID + Name (shared) -->
+                    <div class="form-row">
+                        <label class="form-label">Nome *</label>
+                        <input class="form-input" formControlName="name" type="text" placeholder="Es. Forest Goblin" />
+                        @if (form.get('name')?.invalid && form.get('name')?.touched) {
+                            <span class="form-error">Campo obbligatorio</span>
+                        }
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">ID * <span class="form-hint">(auto da nome)</span></label>
+                        <input class="form-input" formControlName="id" type="text" placeholder="es. forest-goblin" />
+                        @if (form.get('id')?.invalid && form.get('id')?.touched) {
+                            <span class="form-error">
+                                @if (form.get('id')?.errors?.['required']) { Campo obbligatorio }
+                                @else { Solo lettere minuscole, numeri e trattini }
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Description (item, follower, event, place, stranger) -->
+                    @if (activeTab() !== 'enemy') {
+                        <div class="form-row">
+                            <label class="form-label">Descrizione *</label>
+                            <textarea class="form-input form-textarea" formControlName="description" rows="3" placeholder="Descrizione della carta..."></textarea>
+                            @if (form.get('description')?.invalid && form.get('description')?.touched) {
+                                <span class="form-error">Campo obbligatorio</span>
+                            }
+                        </div>
+                    }
+
+                    <!-- ── ENEMY fields ── -->
+                    @if (activeTab() === 'enemy') {
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Combat Stat *</label>
+                                <select class="form-input form-select" formControlName="combatStat">
+                                    <option value="strength">Strength</option>
+                                    <option value="magic">Magic</option>
+                                </select>
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Level Up Mode *</label>
+                                <select class="form-input form-select" formControlName="levelUpMode">
+                                    <option value="BestFirst">BestFirst</option>
+                                    <option value="Equal">Equal</option>
+                                    <option value="Lucky">Lucky</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Time *</label>
+                                <select class="form-input form-select" formControlName="time">
+                                    <option value="day">Day</option>
+                                    <option value="night">Night</option>
+                                    <option value="both">Both</option>
+                                </select>
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Element</label>
+                                <select class="form-input form-select" formControlName="element">
+                                    <option value="">— Nessuno</option>
+                                    <option value="fire">Fire</option>
+                                    <option value="earth">Earth</option>
+                                    <option value="wind">Wind</option>
+                                    <option value="water">Water</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Strength *</label>
+                                <input class="form-input" formControlName="baseStrength" type="number" min="1" />
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Magic *</label>
+                                <input class="form-input" formControlName="baseMagic" type="number" min="1" />
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Luck *</label>
+                                <input class="form-input" formControlName="baseLuck" type="number" min="1" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">Loot <span class="form-hint">(JSON array)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="loot" rows="3"
+                                placeholder='["exp", {"type":"gold","dropRate":0.75}]'></textarea>
+                        </div>
+                    }
+
+                    <!-- ── ITEM fields ── -->
+                    @if (activeTab() === 'item') {
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Categoria *</label>
+                                <select class="form-input form-select" formControlName="category">
+                                    <option value="weapon">Weapon</option>
+                                    <option value="armor">Armor</option>
+                                    <option value="magic">Magic</option>
+                                </select>
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Prezzo acquisto *</label>
+                                <input class="form-input" formControlName="purchaseValue" type="number" min="0" />
+                            </div>
+                        </div>
+
+                        <div class="form-row form-row-inline">
+                            <label class="form-checkbox-label">
+                                <input type="checkbox" formControlName="occupiesSpace" />
+                                Occupa spazio
+                            </label>
+                            <label class="form-checkbox-label">
+                                <input type="checkbox" formControlName="consumable" />
+                                Consumabile
+                            </label>
+                        </div>
+
+                        @if (isConsumable()) {
+                            <div class="form-row">
+                                <label class="form-label">Cariche massime</label>
+                                <input class="form-input" formControlName="maxCharges" type="number" min="1" />
+                            </div>
+                        }
+
+                        <div class="form-row">
+                            <label class="form-label">Actions <span class="form-hint">(JSON array di ID)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="actions" rows="2"
+                                placeholder='["use-item"]'></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">Parameter Modifiers <span class="form-hint">(JSON, opzionale)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="parameterModifiers" rows="3"
+                                placeholder='[{"parameter":"strength","amount":2,"scopes":["always"]}]'></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">Constraints <span class="form-hint">(JSON, opzionale)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="constraints" rows="2"
+                                placeholder='{"allowedAlignments":["good"]}'></textarea>
+                        </div>
+                    }
+
+                    <!-- ── FOLLOWER fields ── -->
+                    @if (activeTab() === 'follower') {
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Categoria *</label>
+                                <input class="form-input" formControlName="category" type="text" placeholder="companion" />
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">HP Max *</label>
+                                <input class="form-input" formControlName="maxHp" type="number" min="1" />
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Item Cap. Bonus</label>
+                                <input class="form-input" formControlName="itemCapacityBonus" type="number" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">Actions <span class="form-hint">(JSON array di ID)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="actions" rows="2"
+                                placeholder='[]'></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">Parameter Modifiers <span class="form-hint">(JSON, opzionale)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="parameterModifiers" rows="3"
+                                placeholder='[{"parameter":"luck","amount":1,"scopes":["always"]}]'></textarea>
+                        </div>
+                    }
+
+                    <!-- ── EVENT fields ── -->
+                    @if (activeTab() === 'event') {
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Duration *</label>
+                                <select class="form-input form-select" formControlName="duration">
+                                    <option value="instant">Instant</option>
+                                    <option value="turn">Turn</option>
+                                </select>
+                            </div>
+                            <div class="form-col">
+                                <label class="form-label">Effect Type *</label>
+                                <select class="form-input form-select" formControlName="effectType">
+                                    <option value="none">None</option>
+                                    <option value="lose-hp">Lose HP</option>
+                                    <option value="gain-hp">Gain HP</option>
+                                    <option value="lose-gold">Lose Gold</option>
+                                    <option value="gain-gold">Gain Gold</option>
+                                    <option value="skip-turn">Skip Turn</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        @if (effectTypeNeedsAmount()) {
+                            <div class="form-row">
+                                <label class="form-label">Amount</label>
+                                <input class="form-input" formControlName="effectAmount" type="number" min="0" />
+                            </div>
+                        }
+                    }
+
+                    <!-- ── STRANGER fields ── -->
+                    @if (activeTab() === 'stranger') {
+                        <div class="form-row form-row-inline">
+                            <div class="form-col">
+                                <label class="form-label">Dialog Type *</label>
+                                <select class="form-input form-select" formControlName="dialogType">
+                                    <option value="healer">Healer</option>
+                                    <option value="merchant">Merchant</option>
+                                    <option value="mercenary">Mercenary</option>
+                                </select>
+                            </div>
+                            <div class="form-col form-checkbox-col">
+                                <label class="form-checkbox-label">
+                                    <input type="checkbox" formControlName="persistent" />
+                                    Persistent
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <label class="form-label">Dialog Params <span class="form-hint">(JSON, opzionale)</span></label>
+                            <textarea class="form-input form-textarea form-textarea-code" formControlName="dialogParams" rows="3"
+                                placeholder='{"healAmount":3,"cost":2}'></textarea>
+                        </div>
+                    }
+
+                    <div class="form-actions">
+                        <button type="submit" class="admin-btn-primary" [disabled]="form.invalid">
+                            + Aggiungi
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Divider -->
+            <div class="admin-col-divider"></div>
+
+            <!-- Right: JSON preview + list -->
+            <div class="admin-preview-col">
+
+                <!-- JSON block -->
+                <div class="admin-json-block">
+                    <div class="block-header">
+                        <span class="block-title">JSON Config</span>
+                        <button class="admin-btn-copy" (click)="onCopyJson()">
+                            {{ copied() ? '✓ Copiato' : 'Copia JSON' }}
+                        </button>
+                    </div>
+                    <pre class="json-preview">{{ jsonPreview() }}</pre>
+                </div>
+
+                <!-- Entries list block -->
+                <div class="admin-list-block">
+                    <div class="block-header">
+                        <span class="block-title">Entries ({{ filteredEntries().length }})</span>
+                        <input
+                            class="filter-input"
+                            type="text"
+                            placeholder="Cerca..."
+                            [value]="filterQuery()"
+                            (input)="filterQuery.set($any($event.target).value)"
+                        />
+                    </div>
+                    <div class="entries-list">
+                        @for (entry of filteredEntries(); track entry.id) {
+                            <button class="entry-item" (click)="onLoadEntry(entry.id)">
+                                <span class="entry-name">{{ entry.name }}</span>
+                                <span class="entry-id">{{ entry.id }}</span>
+                            </button>
+                        } @empty {
+                            <p class="entries-empty">Nessuna entry trovata.</p>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+
+</div>

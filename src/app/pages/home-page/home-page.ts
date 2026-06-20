@@ -25,6 +25,8 @@ import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-but
 import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
 import { CrtToggleButton } from "../../components/ui/crt-toggle-button/crt-toggle-button";
 
+const ADMIN_USER_ID = "JV4eWsYVQbXdIw9qU00buX0DSaJ2";
+
 @Component({
   selector: "app-home-page",
   imports: [TextButton, ActionMenu, TranslationPipe, LanguageMenu, SoundToggleButton, CrtToggleButton, RulebookButton],
@@ -50,6 +52,10 @@ export class HomePage implements OnInit {
     const game = this.myGame();
     if (!currentUserId || !game) return false;
     return game.ownerId === currentUserId;
+  });
+
+  public isAdmin = computed(() => {
+    return getAuth().currentUser?.uid === ADMIN_USER_ID;
   });
 
   public async ngOnInit(): Promise<void> {
@@ -223,5 +229,9 @@ export class HomePage implements OnInit {
 
   public openRulebookDialog(): void {
     this.rulebookDialogService.open();
+  }
+
+  public onOpenAdmin(): void {
+    void this.router.navigate(["/admin"]);
   }
 }

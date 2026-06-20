@@ -88,6 +88,42 @@
       "baseMagic": 3,
       "baseLuck": 3,
       "loot": ["exp"]
+    },
+    {
+      "id": "bandit",
+      "name": "Bandit",
+      "nameKey": "catalogs.enemies.bandit.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "both",
+      "baseStrength": 5,
+      "baseMagic": 1,
+      "baseLuck": 3,
+      "loot": ["exp", { "type": "gold", "dropRate": 0.75 }]
+    },
+    {
+      "id": "gorilla",
+      "name": "Gorilla",
+      "nameKey": "catalogs.enemies.gorilla.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "day",
+      "baseStrength": 5,
+      "baseMagic": 1,
+      "baseLuck": 1,
+      "loot": ["exp", { "type": "resource:food", "dropRate": 0.60 }]
+    },
+    {
+      "id": "giant-spider",
+      "name": "Giant Spider",
+      "nameKey": "catalogs.enemies.giant-spider.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "night",
+      "baseStrength": 4,
+      "baseMagic": 2,
+      "baseLuck": 2,
+      "loot": ["exp", { "type": "resource:cloth", "dropRate": 0.40 }]
     }
   ]
 }

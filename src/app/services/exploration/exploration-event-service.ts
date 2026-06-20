@@ -3,9 +3,15 @@ import { Player } from "@models/player/Player";
 import { MapCell } from "@models/world/MapCell";
 import { WorldState } from "@models/world/WorldState";
 import { EnemyLoot, PlacedEnemyCard, PlacedExplorationCard } from "@models/exploration/ExplorationCard";
+
+export interface ExplorationPhaseSession {
+  cards: PlacedExplorationCard[];
+  resolvedInstanceIds: string[];
+}
 import { CombatResult, CombatState } from "@models/exploration/CombatState";
 import { CombatResolverService } from "@services/gameplay/combat-resolver-service";
 import { ExplorationActionService, CommitCombatResultInput } from "@services/exploration/exploration-action-service";
+import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
 import { PlayerStatsModifierService } from "@services/player/player-stats-modifier-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { RegionLabel } from "@models/world/WorldZone";
@@ -35,6 +41,14 @@ export interface CombatSpellOption {
   parameter: "strength" | "magic";
 }
 
+export interface StrangerOfferState {
+  dialogType: import("@models/catalog/ExplorationCardCatalog").StrangerDialogType;
+  params: Record<string, unknown>;
+  playerMoney: number;
+  playerHp: number;
+  playerMaxHp: number;
+}
+
 export interface CombatHydrationContext {
   getPlayer: () => Player | null;
   getCell: (cellId: string) => MapCell | null;
@@ -58,11 +72,19 @@ export class ExplorationEventService {
   public readonly pendingEquipmentOptions = signal<PendingCombatEquipment | null>(null);
   public readonly pendingSpellOptions = signal<CombatSpellOption[] | null>(null);
   public readonly explorationFlowActive = signal(false);
+  public readonly pendingExplorationSession = signal<ExplorationPhaseSession | null>(null);
+  public readonly pendingStrangerOffer = signal<StrangerOfferState | null>(null);
 
   private combatActionResolver: ((action: "fight" | "flee") => void) | null = null;
   private combatResultDismissResolver: (() => void) | null = null;
   private equipmentSelectionResolver: ((bonus: number) => void) | null = null;
   private currentSpellBonus = 0;
+  private cardActionResolver: (() => void) | null = null;
+  private explorationSessionCloseResolver: (() => void) | null = null;
+  private strangerOfferResolver: ((accepted: boolean) => void) | null = null;
+  private currentSessionInput: HandleCellArrivalInput | null = null;
+
+  public get sessionGameId(): string | null { return this.currentSessionInput?.gameId ?? null; }
 
   constructor(
     private combatResolverService: CombatResolverService,
@@ -70,6 +92,7 @@ export class ExplorationEventService {
     private playerStatsModifierService: PlayerStatsModifierService,
     private worldZonesService: WorldZonesService,
     private itemCatalogService: ItemCatalogService,
+    private explorationCatalogService: ExplorationCatalogService,
   ) {}
 
   /**
@@ -80,10 +103,21 @@ export class ExplorationEventService {
     const events = this.getSortedEvents(input.cell);
     if (!events.length) return;
 
+    await this.explorationCatalogService.loadConfig();
     this.explorationFlowActive.set(true);
+    this.currentSessionInput = input;
+
+    const cellId = `${input.cell.x}_${input.cell.y}`;
+    await this.explorationActionService.openExplorationSession(input.gameId, input.player.id, cellId);
+
+    this.pendingExplorationSession.set({ cards: events, resolvedInstanceIds: [] });
+
     try {
       await this.resolveEventsInOrder(input, events);
     } finally {
+      this.pendingExplorationSession.set(null);
+      this.currentSessionInput = null;
+      await this.explorationActionService.closeExplorationSession(input.gameId);
       this.explorationFlowActive.set(false);
     }
   }
@@ -109,6 +143,88 @@ export class ExplorationEventService {
   public dismissCombatResult(): void {
     this.combatResultDismissResolver?.();
     this.combatResultDismissResolver = null;
+  }
+
+  /** Called by the exploration phase overlay when the player triggers a card CTA. */
+  public submitCardAction(): void {
+    this.cardActionResolver?.();
+    this.cardActionResolver = null;
+  }
+
+  /** Called by the exploration phase overlay when the player closes the session. */
+  public submitExplorationClose(): void {
+    this.explorationSessionCloseResolver?.();
+    this.explorationSessionCloseResolver = null;
+  }
+
+  /** Called by the exploration phase overlay when the player accepts/declines a stranger offer. */
+  public submitStrangerOffer(accepted: boolean): void {
+    this.strangerOfferResolver?.(accepted);
+    this.strangerOfferResolver = null;
+  }
+
+  /**
+   * Restores exploration session after a page refresh.
+   * Called from the map page when worldState.activeExplorationSession is found for the current player.
+   */
+  public hydrateFromActiveExplorationSession(
+    gameId: string,
+    session: import("@models/world/WorldState").ExplorationSessionState,
+    context: CombatHydrationContext,
+  ): void {
+    if (this.pendingExplorationSession() !== null || this.explorationFlowActive()) return;
+
+    const player = context.getPlayer();
+    if (!player || player.id !== session.playerId) return;
+
+    const cellId = session.cellId;
+    const [xStr, yStr] = cellId.split("_");
+    const cell = context.getCell(cellId);
+    const worldState = context.getWorldState();
+
+    if (!cell || !worldState) return;
+
+    this.explorationFlowActive.set(true);
+
+    void (async () => {
+      await this.explorationCatalogService.loadConfig();
+
+      const allEvents = this.getSortedEvents(cell);
+      if (!allEvents.length) {
+        await this.explorationActionService.closeExplorationSession(gameId);
+        this.explorationFlowActive.set(false);
+        return;
+      }
+
+      const resolved = new Set(session.resolvedInstanceIds ?? []);
+      const remaining = allEvents.filter((e) => !resolved.has(e.instanceId));
+
+      if (!remaining.length) {
+        await this.explorationActionService.closeExplorationSession(gameId);
+        this.explorationFlowActive.set(false);
+        return;
+      }
+
+      this.pendingExplorationSession.set({ cards: allEvents, resolvedInstanceIds: [...resolved] });
+
+      const input: HandleCellArrivalInput = {
+        gameId,
+        player,
+        cell,
+        worldState,
+        mapSize: context.mapSize,
+      };
+      this.currentSessionInput = input;
+
+      try {
+        await this.resolveEventsInOrder(input, remaining);
+      } finally {
+        this.pendingExplorationSession.set(null);
+        this.currentSessionInput = null;
+        await this.explorationActionService.closeExplorationSession(gameId);
+        this.explorationFlowActive.set(false);
+      }
+    })();
   }
 
   /**
@@ -240,12 +356,96 @@ export class ExplorationEventService {
     events: PlacedExplorationCard[],
   ): Promise<void> {
     for (const event of events) {
+      // Wait for the player to click the CTA for this card in the dialog
+      await this.waitForCardAction();
+
       if (event.type === "enemy") {
         const continueChain = await this.resolveCombatEvent(input, event);
-        if (!continueChain) return;
+        this.markCardResolved(event.instanceId);
+        if (!continueChain) {
+          // Fled or defeated — session ends immediately, remaining cards stay on cell
+          return;
+        }
+      } else if (event.type === "item" || event.type === "amulet") {
+        await this.resolveItemCard(input, event);
+        this.markCardResolved(event.instanceId);
+      } else if (event.type === "follower") {
+        await this.resolveFollowerCard(input, event);
+        this.markCardResolved(event.instanceId);
+      } else if (event.type === "event") {
+        await this.resolveEventCard(input, event);
+        this.markCardResolved(event.instanceId);
+      } else if (event.type === "place") {
+        // Place stays on the cell — nothing to commit, card is persistent
+        this.markCardResolved(event.instanceId);
+      } else if (event.type === "stranger") {
+        await this.resolveStrangerCard(input, event);
+        this.markCardResolved(event.instanceId);
       }
-      // Other card types (place, event, stranger, follower, item, amulet): future handlers
     }
+
+    // All cards processed — wait for the player to explicitly close the session
+    await this.waitForExplorationSessionClose();
+  }
+
+  private async resolveItemCard(
+    input: HandleCellArrivalInput,
+    card: PlacedExplorationCard & { type: "item" | "amulet" },
+  ): Promise<void> {
+    await this.explorationActionService.pickupItemCard({
+      gameId: input.gameId,
+      player: input.player,
+      cell: input.cell,
+      card: card as Parameters<typeof this.explorationActionService.pickupItemCard>[0]["card"],
+    });
+  }
+
+  private async resolveFollowerCard(
+    input: HandleCellArrivalInput,
+    card: PlacedExplorationCard & { type: "follower" },
+  ): Promise<void> {
+    await this.explorationActionService.pickupFollowerCard({
+      gameId: input.gameId,
+      player: input.player,
+      cell: input.cell,
+      card: card as Parameters<typeof this.explorationActionService.pickupFollowerCard>[0]["card"],
+    });
+  }
+
+  private async resolveEventCard(
+    input: HandleCellArrivalInput,
+    card: PlacedExplorationCard & { type: "event" },
+  ): Promise<void> {
+    const def = this.explorationCatalogService.getEventDef(card.cardId);
+    await this.explorationActionService.applyEventEffect({
+      gameId: input.gameId,
+      player: input.player,
+      cell: input.cell,
+      worldState: input.worldState,
+      card: card as Parameters<typeof this.explorationActionService.applyEventEffect>[0]["card"],
+      effect: def?.effect,
+    });
+  }
+
+  private markCardResolved(instanceId: string): void {
+    const session = this.pendingExplorationSession();
+    if (!session) return;
+    this.pendingExplorationSession.set({
+      ...session,
+      resolvedInstanceIds: [...session.resolvedInstanceIds, instanceId],
+    });
+  }
+
+  private waitForCardAction(): Promise<void> {
+    return new Promise((resolve) => {
+      this.cardActionResolver = resolve;
+    });
+  }
+
+  private waitForExplorationSessionClose(): Promise<void> {
+    return new Promise((resolve) => {
+      this.explorationSessionCloseResolver = resolve;
+    });
   }
 
   /**
@@ -377,6 +577,75 @@ export class ExplorationEventService {
     const playerDefeated = result.outcome === "player-loss" && result.damage > 0;
     const playerFled = result.outcome === "flee" || result.outcome === "flee-lucky";
     return !playerDefeated && !playerFled;
+  }
+
+  private async resolveStrangerCard(
+    input: HandleCellArrivalInput,
+    event: PlacedExplorationCard & { type: "stranger" },
+  ): Promise<void> {
+    const strangerDef = this.explorationCatalogService.getStrangerDef(event.cardId);
+
+    if (strangerDef?.dialogType === "healer") {
+      const healAmount = Math.max(0, Math.floor(Number(strangerDef.dialogParams?.["healAmount"] ?? 0)));
+      const cost = Math.max(0, Math.floor(Number(strangerDef.dialogParams?.["cost"] ?? 0)));
+      const p = input.player;
+      this.pendingStrangerOffer.set({
+        dialogType: "healer",
+        params: strangerDef.dialogParams ?? {},
+        playerMoney: Math.floor(Number(p.inventory?.money ?? 0)),
+        playerHp: Math.floor(Number(p.parameters?.hp?.current ?? 0)),
+        playerMaxHp: Math.floor(Number(p.parameters?.hp?.max ?? p.parameters?.hp?.base ?? 1)),
+      });
+
+      const accepted = await this.waitForStrangerOffer();
+      this.pendingStrangerOffer.set(null);
+
+      if (accepted) {
+        try {
+          await this.explorationActionService.applyHealerOffer({
+            gameId: input.gameId,
+            player: input.player,
+            cell: input.cell,
+            worldState: input.worldState,
+            instanceId: event.instanceId,
+            cardId: event.cardId,
+            expansion: event.expansion,
+            healAmount,
+            cost,
+          });
+        } catch (e) {
+          console.error("applyHealerOffer failed, continuing session", e);
+        }
+      } else if (!event.persistent) {
+        try {
+          await this.explorationActionService.removeStrangerCard(
+            input.gameId, input.player, input.cell, event.instanceId,
+            input.worldState, event.cardId, event.expansion,
+          );
+        } catch (e) {
+          console.error("removeStrangerCard (healer decline) failed, continuing session", e);
+        }
+      }
+      return;
+    }
+
+    // Generic stranger — no interactive dialog, just remove
+    if (!event.persistent) {
+      try {
+        await this.explorationActionService.removeStrangerCard(
+          input.gameId, input.player, input.cell, event.instanceId,
+          input.worldState, event.cardId, event.expansion,
+        );
+      } catch (e) {
+        console.error("removeStrangerCard failed, continuing session", e);
+      }
+    }
+  }
+
+  private waitForStrangerOffer(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.strangerOfferResolver = resolve;
+    });
   }
 
   private waitForCombatAction(): Promise<"fight" | "flee"> {

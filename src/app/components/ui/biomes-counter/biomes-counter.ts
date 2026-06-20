@@ -39,10 +39,9 @@ export class BiomesCounter {
 
   public explorationDeckCount = computed(() => this.worldState()?.explorationDeck?.length ?? 0);
 
-  public discardPileCount = computed<number>(() => {
-    const rawCount = Number(this.worldState()?.nextDiscardSeq ?? 0);
-    return Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0;
-  });
+  public discardPileCount = computed<number>(() =>
+    this.worldState()?.explorationDiscardedDeck?.length ?? 0,
+  );
 
   public discardPileRequested = output<void>();
 

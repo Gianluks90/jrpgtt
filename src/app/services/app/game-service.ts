@@ -7,13 +7,15 @@ import { Player } from "@models/player/Player";
 import { BiomeType, MapCell } from "@models/world/MapCell";
 import { GameConfig } from "@models/core/GameConfig";
 import { BiomePlacementCount, WorldState } from "@models/world/WorldState";
-import { PLAYER_SETUP_BASE_HP, PLAYER_STARTING_MONEY } from "../../consts/player/player-defaults";
+import { PLAYER_STARTING_MONEY } from "../../consts/player/player-defaults";
 import { DEFAULT_ITEM_INVENTORY_CAPACITY, DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../consts/gameplay/inventory-config";
 import { InventoryItemEntry } from "@models/player/Inventory";
 import { PlayerSpellbook, PlayerSpellEntry } from "@models/player/Spellbook";
 import { DEFAULT_SPELLBOOK_CAPACITY } from "../../consts/player/spellbook-config";
 import { LandmarksService } from "@services/map/landmarks-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
+import { ExplorationDeckService } from "@services/exploration/exploration-deck-service";
+import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
 
 interface StartGameSetupContext {
   game: Game;
@@ -44,6 +46,8 @@ export class GameService {
     private firebaseService: FirebaseService,
     private landmarksService: LandmarksService,
     private worldZonesService: WorldZonesService,
+    private explorationDeckService: ExplorationDeckService,
+    private explorationCatalogService: ExplorationCatalogService,
   ) { }
 
   public startMyGameSnapshot(playerId: string): void {
@@ -685,6 +689,7 @@ export class GameService {
 
     const setupPipeline: Array<(setup: StartGameSetupContext) => void | Promise<void>> = [
       this.setupBiomeDeck,
+      this.setupExplorationDeck,
       this.setupTurnOrder,
       this.setupPlayerSpawns,
       this.setupLandmarks,
@@ -701,6 +706,12 @@ export class GameService {
 
   private setupBiomeDeck(context: StartGameSetupContext): void {
     context.worldState.remainingDeck = this.shuffleArray(this.buildBiomeDeck(context.config));
+  }
+
+  private async setupExplorationDeck(context: StartGameSetupContext): Promise<void> {
+    const deckConfigs = await this.explorationCatalogService.loadDeckConfigs();
+    context.worldState.explorationDeck = this.explorationDeckService.buildAndShuffleDeck(deckConfigs);
+    context.worldState.explorationDiscardedDeck = [];
   }
 
   private setupTurnOrder(context: StartGameSetupContext): void {

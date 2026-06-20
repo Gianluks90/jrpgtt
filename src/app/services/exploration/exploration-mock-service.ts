@@ -11,6 +11,7 @@ const MOCK_ENEMY: PlacedEnemyCard = {
   type: "enemy",
   cardId: "forest-goblin",
   instanceId: "mock-instance-dev",
+  expansion: "base",
   order: 1,
   name: "Forest Goblin",
   level: 2,

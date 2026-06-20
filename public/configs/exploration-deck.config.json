@@ -1,0 +1,15 @@
+[
+  {
+    "id": "base",
+    "label": "Base Set",
+    "cards": [
+      { "type": "enemy",    "cardId": "forest-goblin",            "quantity": 1, "expansion": "base" },
+      { "type": "event",    "cardId": "event-sudden-storm",        "quantity": 1, "expansion": "base" },
+      { "type": "place",    "cardId": "place-abandoned-camp",      "quantity": 1, "expansion": "base" },
+      { "type": "stranger", "cardId": "stranger-wandering-healer", "quantity": 1, "expansion": "base" },
+      { "type": "follower", "cardId": "horse",                     "quantity": 1, "expansion": "base", "forced": false },
+      { "type": "item",     "cardId": "common-sword",              "quantity": 1, "expansion": "base" },
+      { "type": "amulet",   "cardId": "talisman",                  "quantity": 1, "expansion": "base" }
+    ]
+  }
+]

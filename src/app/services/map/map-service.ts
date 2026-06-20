@@ -26,8 +26,11 @@ import { TilesConfig } from "@models/world/TilesConfig";
 import { WorldEventMapMutationService } from "@services/map/world-event-map-mutation-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { EnemyCatalogService } from "@services/catalog/enemy-catalog-service";
-import { EnemiesCatalogConfig } from "@models/catalog/EnemyCatalog";
 import { PlacedExplorationCard } from "@models/exploration/ExplorationCard";
+import { ExplorationDeckService } from "@services/exploration/exploration-deck-service";
+import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
+import { ExplorationActionService } from "@services/exploration/exploration-action-service";
+import { ExplorationDeckSlot } from "@models/catalog/ExplorationCardCatalog";
 
 interface WorldEventLogSummary {
   eventTitle: string;
@@ -64,12 +67,15 @@ export class MapService {
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private worldZonesService: WorldZonesService,
     private enemyCatalogService: EnemyCatalogService,
+    private explorationDeckService: ExplorationDeckService,
+    private explorationCatalogService: ExplorationCatalogService,
+    private explorationActionService: ExplorationActionService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<MapCell | null> {
-    const [tilesConfig, enemiesConfig] = await Promise.all([
+    const [tilesConfig] = await Promise.all([
       this.tilesConfigService.loadConfig(),
-      this.enemyCatalogService.loadConfig().catch(() => null),
+      this.enemyCatalogService.loadConfig().catch(() => null), // pre-warm cache for enemy card draws
       this.landmarksService.loadConfig(),
       this.statusCatalogService.loadConfig(),
       this.biomeConditionCatalogService.loadConfig(),
@@ -95,6 +101,8 @@ export class MapService {
     let movedPlayerStatuses: Player["statuses"] = [];
     let landedMapCell: MapCell | null = null;
     let movedMapSize = 10;
+    let drawnCardIds: ExplorationDeckSlot[] = [];
+    let deckReshuffled = false;
     const worldEventLogContext: { summary: WorldEventLogSummary | null } = {
       summary: null,
     };
@@ -433,6 +441,27 @@ export class MapService {
         },
       }, { merge: true });
 
+      const shouldDrawExplorationCards = !landedOnSpecialCell
+        && targetCellAfterMutation
+        && !(targetCellAfterMutation.explorationEvents?.length)
+        && ((nextWorldState.explorationDeck?.length ?? 0) > 0
+          || (nextWorldState.explorationDiscardedDeck?.length ?? 0) > 0);
+
+      if (shouldDrawExplorationCards) {
+        const drawResult = this.explorationDeckService.draw(
+          nextWorldState.explorationDeck ?? [],
+          nextWorldState.explorationDiscardedDeck ?? [],
+          1,
+        );
+        drawnCardIds = drawResult.drawn;
+        nextWorldState.explorationDeck = drawResult.remaining;
+        nextWorldState.explorationDiscardedDeck = drawResult.discard;
+        if (drawResult.reshuffled) {
+          deckReshuffled = true;
+          nextWorldState.nextDiscardSeq = 0;
+        }
+      }
+
       transaction.set(worldStateRef, nextWorldState);
 
       transaction.set(gameRef, {
@@ -540,35 +569,38 @@ export class MapService {
       });
     }
 
-    // Draw exploration events for newly revealed non-special cells
-    if (movedToNewCell && !landedOnSpecialCell && landedMapCell && enemiesConfig) {
+    if (deckReshuffled) {
+      await this.explorationActionService.clearDiscardPile(gameId);
+    }
+
+    if (drawnCardIds.length > 0 && landedMapCell) {
       const cellSnapshot: MapCell = landedMapCell;
-      const drawnEvents = await this.spawnExplorationEvents(gameId, cellSnapshot, enemiesConfig);
-      if (drawnEvents.length > 0) {
-        landedMapCell = { ...cellSnapshot, explorationEvents: drawnEvents };
+      const placedCards = await this.instantiateAndSaveExplorationCards(gameId, cellSnapshot, drawnCardIds);
+      if (placedCards.length > 0) {
+        landedMapCell = { ...cellSnapshot, explorationEvents: placedCards };
       }
     }
 
     return landedMapCell;
   }
 
-  private async spawnExplorationEvents(
+  private async instantiateAndSaveExplorationCards(
     gameId: string,
     cell: MapCell,
-    config: EnemiesCatalogConfig,
+    slots: ExplorationDeckSlot[],
   ): Promise<PlacedExplorationCard[]> {
-    if (!config.enemies.length) return [];
+    const placed: PlacedExplorationCard[] = [];
+    for (const slot of slots) {
+      const card = await this.explorationCatalogService.instantiatePlacedCard(slot, cell);
+      if (card) placed.push(card);
+    }
 
-    const worldEventBonus = typeof cell.worldEventEnemyLevelBonus === "number"
-      ? cell.worldEventEnemyLevelBonus : 0;
-    const level = this.enemyCatalogService.computeSpawnLevel(cell.x, worldEventBonus);
-    const entry = config.enemies[Math.floor(Math.random() * config.enemies.length)];
-    const enemy = this.enemyCatalogService.resolveSpawnedEnemy(entry, level);
+    if (!placed.length) return [];
 
     const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(cell.x, cell.y));
-    await setDoc(cellRef, { explorationEvents: [enemy] }, { merge: true });
+    await setDoc(cellRef, { explorationEvents: placed }, { merge: true });
 
-    return [enemy];
+    return placed;
   }
 
   private async tryCreateLog(

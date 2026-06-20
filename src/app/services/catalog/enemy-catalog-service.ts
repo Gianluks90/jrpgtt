@@ -76,7 +76,7 @@ export class EnemyCatalogService {
   /**
    * Resolves a catalog entry into a placed enemy card with stats scaled to the given level.
    */
-  public resolveSpawnedEnemy(entry: EnemyCatalogEntry, level: number): PlacedEnemyCard {
+  public resolveSpawnedEnemy(entry: EnemyCatalogEntry, level: number): Omit<PlacedEnemyCard, 'expansion'> {
     const safeLevel = Math.max(1, Math.floor(Number(level)));
     const { str, mag, lck } = this.scaleStats(entry, safeLevel);
 

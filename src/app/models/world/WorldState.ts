@@ -3,6 +3,14 @@ import { SanctuaryElement } from "@models/world/MapCell";
 import { LandmarkTarget } from "@models/world/Landmark";
 import { QuadrantId } from "@models/world/WorldZone";
 import { CombatState } from "@models/exploration/CombatState";
+import { ExplorationDeckSlot } from "@models/catalog/ExplorationCardCatalog";
+
+export interface ExplorationSessionState {
+    playerId: string;
+    cellId: string;
+    /** instanceIds of cards already resolved in this session (for multiplayer display + refresh recovery). */
+    resolvedInstanceIds: string[];
+}
 
 export type BiomePlacementCount = Record<BiomeType, number>;
 export type TimeOfDay = "day" | "night";
@@ -107,7 +115,8 @@ export interface WorldState {
     sanctuaryInfluenceByQuadrant?: Partial<Record<QuadrantId, SanctuaryElement>>;
     landmarkTargets?: LandmarkTarget[];
     requiredActionNotification?: RequiredActionNotificationState;
-    explorationDeck?: string[];
-    explorationDiscardedDeck?: string[];
+    explorationDeck?: ExplorationDeckSlot[];
+    explorationDiscardedDeck?: ExplorationDeckSlot[];
     activeCombat?: CombatState;
+    activeExplorationSession?: ExplorationSessionState;
 }

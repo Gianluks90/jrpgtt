@@ -1,0 +1,112 @@
+@if (visible()) {
+    <div class="exploration-phase-backdrop" role="dialog" aria-modal="true">
+        <div class="exploration-phase-card">
+
+            <div class="exploration-phase-card-header">
+                <span class="exploration-phase-card-label">Esplorazione</span>
+                @if (vitals(); as v) {
+                    <span class="exploration-header-vitals">
+                        <span class="vitals-dot vitals-dot-hp"></span>
+                        HP {{ v.hp }}/{{ v.hpMax }}
+                        <span class="vitals-sep">·</span>
+                        <span class="vitals-dot vitals-dot-mp"></span>
+                        MP {{ v.mp }}/{{ v.mpMax }}
+                        <span class="vitals-sep">·</span>
+                        {{ v.money }}
+                        <span class="coin-icon vitals-coin-icon" aria-hidden="true"></span>
+                    </span>
+                }
+            </div>
+
+            <div class="exploration-columns">
+
+                <!-- Left: sequential stepper list -->
+                <div class="exploration-list-col">
+                    @for (entry of cardEntries(); track entry.placed.instanceId) {
+                        <div
+                            class="exploration-list-item"
+                            [class.is-resolved]="isResolved(entry.placed.instanceId)"
+                            [class.is-active]="isActive(entry.placed.instanceId)"
+                        >
+                            <div class="exploration-list-track">
+                                <span class="exploration-list-dot"></span>
+                                <span class="exploration-list-connector"></span>
+                            </div>
+                            <div class="exploration-list-info">
+                                <span class="exploration-list-name">{{ entry.name }}</span>
+                                <span [class]="'exploration-card-type type-' + entry.placed.type">
+                                    {{ entry.typeLabel }}
+                                </span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Concludi as final step -->
+                    <div class="exploration-list-item exploration-list-conclude" [class.is-active]="allResolved()">
+                        <div class="exploration-list-track">
+                            <span class="exploration-list-dot"></span>
+                        </div>
+                        <div class="exploration-list-info">
+                            <text-button
+                                text="Concludi"
+                                [disabled]="!allResolved()"
+                                (clicked)="onConclude()"
+                            ></text-button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column divider -->
+                <div class="exploration-col-divider"></div>
+
+                <!-- Right: active card detail -->
+                <div class="exploration-detail-col">
+                    @if (activeEntry(); as entry) {
+                        <span class="exploration-detail-name">{{ entry.name }}</span>
+                        <div class="exploration-detail-meta">
+                            <span [class]="'exploration-card-type type-' + entry.placed.type">
+                                {{ entry.typeLabel }}
+                            </span>
+                        </div>
+                        @if (entry.description) {
+                            <p class="exploration-detail-desc">{{ entry.description }}</p>
+                        }
+
+                        @if (pendingStrangerOffer(); as offer) {
+                            <div class="stranger-offer-panel">
+                                @if (offer.dialogType === 'healer') {
+                                    <p class="stranger-offer-text">
+                                        Il guaritore offre di curarti
+                                        <strong>{{ offer.params['healAmount'] }} PF</strong>
+                                        per
+                                        <strong>{{ offer.params['cost'] }} monete</strong>.
+                                    </p>
+                                    <p class="stranger-offer-status">
+                                        PF attuali: {{ offer.playerHp }}/{{ offer.playerMaxHp }}
+                                        &nbsp;·&nbsp;
+                                        Monete: {{ offer.playerMoney }}
+                                    </p>
+                                    <div class="stranger-offer-actions">
+                                        <text-button
+                                            text="Accetta"
+                                            [disabled]="offer.playerMoney < $any(offer.params['cost']) || offer.playerHp >= offer.playerMaxHp"
+                                            (clicked)="onStrangerOffer(true)"
+                                        ></text-button>
+                                        <text-button text="Rifiuta" (clicked)="onStrangerOffer(false)"></text-button>
+                                    </div>
+                                }
+                            </div>
+                        } @else {
+                            <div class="exploration-detail-actions">
+                                <text-button [text]="entry.cta" (clicked)="onCardAction(entry)"></text-button>
+                            </div>
+                        }
+                    } @else {
+                        <p class="exploration-detail-placeholder">Tutte le carte risolte.</p>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+}

@@ -29,6 +29,7 @@ export interface PlacedEnemyCard {
     type: 'enemy';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 1;
     name: string;
     suffix?: string;
@@ -47,6 +48,7 @@ export interface PlacedEventCard {
     type: 'event';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 2;
 }
 
@@ -54,6 +56,7 @@ export interface PlacedPlaceCard {
     type: 'place';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 3;
 }
 
@@ -61,6 +64,7 @@ export interface PlacedStrangerCard {
     type: 'stranger';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 4;
     persistent: boolean;
 }
@@ -69,6 +73,7 @@ export interface PlacedFollowerCard {
     type: 'follower';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 5;
     followerId: string;
     forced: boolean;
@@ -78,6 +83,7 @@ export interface PlacedItemCard {
     type: 'item';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 6;
     itemId: string;
 }
@@ -86,6 +92,7 @@ export interface PlacedAmuletCard {
     type: 'amulet';
     cardId: string;
     instanceId: string;
+    expansion: string;
     order: 7;
     amuletId: string;
 }

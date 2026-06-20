@@ -38,6 +38,7 @@ import { RulebookButton } from "../../components/ui/rulebook-button/rulebook-but
 import { RulebookDialogService } from "@services/ui/rulebook-dialog-service";
 import { MapSettingsDialogService } from "@services/ui/map-settings-dialog-service";
 import { CombatOverlay } from "../../components/ui/combat-overlay/combat-overlay";
+import { ExplorationPhaseOverlay } from "../../components/ui/exploration-phase-overlay/exploration-phase-overlay";
 import { ExplorationEventService } from "@services/exploration/exploration-event-service";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
@@ -60,6 +61,7 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     RequiredActionNotification,
     RulebookButton,
     CombatOverlay,
+    ExplorationPhaseOverlay,
   ],
   templateUrl: "./map-page.html",
   styleUrl: "./map-page.scss",
@@ -668,6 +670,23 @@ export class MapPage implements OnInit, OnDestroy {
       if (untracked(() => this.explorationEventService.pendingCombat()) !== null) return;
 
       this.explorationEventService.hydrateFromActiveCombat(this.gameId, activeCombat, {
+        getPlayer: () => this.myPlayer(),
+        getCell: (cellId) => this.mapCellsById()[cellId] ?? null,
+        getWorldState: () => this.worldState(),
+        mapSize: this.mapSize(),
+      });
+    }, { injector: this.injector });
+
+    effect(() => {
+      const worldState = this.worldState();
+      const currentUserId = this.currentUserId();
+      const activeSession = worldState?.activeExplorationSession;
+
+      if (!activeSession) return;
+      if (activeSession.playerId !== currentUserId) return;
+      if (untracked(() => this.explorationEventService.explorationFlowActive())) return;
+
+      this.explorationEventService.hydrateFromActiveExplorationSession(this.gameId, activeSession, {
         getPlayer: () => this.myPlayer(),
         getCell: (cellId) => this.mapCellsById()[cellId] ?? null,
         getWorldState: () => this.worldState(),

@@ -8,6 +8,7 @@ export * from "./catalog/enemy-catalog-service";
 export * from "./catalog/biome-condition-catalog-service";
 export * from "./catalog/enchantress-rewards-config-service";
 export * from "./catalog/follower-catalog-service";
+export * from "./catalog/follower-upgrade-service";
 export * from "./catalog/graveyard-resurrect-rewards-config-service";
 export * from "./catalog/item-catalog-service";
 export * from "./catalog/item-effect-catalog-service";

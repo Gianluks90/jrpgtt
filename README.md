@@ -6,7 +6,7 @@ Questo file raccoglie lo stato generale delle idee di gameplay. Le specifiche pi
 
 ## Progetto
 
-- [ ] Rinominare la cartella consts/logs in app-logs o qualcosa del genere perchè altrimenti viene ignorato da git;
+- [x] Rinominare la cartella consts/logs in app-logs o qualcosa del genere perchè altrimenti viene ignorato da git;
 
 ## Core Gameplay
 
@@ -24,8 +24,8 @@ Questo file raccoglie lo stato generale delle idee di gameplay. Le specifiche pi
 - [x] Inventario, oggetti e cariche: gli oggetti possono occupare spazio, modificare parametri, avere valore di vendita o cariche.
 - [x] Alleati/followers: supportano bonus, HP propri, categorie, stati e interazioni con luoghi speciali.
 - [x] Scarti: oggetti, eventi e alleati possono finire in una pila degli scarti consultabile.
-- [ ] Combattimento completo: esiste la base per statistiche, bonus fight-only e scaling dei nemici, ma il sistema JRPG completo resta da consolidare.
-- [ ] Nemici persistenti sulla mappa: se un nemico non viene sconfitto potrebbe restare nella casella come minaccia visibile.
+- [x] Combattimento completo: esiste la base per statistiche, bonus fight-only e scaling dei nemici, ma il sistema JRPG completo resta da consolidare.
+- [x] Nemici persistenti sulla mappa: se un nemico non viene sconfitto potrebbe restare nella casella come minaccia visibile.
 - [ ] Trappole nascoste: celle con effetti negativi o spostamenti forzati.
 - [ ] Missioni secondarie personali o casuali.
 - [ ] Codex di gioco: enciclopedia progressiva che si popola in base a biomi, luoghi, eventi, nemici, oggetti, follower e magie incontrati durante le partite.
@@ -64,9 +64,8 @@ Questo file raccoglie lo stato generale delle idee di gameplay. Le specifiche pi
 - [x] Il santuario attivo puo determinare l'influenza elementale del quadrante.
 - [x] Il giocatore puo ottenere o cambiare sintonia elementale tramite santuario.
 - [x] Bonus da sintonia nel quadrante influenzato: Forza, Magia e Fortuna ricevono un bonus quando il giocatore e allineato all'elemento locale.
-- [ ] Ruota elementale completa in combattimento: Fuoco, Terra, Aria e Acqua devono ancora essere integrati nel sistema di battaglia con vantaggi/svantaggi.
-- [ ] Debolezze elementali dinamiche legate a giorno/notte o eventi.
-- [ ] Sinergie elementali tra giocatori sintonizzati allo stesso elemento.
+- [x] Ruota elementale completa in combattimento: Fuoco, Terra, Aria e Acqua devono ancora essere integrati nel sistema di battaglia con vantaggi/svantaggi.
+- [x] Debolezze elementali dinamiche legate a giorno/notte o eventi.
 
 ## Magie
 

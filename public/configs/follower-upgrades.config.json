@@ -1,0 +1,44 @@
+{
+  "upgrades": [
+    {
+      "id": "elemental-fire",
+      "element": "fire",
+      "nameSuffixKey": "followerUpgrades.elemental-fire.suffix",
+      "hpFloor": 10,
+      "parameterModifiers": [
+        { "parameter": "strength", "amount": 1, "scope": "always" },
+        { "parameter": "magic", "amount": 1, "scope": "always" }
+      ]
+    },
+    {
+      "id": "elemental-water",
+      "element": "water",
+      "nameSuffixKey": "followerUpgrades.elemental-water.suffix",
+      "hpFloor": 10,
+      "parameterModifiers": [
+        { "parameter": "strength", "amount": 1, "scope": "always" },
+        { "parameter": "magic", "amount": 1, "scope": "always" }
+      ]
+    },
+    {
+      "id": "elemental-wind",
+      "element": "wind",
+      "nameSuffixKey": "followerUpgrades.elemental-wind.suffix",
+      "hpFloor": 10,
+      "parameterModifiers": [
+        { "parameter": "strength", "amount": 1, "scope": "always" },
+        { "parameter": "magic", "amount": 1, "scope": "always" }
+      ]
+    },
+    {
+      "id": "elemental-earth",
+      "element": "earth",
+      "nameSuffixKey": "followerUpgrades.elemental-earth.suffix",
+      "hpFloor": 10,
+      "parameterModifiers": [
+        { "parameter": "strength", "amount": 1, "scope": "always" },
+        { "parameter": "magic", "amount": 1, "scope": "always" }
+      ]
+    }
+  ]
+}

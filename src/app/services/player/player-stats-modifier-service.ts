@@ -8,6 +8,7 @@ import { QuadrantId } from "@models/world/WorldZone";
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { StatusCatalogService } from "@services/catalog/status-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
 
 interface PlayerStatsContext {
@@ -25,6 +26,7 @@ export class PlayerStatsModifierService {
     private worldZonesService: WorldZonesService,
     private statusCatalogService: StatusCatalogService,
     private followerCatalogService: FollowerCatalogService,
+    private followerUpgradeService: FollowerUpgradeService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
   ) {}
 
@@ -111,7 +113,11 @@ export class PlayerStatsModifierService {
 
       const localizedFollowerName = this.followerCatalogService.getLocalizedName(allyDefinition);
 
-      (allyDefinition.parameterModifiers ?? []).forEach((modifier) => {
+      const allModifiers = [
+        ...(allyDefinition.parameterModifiers ?? []),
+        ...this.followerUpgradeService.resolveParameterModifiers(allyEntry.upgrades),
+      ];
+      allModifiers.forEach((modifier) => {
         if (!this.isScopeActive(modifier.scopes, context.worldState?.timeOfDay)) {
           return;
         }

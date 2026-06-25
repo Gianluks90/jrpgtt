@@ -410,6 +410,7 @@ export class ActionCatalogService {
         || value === "graveyard-resurrect"
         || value === "temple-send-devotee"
         || value === "altar-sacrifice"
+        || value === "elemental-ritual"
         || value === "follower-eliminate-zombie";
   }
 

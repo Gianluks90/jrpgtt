@@ -1,19 +1,23 @@
 <dialog-wrapper [title]="title">
+    @if (subtitle) {
+        <p class="info-text">{{ subtitle }}</p>
+    }
+
     @if (rows.length === 0) {
         <p class="info-text">{{ waitingMessage }}</p>
     } @else {
-        <p class="info-text">{{ subtitle }}</p>
-
         <div class="rows">
             @for (row of rows; track row.cellLabel + '-' + $index) {
                 <section class="row-card">
                     <p class="row-cell-label">{{ row.cellLabel }}</p>
 
                     <div class="row-main">
-                        <div class="mini-cell" [class]="'biome-' + row.originalBiome">
-                            <span>{{ row.originalBiomeLabel }}</span>
-                        </div>
-                        <span class="row-arrow">&gt;</span>
+                        @if (row.originalBiome !== row.mutatedBiome) {
+                            <div class="mini-cell" [class]="'biome-' + row.originalBiome">
+                                <span>{{ row.originalBiomeLabel }}</span>
+                            </div>
+                            <span class="row-arrow">&gt;</span>
+                        }
                         <div class="mini-cell" [class]="'biome-' + row.mutatedBiome">
                             <span>{{ row.mutatedBiomeLabel }}</span>
                         </div>

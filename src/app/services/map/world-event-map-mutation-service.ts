@@ -37,9 +37,9 @@ export class WorldEventMapMutationService {
     };
 
     const seed = this.normalizeSeed(existingState.seed) ?? Math.floor(Math.random() * 1_000_000_000);
-    const ranking = this.rankBiomes(input.worldState, input.mapCellsById);
-    const targetBiome = ranking[0] ?? null;
-    const driverBiome = ranking.find((biome) => biome !== targetBiome) ?? null;
+    const { targetBiome, driverBiome } = this.resolveTargetAndDriverBiomes(
+      this.rankBiomes(input.worldState, input.mapCellsById),
+    );
     const activeShrinesInRegionI = this.countActiveShrinesInRegionI(input.mapCellsById, input.mapSize);
     const primaryOutcome = this.rollPrimaryOutcome(seed, activeShrinesInRegionI, "event-summary-primary");
     const title = this.resolveWorldEventTitle();
@@ -324,6 +324,18 @@ export class WorldEventMapMutationService {
 
       return BIOME_TIE_BREAK_ORDER.indexOf(left) - BIOME_TIE_BREAK_ORDER.indexOf(right);
     });
+  }
+
+  private resolveTargetAndDriverBiomes(ranking: BiomeType[]): { targetBiome: BiomeType | null; driverBiome: BiomeType | null } {
+    const targetBiome = ranking[0] ?? null;
+    const driverBiome = targetBiome
+      ? (ranking.find((biome) => biome !== targetBiome) ?? null)
+      : null;
+
+    return {
+      targetBiome,
+      driverBiome: driverBiome !== targetBiome ? driverBiome : null,
+    };
   }
 
   private countActiveShrinesInRegionI(mapCellsById: Record<string, MapCell>, mapSize: number): number {

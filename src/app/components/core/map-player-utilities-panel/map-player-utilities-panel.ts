@@ -6,6 +6,7 @@ import { Player } from "@models/player/Player";
 import { DEFAULT_RESOURCE_INVENTORY_CAPACITY } from "../../../consts/gameplay/inventory-config";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { TranslationService } from "@services/shared/translation-service";
 import { AlignmentIndicator } from "../../ui/alignment-indicator/alignment-indicator";
@@ -32,6 +33,7 @@ export class MapPlayerUtilitiesPanel {
   constructor(
     private itemCatalogService: ItemCatalogService,
     private followerCatalogService: FollowerCatalogService,
+    private followerUpgradeService: FollowerUpgradeService,
     private translationService: TranslationService,
   ) {}
 
@@ -127,16 +129,22 @@ export class MapPlayerUtilitiesPanel {
         const definition = this.followerCatalogService.getCachedFollowerById(entry.followerId);
         const hpMax = typeof definition?.maxHp === "number" ? Math.max(1, Math.floor(definition.maxHp)) : 1;
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
+        const baseName = entry.nameOverride ?? (definition ? this.followerCatalogService.getLocalizedName(definition) : entry.followerId);
+        const upgradeSuffix = (entry.upgrades ?? [])
+          .map((id) => this.followerUpgradeService.getLocalizedNameSuffix(id))
+          .filter((s) => s.length > 0)
+          .join(" ");
+        const upgradeModifiers = this.followerUpgradeService.resolveParameterModifiers(entry.upgrades);
         return {
           followerId: entry.followerId,
-          name: entry.nameOverride ?? (definition ? this.followerCatalogService.getLocalizedName(definition) : entry.followerId),
+          name: upgradeSuffix ? `${baseName} ${upgradeSuffix}` : baseName,
           description: (definition ? this.followerCatalogService.getLocalizedDescription(definition).trim() : "")
             || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
           hpCurrent,
           hpMax,
           hpPercent: Math.max(0, Math.min(100, Math.floor((hpCurrent / hpMax) * 100))),
           labels: [
-            ...(definition ? this.buildFollowerLabels(definition.parameterModifiers ?? []) : []),
+            ...(definition ? this.buildFollowerLabels([...(definition.parameterModifiers ?? []), ...upgradeModifiers]) : []),
           ],
         };
       });

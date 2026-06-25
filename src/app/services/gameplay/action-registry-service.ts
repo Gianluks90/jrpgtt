@@ -10,6 +10,7 @@ import { ActionCatalogService } from "@services/catalog/action-catalog-service";
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 
 export interface ActionCardContext {
   isBusy: boolean;
@@ -34,6 +35,7 @@ export class ActionRegistryService {
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private itemCatalogService: ItemCatalogService,
     private followerCatalogService: FollowerCatalogService,
+    private followerUpgradeService: FollowerUpgradeService,
   ) {}
 
   public buildActionCard(actionId: string, context: ActionCardContext): CommandPanelAction | null {
@@ -438,6 +440,22 @@ export class ActionRegistryService {
       };
     }
 
+    if (actionId === "elemental-ritual") {
+      const hasAffinity = !!player.attunedElement;
+      const eligibleFollower = this.getEligibleElementalRitualFollower(player);
+      const alreadyHasElementalFollower = this.playerHasElementalFollower(player);
+      return {
+        id: "elemental-ritual",
+        label: this.actionCatalogService.getLabel(actionId, "Elemental Ritual"),
+        description: this.actionCatalogService.getDescription(
+          actionId,
+          "Transform a follower into their elemental form. Requires elemental affinity. Grants +1 STR, +1 MAG and at least 10 HP. End turn.",
+        ),
+        disabled: commonDisabled || !hasAffinity || !eligibleFollower || alreadyHasElementalFollower,
+        pending: false,
+      };
+    }
+
     if (actionId === "eliminate-zombie") {
       const hasZombie = this.hasActiveZombie(player);
       return {
@@ -496,6 +514,25 @@ export class ActionRegistryService {
       if (entry.state === "discarded") return false;
       if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
       return String(entry.followerId ?? "").trim() === "zombie";
+    });
+  }
+
+  private getEligibleElementalRitualFollower(player: Player): boolean {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers.some((entry) => {
+      if (!entry || typeof entry !== "object") return false;
+      if (entry.state === "discarded") return false;
+      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
+      return true;
+    });
+  }
+
+  private playerHasElementalFollower(player: Player): boolean {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers.some((entry) => {
+      if (!entry || typeof entry !== "object") return false;
+      if (entry.state === "discarded") return false;
+      return this.followerUpgradeService.hasElementalUpgrade(entry.upgrades);
     });
   }
 

@@ -75,6 +75,7 @@ import { ActionCatalogService } from "@services/catalog/action-catalog-service";
 import { EnchantressRewardsConfigService } from "@services/catalog/enchantress-rewards-config-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 import { MerchantCatalogService } from "@services/catalog/merchant-catalog-service";
 import { MerchantTradeOffersService } from "@services/player/merchant-trade-offers-service";
 import { MysticRewardsConfigService } from "@services/catalog/mystic-rewards-config-service";
@@ -144,6 +145,7 @@ export class MapPageInteractionService {
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
     private itemCatalogService: ItemCatalogService,
     private followerCatalogService: FollowerCatalogService,
+    private followerUpgradeService: FollowerUpgradeService,
     private merchantCatalogService: MerchantCatalogService,
     private merchantTradeOffersService: MerchantTradeOffersService,
     private mysticRewardsConfigService: MysticRewardsConfigService,
@@ -217,6 +219,12 @@ export class MapPageInteractionService {
     const worldEvent = input.worldState?.worldEvent;
     const eventTriggered = worldEvent?.emitted === true;
     const flow = worldEvent?.flow;
+    const driverBiomeLabel = worldEvent?.driverBiome
+      ? this.translationService.tOrFallback(`map.biomes.${worldEvent.driverBiome}`, worldEvent.driverBiome)
+      : "-";
+    const targetBiomeLabel = worldEvent?.targetBiome
+      ? this.translationService.tOrFallback(`map.biomes.${worldEvent.targetBiome}`, worldEvent.targetBiome)
+      : "-";
     const pendingMutations = flow?.pendingMutationsByCellId ?? {};
     const appliedMutations = flow?.appliedMutationsByCellId ?? {};
     const sourceMutations = Object.keys(pendingMutations).length > 0 ? pendingMutations : appliedMutations;
@@ -228,7 +236,7 @@ export class MapPageInteractionService {
         const y = Math.max(0, Math.floor(Number(yRaw ?? 0)));
         const mapCell = input.mapCellsById[cellId] ?? null;
 
-        const originalBiome = (mapCell?.worldEventOriginalBiome ?? mapCell?.biome ?? mutation.worldEventOriginalBiome ?? mutation.biome) as WorldEventHelpBiome;
+        const originalBiome = (mutation.worldEventOriginalBiome ?? mapCell?.worldEventOriginalBiome ?? mapCell?.biome ?? mutation.biome) as WorldEventHelpBiome;
         const mutatedBiome = mutation.biome as WorldEventHelpBiome;
 
         const changes: string[] = [];
@@ -294,10 +302,13 @@ export class MapPageInteractionService {
 
     const data: WorldEventHelpDialogData = {
       title: this.translationService.tOrFallback("dialogs.worldEventHelp.title", "World Event Details"),
-      subtitle: this.translationService.tOrFallback(
-        "dialogs.worldEventHelp.subtitle",
-        "Original cell > resolved cell and applied changes.",
-      ),
+      subtitle: eventTriggered && worldEvent?.driverBiome && worldEvent?.targetBiome
+        ? this.translationService.tOrFallback(
+          "dialogs.worldEventHelp.subtitle",
+          "The world event has concluded with the following results. The most widespread biome on the map was {target}, influenced by the energy of {driver}. In the list below you can see each change that was applied.",
+          { driver: driverBiomeLabel, target: targetBiomeLabel },
+        )
+        : "",
       waitingMessage: eventTriggered
         ? this.translationService.tOrFallback("dialogs.worldEventHelp.noChanges", "No mutations are currently available.")
         : this.translationService.tOrFallback(
@@ -1151,6 +1162,40 @@ export class MapPageInteractionService {
       return;
     }
 
+    if (handler === "elemental-ritual") {
+      if (!player) return;
+
+      const options = this.buildElementalRitualSelectionOptions(player);
+      if (options.length === 0) {
+        window.alert(this.translationService.tOrFallback(
+          "map.interaction.errors.noElementalRitualFollower",
+          "No eligible follower is available for the elemental ritual.",
+        ));
+        return;
+      }
+
+      const selectedFollowerId = await this.openFollowerSelectionDialog({
+        title: this.translationService.tOrFallback("map.interaction.elementalRitual.title", "Elemental Ritual"),
+        message: this.translationService.tOrFallback(
+          "map.interaction.elementalRitual.message",
+          "Choose a follower to transform. They will gain +1 STR, +1 MAG and at least 10 HP.",
+        ),
+        confirmText: this.translationService.tOrFallback("map.interaction.elementalRitual.confirm", "Perform ritual"),
+        options,
+      });
+      if (!selectedFollowerId) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.elementalRitual(input.gameId, {
+          id: player.id,
+          name: player.name,
+        }, {
+          followerId: selectedFollowerId,
+        });
+      }, errorMessage);
+      return;
+    }
+
     if (handler === "follower-eliminate-zombie") {
       if (!player) return;
 
@@ -1920,6 +1965,46 @@ export class MapPageInteractionService {
           hpCurrent,
           hpMax,
           labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
+        };
+      });
+  }
+
+  private buildElementalRitualSelectionOptions(player: Player): FollowerSelectDialogData["options"] {
+    const followers = Array.isArray(player.followers) ? player.followers : [];
+    return followers
+      .filter((entry) => {
+        if (!entry || typeof entry !== "object") return false;
+        if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
+        if (entry.state === "discarded") return false;
+        if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
+        return true;
+      })
+      .map((entry) => {
+        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+        const baseName = follower ? this.followerCatalogService.getLocalizedName(follower) : entry.followerId;
+        const upgradeSuffix = (entry.upgrades ?? [])
+          .map((id) => this.followerUpgradeService.getLocalizedNameSuffix(id))
+          .filter((s) => s.length > 0)
+          .join(" ");
+        const followerName = upgradeSuffix
+          ? `${entry.nameOverride ?? baseName} ${upgradeSuffix}`
+          : String(entry.nameOverride ?? baseName);
+        const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
+        const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
+        const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
+        const allModifiers = [
+          ...(follower?.parameterModifiers ?? []),
+          ...this.followerUpgradeService.resolveParameterModifiers(entry.upgrades),
+        ];
+        return {
+          key: entry.followerId,
+          label: followerName,
+          description: (follower
+            ? this.followerCatalogService.getLocalizedDescription(follower).trim()
+            : "") || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
+          hpCurrent,
+          hpMax,
+          labels: this.buildFollowerSelectionLabels(category, allModifiers),
         };
       });
   }

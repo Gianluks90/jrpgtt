@@ -133,7 +133,7 @@
         },
         "worldEventHelp": {
             "title": "Dettagli Evento Mondiale",
-            "subtitle": "Cella originale > cella risolta.",
+            "subtitle": "L'evento mondiale si è concluso con i seguenti risultati. Il bioma più diffuso sulla mappa era {target}, influenzato dall'energia di {driver}. Nell'elenco sottostante puoi vedere ogni cambiamento applicato.",
             "waiting": "Evento mondiale non ancora innescato, in attesa che qualcuno entri nella Regione II.",
             "noChanges": "Nessun cambiamento rilevato.",
             "changesTitle": "Cambiamenti:",
@@ -904,12 +904,18 @@
                 "message": "Scegli un seguace da sacrificare all'Altare. I non morti non possono essere sacrificati.",
                 "confirm": "Sacrifica seguace"
             },
+            "elementalRitual": {
+                "title": "Rituale Elementale",
+                "message": "Scegli un seguace da trasformare. Otterrà +1 FRZ, +1 MAG e almeno 10 HP.",
+                "confirm": "Esegui rituale"
+            },
             "errors": {
                 "movePlayer": "Errore durante lo spostamento del giocatore",
                 "noMerchantForLandmark": "Nessun mercante configurato per questo luogo.",
                 "noDeadFollowerForResurrection": "Nessun seguace morto disponibile per la resurrezione.",
                 "noTempleFollower": "Nessun seguace idoneo disponibile per la devozione al tempio.",
                 "noAltarFollower": "Nessun seguace idoneo disponibile per il sacrificio all'altare.",
+                "noElementalRitualFollower": "Nessun seguace disponibile per il Rituale Elementale.",
                 "levelUp": "Errore durante l'applicazione della scelta di livello",
                 "manageResources": "Errore durante la gestione delle risorse"
             }
@@ -1047,6 +1053,7 @@
             "graveyardResurrect": "{playerName} ha tentato la resurrezione al {source} per {followerId}. Esito: {appliedOutcome}.",
             "templeSendDevotee": "{playerName} ha inviato un devoto al {source}, e diventato BUONO e ha ottenuto {gainedExperience} XP.",
             "altarSacrifice": "{playerName} ha eseguito un sacrificio all'{source}, e diventato MALVAGIO e ha ottenuto {gainedExperience} XP.",
+            "elementalRitual": "{playerName} ha eseguito il Rituale Elementale all'{source} sul seguace {followerId}.",
             "eliminateZombie": "{playerName} ha usato {source} ed eliminato lo zombie attivo.",
             "merchantBuy": "{playerName} ha comprato {itemName}{quantityLabel} da {source} per {spentCoins} monete e ha terminato il turno.",
             "merchantSell": "{playerName} ha venduto {itemName}{quantityLabel} a {source} per {gainedCoins} monete.",
@@ -1188,9 +1195,27 @@
             "label": "Sacrifica",
             "description": "Sacrifica un seguace idoneo all'Altare. Il tuo allineamento diventa malvagio, ottieni 2 XP, poi termini il turno."
         },
+        "elementalRitual": {
+            "label": "Rituale Elementale",
+            "description": "Trasforma un seguace nella sua forma elementale. Richiede affinità elementale. Il seguace ottiene +1 FRZ, +1 MAG e almeno 10 HP. Utilizzabile solo se non possiedi già un seguace potenziato. Termina il turno."
+        },
         "eliminateZombie": {
             "label": "Elimina zombie",
             "description": "Distruggi il tuo compagno zombie e termina il turno."
+        }
+    },
+    "followerUpgrades": {
+        "elemental-fire": {
+            "suffix": "del Fuoco"
+        },
+        "elemental-water": {
+            "suffix": "dell'Acqua"
+        },
+        "elemental-wind": {
+            "suffix": "del Vento"
+        },
+        "elemental-earth": {
+            "suffix": "della Terra"
         }
     },
     "spells": {

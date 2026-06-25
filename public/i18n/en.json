@@ -133,7 +133,7 @@
     },
     "worldEventHelp": {
       "title": "World Event Details",
-      "subtitle": "Original cell > resolved cell.",
+      "subtitle": "The world event has concluded with the following results. The most widespread biome on the map was {target}, influenced by the energy of {driver}. In the list below you can see each change that was applied.",
       "waiting": "World event not triggered yet. Waiting for someone to enter Region II.",
       "noChanges": "No changes detected.",
       "changesTitle": "Changes:",
@@ -894,12 +894,18 @@
         "message": "Choose an follower to sacrifice at the Altar. Undead cannot be sacrificed.",
         "confirm": "Sacrifice follower"
       },
+      "elementalRitual": {
+        "title": "Elemental Ritual",
+        "message": "Choose a follower to transform. They will gain +1 STR, +1 MAG and at least 10 HP.",
+        "confirm": "Perform ritual"
+      },
       "errors": {
         "movePlayer": "Error while moving player",
         "noMerchantForLandmark": "No merchant configured for this landmark.",
         "noDeadFollowerForResurrection": "No dead follower is available for resurrection.",
         "noTempleFollower": "No eligible follower is available for temple devotion.",
         "noAltarFollower": "No eligible follower is available for altar sacrifice.",
+        "noElementalRitualFollower": "No eligible follower is available for the Elemental Ritual.",
         "levelUp": "Error while applying level-up choice",
         "manageResources": "Error while managing resources"
       }
@@ -1037,6 +1043,7 @@
       "graveyardResurrect": "{playerName} attempted resurrection at {source} for {followerId}. Outcome: {appliedOutcome}.",
       "templeSendDevotee": "{playerName} sent a devotee at {source}, became GOOD and gained {gainedExperience} XP.",
       "altarSacrifice": "{playerName} performed a sacrifice at {source}, became EVIL and gained {gainedExperience} XP.",
+      "elementalRitual": "{playerName} performed the Elemental Ritual at {source} on follower {followerId}.",
       "eliminateZombie": "{playerName} used {source} and eliminated the active zombie.",
       "merchantBuy": "{playerName} bought {itemName}{quantityLabel} from {source} for {spentCoins} coins and ended the turn.",
       "merchantSell": "{playerName} sold {itemName}{quantityLabel} to {source} for {gainedCoins} coins.",
@@ -1172,9 +1179,27 @@
       "label": "Sacrifice",
       "description": "Sacrifice an eligible follower at the Altar. Your alignment becomes evil, gain 2 XP, then end turn."
     },
+    "elementalRitual": {
+      "label": "Elemental Ritual",
+      "description": "Transform a follower into their elemental form. Requires elemental affinity. Grants +1 STR, +1 MAG and at least 10 HP. Only usable while you have no already upgraded follower. End turn."
+    },
     "eliminateZombie": {
       "label": "Eliminate zombie",
       "description": "Destroy your zombie companion and end your turn."
+    }
+  },
+  "followerUpgrades": {
+    "elemental-fire": {
+      "suffix": "of Fire"
+    },
+    "elemental-water": {
+      "suffix": "of Water"
+    },
+    "elemental-wind": {
+      "suffix": "of Wind"
+    },
+    "elemental-earth": {
+      "suffix": "of Earth"
     }
   },
   "spells": {

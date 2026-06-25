@@ -191,6 +191,11 @@ export class EventLogService {
             const gainedExperience = Math.max(0, Math.floor(Number(args["gainedExperience"] ?? 0)));
             return `${playerName} performed a sacrifice at ${source}, became EVIL and gained ${gainedExperience} XP.`;
         },
+        "player.elementalRitual": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("elemental-ritual", "Altar");
+            const followerId = String(args["followerId"] ?? "follower");
+            return `${playerName} performed the Elemental Ritual at ${source} on ${followerId}.`;
+        },
         "player.eliminateZombie": ({ playerName }) => {
             const source = this.getActionSourceLabel("eliminate-zombie", "Zombie");
             return `${playerName} used ${source} and eliminated the active zombie.`;
@@ -685,6 +690,15 @@ export class EventLogService {
                 ...baseParams,
                 source,
                 gainedExperience: Math.max(0, Math.floor(Number(args["gainedExperience"] ?? 0))),
+            });
+        }
+
+        if (code === "player.elementalRitual") {
+            const source = this.getLocalizedActionLabel("elemental-ritual", "Altar");
+            return this.translationService.tOrFallback("logs.player.elementalRitual", fallback, {
+                ...baseParams,
+                source,
+                followerId: String(args["followerId"] ?? "follower"),
             });
         }
 

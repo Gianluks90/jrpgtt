@@ -7,6 +7,7 @@ export interface PlayerFollowerEntry {
   hpCurrent: number;
   nameOverride?: string;
   categoryOverride?: string;
+  upgrades?: string[];
   state?: FollowerState;
   discardReason?: FollowerDiscardReason;
   discardedAtTurn?: number;

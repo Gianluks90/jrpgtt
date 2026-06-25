@@ -24,6 +24,7 @@ import { getDoctorCostPerUnit, SafePlaceDoctorActionId } from "../../consts/game
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
 import { EnchantressRewardsConfigService } from "@services/catalog/enchantress-rewards-config-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { ItemOwnershipService } from "@services/player/item-ownership-service";
 import { MerchantCatalogService } from "@services/catalog/merchant-catalog-service";
@@ -123,6 +124,7 @@ export class ActionExecutorService {
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private enchantressRewardsConfigService: EnchantressRewardsConfigService,
     private followerCatalogService: FollowerCatalogService,
+    private followerUpgradeService: FollowerUpgradeService,
     private itemCatalogService: ItemCatalogService,
     private itemOwnershipService: ItemOwnershipService,
     private merchantCatalogService: MerchantCatalogService,
@@ -3949,6 +3951,118 @@ export class ActionExecutorService {
     await this.tryCreateLog(gameId, actor, "player.altarSacrifice", {
       gainedExperience: 2,
       alignment: "evil",
+      turnEnded: true,
+    });
+  }
+
+  public async elementalRitual(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    payload: { followerId: string },
+  ): Promise<void> {
+    if (!gameId || !actor.id || !payload.followerId) {
+      throw new Error("Invalid action payload");
+    }
+
+    await Promise.all([
+      this.followerCatalogService.loadConfig(),
+      this.followerUpgradeService.loadConfig(),
+    ]);
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) throw new Error("World state not found");
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const player = playerSnap.data() as Player;
+
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using landmark actions");
+
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "elemental-ritual", worldTurn, "You can only perform the Elemental Ritual once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) throw new Error("You are not standing on a revealed cell");
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "altar", "You must be at the Altar to perform the Elemental Ritual");
+
+      const attunedElement = player.attunedElement;
+      if (!attunedElement) throw new Error("No elemental affinity — you must attune to an element first");
+
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+
+      const alreadyUpgraded = normalizedFollowers.some(
+        (f) => f.state !== "discarded" && this.followerUpgradeService.hasElementalUpgrade(f.upgrades),
+      );
+      if (alreadyUpgraded) throw new Error("You already have an elementally upgraded follower");
+
+      const targetIndex = normalizedFollowers.findIndex(
+        (f) => f.followerId === payload.followerId
+          && f.state !== "discarded"
+          && Math.max(0, Math.floor(Number(f.hpCurrent ?? 0))) > 0,
+      );
+      if (targetIndex < 0) throw new Error("Selected follower is not eligible for the elemental ritual");
+
+      const upgradeId = this.followerUpgradeService.getElementalUpgradeIdForElement(attunedElement);
+      const upgradeHpFloor = this.followerUpgradeService.resolveHpFloor([upgradeId]);
+      const entry = normalizedFollowers[targetIndex];
+      const followerDef = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      const baseMaxHp = Math.max(1, Math.floor(Number(followerDef?.maxHp ?? 1)));
+      const currentHp = Math.max(0, Math.min(baseMaxHp, Math.floor(Number(entry.hpCurrent ?? 0))));
+      const newHp = Math.max(currentHp, upgradeHpFloor);
+
+      const nextFollowers = normalizedFollowers.map((f, i) =>
+        i === targetIndex
+          ? { ...f, hpCurrent: newHp, upgrades: [...(f.upgrades ?? []), upgradeId] }
+          : { ...f },
+      );
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = { ...worldState };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        followers: nextFollowers,
+        statuses: nextStatuses,
+        parameters: {
+          ...player.parameters,
+          mp: { ...player.parameters.mp, current: nextMpCurrent },
+        },
+        actionsUsedThisTurn: this.markActionUsed(player, "elemental-ritual", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.elementalRitual", {
+      followerId: payload.followerId,
       turnEnded: true,
     });
   }

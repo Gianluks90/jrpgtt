@@ -30,6 +30,7 @@ import { WorldEventRegionTransitionService } from "@services/map/world-event-reg
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 import { DiscardPileService } from "@services/gameplay/discard-pile-service";
 import { TranslationPipe } from "../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
@@ -82,6 +83,7 @@ export class MapPage implements OnInit, OnDestroy {
   private biomeConditionCatalogService = inject(BiomeConditionCatalogService);
   private itemCatalogService = inject(ItemCatalogService);
   private followerCatalogService = inject(FollowerCatalogService);
+  private followerUpgradeService = inject(FollowerUpgradeService);
   private discardPileService = inject(DiscardPileService);
   private translationService = inject(TranslationService);
   private rulebookDialogService = inject(RulebookDialogService);
@@ -580,6 +582,7 @@ export class MapPage implements OnInit, OnDestroy {
     void this.biomeConditionCatalogService.loadConfig();
     void this.itemCatalogService.loadConfig();
     void this.followerCatalogService.loadConfig();
+    void this.followerUpgradeService.loadConfig();
     this.startWorldEventFlowClock();
     effect(() => {
       const player = this.myPlayer();

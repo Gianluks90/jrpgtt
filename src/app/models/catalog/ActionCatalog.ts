@@ -23,6 +23,7 @@ export type ActionFlowHandler =
   | "graveyard-resurrect"
   | "temple-send-devotee"
   | "altar-sacrifice"
+  | "elemental-ritual"
   | "follower-eliminate-zombie";
 
 export type ActionFlowTrigger = "command-panel";

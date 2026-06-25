@@ -635,6 +635,30 @@
       }
     },
     {
+      "id": "elemental-ritual",
+      "ui": {
+        "label": "Elemental Ritual",
+        "descriptionTemplate": "Transform a follower into their elemental form. Requires elemental affinity. The follower gains +1 STR, +1 MAG and at least 10 HP. Can only be used once while you have an upgraded follower. End turn.",
+        "i18n": {
+          "labelKey": "actions.elementalRitual.label",
+          "descriptionKey": "actions.elementalRitual.description"
+        }
+      },
+      "flow": {
+        "handler": "elemental-ritual",
+        "errorMessage": "Error while performing elemental ritual",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Altar"
+      }
+    },
+    {
       "id": "eliminate-zombie",
       "ui": {
         "label": "Eliminate zombie",

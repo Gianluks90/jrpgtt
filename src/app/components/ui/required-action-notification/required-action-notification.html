@@ -8,6 +8,16 @@
             </div>
 
             <div class="required-action-actions">
+                @if (canCounter()) {
+                    <div class="required-action-counter-action">
+                        <text-button
+                            [text]="counterActionLabel()!"
+                            [compact]="true"
+                            (clicked)="counter()"
+                        ></text-button>
+                    </div>
+                }
+
                 <div class="required-action-player-actions">
                     @for (player of players(); track player.id) {
                         <div class="required-action-player-action" [class.required-action-player-action-confirmed]="player.acknowledged">

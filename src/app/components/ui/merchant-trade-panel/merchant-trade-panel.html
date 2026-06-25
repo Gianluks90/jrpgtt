@@ -19,15 +19,33 @@
                     <p class="empty-text">{{ 'dialogs.merchant.empty.noStock' | t }}</p>
                 } @else {
                     @for (offer of buyOffers(); track offer.tradableKind + ':' + offer.tradableId) {
-                        <div class="inventory-item-row">
+                        <div class="inventory-item-row" [class.inventory-item-row--spell]="offer.tradableKind === 'spell'">
                             <div class="inventory-item-header">
-                                <p class="inventory-item-title">{{ offer.name }}</p>
+                                <p class="inventory-item-title">
+                                    @if (offer.tradableKind === 'spell') {
+                                        <span class="spell-m-glyph" aria-hidden="true">M</span>
+                                    }
+                                    {{ offer.name }}
+                                </p>
                                 <span class="inventory-item-value-tag">
                                     <span>-{{ offer.purchaseValue }}</span>
                                     <span class="coin-icon inventory-item-value-icon" aria-hidden="true"></span>
                                 </span>
                             </div>
                             <div class="inventory-item-line"></div>
+                            @if (offer.mpCost !== undefined || offer.consumableOnCast) {
+                                <div class="spell-tags">
+                                    @if (offer.mpCost !== undefined) {
+                                        <span class="spell-tag spell-tag--mp">
+                                            <span class="spell-tag-mp-dot" aria-hidden="true"></span>
+                                            {{ offer.mpCost }} MP
+                                        </span>
+                                    }
+                                    @if (offer.consumableOnCast) {
+                                        <span class="spell-tag">{{ 'spells.meta.singleUse' | t }}</span>
+                                    }
+                                </div>
+                            }
                             @if (offer.identityKeywords.length > 0) {
                                 <div class="inventory-item-keywords">
                                     @for (keyword of offer.identityKeywords; track keyword + '-' + $index) {
@@ -37,7 +55,9 @@
                             }
                             <p class="inventory-item-description">{{ offer.description }}</p>
                             <div class="inventory-item-meta">
-                                <span>{{ 'dialogs.merchant.meta.category' | t }}: {{ offer.category }}</span>
+                                @if (offer.tradableKind !== 'spell') {
+                                    <span>{{ 'dialogs.merchant.meta.category' | t }}: {{ offer.category }}</span>
+                                }
                                 <span>{{ 'dialogs.merchant.meta.stock' | t }}: {{ getRemainingStock(offer.tradableKind, offer.tradableId) }}</span>
                             </div>
                             <text-button

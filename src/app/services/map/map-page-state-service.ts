@@ -553,6 +553,11 @@ export class MapPageStateService {
         ? rawCategoryOverride.trim().toLowerCase()
         : undefined;
 
+      const rawUpgrades = (entry as { upgrades?: unknown }).upgrades;
+      const upgrades = Array.isArray(rawUpgrades)
+        ? rawUpgrades.filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+        : undefined;
+
       nextFollowers.push({
         followerId: followerId.trim(),
         hpCurrent,
@@ -561,6 +566,7 @@ export class MapPageStateService {
         ...(typeof discardedAtTurn === "number" ? { discardedAtTurn } : {}),
         ...(nameOverride ? { nameOverride } : {}),
         ...(categoryOverride ? { categoryOverride } : {}),
+        ...(upgrades && upgrades.length > 0 ? { upgrades } : {}),
       });
     });
 

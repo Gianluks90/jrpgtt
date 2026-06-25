@@ -487,6 +487,53 @@
       }
     },
     {
+      "id": "academy-spell-upgrader",
+      "ui": {
+        "label": "Spell Master",
+        "descriptionTemplate": "Visit the Spell Master to upgrade Mimicry→Mimicry+ or Negate→Negate+ for {upgradeCost} coins. Ends your turn.",
+        "i18n": {
+          "labelKey": "actions.academySpellUpgrader.label",
+          "descriptionKey": "actions.academySpellUpgrader.description"
+        }
+      },
+      "flow": {
+        "handler": "academy-spell-upgrader",
+        "errorMessage": "Error while upgrading spell at Academy",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        "dialog": { "type": "none" },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Spell Master"
+      }
+    },
+    {
+      "id": "manor-counterfeiter",
+      "ui": {
+        "label": "Arcane Counterfeiter",
+        "descriptionTemplate": "Visit the Arcane Counterfeiter at the Manor. Buy from a shady stock. Buying ends your turn.",
+        "i18n": {
+          "labelKey": "actions.manorCounterfeiter.label",
+          "descriptionKey": "actions.manorCounterfeiter.description"
+        }
+      },
+      "flow": {
+        "handler": "safe-place-merchant",
+        "errorMessage": "Error while trading with the counterfeiter",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "moved-this-turn", "not-busy"],
+        "dialog": {
+          "type": "merchant-trade",
+          "stockConfigUrl": "/configs/merchant-stock/manor-counterfeiter.stock.json"
+        },
+        "requiresMyTurn": true
+      },
+      "log": {
+        "sourceLabel": "Arcane Counterfeiter"
+      }
+    },
+    {
       "id": "village-craftsman",
       "ui": {
         "label": "Craftsman",

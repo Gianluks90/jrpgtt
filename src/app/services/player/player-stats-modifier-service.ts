@@ -262,11 +262,18 @@ export class PlayerStatsModifierService {
         if (typeof entry.hpCurrent !== "number" || !Number.isFinite(entry.hpCurrent)) return false;
         return Math.floor(entry.hpCurrent) > 0;
       })
-      .map((entry) => ({
-        followerId: entry.followerId,
-        hpCurrent: Math.max(0, Math.floor(Number(entry.hpCurrent))),
-        state: entry.state,
-      }));
+      .map((entry) => {
+        const rawUpgrades = (entry as { upgrades?: unknown }).upgrades;
+        const upgrades = Array.isArray(rawUpgrades)
+          ? rawUpgrades.filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+          : undefined;
+        return {
+          followerId: entry.followerId,
+          hpCurrent: Math.max(0, Math.floor(Number(entry.hpCurrent))),
+          state: entry.state,
+          ...(upgrades && upgrades.length > 0 ? { upgrades } : {}),
+        };
+      });
   }
 
   private isScopeActive(scopes: Array<"always" | "fight-only" | "magic-fight-only" | "day-only" | "night-only">, timeOfDay: WorldState["timeOfDay"]): boolean {

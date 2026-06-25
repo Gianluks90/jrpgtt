@@ -2,13 +2,14 @@ import { Component, computed, input, output } from "@angular/core";
 import { BiomeType, MapCell } from "@models/world/MapCell";
 import { WorldState } from "@models/world/WorldState";
 import { ExplorationCardBack } from "../exploration-card-back/exploration-card-back";
+import { SpellCardBack } from "../spell-card-back/spell-card-back";
 
 @Component({
   selector: "app-biomes-counter",
   templateUrl: "./biomes-counter.html",
   styleUrl: "./biomes-counter.scss",
   standalone: true,
-  imports: [ExplorationCardBack],
+  imports: [ExplorationCardBack, SpellCardBack],
 })
 export class BiomesCounter {
   public worldState = input<WorldState | null>(null);
@@ -38,6 +39,8 @@ export class BiomesCounter {
   }
 
   public explorationDeckCount = computed(() => this.worldState()?.explorationDeck?.length ?? 0);
+
+  public spellDeckCount = computed(() => this.worldState()?.spellDeck?.length ?? 0);
 
   public discardPileCount = computed<number>(() =>
     this.worldState()?.explorationDiscardedDeck?.length ?? 0,

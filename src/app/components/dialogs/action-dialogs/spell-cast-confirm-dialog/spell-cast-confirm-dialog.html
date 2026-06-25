@@ -1,0 +1,28 @@
+<div class="scroll-container" (keydown.escape)="close()">
+
+    <div class="scroll-header">
+        <span class="scroll-title">{{ 'dialogs.spellCast.title' | t }}</span>
+        <div class="scroll-mp-badge">
+            <span class="scroll-mp-dot" aria-hidden="true"></span>
+            <span class="scroll-mp-value">{{ data.mpCost }} MP</span>
+        </div>
+    </div>
+
+    <div class="scroll-body">
+        <h2 class="spell-name">{{ data.spellName }}</h2>
+        <div class="spell-divider" aria-hidden="true"></div>
+
+        @if (data.consumableOnCast) {
+            <span class="single-use-tag">{{ 'spells.meta.singleUse' | t }}</span>
+        }
+
+        <p class="spell-description">{{ data.description }}</p>
+    </div>
+
+    <div class="scroll-footer">
+        <button class="cast-button" type="button" (click)="cast()">
+            {{ 'dialogs.spellCast.cast' | t }}
+        </button>
+    </div>
+
+</div>

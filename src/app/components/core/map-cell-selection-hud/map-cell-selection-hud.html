@@ -1,0 +1,16 @@
+<div class="cell-selection-hud">
+  <section class="hud-block hud-prompt-block">
+    <div class="hud-content">
+      <p class="hud-label">{{ 'map.cellSelection.label' | t }}</p>
+      <p class="hud-prompt">{{ prompt() }}</p>
+    </div>
+  </section>
+
+  @if (withCancel()) {
+    <text-button
+      class="hud-cancel-btn"
+      [text]="'dialogs.common.cancel' | t"
+      (clicked)="onCancel()"
+    ></text-button>
+  }
+</div>

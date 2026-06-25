@@ -127,7 +127,9 @@ export class MapPlayerUtilitiesPanel {
       .filter((entry) => entry.state !== "discarded")
       .map((entry) => {
         const definition = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-        const hpMax = typeof definition?.maxHp === "number" ? Math.max(1, Math.floor(definition.maxHp)) : 1;
+        const catalogMaxHp = typeof definition?.maxHp === "number" ? Math.max(1, Math.floor(definition.maxHp)) : 1;
+        const upgradeHpFloor = this.followerUpgradeService.resolveHpFloor(entry.upgrades);
+        const hpMax = Math.max(catalogMaxHp, upgradeHpFloor);
         const hpCurrent = Math.max(0, Math.min(hpMax, Math.floor(Number(entry.hpCurrent ?? 0))));
         const baseName = entry.nameOverride ?? (definition ? this.followerCatalogService.getLocalizedName(definition) : entry.followerId);
         const upgradeSuffix = (entry.upgrades ?? [])
@@ -258,12 +260,18 @@ export class MapPlayerUtilitiesPanel {
         ? rawCategoryOverride.trim().toLowerCase()
         : undefined;
 
+      const rawUpgrades = (entry as { upgrades?: unknown }).upgrades;
+      const upgrades = Array.isArray(rawUpgrades)
+        ? rawUpgrades.filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+        : undefined;
+
       followers.push({
         followerId: followerId.trim(),
         hpCurrent,
         state,
         ...(nameOverride ? { nameOverride } : {}),
         ...(categoryOverride ? { categoryOverride } : {}),
+        ...(upgrades && upgrades.length > 0 ? { upgrades } : {}),
       });
     });
 

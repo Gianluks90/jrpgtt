@@ -45,6 +45,16 @@ export const MERCHANT_DIALOG_CONFIG = {
     maxWidth: '760px',
 };
 
+export const SPELL_CAST_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    width: '50%',
+    maxWidth: '320px',
+    minWidth: '260px',
+    height: '480px',
+    maxHeight: '90vh',
+    panelClass: ['dialog-backdrop-panel', 'spell-cast-dialog-panel'],
+};
+
 export const RULEBOOK_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     width: 'calc(100vw - 96px)',

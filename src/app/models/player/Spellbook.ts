@@ -1,6 +1,6 @@
 import { SanctuaryElement } from "@models/world/MapCell";
 
-export type PlayerSpellSource = "sanctuary" | "merchant" | "enchantress" | "memory";
+export type PlayerSpellSource = "sanctuary" | "merchant" | "enchantress" | "memory" | "upgrade";
 
 export interface PlayerSpellEntry {
   spellId: string;

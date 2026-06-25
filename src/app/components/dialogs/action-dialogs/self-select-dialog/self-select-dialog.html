@@ -1,0 +1,37 @@
+<dialog-wrapper [title]="data.title">
+
+  @if (data.message) {
+    <p class="info-text">{{ data.message }}</p>
+  }
+
+  @if (data.options.length === 0) {
+    <p class="info-text">{{ 'dialogs.selfSelect.noOptions' | t }}</p>
+  } @else {
+    <ul class="option-list">
+      @for (option of data.options; track option.key) {
+        <li
+          class="option-row"
+          [class.option-row--selected]="selectedKey === option.key"
+          (click)="select(option.key)"
+          (keydown.enter)="select(option.key)"
+          tabindex="0"
+          role="option"
+          [attr.aria-selected]="selectedKey === option.key">
+          <span class="option-label">{{ option.label }}</span>
+          @if (option.sublabel) {
+            <span class="option-sublabel">{{ option.sublabel }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  <text-button
+    dialog-action
+    [text]="data.confirmText"
+    [disabled]="!canConfirm"
+    (clicked)="confirm()"
+  ></text-button>
+  <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
+
+</dialog-wrapper>

@@ -37,6 +37,7 @@
     <app-commands-panel
       [actions]="spellActions()"
       [emptyStateKey]="'map.spells.empty'"
+      [spellVariant]="true"
       (actionRequested)="onSpellActionRequested($event)"
     ></app-commands-panel>
   } @else {

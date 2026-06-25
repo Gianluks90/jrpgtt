@@ -16,6 +16,7 @@
             "label": "Poison",
             "description": "Takes damage at the end of each turn.",
             "defaultDurationTurns": 3,
+            "isNegative": true,
             "iconUrl": "/status-icons/poison-icon.svg",
             "i18n": {
                 "labelKey": "statuses.poison.label",
@@ -44,6 +45,7 @@
             "label": "Minified",
             "description": "Transforms the target into a mouse. Primary stats are set to 1, HP/MP recovery is disabled, and item use is blocked.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/mouse-icon.svg",
             "i18n": {
                 "labelKey": "statuses.minified.label",
@@ -61,6 +63,7 @@
             "label": "Silence",
             "description": "Spell casting and MP natural regeneration are disabled.",
             "defaultDurationTurns": 3,
+            "isNegative": true,
             "iconUrl": "/status-icons/silence-icon.svg",
             "i18n": {
                 "labelKey": "statuses.silence.label",
@@ -106,6 +109,7 @@
             "label": "Weakened",
             "description": "Decreases Strength by 1.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/debuff-icon.svg",
             "i18n": {
                 "labelKey": "statuses.weakened.label",
@@ -138,6 +142,7 @@
             "label": "Hexed",
             "description": "Decreases Magic by 1.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/debuff-icon.svg",
             "i18n": {
                 "labelKey": "statuses.hexed.label",
@@ -154,6 +159,7 @@
             "label": "Sleep",
             "description": "Puts the target to sleep and skips the next turn.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/sleep-icon.svg",
             "i18n": {
                 "labelKey": "statuses.sleep.label",
@@ -197,6 +203,7 @@
             "label": "Immobilized",
             "description": "The target cannot move.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/immobilized-icon.svg",
             "i18n": {
                 "labelKey": "statuses.immobilized.label",
@@ -271,6 +278,7 @@
             "label": "Petrified",
             "description": "The target is turned to stone and skips the next turn.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/immobilized-icon.svg",
             "i18n": {
                 "labelKey": "statuses.petrified.label",
@@ -285,6 +293,7 @@
             "label": "Anchored",
             "description": "Movement is blocked until the status expires.",
             "defaultDurationTurns": 1,
+            "isNegative": true,
             "iconUrl": "/status-icons/immobilized-icon.svg",
             "i18n": {
                 "labelKey": "statuses.anchored.label",

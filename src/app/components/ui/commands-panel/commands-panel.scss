@@ -45,9 +45,19 @@
   gap: 8px;
 }
 
+.command-card--spell {
+  border-color: color-mix(in srgb, var(--magic-color) 60%, transparent);
+  background: color-mix(in srgb, var(--magic-color) 10%, rgba(255, 255, 255, 0.04));
+}
+
 .command-card:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.7);
+}
+
+.command-card--spell:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--magic-color) 18%, rgba(255, 255, 255, 0.08));
+  border-color: var(--magic-color);
 }
 
 .command-card:disabled {
@@ -120,6 +130,19 @@
   line-height: 1.25;
   color: rgba(255, 255, 255, 0.72);
   text-transform: none;
+}
+
+.command-card-single-use {
+  display: inline-flex;
+  align-items: center;
+  min-height: 14px;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.42rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
 }
 
 .command-card-warning {

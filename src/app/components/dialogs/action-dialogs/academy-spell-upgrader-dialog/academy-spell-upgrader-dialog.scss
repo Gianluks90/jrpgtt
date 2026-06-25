@@ -1,0 +1,103 @@
+.upgrader-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 300px;
+  max-width: 420px;
+}
+
+.info-text {
+  margin: 0;
+  font-size: 0.56rem;
+  line-height: 1.35;
+}
+
+.error-text {
+  margin: 0;
+  font-size: 0.56rem;
+  color: #f08d8d;
+}
+
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--bg-color) 92%, black 8%);
+  border: 1px solid color-mix(in srgb, var(--fg-color) 30%, transparent);
+  color: var(--fg-color);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &--selected {
+    border-color: var(--magic-color);
+    background: color-mix(in srgb, var(--magic-color) 12%, var(--bg-color));
+  }
+}
+
+.option-spells {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.option-spell-name {
+  font-size: 0.58rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &--upgraded {
+    color: var(--magic-color);
+    font-weight: 700;
+  }
+}
+
+.option-arrow {
+  font-size: 0.58rem;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--fg-color) 50%, transparent);
+}
+
+.option-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.56rem;
+  flex-shrink: 0;
+
+  &--cant-afford { color: #f08d8d; }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-text {
+  margin: 0;
+  font-size: 0.58rem;
+  color: var(--magic-color);
+}

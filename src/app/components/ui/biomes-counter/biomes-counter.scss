@@ -69,8 +69,14 @@
   justify-content: center;
 }
 
-.deck-counter-group {
+.decks-block {
   margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deck-counter-group {
   display: flex;
   align-items: center;
   gap: 8px;

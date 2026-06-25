@@ -116,6 +116,10 @@ p.info-text {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
+.spell-cast-dialog-panel {
+    overflow: visible !important;
+}
+
 form {
     display: flex;
     flex-direction: column;

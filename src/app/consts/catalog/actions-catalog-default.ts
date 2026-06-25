@@ -540,6 +540,168 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
       },
     },
     {
+      id: "elemental-ritual",
+      ui: {
+        label: "Elemental Ritual",
+        descriptionTemplate: "Transform a follower into their elemental form. Requires elemental affinity. The follower gains +1 STR, +1 MAG and at least 10 HP. Can only be used once while you have an upgraded follower. End turn.",
+        i18n: {
+          labelKey: "actions.elementalRitual.label",
+          descriptionKey: "actions.elementalRitual.description",
+        },
+      },
+      flow: {
+        handler: "elemental-ritual",
+        errorMessage: "Error while performing elemental ritual",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: {
+          type: "none",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Altar",
+      },
+    },
+    {
+      id: "castle-rest",
+      ui: {
+        label: "Rest",
+        descriptionTemplate: "Rest at the Castle: restore 50% HP, pay 10 coins, then end your turn (day and night).",
+        i18n: {
+          labelKey: "actions.castleRest.label",
+          descriptionKey: "actions.castleRest.description",
+        },
+      },
+      flow: {
+        handler: "landmark-rest",
+        errorMessage: "Error while resting at castle",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Castle Rest",
+      },
+    },
+    {
+      id: "castle-trainer",
+      ui: {
+        label: "Trainer",
+        descriptionTemplate: "Train Strength at the Castle. Cost {trainingCost} coins (3 x level), gain +1 permanent STR, end your turn and skip your next one.",
+        i18n: {
+          labelKey: "actions.castleTrainer.label",
+          descriptionKey: "actions.castleTrainer.description",
+        },
+      },
+      flow: {
+        handler: "landmark-trainer",
+        errorMessage: "Error while training strength at castle",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Castle Trainer",
+      },
+    },
+    {
+      id: "academy-trainer",
+      ui: {
+        label: "Trainer",
+        descriptionTemplate: "Train Magic at the Academy. Cost {trainingCost} coins (3 x level), gain +1 permanent MAG, end your turn and skip your next one.",
+        i18n: {
+          labelKey: "actions.academyTrainer.label",
+          descriptionKey: "actions.academyTrainer.description",
+        },
+      },
+      flow: {
+        handler: "landmark-trainer",
+        errorMessage: "Error while training magic at academy",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Academy Trainer",
+      },
+    },
+    {
+      id: "academy-merchant",
+      ui: {
+        label: "Arcane Merchant",
+        descriptionTemplate: "Visit the Academy Merchant. Buy magical stock and sell only magical items. Buying ends your turn.",
+        i18n: {
+          labelKey: "actions.academyMerchant.label",
+          descriptionKey: "actions.academyMerchant.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-merchant",
+        errorMessage: "Error while trading with academy merchant",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy"],
+        dialog: {
+          type: "merchant-trade",
+          stockConfigUrl: "/configs/merchant-stock/academy-merchant.stock.json",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Academy Merchant",
+      },
+    },
+    {
+      id: "academy-spell-upgrader",
+      ui: {
+        label: "Spell Master",
+        descriptionTemplate: "Visit the Spell Master to upgrade Mimicry→Mimicry+ or Negate→Negate+ for {upgradeCost} coins. Ends your turn.",
+        i18n: {
+          labelKey: "actions.academySpellUpgrader.label",
+          descriptionKey: "actions.academySpellUpgrader.description",
+        },
+      },
+      flow: {
+        handler: "academy-spell-upgrader",
+        errorMessage: "Error while upgrading spell at Academy",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Spell Master",
+      },
+    },
+    {
+      id: "manor-counterfeiter",
+      ui: {
+        label: "Arcane Counterfeiter",
+        descriptionTemplate: "Visit the Arcane Counterfeiter at the Manor. Buy from a shady stock. Buying ends your turn.",
+        i18n: {
+          labelKey: "actions.manorCounterfeiter.label",
+          descriptionKey: "actions.manorCounterfeiter.description",
+        },
+      },
+      flow: {
+        handler: "safe-place-merchant",
+        errorMessage: "Error while trading with the counterfeiter",
+        trigger: "command-panel",
+        validators: ["my-turn", "moved-this-turn", "not-busy"],
+        dialog: {
+          type: "merchant-trade",
+          stockConfigUrl: "/configs/merchant-stock/manor-counterfeiter.stock.json",
+        },
+        requiresMyTurn: true,
+      },
+      log: {
+        sourceLabel: "Arcane Counterfeiter",
+      },
+    },
+    {
       id: "eliminate-zombie",
       ui: {
         label: "Eliminate zombie",

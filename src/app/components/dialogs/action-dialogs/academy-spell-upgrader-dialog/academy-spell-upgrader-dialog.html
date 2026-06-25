@@ -1,0 +1,64 @@
+<dialog-wrapper [title]="title" [hideActions]="true">
+
+    <div class="upgrader-layout">
+
+        @if (done && outcome) {
+            <div class="result">
+                <p class="result-text">{{ 'dialogs.academySpellUpgrader.result' | t: { from: outcome.fromSpellName, to: outcome.toSpellName } }}</p>
+                <text-button
+                    [text]="'dialogs.common.continue' | t"
+                    [fullWidth]="true"
+                    (clicked)="close()"
+                ></text-button>
+            </div>
+        } @else {
+            <p class="info-text">{{ 'dialogs.academySpellUpgrader.info' | t }}</p>
+
+            @if (errorMessage) {
+                <p class="error-text">{{ errorMessage }}</p>
+            }
+
+            <div class="options-list">
+                @for (option of options; track option.fromSpellId) {
+                    <button
+                        class="option-row"
+                        [class.option-row--selected]="selectedId === option.fromSpellId"
+                        [disabled]="upgrading"
+                        (click)="select(option.fromSpellId)"
+                    >
+                        <div class="option-spells">
+                            <span class="option-spell-name">{{ option.fromSpellName }}</span>
+                            <span class="option-arrow" aria-hidden="true">→</span>
+                            <span class="option-spell-name option-spell-name--upgraded">{{ option.toSpellName }}</span>
+                        </div>
+                        <div class="option-cost" [class.option-cost--cant-afford]="!option.canAfford">
+                            <span>{{ option.cost }}</span>
+                            <span class="coin-icon" aria-hidden="true"></span>
+                        </div>
+                    </button>
+                }
+            </div>
+
+            @if (selectedOption && !selectedOption.canAfford) {
+                <p class="error-text">{{ 'dialogs.academySpellUpgrader.errors.notEnoughCoins' | t }}</p>
+            }
+
+            <div class="actions">
+                <text-button
+                    [text]="'dialogs.academySpellUpgrader.actions.confirm' | t: { cost: selectedOption?.cost ?? 0 }"
+                    [fullWidth]="true"
+                    [disabled]="!canConfirm"
+                    (clicked)="confirm()"
+                ></text-button>
+                <text-button
+                    [text]="'dialogs.common.cancel' | t"
+                    [fullWidth]="true"
+                    [disabled]="!canClose"
+                    (clicked)="close()"
+                ></text-button>
+            </div>
+        }
+
+    </div>
+
+</dialog-wrapper>

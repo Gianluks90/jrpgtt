@@ -11,6 +11,7 @@ import { Player } from "@models/player/Player";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { MerchantStockConfigService } from "@services/catalog/merchant-stock-config-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
 import { TranslationService } from "@services/shared/translation-service";
 
 @Injectable({
@@ -21,6 +22,7 @@ export class MerchantTradeOffersService {
     private itemCatalogService: ItemCatalogService,
     private merchantStockConfigService: MerchantStockConfigService,
     private followerCatalogService: FollowerCatalogService,
+    private spellCatalogService: SpellCatalogService,
     private translationService: TranslationService,
   ) {}
 
@@ -114,6 +116,27 @@ export class MerchantTradeOffersService {
               : Math.max(0, Math.floor(item.purchaseValue)),
             stock: Math.max(0, Math.floor(Number(input.stockMap[stockKey] ?? 0))),
             canBuy: isAlignmentAllowed,
+          };
+        }
+
+        if (entry.kind === "spell") {
+          const spell = this.spellCatalogService.getSpell(entry.tradableId);
+          if (!spell) return null;
+
+          return {
+            tradableKind: "spell",
+            tradableId: spell.id,
+            name: this.spellCatalogService.getLocalizedName(spell),
+            description: this.spellCatalogService.getLocalizedDescription(spell),
+            category: this.translationService.tOrFallback("dialogs.merchant.categories.spell", "Spell"),
+            identityKeywords: [],
+            mpCost: spell.mpCost,
+            consumableOnCast: spell.consumableOnCast === true ? true : undefined,
+            purchaseValue: typeof entry.purchaseValue === "number"
+              ? Math.max(0, Math.floor(entry.purchaseValue))
+              : 0,
+            stock: Math.max(0, Math.floor(Number(input.stockMap[stockKey] ?? 0))),
+            canBuy: true,
           };
         }
 

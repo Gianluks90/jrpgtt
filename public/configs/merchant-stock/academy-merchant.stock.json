@@ -1,4 +1,23 @@
 {
   "merchantId": "academy-merchant",
-  "stock": []
+  "stock": [
+    { "kind": "spell", "tradableId": "alchemy",       "purchaseValue": 6,  "stock": 2 },
+    { "kind": "spell", "tradableId": "focus",          "purchaseValue": 8,  "stock": 2 },
+    { "kind": "spell", "tradableId": "transmute",      "purchaseValue": 8,  "stock": 2 },
+    { "kind": "spell", "tradableId": "mana-drain",     "purchaseValue": 8,  "stock": 2 },
+    { "kind": "spell", "tradableId": "invisibility",   "purchaseValue": 12, "stock": 2 },
+    { "kind": "spell", "tradableId": "elemental-bond", "purchaseValue": 10, "stock": 2 },
+    { "kind": "spell", "tradableId": "mana-shield",    "purchaseValue": 10, "stock": 2 },
+    { "kind": "spell", "tradableId": "silence",        "purchaseValue": 12, "stock": 2 },
+    { "kind": "spell", "tradableId": "minor-exile",    "purchaseValue": 10, "stock": 1 },
+    { "kind": "spell", "tradableId": "seal",           "purchaseValue": 12, "stock": 1 },
+    { "kind": "spell", "tradableId": "counterspell",   "purchaseValue": 12, "stock": 1 },
+    { "kind": "spell", "tradableId": "spell-break",    "purchaseValue": 14, "stock": 1 },
+    { "kind": "spell", "tradableId": "disciple",       "purchaseValue": 12, "stock": 1 },
+    { "kind": "spell", "tradableId": "mimicry",        "purchaseValue": 12, "stock": 1 },
+    { "kind": "spell", "tradableId": "mimicry-plus",   "purchaseValue": 14, "stock": 1 },
+    { "kind": "spell", "tradableId": "negate",         "purchaseValue": 14, "stock": 1 },
+    { "kind": "spell", "tradableId": "negate-plus",    "purchaseValue": 16, "stock": 1 },
+    { "kind": "spell", "tradableId": "time-fold",      "purchaseValue": 16, "stock": 1 }
+  ]
 }

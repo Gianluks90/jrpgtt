@@ -1,13 +1,15 @@
 import { Injectable } from "@angular/core";
 import { collection, deleteField, doc, getDoc, getDocs, runTransaction, Timestamp, Transaction } from "firebase/firestore";
 import { GameMap } from "@models/core/GameMap";
-import { MapCell, SanctuaryElement } from "@models/world/MapCell";
+import { BiomeType, MapCell, SanctuaryElement } from "@models/world/MapCell";
+import { SPECIAL_CELLS } from "../../consts/gameplay/special-cells";
 import { InventoryItemEntry } from "@models/player/Inventory";
 import { PlayerFollowerEntry } from "@models/player/Follower";
 import { Player, PlayerStatus } from "@models/player/Player";
 import { PlayerSpellEntry } from "@models/player/Spellbook";
 import { ResourceLabel, ResourceStack } from "@models/world/Resource";
-import { WorldState } from "@models/world/WorldState";
+import { WorldState, PendingSpellEffectState } from "@models/world/WorldState";
+import { QuadrantId } from "@models/world/WorldZone";
 import { EventLogService } from "@services/gameplay/event-log-service";
 import { FirebaseService } from "@services/app/firebase-service";
 import { LuckService } from "@services/gameplay/luck-service";
@@ -36,6 +38,10 @@ import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { GraveyardResurrectRewardsConfigService } from "@services/catalog/graveyard-resurrect-rewards-config-service";
 import { WorldEventMapMutationService } from "@services/map/world-event-map-mutation-service";
 import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import { SpellDeckService } from "@services/gameplay/spell-deck-service";
+import { AcademySpellUpgradeConfigService } from "@services/catalog/academy-spell-upgrade-config-service";
+import { ChaosEffectsConfigService } from "@services/catalog/chaos-effects-config-service";
+import { ChaosEffectDefinition } from "@models/catalog/ChaosEffectsConfig";
 import { DEFAULT_SPELLBOOK_CAPACITY } from "../../consts/player/spellbook-config";
 
 export interface CapitalEnchantressOutcome {
@@ -45,6 +51,8 @@ export interface CapitalEnchantressOutcome {
   rolledTotal: number;
   pendingMagicReward: boolean;
   overflowLuckyStrikeCandidate: boolean;
+  learnedSpellId: string | null;
+  learnedSpellName: string;
 }
 
 export interface CityMysticOutcome {
@@ -76,14 +84,14 @@ export interface MerchantTradeOutcome {
 
 export interface MerchantCheckoutOperation {
   operation: "buy" | "sell";
-  kind?: "item" | "follower";
+  kind?: "item" | "follower" | "spell";
   itemId: string;
   quantity: number;
 }
 
 export interface MerchantCheckoutLineOutcome {
   operation: "buy" | "sell";
-  kind: "item" | "follower";
+  kind: "item" | "follower" | "spell";
   itemId: string;
   itemName: string;
   quantity: number;
@@ -95,6 +103,14 @@ export interface MerchantCheckoutOutcome {
   lines: MerchantCheckoutLineOutcome[];
   netCoinsDelta: number;
   turnEnded: boolean;
+}
+
+export interface AcademySpellUpgradeOutcome {
+  fromSpellId: string;
+  fromSpellName: string;
+  toSpellId: string;
+  toSpellName: string;
+  spentCoins: number;
 }
 
 @Injectable({
@@ -136,6 +152,9 @@ export class ActionExecutorService {
     private worldZonesService: WorldZonesService,
     private worldEventMapMutationService: WorldEventMapMutationService,
     private spellCatalogService: SpellCatalogService,
+    private spellDeckService: SpellDeckService,
+    private academySpellUpgradeConfigService: AcademySpellUpgradeConfigService,
+    private chaosEffectsConfigService: ChaosEffectsConfigService,
   ) { }
 
   public async endTurn(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
@@ -590,6 +609,13 @@ export class ActionExecutorService {
         nextPlayerPatch.followers = nextFollowers;
       }
 
+      const elementalBondBefore = currentStatuses.find((s) => s.key === "elemental-bond");
+      const elementalBondAfter = nextStatuses.find((s) => s.key === "elemental-bond");
+      if (elementalBondBefore && !elementalBondAfter) {
+        const revertedElement = elementalBondBefore.effectKey;
+        nextPlayerPatch.attunedElement = (revertedElement as SanctuaryElement) || undefined;
+      }
+
       if (Object.keys(nextPlayerPatch).length > 0) {
         transaction.set(playerRef, nextPlayerPatch, { merge: true });
       }
@@ -633,10 +659,10 @@ export class ActionExecutorService {
     actor: Pick<Player, "id" | "name">,
     payload: {
       spellId: string;
-      target?: {
-        x: number;
-        y: number;
-      } | null;
+      target?: { x: number; y: number } | null;
+      targetPlayerId?: string | null;
+      selectedSpellId?: string | null;
+      selectedKey?: string | null;
     },
   ): Promise<void> {
     if (!gameId || !actor.id) {
@@ -651,6 +677,7 @@ export class ActionExecutorService {
     await Promise.all([
       this.spellCatalogService.loadConfig(),
       this.statusCatalogService.loadConfig(),
+      this.chaosEffectsConfigService.loadConfig(),
     ]);
 
     const spell = this.spellCatalogService.getSpell(spellId);
@@ -663,6 +690,13 @@ export class ActionExecutorService {
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
     const gameRef = doc(this.firebaseService.database, "games", gameId);
 
+    const targetPlayerId = typeof payload.targetPlayerId === "string" ? payload.targetPlayerId.trim() : null;
+    const targetPlayerRef = targetPlayerId
+      ? doc(this.firebaseService.database, "games", gameId, "players", targetPlayerId)
+      : null;
+    const selectedSpellId = typeof payload.selectedSpellId === "string" ? payload.selectedSpellId.trim() : null;
+    const selectedKey = typeof payload.selectedKey === "string" ? payload.selectedKey.trim() : null;
+
     let logCode = "player.castSpell";
     let logArgs: Record<string, unknown> = {
       spellName: this.spellCatalogService.getLocalizedName(spell),
@@ -670,10 +704,11 @@ export class ActionExecutorService {
     };
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
-      const [worldStateSnap, playerSnap, gameMapSnap] = await Promise.all([
+      const [worldStateSnap, playerSnap, gameMapSnap, gameSnap] = await Promise.all([
         transaction.get(worldStateRef),
         transaction.get(playerRef),
         transaction.get(gameMapRef),
+        transaction.get(gameRef),
       ]);
 
       if (!worldStateSnap.exists()) {
@@ -688,6 +723,9 @@ export class ActionExecutorService {
       const player = playerSnap.data() as Player;
       const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
       const mapSize = gameMapSnap.exists() ? ((gameMapSnap.data() as GameMap).size ?? 10) : 10;
+      const ownerPlayerId = gameSnap.exists()
+        ? (gameSnap.data() as { ownerId?: unknown }).ownerId
+        : undefined;
 
       if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
         throw new Error("It is not your turn");
@@ -741,6 +779,51 @@ export class ActionExecutorService {
       const effectiveStats = this.playerStatsModifierService.computeStats({ player, currentCell, worldState, mapSize });
       const magicValue = effectiveStats.effective.magic;
       const scalar = this.spellCatalogService.computeEffectScalar(spell, magicValue);
+      let spellEffectTargetPlayerIds: string[] | null = null;
+
+      // COUNTERSPELL INTERCEPT — only for single-target player spells
+      let interceptedByCounter = false;
+      if (targetPlayerId && targetPlayerRef) {
+        const counterCheckSnap = await transaction.get(targetPlayerRef);
+        if (counterCheckSnap.exists()) {
+          const counterCheckPlayer = counterCheckSnap.data() as Player;
+          const counterEntry = this.normalizePlayerSpellEntries(counterCheckPlayer.spellbook?.spells).find((e) => {
+            const s = this.spellCatalogService.getSpell(e.spellId);
+            return s?.effect.type === "counter-spell-reaction"
+              && Math.max(0, Math.floor(Number(e.blockedUntilTurn ?? 0))) <= worldTurn;
+          });
+          if (counterEntry) {
+            const nowMs = Date.now();
+            nextWorldState.pendingSpellEffect = {
+              spellId: spell.id,
+              casterId: actor.id,
+              casterName: actor.name,
+              targetPlayerId,
+              ...(selectedSpellId ? { selectedSpellId } : {}),
+              ...(selectedKey ? { selectedKey } : {}),
+              ...(payload.target ? { target: payload.target } : {}),
+              castAtTurn: worldTurn,
+            };
+            nextWorldState.requiredActionNotification = {
+              type: "spell-pending-counter",
+              notificationId: `spell-counter:${spell.id}:${worldTurn}:${actor.id}`,
+              activatedByPlayerId: actor.id,
+              activatedByPlayerName: actor.name,
+              spellName: this.spellCatalogService.getLocalizedName(spell),
+              spellEffectSummary: spell.ui.descriptionTemplate,
+              canTargetCounter: true,
+              requiredPlayerIds: [targetPlayerId],
+              acknowledgedPlayerIds: [],
+              createdAtMs: nowMs,
+              lastActionAtMs: nowMs,
+              ...(typeof ownerPlayerId === "string" ? { ownerPlayerId } : {}),
+            };
+            interceptedByCounter = true;
+            logCode = "player.castSpellCounterPending";
+            logArgs = { ...logArgs, targetPlayerName: counterCheckPlayer.name };
+          }
+        }
+      }
 
       if (spell.effect.type === "heal-self") {
         const hpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
@@ -891,6 +974,549 @@ export class ActionExecutorService {
           biome: targetBiome,
           x: player.location.x + 1,
           y: player.location.y + 1,
+        };
+      }
+
+      if (spell.effect.type === "gain-coins") {
+        const baseAmount = Math.max(0, Math.floor(Number(spell.effect.baseAmount ?? 0)));
+        const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+        nextPlayerPatch.inventory = {
+          ...player.inventory,
+          money: currentMoney + baseAmount,
+        };
+        logCode = "player.castSpellGainCoins";
+        logArgs = { ...logArgs, coinsGained: baseAmount };
+      }
+
+      if (spell.effect.type === "remove-status-self") {
+        const currentStatuses = this.normalizeStatuses(player.statuses);
+        const negativeStatus = currentStatuses.find((s) => {
+          const def = this.statusCatalogService.getCachedStatus(s.key);
+          return def?.isNegative === true;
+        });
+        nextPlayerPatch.statuses = negativeStatus
+          ? currentStatuses.filter((s) => s.key !== negativeStatus.key)
+          : currentStatuses;
+        logCode = "player.castSpellDispel";
+        logArgs = { ...logArgs, removedStatus: negativeStatus?.key ?? "none" };
+      }
+
+      if (spell.effect.type === "remove-all-negative-statuses-self") {
+        const currentStatuses = this.normalizeStatuses(player.statuses);
+        const cleanedStatuses = currentStatuses.filter((s) => {
+          const def = this.statusCatalogService.getCachedStatus(s.key);
+          return def?.isNegative !== true;
+        });
+        nextPlayerPatch.statuses = cleanedStatuses;
+        logCode = "player.castSpellPurify";
+        logArgs = { ...logArgs, removedCount: currentStatuses.length - cleanedStatuses.length };
+      }
+
+      if (spell.effect.type === "remove-negative-follower-self") {
+        const activeFollowers = (player.followers ?? []).filter((f) => f.state !== "discarded");
+        const negativeFollower = activeFollowers.find((f) => {
+          const def = this.followerCatalogService.getCachedFollowerById(f.followerId);
+          return def?.isNegative === true;
+        });
+        if (negativeFollower) {
+          nextPlayerPatch.followers = (player.followers ?? []).map((f) => {
+            if (f.followerId !== negativeFollower.followerId || f.state === "discarded") return f;
+            return {
+              ...f,
+              state: "discarded" as const,
+              discardReason: "released" as const,
+              discardedAtTurn: worldTurn,
+            };
+          });
+        }
+        logCode = "player.castSpellRemoveFollower";
+        logArgs = { ...logArgs, removedFollowerId: negativeFollower?.followerId ?? "none" };
+      }
+
+      if (!interceptedByCounter && (spell.effect.type === "apply-status-target" || spell.effect.type === "skip-turn-target")) {
+        if (!targetPlayerRef || !targetPlayerId) {
+          throw new Error("Target player is required for this spell");
+        }
+
+        const statusKey = typeof spell.effect.statusKey === "string" ? spell.effect.statusKey : "";
+        const statusDefinition = this.statusCatalogService.getCachedStatus(statusKey);
+        if (!statusDefinition) {
+          throw new Error("Invalid spell status effect");
+        }
+
+        const targetPlayerSnap = await transaction.get(targetPlayerRef);
+        if (!targetPlayerSnap.exists()) {
+          throw new Error("Target player not found");
+        }
+        const targetPlayer = targetPlayerSnap.data() as Player;
+        const durationTurns = Math.max(1, Math.floor(
+          Number(spell.effect.baseDurationTurns ?? 1) + scalar * Number(spell.effect.durationPerMagic ?? 0),
+        ));
+
+        let targetStatuses = this.upsertStatus(this.normalizeStatuses(targetPlayer.statuses), {
+          key: statusDefinition.key,
+          label: statusDefinition.label,
+          description: statusDefinition.description,
+          durationTurns,
+          ...(statusDefinition.effectKey ? { effectKey: statusDefinition.effectKey } : {}),
+        });
+
+        for (const extraKey of spell.effect.additionalStatusKeys ?? []) {
+          const extraDef = this.statusCatalogService.getCachedStatus(extraKey);
+          if (extraDef) {
+            targetStatuses = this.upsertStatus(targetStatuses, {
+              key: extraDef.key,
+              label: extraDef.label,
+              description: extraDef.description,
+              durationTurns,
+              ...(extraDef.effectKey ? { effectKey: extraDef.effectKey } : {}),
+            });
+          }
+        }
+
+        transaction.set(targetPlayerRef, { statuses: targetStatuses }, { merge: true });
+
+        logCode = "player.castSpellStatusTarget";
+        logArgs = {
+          ...logArgs,
+          targetPlayerName: targetPlayer.name,
+          statusKey: statusDefinition.key,
+          durationTurns,
+        };
+        spellEffectTargetPlayerIds = [targetPlayerId];
+      }
+
+      if (!interceptedByCounter && (
+        spell.effect.type === "steal-coins" ||
+        spell.effect.type === "drain-mp-target" ||
+        spell.effect.type === "steal-follower" ||
+        spell.effect.type === "copy-random-spell" ||
+        spell.effect.type === "forget-random-spell-target" ||
+        spell.effect.type === "copy-chosen-spell" ||
+        spell.effect.type === "forget-chosen-spell-target"
+      )) {
+        if (!targetPlayerRef || !targetPlayerId) {
+          throw new Error("Target player is required for this spell");
+        }
+
+        const targetPlayerSnap = await transaction.get(targetPlayerRef);
+        if (!targetPlayerSnap.exists()) {
+          throw new Error("Target player not found");
+        }
+        const targetPlayer = targetPlayerSnap.data() as Player;
+
+        const playerLuck = Math.max(0, Math.floor(Number(player.parameters?.luck?.current ?? player.parameters?.luck?.base ?? 0)));
+        const luckThreshold = typeof spell.effect.luckThreshold === "number" ? spell.effect.luckThreshold : null;
+        const luckResult = luckThreshold !== null
+          ? this.luckService.checkLuck(playerLuck * this.resolveLuckBonusMultiplier(player.statuses), { successThreshold: 100 })
+          : null;
+        const luckSuccess = luckResult === null || luckResult.total >= luckThreshold!;
+
+        if (spell.effect.type === "steal-coins") {
+          const amount = Math.max(0, Math.floor(Number(spell.effect.baseAmount ?? 0)));
+          const targetMoney = Math.max(0, Math.floor(Number(targetPlayer.inventory?.money ?? 0)));
+          const stolen = Math.min(amount, targetMoney);
+          const selfMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+
+          if (luckSuccess && stolen > 0) {
+            transaction.set(targetPlayerRef, { inventory: { ...targetPlayer.inventory, money: targetMoney - stolen } }, { merge: true });
+            nextPlayerPatch.inventory = { ...player.inventory, money: selfMoney + stolen };
+          }
+          logCode = "player.castSpellStealCoins";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, amount: stolen, success: luckSuccess };
+        }
+
+        if (spell.effect.type === "drain-mp-target") {
+          const amount = Math.max(1, Math.floor(Number(spell.effect.baseAmount ?? 1)));
+          const targetMpCurrent = Math.max(0, Math.floor(Number(targetPlayer.parameters?.mp?.current ?? 0)));
+          const drained = Math.min(amount, targetMpCurrent);
+          const selfMpCurrent = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+          const selfMpMax = Math.max(1, Math.floor(Number(
+            typeof player.parameters?.mp?.max === "number" ? player.parameters.mp.max : player.parameters?.mp?.base,
+          )));
+
+          if (luckSuccess && drained > 0) {
+            transaction.set(targetPlayerRef, {
+              parameters: { ...targetPlayer.parameters, mp: { ...targetPlayer.parameters.mp, current: targetMpCurrent - drained } },
+            }, { merge: true });
+            nextPlayerPatch.parameters = {
+              ...nextPlayerPatch.parameters!,
+              mp: { ...player.parameters.mp, current: Math.min(selfMpMax, selfMpCurrent - spell.mpCost + drained) },
+            };
+          }
+          logCode = "player.castSpellDrainMp";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, amount: drained, success: luckSuccess };
+        }
+
+        if (spell.effect.type === "steal-follower") {
+          const targetActiveFollowers = (targetPlayer.followers ?? []).filter((f) => f.state !== "discarded");
+          const randomFollower = targetActiveFollowers.length > 0
+            ? targetActiveFollowers[Math.floor(Math.random() * targetActiveFollowers.length)]
+            : null;
+
+          if (luckSuccess && randomFollower) {
+            transaction.set(targetPlayerRef, {
+              followers: (targetPlayer.followers ?? []).map((f) =>
+                f.followerId === randomFollower.followerId
+                  ? { ...f, state: "discarded" as const, discardReason: "stolen" as const, discardedAtTurn: worldTurn }
+                  : f,
+              ),
+            }, { merge: true });
+            nextPlayerPatch.followers = [
+              ...(player.followers ?? []),
+              { followerId: randomFollower.followerId, hpCurrent: randomFollower.hpCurrent },
+            ];
+          }
+          logCode = "player.castSpellStealFollower";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, followerId: randomFollower?.followerId ?? "none", success: luckSuccess };
+        }
+
+        if (spell.effect.type === "copy-random-spell") {
+          const targetKnownSpells = this.normalizePlayerSpellEntries(targetPlayer.spellbook?.spells);
+          const randomEntry = targetKnownSpells.length > 0
+            ? targetKnownSpells[Math.floor(Math.random() * targetKnownSpells.length)]
+            : null;
+          const selfKnownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+          const selfCapacity = this.getSpellbookCapacity(player);
+          const alreadyKnows = randomEntry ? selfKnownSpells.some((e) => e.spellId === randomEntry.spellId) : false;
+
+          if (randomEntry && !alreadyKnows && selfKnownSpells.length < selfCapacity) {
+            nextPlayerPatch.spellbook = {
+              spells: this.normalizePlayerSpellEntries([...selfKnownSpells, { spellId: randomEntry.spellId }]),
+              capacity: selfCapacity,
+            };
+          }
+          logCode = "player.castSpellCopySpell";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, copiedSpellId: randomEntry?.spellId ?? "none" };
+        }
+
+        if (spell.effect.type === "forget-random-spell-target") {
+          const targetKnownSpells = this.normalizePlayerSpellEntries(targetPlayer.spellbook?.spells);
+          const randomEntry = targetKnownSpells.length > 0
+            ? targetKnownSpells[Math.floor(Math.random() * targetKnownSpells.length)]
+            : null;
+
+          if (randomEntry) {
+            transaction.set(targetPlayerRef, {
+              spellbook: {
+                spells: this.normalizePlayerSpellEntries(targetKnownSpells.filter((e) => e.spellId !== randomEntry.spellId)),
+                capacity: this.getSpellbookCapacity(targetPlayer),
+              },
+            }, { merge: true });
+          }
+          logCode = "player.castSpellForgetSpell";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, forgottenSpellId: randomEntry?.spellId ?? "none" };
+        }
+
+        if (spell.effect.type === "copy-chosen-spell") {
+          const targetKnownSpells = this.normalizePlayerSpellEntries(targetPlayer.spellbook?.spells);
+          const chosenEntry = selectedSpellId
+            ? targetKnownSpells.find((e) => e.spellId === selectedSpellId) ?? null
+            : null;
+          const selfKnownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+          const selfCapacity = this.getSpellbookCapacity(player);
+          const alreadyKnows = chosenEntry ? selfKnownSpells.some((e) => e.spellId === chosenEntry.spellId) : false;
+
+          if (chosenEntry && !alreadyKnows && selfKnownSpells.length < selfCapacity) {
+            nextPlayerPatch.spellbook = {
+              spells: this.normalizePlayerSpellEntries([...selfKnownSpells, { spellId: chosenEntry.spellId }]),
+              capacity: selfCapacity,
+            };
+          }
+          logCode = "player.castSpellCopySpell";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, copiedSpellId: chosenEntry?.spellId ?? "none" };
+        }
+
+        if (spell.effect.type === "forget-chosen-spell-target") {
+          const targetKnownSpells = this.normalizePlayerSpellEntries(targetPlayer.spellbook?.spells);
+          const chosenEntry = selectedSpellId
+            ? targetKnownSpells.find((e) => e.spellId === selectedSpellId) ?? null
+            : null;
+
+          if (chosenEntry) {
+            transaction.set(targetPlayerRef, {
+              spellbook: {
+                spells: this.normalizePlayerSpellEntries(targetKnownSpells.filter((e) => e.spellId !== chosenEntry.spellId)),
+                capacity: this.getSpellbookCapacity(targetPlayer),
+              },
+            }, { merge: true });
+          }
+          logCode = "player.castSpellForgetSpell";
+          logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, forgottenSpellId: chosenEntry?.spellId ?? "none" };
+        }
+        spellEffectTargetPlayerIds = [targetPlayerId];
+      }
+
+      if (spell.effect.type === "alchemize-item") {
+        const itemEntry = (player.inventory?.items ?? []).find((e) => e.itemId === selectedKey);
+        const itemDef = itemEntry ? this.itemCatalogService.getCachedItemById(itemEntry.itemId) : null;
+        const goldValue = itemDef ? Math.max(0, Math.floor(Number(itemDef.purchaseValue ?? 0))) : 0;
+
+        nextPlayerPatch.inventory = {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          items: (player.inventory?.items ?? []).filter((e) => e.itemId !== selectedKey),
+          money: Math.max(0, Math.floor(Number(player.inventory?.money ?? 0))) + goldValue,
+        };
+        logCode = "player.castSpellAlchemy";
+        logArgs = { ...logArgs, itemId: selectedKey ?? "none", goldValue };
+      }
+
+      if (spell.effect.type === "transmute-resource") {
+        const allResourceLabels: ResourceLabel[] = ["timber", "food", "minerals", "cloth"];
+        const sourceLabel = allResourceLabels.includes(selectedKey as ResourceLabel) ? selectedKey as ResourceLabel : null;
+        const currentResources = (player.inventory?.resources ?? []).map((r) => ({ ...r }));
+        const sourceStack = sourceLabel ? currentResources.find((r) => r.label === sourceLabel) : null;
+        const otherLabels = allResourceLabels.filter((l) => l !== sourceLabel);
+        const targetLabel = otherLabels[Math.floor(Math.random() * otherLabels.length)];
+
+        if (sourceStack && sourceStack.quantity > 0 && targetLabel) {
+          sourceStack.quantity -= 1;
+          const targetStack = currentResources.find((r) => r.label === targetLabel);
+          if (targetStack) {
+            targetStack.quantity += 1;
+          } else {
+            currentResources.push({ label: targetLabel, quantity: 1 });
+          }
+          nextPlayerPatch.inventory = {
+            ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+            resources: currentResources.filter((r) => r.quantity > 0),
+          };
+        }
+        logCode = "player.castSpellTransmute";
+        logArgs = { ...logArgs, sourceLabel: sourceLabel ?? "none", targetLabel: targetLabel ?? "none" };
+      }
+
+      if (spell.effect.type === "change-element-temp") {
+        const newElement = selectedKey as SanctuaryElement | null;
+        if (newElement) {
+          const previousElement = player.attunedElement ?? "";
+          const durationTurns = Math.max(1, this.spellCatalogService.computeEffectScalar(spell, magicValue));
+          const elementalBondStatus: PlayerStatus = {
+            key: "elemental-bond",
+            label: "Elemental Bond",
+            description: "Temporary elemental attunement",
+            durationTurns,
+            effectKey: previousElement,
+          };
+          const currentStatuses = this.normalizeStatuses(player.statuses);
+          nextPlayerPatch.statuses = [
+            ...currentStatuses.filter((s) => s.key !== "elemental-bond"),
+            elementalBondStatus,
+          ];
+          nextPlayerPatch.attunedElement = newElement;
+        }
+        logCode = "player.castSpellElementalBond";
+        logArgs = { ...logArgs, newElement: newElement ?? "none" };
+      }
+
+      if (spell.effect.type === "reveal-cell") {
+        const targetX = typeof payload.target?.x === "number" ? payload.target.x : null;
+        const targetY = typeof payload.target?.y === "number" ? payload.target.y : null;
+        if (targetX === null || targetY === null) throw new Error("Target cell required for reveal-cell");
+
+        const targetCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(targetX, targetY));
+        const targetCellSnap = await transaction.get(targetCellRef);
+
+        if (!targetCellSnap.exists()) {
+          if (nextWorldState.remainingDeck.length === 0 && (nextWorldState.discardedDeck?.length ?? 0) > 0) {
+            nextWorldState.remainingDeck = this.shuffleLocal([...nextWorldState.discardedDeck]);
+            nextWorldState.discardedDeck = [];
+          }
+          const drawnBiome = (nextWorldState.remainingDeck.shift() ?? "plains") as BiomeType;
+          nextWorldState.placedBiomeCount = {
+            ...(nextWorldState.placedBiomeCount ?? {}),
+            [drawnBiome]: ((nextWorldState.placedBiomeCount?.[drawnBiome] ?? 0) + 1),
+          };
+          transaction.set(targetCellRef, {
+            x: targetX, y: targetY,
+            biome: drawnBiome,
+            revealedAtTurn: worldTurn,
+            discoveredBy: actor.id,
+          } satisfies Partial<MapCell>);
+        }
+        logCode = "player.castSpellReveal";
+        logArgs = { ...logArgs, targetX, targetY };
+      }
+
+      if (spell.effect.type === "remove-local-event") {
+        const targetX = typeof payload.target?.x === "number" ? payload.target.x : null;
+        const targetY = typeof payload.target?.y === "number" ? payload.target.y : null;
+        if (targetX === null || targetY === null) throw new Error("Target cell required for remove-local-event");
+
+        const targetCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(targetX, targetY));
+        const targetCellSnap = await transaction.get(targetCellRef);
+
+        if (targetCellSnap.exists()) {
+          const targetCell = targetCellSnap.data() as MapCell;
+          const events = Array.isArray(targetCell.explorationEvents) ? targetCell.explorationEvents : [];
+          if (events.length > 0) {
+            transaction.set(targetCellRef, { explorationEvents: events.slice(1) }, { merge: true });
+          }
+        }
+        logCode = "player.castSpellDestroy";
+        logArgs = { ...logArgs, targetX, targetY };
+      }
+
+      if (spell.effect.type === "block-all-spells") {
+        const durationTurns = Math.max(1, scalar);
+        const silenceStatusDef = this.statusCatalogService.getCachedStatus("silence");
+        const allPlayerIds = worldState.turnOrder ?? [];
+
+        for (const pid of allPlayerIds) {
+          if (pid === actor.id) continue;
+          const pRef = doc(this.firebaseService.database, "games", gameId, "players", pid);
+          const pSnap = await transaction.get(pRef);
+          if (!pSnap.exists()) continue;
+          const p = pSnap.data() as Player;
+          const pStatuses = this.normalizeStatuses(p.statuses);
+          if (pStatuses.some((s) => s.key === "silence")) continue;
+          pStatuses.push({
+            key: "silence",
+            label: silenceStatusDef?.label ?? "Silence",
+            description: silenceStatusDef?.description ?? "Cannot cast spells",
+            durationTurns,
+            ...(silenceStatusDef?.effectKey ? { effectKey: silenceStatusDef.effectKey } : {}),
+          });
+          transaction.set(pRef, { statuses: pStatuses }, { merge: true });
+        }
+        logCode = "player.castSpellBlockAllSpells";
+        logArgs = { ...logArgs, durationTurns };
+        spellEffectTargetPlayerIds = allPlayerIds.filter((id) => id !== actor.id);
+      }
+
+      if (spell.effect.type === "return-to-attuned-sanctuary") {
+        const attunedElement = player.attunedElement ?? null;
+        const sanctuaryInfluence = worldState.sanctuaryInfluenceByQuadrant ?? {};
+        let destCoord: { x: number; y: number } | null = null;
+
+        if (attunedElement) {
+          for (const coord of SPECIAL_CELLS) {
+            const qId = this.cellQuadrant(coord.x, coord.y, mapSize);
+            if (sanctuaryInfluence[qId] === attunedElement) {
+              destCoord = coord;
+              break;
+            }
+          }
+        }
+
+        if (!destCoord) {
+          let minDist = Infinity;
+          for (const coord of SPECIAL_CELLS) {
+            const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(coord.x, coord.y));
+            const cellSnap = await transaction.get(cellRef);
+            if (!cellSnap.exists()) continue;
+            if ((cellSnap.data() as MapCell).active !== true) continue;
+            const dist = Math.abs(coord.x - player.location.x) + Math.abs(coord.y - player.location.y);
+            if (dist < minDist) { minDist = dist; destCoord = coord; }
+          }
+        }
+
+        if (destCoord) {
+          nextPlayerPatch.location = destCoord;
+          nextWorldState.movedThisTurnByPlayer = {
+            ...(nextWorldState.movedThisTurnByPlayer ?? {}),
+            [actor.id]: worldTurn,
+          };
+        }
+        logCode = "player.castSpellRecall";
+        logArgs = { ...logArgs, attunedElement: attunedElement ?? "none", destX: destCoord?.x ?? null, destY: destCoord?.y ?? null };
+      }
+
+      if (!interceptedByCounter && spell.effect.type === "apply-random-effect-target") {
+        if (!targetPlayerRef || !targetPlayerId) {
+          throw new Error("Target player is required for this spell");
+        }
+        const chaosConfig = await this.chaosEffectsConfigService.loadConfig();
+        const rolledEffect = this.rollWeightedChaosEffect(chaosConfig.effects);
+
+        const targetPlayerSnap = await transaction.get(targetPlayerRef);
+        if (!targetPlayerSnap.exists()) {
+          throw new Error("Target player not found");
+        }
+        const targetPlayer = targetPlayerSnap.data() as Player;
+
+        if (rolledEffect) {
+          if (rolledEffect.effectType === "apply-status" && rolledEffect.statusKey) {
+            const statusDef = this.statusCatalogService.getCachedStatus(rolledEffect.statusKey);
+            if (statusDef) {
+              const durationTurns = Math.max(1, rolledEffect.durationTurns ?? 1);
+              const targetStatuses = this.upsertStatus(this.normalizeStatuses(targetPlayer.statuses), {
+                key: statusDef.key,
+                label: statusDef.label,
+                description: statusDef.description,
+                durationTurns,
+                ...(statusDef.effectKey ? { effectKey: statusDef.effectKey } : {}),
+              });
+              transaction.set(targetPlayerRef, { statuses: targetStatuses }, { merge: true });
+            }
+          } else if (rolledEffect.effectType === "steal-coins") {
+            const amount = Math.max(1, rolledEffect.amount ?? 5);
+            const targetMoney = Math.max(0, Math.floor(Number(targetPlayer.inventory?.money ?? 0)));
+            const stolen = Math.min(amount, targetMoney);
+            const selfMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+            if (stolen > 0) {
+              transaction.set(targetPlayerRef, { inventory: { ...targetPlayer.inventory, money: targetMoney - stolen } }, { merge: true });
+              nextPlayerPatch.inventory = { ...(player.inventory ?? { items: [], resources: [], money: 0 }), money: selfMoney + stolen };
+            }
+          } else if (rolledEffect.effectType === "drain-mp") {
+            const amount = Math.max(1, rolledEffect.amount ?? 3);
+            const targetMpCurrent = Math.max(0, Math.floor(Number(targetPlayer.parameters?.mp?.current ?? 0)));
+            const drained = Math.min(amount, targetMpCurrent);
+            if (drained > 0) {
+              transaction.set(targetPlayerRef, {
+                parameters: { ...targetPlayer.parameters, mp: { ...targetPlayer.parameters.mp, current: targetMpCurrent - drained } },
+              }, { merge: true });
+            }
+          }
+        }
+
+        spellEffectTargetPlayerIds = [targetPlayerId];
+        logCode = "player.castSpellChaos";
+        logArgs = { ...logArgs, targetPlayerName: targetPlayer.name, effectId: rolledEffect?.id ?? "none" };
+      }
+
+      if (spell.effect.type === "copy-stat-gain") {
+        const lastStatGain = worldState.lastStatGain;
+        if (!lastStatGain || (lastStatGain.parameter !== "strength" && lastStatGain.parameter !== "magic")) {
+          throw new Error("No stat gain to copy — wait until another player trains or levels up STR or MAG.");
+        }
+
+        const param = lastStatGain.parameter;
+        const targetParam = player.parameters[param];
+        const nextParam = {
+          ...targetParam,
+          base: Math.max(0, Math.floor(Number(targetParam.base ?? 0))) + 1,
+          current: Math.max(0, Math.floor(Number(targetParam.current ?? 0))) + 1,
+          ...(typeof targetParam.max === "number"
+            ? { max: Math.max(0, Math.floor(Number(targetParam.max))) + 1 }
+            : {}),
+        };
+        nextParameters = { ...nextParameters, [param]: nextParam };
+        nextPlayerPatch.parameters = nextParameters;
+
+        logCode = "player.castSpellCopyStatGain";
+        logArgs = {
+          ...logArgs,
+          parameter: param,
+          copiedFromPlayerName: lastStatGain.gainedByPlayerName,
+          newValue: nextParam.base,
+        };
+      }
+
+      if (!interceptedByCounter && spellEffectTargetPlayerIds && spellEffectTargetPlayerIds.length > 0) {
+        const nowMs = Date.now();
+        nextWorldState.requiredActionNotification = {
+          type: "spell-effect-on-player",
+          notificationId: `spell-effect:${spell.id}:${worldTurn}:${actor.id}`,
+          activatedByPlayerId: actor.id,
+          activatedByPlayerName: actor.name,
+          spellName: this.spellCatalogService.getLocalizedName(spell),
+          spellEffectSummary: spell.ui.descriptionTemplate,
+          requiredPlayerIds: spellEffectTargetPlayerIds,
+          acknowledgedPlayerIds: [],
+          createdAtMs: nowMs,
+          lastActionAtMs: nowMs,
+          ...(typeof ownerPlayerId === "string" ? { ownerPlayerId } : {}),
         };
       }
 
@@ -1252,6 +1878,268 @@ export class ActionExecutorService {
 
       transaction.set(worldStateRef, patch, { merge: true });
     });
+  }
+
+  public async counterSpell(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    await this.spellCatalogService.loadConfig();
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    let counterSpellName = "";
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) throw new Error("World state not found");
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const player = playerSnap.data() as Player;
+      const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+
+      const pending = worldState.pendingSpellEffect as PendingSpellEffectState | undefined;
+      if (!pending || pending.targetPlayerId !== actor.id) {
+        throw new Error("No pending spell effect to counter");
+      }
+      if (worldState.requiredActionNotification?.type !== "spell-pending-counter") {
+        throw new Error("No counter notification active");
+      }
+
+      const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+      const counterEntry = knownSpells.find((e) => {
+        const s = this.spellCatalogService.getSpell(e.spellId);
+        return s?.effect.type === "counter-spell-reaction"
+          && Math.max(0, Math.floor(Number(e.blockedUntilTurn ?? 0))) <= worldTurn;
+      });
+      if (!counterEntry) throw new Error("You do not have an active counter spell");
+
+      const counterSpell = this.spellCatalogService.getSpell(counterEntry.spellId);
+      counterSpellName = counterSpell ? this.spellCatalogService.getLocalizedName(counterSpell) : counterEntry.spellId;
+
+      let nextKnownSpells: typeof knownSpells;
+      if (counterSpell?.consumableOnCast === true) {
+        nextKnownSpells = knownSpells.filter((e) => e.spellId !== counterEntry.spellId);
+      } else {
+        const cooldownTurns = Math.max(0, Math.floor(Number(counterSpell?.cooldownTurns ?? 0)));
+        const blockedTurn = cooldownTurns > 0 ? worldTurn + cooldownTurns : 0;
+        nextKnownSpells = knownSpells.map((e) =>
+          e.spellId === counterEntry.spellId
+            ? { ...e, ...(blockedTurn > 0 ? { blockedUntilTurn: blockedTurn } : { blockedUntilTurn: undefined }) }
+            : e,
+        );
+      }
+
+      transaction.set(playerRef, {
+        spellbook: {
+          spells: this.normalizePlayerSpellEntries(nextKnownSpells),
+          capacity: this.getSpellbookCapacity(player),
+        },
+      }, { merge: true });
+
+      transaction.set(worldStateRef, {
+        pendingSpellEffect: deleteField() as never,
+        requiredActionNotification: deleteField() as never,
+      }, { merge: true });
+
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.counterSpell", {
+      counterSpellName,
+    });
+  }
+
+  public async acceptPendingSpellEffect(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    await Promise.all([
+      this.spellCatalogService.loadConfig(),
+      this.statusCatalogService.loadConfig(),
+      this.chaosEffectsConfigService.loadConfig(),
+    ]);
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const worldStateSnap = await transaction.get(worldStateRef);
+      if (!worldStateSnap.exists()) throw new Error("World state not found");
+
+      const worldState = worldStateSnap.data() as WorldState;
+      const pending = worldState.pendingSpellEffect as PendingSpellEffectState | undefined;
+      if (!pending || worldState.requiredActionNotification?.type !== "spell-pending-counter") {
+        return; // already resolved
+      }
+
+      const spell = this.spellCatalogService.getSpell(pending.spellId);
+      if (!spell) {
+        transaction.set(worldStateRef, { pendingSpellEffect: deleteField() as never, requiredActionNotification: deleteField() as never }, { merge: true });
+        return;
+      }
+
+      const targetPlayerRef = doc(this.firebaseService.database, "games", gameId, "players", pending.targetPlayerId);
+      const casterPlayerRef = doc(this.firebaseService.database, "games", gameId, "players", pending.casterId);
+      const [targetSnap, casterSnap] = await Promise.all([
+        transaction.get(targetPlayerRef),
+        transaction.get(casterPlayerRef),
+      ]);
+
+      if (!targetSnap.exists()) {
+        transaction.set(worldStateRef, { pendingSpellEffect: deleteField() as never, requiredActionNotification: deleteField() as never }, { merge: true });
+        return;
+      }
+      const targetPlayer = targetSnap.data() as Player;
+      const casterPlayer = casterSnap.exists() ? (casterSnap.data() as Player) : null;
+      const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+
+      if (spell.effect.type === "apply-status-target" || spell.effect.type === "skip-turn-target") {
+        const statusKey = typeof spell.effect.statusKey === "string" ? spell.effect.statusKey : "";
+        const statusDef = this.statusCatalogService.getCachedStatus(statusKey);
+        if (statusDef) {
+          const durationTurns = Math.max(1, spell.effect.baseDurationTurns ?? 1);
+          let targetStatuses = this.upsertStatus(this.normalizeStatuses(targetPlayer.statuses), {
+            key: statusDef.key, label: statusDef.label, description: statusDef.description, durationTurns,
+            ...(statusDef.effectKey ? { effectKey: statusDef.effectKey } : {}),
+          });
+          for (const extraKey of spell.effect.additionalStatusKeys ?? []) {
+            const extraDef = this.statusCatalogService.getCachedStatus(extraKey);
+            if (extraDef) {
+              targetStatuses = this.upsertStatus(targetStatuses, {
+                key: extraDef.key, label: extraDef.label, description: extraDef.description, durationTurns,
+                ...(extraDef.effectKey ? { effectKey: extraDef.effectKey } : {}),
+              });
+            }
+          }
+          transaction.set(targetPlayerRef, { statuses: targetStatuses }, { merge: true });
+        }
+      }
+
+      if (spell.effect.type === "steal-coins" && casterPlayer) {
+        const amount = Math.max(0, Math.floor(Number(spell.effect.baseAmount ?? 0)));
+        const targetMoney = Math.max(0, Math.floor(Number(targetPlayer.inventory?.money ?? 0)));
+        const stolen = Math.min(amount, targetMoney);
+        const selfMoney = Math.max(0, Math.floor(Number(casterPlayer.inventory?.money ?? 0)));
+        if (stolen > 0) {
+          transaction.set(targetPlayerRef, { inventory: { ...targetPlayer.inventory, money: targetMoney - stolen } }, { merge: true });
+          transaction.set(casterPlayerRef, { inventory: { ...casterPlayer.inventory, money: selfMoney + stolen } }, { merge: true });
+        }
+      }
+
+      if (spell.effect.type === "drain-mp-target" && casterPlayer) {
+        const amount = Math.max(1, Math.floor(Number(spell.effect.baseAmount ?? 1)));
+        const targetMpCurrent = Math.max(0, Math.floor(Number(targetPlayer.parameters?.mp?.current ?? 0)));
+        const drained = Math.min(amount, targetMpCurrent);
+        const selfMpCurrent = Math.max(0, Math.floor(Number(casterPlayer.parameters?.mp?.current ?? 0)));
+        const selfMpMax = Math.max(1, Math.floor(Number(
+          typeof casterPlayer.parameters?.mp?.max === "number" ? casterPlayer.parameters.mp.max : casterPlayer.parameters?.mp?.base,
+        )));
+        if (drained > 0) {
+          transaction.set(targetPlayerRef, {
+            parameters: { ...targetPlayer.parameters, mp: { ...targetPlayer.parameters.mp, current: targetMpCurrent - drained } },
+          }, { merge: true });
+          transaction.set(casterPlayerRef, {
+            parameters: { ...casterPlayer.parameters, mp: { ...casterPlayer.parameters.mp, current: Math.min(selfMpMax, selfMpCurrent + drained) } },
+          }, { merge: true });
+        }
+      }
+
+      if (spell.effect.type === "steal-follower" && casterPlayer) {
+        const targetActiveFollowers = (targetPlayer.followers ?? []).filter((f) => f.state !== "discarded");
+        const randomFollower = targetActiveFollowers.length > 0
+          ? targetActiveFollowers[Math.floor(Math.random() * targetActiveFollowers.length)]
+          : null;
+        if (randomFollower) {
+          transaction.set(targetPlayerRef, {
+            followers: (targetPlayer.followers ?? []).map((f) =>
+              f.followerId === randomFollower.followerId
+                ? { ...f, state: "discarded" as const, discardReason: "stolen" as const, discardedAtTurn: worldTurn }
+                : f,
+            ),
+          }, { merge: true });
+          transaction.set(casterPlayerRef, {
+            followers: [...(casterPlayer.followers ?? []), { followerId: randomFollower.followerId, hpCurrent: randomFollower.hpCurrent }],
+          }, { merge: true });
+        }
+      }
+
+      if ((spell.effect.type === "copy-random-spell" || spell.effect.type === "copy-chosen-spell") && casterPlayer) {
+        const targetKnownSpells = this.normalizePlayerSpellEntries(targetPlayer.spellbook?.spells);
+        const entry = spell.effect.type === "copy-chosen-spell"
+          ? (pending.selectedSpellId ? targetKnownSpells.find((e) => e.spellId === pending.selectedSpellId) ?? null : null)
+          : (targetKnownSpells.length > 0 ? targetKnownSpells[Math.floor(Math.random() * targetKnownSpells.length)] : null);
+        const selfKnownSpells = this.normalizePlayerSpellEntries(casterPlayer.spellbook?.spells);
+        const selfCapacity = this.getSpellbookCapacity(casterPlayer);
+        if (entry && !selfKnownSpells.some((e) => e.spellId === entry.spellId) && selfKnownSpells.length < selfCapacity) {
+          transaction.set(casterPlayerRef, {
+            spellbook: { spells: this.normalizePlayerSpellEntries([...selfKnownSpells, { spellId: entry.spellId }]), capacity: selfCapacity },
+          }, { merge: true });
+        }
+      }
+
+      if (spell.effect.type === "forget-random-spell-target" || spell.effect.type === "forget-chosen-spell-target") {
+        const targetKnownSpells = this.normalizePlayerSpellEntries(targetPlayer.spellbook?.spells);
+        const entry = spell.effect.type === "forget-chosen-spell-target"
+          ? (pending.selectedSpellId ? targetKnownSpells.find((e) => e.spellId === pending.selectedSpellId) ?? null : null)
+          : (targetKnownSpells.length > 0 ? targetKnownSpells[Math.floor(Math.random() * targetKnownSpells.length)] : null);
+        if (entry) {
+          transaction.set(targetPlayerRef, {
+            spellbook: {
+              spells: this.normalizePlayerSpellEntries(targetKnownSpells.filter((e) => e.spellId !== entry.spellId)),
+              capacity: this.getSpellbookCapacity(targetPlayer),
+            },
+          }, { merge: true });
+        }
+      }
+
+      if (spell.effect.type === "apply-random-effect-target") {
+        const chaosConfig = await this.chaosEffectsConfigService.loadConfig();
+        const rolledEffect = this.rollWeightedChaosEffect(chaosConfig.effects);
+        if (rolledEffect) {
+          if (rolledEffect.effectType === "apply-status" && rolledEffect.statusKey) {
+            const statusDef = this.statusCatalogService.getCachedStatus(rolledEffect.statusKey);
+            if (statusDef) {
+              const durationTurns = Math.max(1, rolledEffect.durationTurns ?? 1);
+              const targetStatuses = this.upsertStatus(this.normalizeStatuses(targetPlayer.statuses), {
+                key: statusDef.key, label: statusDef.label, description: statusDef.description, durationTurns,
+                ...(statusDef.effectKey ? { effectKey: statusDef.effectKey } : {}),
+              });
+              transaction.set(targetPlayerRef, { statuses: targetStatuses }, { merge: true });
+            }
+          } else if (rolledEffect.effectType === "steal-coins" && casterPlayer) {
+            const stolen = Math.min(rolledEffect.amount ?? 5, Math.max(0, Math.floor(Number(targetPlayer.inventory?.money ?? 0))));
+            if (stolen > 0) {
+              transaction.set(targetPlayerRef, { inventory: { ...targetPlayer.inventory, money: (targetPlayer.inventory?.money ?? 0) - stolen } }, { merge: true });
+              transaction.set(casterPlayerRef, { inventory: { ...casterPlayer.inventory, money: (casterPlayer.inventory?.money ?? 0) + stolen } }, { merge: true });
+            }
+          } else if (rolledEffect.effectType === "drain-mp" && casterPlayer) {
+            const drained = Math.min(rolledEffect.amount ?? 3, Math.max(0, Math.floor(Number(targetPlayer.parameters?.mp?.current ?? 0))));
+            if (drained > 0) {
+              transaction.set(targetPlayerRef, {
+                parameters: { ...targetPlayer.parameters, mp: { ...targetPlayer.parameters.mp, current: (targetPlayer.parameters?.mp?.current ?? 0) - drained } },
+              }, { merge: true });
+            }
+          }
+        }
+      }
+
+      transaction.set(worldStateRef, {
+        pendingSpellEffect: deleteField() as never,
+        requiredActionNotification: deleteField() as never,
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.acceptPendingSpell", {});
   }
 
   public async donateAtSanctuary(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
@@ -2504,6 +3392,12 @@ export class ActionExecutorService {
       const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
       const nextWorldState: WorldState = {
         ...worldState,
+        lastStatGain: {
+          parameter: trainerConfig.parameter,
+          gainedByPlayerId: actor.id,
+          gainedByPlayerName: actor.name,
+          gainedAtTurn: worldTurn,
+        },
       };
       this.playerTurnEffectsService.scheduleSkippedTurns(nextWorldState, actor.id, 1);
       await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
@@ -2595,6 +3489,8 @@ export class ActionExecutorService {
     const reward = await this.enchantressRewardsConfigService.resolveRewardByTotal(clampedLuckTotal);
     const rewardLabel = this.enchantressRewardsConfigService.getLocalizedLabel(reward);
 
+    let learnedSpellId: string | null = null;
+
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateTxSnap, playerTxSnap] = await Promise.all([
         transaction.get(worldStateRef),
@@ -2659,9 +3555,30 @@ export class ActionExecutorService {
         });
       }
 
-      const nextWorldState: WorldState = {
-        ...worldState,
-      };
+      const nextWorldState: WorldState = { ...worldState };
+
+      if (reward.pendingMagicReward === true) {
+        if (clampedLuckTotal === 100) {
+          learnedSpellId = "toadify";
+        } else if (luckResult.total > 100) {
+          const drawResult = this.spellDeckService.draw(
+            worldState.spellDeck ?? [],
+            worldState.spellDiscardedDeck ?? [],
+            1,
+          );
+          learnedSpellId = drawResult.drawn[0] ?? null;
+          if (learnedSpellId) {
+            nextWorldState.spellDeck = drawResult.remaining;
+            nextWorldState.spellDiscardedDeck = drawResult.discard;
+          }
+        }
+      }
+
+      const existingSpells = player.spellbook?.spells ?? [];
+      const nextSpells: typeof existingSpells = learnedSpellId
+        ? [...existingSpells, { spellId: learnedSpellId, source: "enchantress" as const, occupiesSlot: true }]
+        : [...existingSpells];
+
       await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
       const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
 
@@ -2681,6 +3598,9 @@ export class ActionExecutorService {
         statuses: nextStatuses,
         lastLuckCheck: luckResult,
         actionsUsedThisTurn: this.markActionUsed(player, "capital-enchantress", worldTurn),
+        ...(learnedSpellId
+          ? { spellbook: { ...(player.spellbook ?? {}), spells: nextSpells } }
+          : {}),
       }, { merge: true });
 
       transaction.set(worldStateRef, nextWorldState);
@@ -2691,6 +3611,11 @@ export class ActionExecutorService {
       }, { merge: true });
     });
 
+    const learnedSpell = learnedSpellId ? this.spellCatalogService.getSpell(learnedSpellId) : null;
+    const learnedSpellName = learnedSpell
+      ? this.spellCatalogService.getLocalizedName(learnedSpell)
+      : "";
+
     await this.tryCreateLog(gameId, actor, "player.capitalEnchantress", {
       spentCoins: this.capitalEnchantressCost,
       clampedLuckTotal,
@@ -2698,8 +3623,10 @@ export class ActionExecutorService {
       roll: luckResult.roll,
       rewardId: reward.id,
       rewardLabel,
-      rewardStatuses: reward.statuses.map((status) => `${status.key}:${status.durationTurns}`).join(", "),
+      rewardStatuses: reward.statuses.map((s) => `${s.key}:${s.durationTurns}`).join(", "),
       pendingMagicReward: reward.pendingMagicReward === true,
+      learnedSpellId: learnedSpellId ?? "",
+      learnedSpellName,
       turnEnded: true,
     });
 
@@ -2710,7 +3637,116 @@ export class ActionExecutorService {
       rolledTotal: Math.floor(luckResult.total),
       pendingMagicReward: reward.pendingMagicReward === true,
       overflowLuckyStrikeCandidate: luckResult.total > 100,
+      learnedSpellId,
+      learnedSpellName,
     };
+  }
+
+  public async academySpellUpgrade(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    fromSpellId: string,
+  ): Promise<AcademySpellUpgradeOutcome> {
+    if (!gameId || !actor.id || !fromSpellId) {
+      throw new Error("Invalid action payload");
+    }
+
+    const upgradePairs = await this.academySpellUpgradeConfigService.loadConfig();
+    const upgradePair = this.academySpellUpgradeConfigService.getUpgradeForSpell(upgradePairs, fromSpellId);
+    if (!upgradePair) {
+      throw new Error(`No upgrade available for spell '${fromSpellId}'`);
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) throw new Error("World state not found");
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      this.ensurePlayerMovedThisTurn(worldState, actor.id, "You must move before using safe place actions");
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "academy-spell-upgrader", worldTurn, "You can only use the Spell Master once per turn.");
+
+      const mapCellRef = doc(
+        this.firebaseService.database,
+        "games",
+        gameId,
+        "mapCells",
+        this.cellId(player.location.x, player.location.y),
+      );
+      const mapCellSnap = await transaction.get(mapCellRef);
+      if (!mapCellSnap.exists()) throw new Error("You are not standing on a revealed cell");
+
+      const mapCell = mapCellSnap.data() as MapCell;
+      this.ensurePlayerOnLandmark(mapCell, "academy", "You must be at Academy to use the Spell Master");
+
+      const currentMoney = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (currentMoney < upgradePair.cost) {
+        throw new Error(`You need ${upgradePair.cost} coins to upgrade this spell`);
+      }
+
+      const existingSpells = [...(player.spellbook?.spells ?? [])];
+      const baseIndex = existingSpells.findIndex((e) => e.spellId === fromSpellId);
+      if (baseIndex < 0) {
+        throw new Error(`You do not have '${fromSpellId}' in your spellbook`);
+      }
+
+      existingSpells.splice(baseIndex, 1);
+      existingSpells.push({ spellId: upgradePair.to, source: "upgrade" as const, occupiesSlot: true });
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = { ...worldState };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: {
+          ...player.parameters,
+          mp: { ...player.parameters.mp, current: nextMpCurrent },
+        },
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          money: currentMoney - upgradePair.cost,
+          resourceCapacity: this.getResourceCapacity(player),
+        },
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, "academy-spell-upgrader", worldTurn),
+        spellbook: { ...(player.spellbook ?? {}), spells: existingSpells },
+      }, { merge: true });
+
+      transaction.set(worldStateRef, nextWorldState);
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    const fromSpell = this.spellCatalogService.getSpell(fromSpellId);
+    const toSpell = this.spellCatalogService.getSpell(upgradePair.to);
+    const fromSpellName = fromSpell ? this.spellCatalogService.getLocalizedName(fromSpell) : fromSpellId;
+    const toSpellName = toSpell ? this.spellCatalogService.getLocalizedName(toSpell) : upgradePair.to;
+
+    await this.tryCreateLog(gameId, actor, "player.academySpellUpgrade", {
+      fromSpellId,
+      fromSpellName,
+      toSpellId: upgradePair.to,
+      toSpellName,
+      spentCoins: upgradePair.cost,
+      turnEnded: true,
+    });
+
+    return { fromSpellId, fromSpellName, toSpellId: upgradePair.to, toSpellName, spentCoins: upgradePair.cost };
   }
 
   public async cityMystic(gameId: string, actor: Pick<Player, "id" | "name">): Promise<CityMysticOutcome> {
@@ -4478,7 +5514,7 @@ export class ActionExecutorService {
     });
 
     const buyQuantitiesByStockKey = new Map<string, {
-      kind: "item" | "follower";
+      kind: "item" | "follower" | "spell";
       tradableId: string;
       quantity: number;
     }>();
@@ -4499,7 +5535,10 @@ export class ActionExecutorService {
       }
 
       if (operation.operation === "buy") {
-        const kind: "item" | "follower" = operation.kind === "follower" ? "follower" : "item";
+        const kind: "item" | "follower" | "spell" =
+          operation.kind === "follower" ? "follower" :
+          operation.kind === "spell" ? "spell" :
+          "item";
         const stockKey = this.buildMerchantStockKey(kind, itemId);
         const current = buyQuantitiesByStockKey.get(stockKey);
         if (current) {
@@ -4683,6 +5722,20 @@ export class ActionExecutorService {
           purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
             ? Math.max(0, Math.floor(stockEntry.purchaseValue))
             : Math.max(0, Math.floor(item.purchaseValue));
+        } else if (kind === "spell") {
+          const spell = this.spellCatalogService.getSpell(itemId);
+          if (!spell) {
+            throw new Error("Spell definition not found");
+          }
+
+          if (quantity > 1) {
+            throw new Error("Spells can only be bought one at a time");
+          }
+
+          itemName = this.spellCatalogService.getLocalizedName(spell);
+          purchaseValuePerUnit = typeof stockEntry.purchaseValue === "number"
+            ? Math.max(0, Math.floor(stockEntry.purchaseValue))
+            : 0;
         } else {
           const follower = this.followerCatalogService.getCachedFollowerById(itemId);
           if (!follower) {
@@ -4742,6 +5795,7 @@ export class ActionExecutorService {
 
       const nextItems = [...normalizedItems];
       const nextFollowers = [...normalizedFollowers];
+      const nextSpells = [...(player.spellbook?.spells ?? [])];
       sellQuantitiesByItemId.forEach((quantity, itemId) => {
         let toRemove = quantity;
         while (toRemove > 0) {
@@ -4763,6 +5817,11 @@ export class ActionExecutorService {
           return;
         }
 
+        if (kind === "spell") {
+          nextSpells.push({ spellId: itemId, source: "merchant" as const, occupiesSlot: true });
+          return;
+        }
+
         const follower = this.followerCatalogService.getCachedFollowerById(itemId);
         if (!follower) {
           throw new Error("Follower definition not found");
@@ -4776,6 +5835,8 @@ export class ActionExecutorService {
           });
         }
       });
+
+      const spellsBought = nextSpells.length > (player.spellbook?.spells?.length ?? 0);
 
       turnEnded = buyQuantitiesByStockKey.size > 0;
       if (turnEnded) {
@@ -4804,6 +5865,9 @@ export class ActionExecutorService {
           followers: nextFollowers,
           statuses: nextStatuses,
           actionsUsedThisTurn: this.markActionUsed(player, payload.actionId, worldTurn),
+          ...(spellsBought
+            ? { spellbook: { ...(player.spellbook ?? {}), spells: nextSpells } }
+            : {}),
         }, { merge: true });
 
         transaction.set(worldStateRef, nextWorldState);
@@ -4817,6 +5881,9 @@ export class ActionExecutorService {
             itemCapacity,
           },
           followers: nextFollowers,
+          ...(spellsBought
+            ? { spellbook: { ...(player.spellbook ?? {}), spells: nextSpells } }
+            : {}),
         }, { merge: true });
       }
 
@@ -5487,7 +6554,7 @@ export class ActionExecutorService {
     }, 0);
   }
 
-  private buildMerchantStockKey(kind: "item" | "follower", tradableId: string): string {
+  private buildMerchantStockKey(kind: "item" | "follower" | "spell", tradableId: string): string {
     return `${kind}:${tradableId}`;
   }
 
@@ -5581,6 +6648,11 @@ export class ActionExecutorService {
         ? rawCategoryOverride.trim().toLowerCase()
         : undefined;
 
+      const rawUpgrades = (entry as { upgrades?: unknown }).upgrades;
+      const upgrades = Array.isArray(rawUpgrades)
+        ? rawUpgrades.filter((u): u is string => typeof u === "string" && u.trim().length > 0)
+        : undefined;
+
       followers.push({
         followerId: followerId.trim(),
         hpCurrent,
@@ -5589,6 +6661,7 @@ export class ActionExecutorService {
         ...(typeof discardedAtTurn === "number" ? { discardedAtTurn } : {}),
         ...(nameOverride ? { nameOverride } : {}),
         ...(categoryOverride ? { categoryOverride } : {}),
+        ...(upgrades && upgrades.length > 0 ? { upgrades } : {}),
       });
     });
 
@@ -5932,5 +7005,35 @@ export class ActionExecutorService {
 
   private isResourceLabel(value: unknown): value is ResourceLabel {
     return value === "food" || value === "timber" || value === "minerals" || value === "cloth";
+  }
+
+  private shuffleLocal<T>(items: T[]): T[] {
+    const arr = [...items];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  private cellQuadrant(x: number, y: number, mapSize: number): QuadrantId {
+    const split = Math.max(1, Math.floor(Math.max(1, Math.floor(mapSize)) / 2));
+    const isRight = x >= split;
+    const isBottom = y >= split;
+    if (!isRight && !isBottom) return "Q1";
+    if (isRight && !isBottom) return "Q2";
+    if (!isRight && isBottom) return "Q3";
+    return "Q4";
+  }
+
+  private rollWeightedChaosEffect(effects: ChaosEffectDefinition[]): ChaosEffectDefinition | null {
+    const totalWeight = effects.reduce((sum, e) => sum + e.weight, 0);
+    if (totalWeight <= 0) return null;
+    let roll = Math.random() * totalWeight;
+    for (const effect of effects) {
+      roll -= effect.weight;
+      if (roll <= 0) return effect;
+    }
+    return effects[effects.length - 1] ?? null;
   }
 }

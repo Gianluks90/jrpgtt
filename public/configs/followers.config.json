@@ -46,6 +46,7 @@
       "descriptionKey": "catalogs.followers.zombie.description",
       "category": "undead",
       "maxHp": 2,
+      "isNegative": true,
       "actions": ["eliminate-zombie"],
       "parameterModifiers": [
         {

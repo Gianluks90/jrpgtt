@@ -1,6 +1,6 @@
 import { ItemCategory } from "@models/catalog/ItemCatalog";
 
-export type MerchantTradableKind = "item" | "follower";
+export type MerchantTradableKind = "item" | "follower" | "spell";
 
 export interface MerchantStockEntry {
   kind: MerchantTradableKind;
@@ -29,6 +29,8 @@ export interface MerchantDialogOfferRow {
   category: string;
   identityKeywords: string[];
   purchaseValue: number;
+  mpCost?: number;
+  consumableOnCast?: boolean;
   stock: number;
   canBuy: boolean;
   blockedReason?: string;

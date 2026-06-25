@@ -13,6 +13,12 @@
       "label": "Academy Merchant",
       "acceptedCategories": ["magic"],
       "stock": []
+    },
+    {
+      "id": "manor-counterfeiter",
+      "landmarkId": "manor",
+      "label": "Arcane Counterfeiter",
+      "stock": []
     }
   ]
 }

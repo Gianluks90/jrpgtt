@@ -17,11 +17,15 @@
                 <p class="error-text">{{ errorMessage }}</p>
             }
 
+            @if (paid && outcome?.learnedSpellId) {
+                <div class="learned-spell">
+                    <span class="learned-spell-label">{{ 'dialogs.enchantress.learnedSpell' | t }}</span>
+                    <strong class="learned-spell-name">{{ outcome!.learnedSpellName }}</strong>
+                </div>
+            }
+
             <div class="left-actions">
                 @if (paid) {
-                    @if (outcome) {
-                        <p class="result-text"><strong>{{ outcome.rewardLabel }}</strong></p>
-                    }
                     <text-button
                         [text]="'dialogs.enchantress.actions.continue' | t"
                         [fullWidth]="true"

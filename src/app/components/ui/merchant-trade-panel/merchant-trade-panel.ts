@@ -8,7 +8,7 @@ import { TranslationService } from "@services/shared/translation-service";
 
 interface MerchantCartLine {
   operation: "buy" | "sell";
-  tradableKind: "item" | "follower";
+  tradableKind: "item" | "follower" | "spell";
   tradableId: string;
   itemName: string;
   quantity: number;
@@ -109,7 +109,7 @@ export class MerchantTradePanel {
     );
   });
 
-  public queueBuy(tradableKind: "item" | "follower", tradableId: string): void {
+  public queueBuy(tradableKind: "item" | "follower" | "spell", tradableId: string): void {
     if (this.loading()) return;
 
     const buyKey = this.buildBuyKey(tradableKind, tradableId);
@@ -172,7 +172,7 @@ export class MerchantTradePanel {
     this.showCart.set(!this.showCart());
   }
 
-  public getRemainingStock(tradableKind: "item" | "follower", tradableId: string): number {
+  public getRemainingStock(tradableKind: "item" | "follower" | "spell", tradableId: string): number {
     const buyKey = this.buildBuyKey(tradableKind, tradableId);
     const offer = this.buyOffers().find((entry) => this.buildBuyKey(entry.tradableKind, entry.tradableId) === buyKey);
     if (!offer) return 0;
@@ -224,7 +224,10 @@ export class MerchantTradePanel {
     this.pendingBuyByItemId().forEach((quantity, itemId) => {
       if (quantity <= 0) return;
       const [rawKind, ...idParts] = itemId.split(":");
-      const kind = rawKind === "follower" ? "follower" : "item";
+      const kind: "item" | "follower" | "spell" =
+        rawKind === "follower" ? "follower" :
+        rawKind === "spell" ? "spell" :
+        "item";
       const tradableId = idParts.join(":");
       operations.push({
         operation: "buy",
@@ -250,7 +253,7 @@ export class MerchantTradePanel {
     return String(amount);
   }
 
-  private buildBuyKey(kind: "item" | "follower", tradableId: string): string {
+  private buildBuyKey(kind: "item" | "follower" | "spell", tradableId: string): string {
     return `${kind}:${tradableId}`;
   }
 }

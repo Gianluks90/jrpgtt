@@ -1,0 +1,35 @@
+<dialog-wrapper [title]="data.title">
+
+  @if (data.options.length === 0) {
+    <p class="info-text">{{ 'dialogs.spellSelect.noSpells' | t }}</p>
+  } @else {
+    <ul class="spell-list">
+      @for (option of data.options; track option.spellId) {
+        <li
+          class="spell-row"
+          [class.spell-row--selected]="selectedId === option.spellId"
+          (click)="select(option.spellId)"
+          (keydown.enter)="select(option.spellId)"
+          tabindex="0"
+          role="option"
+          [attr.aria-selected]="selectedId === option.spellId">
+          <span class="spell-glyph" aria-hidden="true">M</span>
+          <span class="spell-name">{{ option.name }}</span>
+          <span class="spell-mp">
+            <span class="spell-mp-dot" aria-hidden="true"></span>
+            {{ option.mpCost }} MP
+          </span>
+        </li>
+      }
+    </ul>
+  }
+
+  <text-button
+    dialog-action
+    [text]="data.confirmText"
+    [disabled]="!canConfirm"
+    (clicked)="confirm()"
+  ></text-button>
+  <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
+
+</dialog-wrapper>

@@ -71,7 +71,25 @@ export interface FollowerMovementBonusState {
     amount: number;
 }
 
-export type RequiredActionNotificationType = "sanctuary-activated" | "world-event-activated";
+export type RequiredActionNotificationType = "sanctuary-activated" | "world-event-activated" | "spell-effect-on-player" | "spell-pending-counter";
+
+export interface LastStatGainState {
+    parameter: "strength" | "magic";
+    gainedByPlayerId: string;
+    gainedByPlayerName: string;
+    gainedAtTurn: number;
+}
+
+export interface PendingSpellEffectState {
+    spellId: string;
+    casterId: string;
+    casterName: string;
+    targetPlayerId: string;
+    selectedSpellId?: string;
+    selectedKey?: string;
+    target?: { x: number; y: number };
+    castAtTurn: number;
+}
 
 export interface RequiredActionNotificationState {
     type: RequiredActionNotificationType;
@@ -82,6 +100,9 @@ export interface RequiredActionNotificationState {
     worldEventTargetBiome?: BiomeType;
     worldEventDriverBiome?: BiomeType;
     worldEventTotalMutations?: number;
+    spellName?: string;
+    spellEffectSummary?: string;
+    canTargetCounter?: boolean;
     activatedByPlayerId: string;
     activatedByPlayerName: string;
     ownerPlayerId?: string;
@@ -117,6 +138,10 @@ export interface WorldState {
     requiredActionNotification?: RequiredActionNotificationState;
     explorationDeck?: ExplorationDeckSlot[];
     explorationDiscardedDeck?: ExplorationDeckSlot[];
+    spellDeck?: string[];
+    spellDiscardedDeck?: string[];
+    lastStatGain?: LastStatGainState;
+    pendingSpellEffect?: PendingSpellEffectState;
     activeCombat?: CombatState;
     activeExplorationSession?: ExplorationSessionState;
 }

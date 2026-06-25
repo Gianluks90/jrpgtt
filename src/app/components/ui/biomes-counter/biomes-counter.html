@@ -17,13 +17,21 @@
     <strong class="biome-count">{{ countSpecialLocations() }}</strong>
   </div>
 
-  <div class="deck-counter-group">
-    <app-exploration-card-back size="map-cell" variant="deck" aria-hidden="true"></app-exploration-card-back>
-    <strong class="biome-count">{{ explorationDeckCount() }}</strong>
-  </div>
+  <div class="decks-block">
+    <div class="deck-counter-group">
+      <app-exploration-card-back size="map-cell" variant="deck" aria-hidden="true"></app-exploration-card-back>
+      <strong class="biome-count">{{ explorationDeckCount() }}</strong>
+    </div>
 
-  <button class="deck-counter-group deck-counter-discard" (click)="onDiscardPileClicked()">
-    <app-exploration-card-back size="map-cell" variant="discard" aria-hidden="true"></app-exploration-card-back>
-    <strong class="biome-count">{{ discardPileCount() }}</strong>
-  </button>
+    <div class="deck-counter-group">
+      <app-spell-card-back size="map-cell" aria-hidden="true"></app-spell-card-back>
+      <strong class="biome-count">{{ spellDeckCount() }}</strong>
+    </div>
+    
+    <button class="deck-counter-group deck-counter-discard" (click)="onDiscardPileClicked()">
+      <app-exploration-card-back size="map-cell" variant="discard" aria-hidden="true"></app-exploration-card-back>
+      <strong class="biome-count">{{ discardPileCount() }}</strong>
+    </button>
+
+  </div>
 </div>

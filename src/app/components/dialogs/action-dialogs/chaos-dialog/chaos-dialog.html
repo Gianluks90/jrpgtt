@@ -1,0 +1,37 @@
+<dialog-wrapper [title]="title" [hideActions]="true">
+    <div class="chaos-layout">
+
+        <div class="chaos-left">
+            <p class="flavor-text">{{ 'dialogs.chaos.flavorText' | t }}</p>
+            <p class="info-text">{{ 'dialogs.chaos.targetInfo' | t: { spellName: spellName, targetName: targetPlayerName } }}</p>
+
+            @if (errorMessage) {
+                <p class="error-text">{{ errorMessage }}</p>
+            }
+
+            <div class="left-actions">
+                <button class="cast-button" [disabled]="!canCast" (click)="castSpell()">
+                    <span>{{ 'dialogs.chaos.actions.cast' | t }}</span>
+                </button>
+                <text-button
+                    [text]="'dialogs.common.cancel' | t"
+                    [fullWidth]="true"
+                    [disabled]="!canCancel"
+                    (clicked)="close()"
+                ></text-button>
+            </div>
+        </div>
+
+        <div class="chaos-right">
+            <div class="effects-table">
+                @for (row of effectsTable; track row.id) {
+                    <div class="effect-row">
+                        <span class="effect-weight">{{ row.weightLabel }}</span>
+                        <span class="effect-label">{{ row.effectLabel }}</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</dialog-wrapper>

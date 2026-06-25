@@ -9,8 +9,28 @@ import {
   MERCHANT_DIALOG_CONFIG,
   RESOURCE_INVENTORY_DIALOG_CONFIG,
   RESOURCE_EXCHANGE_DIALOG_CONFIG,
+  SPELL_CAST_DIALOG_CONFIG,
   VARIABLE_REWARD_DIALOG_CONFIG,
 } from "../../consts/ui/dialog-configs";
+import {
+  SpellCastConfirmDialog,
+  SpellCastConfirmDialogData,
+} from "../../components/dialogs/action-dialogs/spell-cast-confirm-dialog/spell-cast-confirm-dialog";
+import {
+  PlayerSelectDialog,
+  PlayerSelectDialogData,
+  PlayerSelectDialogResult,
+} from "../../components/dialogs/action-dialogs/player-select-dialog/player-select-dialog";
+import {
+  SpellSelectDialog,
+  SpellSelectDialogData,
+  SpellSelectDialogResult,
+} from "../../components/dialogs/action-dialogs/spell-select-dialog/spell-select-dialog";
+import {
+  SelfSelectDialog,
+  SelfSelectDialogData,
+  SelfSelectDialogResult,
+} from "../../components/dialogs/action-dialogs/self-select-dialog/self-select-dialog";
 import { GameEventsLogDialog } from "../../components/dialogs/game-events-log-dialog/game-events-log-dialog";
 import { MapService } from "@services/map/map-service";
 import { ActionExecutorService } from "@services/gameplay/action-executor-service";
@@ -73,6 +93,11 @@ import { EventLog } from "@models/ui/EventLog";
 import { isDoctorActionId, SafePlaceDoctorActionId } from "../../consts/gameplay/safe-place-actions";
 import { ActionCatalogService } from "@services/catalog/action-catalog-service";
 import { EnchantressRewardsConfigService } from "@services/catalog/enchantress-rewards-config-service";
+import { AcademySpellUpgradeConfigService } from "@services/catalog/academy-spell-upgrade-config-service";
+import {
+  AcademySpellUpgraderDialog,
+  AcademySpellUpgraderDialogData,
+} from "../../components/dialogs/action-dialogs/academy-spell-upgrader-dialog/academy-spell-upgrader-dialog";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
 import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
@@ -95,6 +120,8 @@ import { TranslationService } from "@services/shared/translation-service";
 import { ActionRegistryService } from "@services/gameplay/action-registry-service";
 import { CommandPanelAction } from "../../components/ui/commands-panel/commands-panel";
 import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import { MapCellSelectionService } from "@services/map/map-cell-selection-service";
+import { EnvironmentService } from "@services/map/environment-service";
 import {
   SpellTeleportDialog,
   SpellTeleportDialogData,
@@ -107,6 +134,11 @@ import {
   WorldEventHelpDialogRow,
   WorldEventHelpBiome,
 } from "../../components/dialogs/world-event-help-dialog/world-event-help-dialog";
+import {
+  ChaosDialog,
+  ChaosDialogData,
+} from "../../components/dialogs/action-dialogs/chaos-dialog/chaos-dialog";
+import { ChaosEffectsConfigService } from "@services/catalog/chaos-effects-config-service";
 
 interface HandleCommandActionInput {
   actionId: string;
@@ -126,6 +158,7 @@ interface HandleSpellActionInput {
   worldState: WorldState | null;
   mapCellsById: Record<string, MapCell>;
   mapSize: number;
+  allPlayers: Player[];
 }
 
 @Injectable({
@@ -156,6 +189,10 @@ export class MapPageInteractionService {
     private actionRegistryService: ActionRegistryService,
     private spellCatalogService: SpellCatalogService,
     private explorationEventService: ExplorationEventService,
+    private academySpellUpgradeConfigService: AcademySpellUpgradeConfigService,
+    private cellSelectionService: MapCellSelectionService,
+    private environmentService: EnvironmentService,
+    private chaosEffectsConfigService: ChaosEffectsConfigService,
   ) {}
 
   public resetUiState(): void {
@@ -200,6 +237,28 @@ export class MapPageInteractionService {
     } catch (error) {
       console.error(error);
       window.alert(error instanceof Error ? error.message : "Unable to clear required action notification");
+    }
+  }
+
+  public async counterSpell(gameId: string, player: Player | null): Promise<void> {
+    if (!gameId || !player) return;
+
+    try {
+      await this.actionExecutorService.counterSpell(gameId, { id: player.id, name: player.name });
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Error while countering spell.");
+    }
+  }
+
+  public async acceptPendingSpellEffect(gameId: string, player: Player | null): Promise<void> {
+    if (!gameId || !player) return;
+
+    try {
+      await this.actionExecutorService.acceptPendingSpellEffect(gameId, { id: player.id, name: player.name });
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Error while accepting spell effect.");
     }
   }
 
@@ -517,6 +576,185 @@ export class MapPageInteractionService {
         x: teleportDialogResult.targetX,
         y: teleportDialogResult.targetY,
       };
+    } else {
+      const confirmed = await this.openSpellCastConfirmDialog({
+        spellId: spell.id,
+        spellName: this.spellCatalogService.getLocalizedName(spell),
+        description: this.spellCatalogService.getLocalizedDescription(spell),
+        mpCost: spell.mpCost,
+        consumableOnCast: spell.consumableOnCast === true,
+      });
+      if (!confirmed) {
+        return;
+      }
+
+      if (this.spellCatalogService.needsCellSelection(spell)) {
+        const magicValue = Math.max(0, Math.floor(Number(player.parameters.magic.current ?? player.parameters.magic.base ?? 0)));
+        const range = this.spellCatalogService.computeEffectScalar(spell, magicValue);
+        const candidateIds = this.environmentService.buildOrthogonalRangeTargetIds(
+          player.location.x,
+          player.location.y,
+          range,
+          input.mapSize,
+        );
+
+        const selectableCellIds = new Set<string>();
+        candidateIds.forEach((cellId) => {
+          const cell = input.mapCellsById[cellId];
+          if (spell.effect.type === "reveal-cell") {
+            if (cell && cell.biome && cell.discoveredBy) return;
+            selectableCellIds.add(cellId);
+          } else if (spell.effect.type === "remove-local-event") {
+            if (!cell || !cell.biome) return;
+            if (!cell.explorationEvents || cell.explorationEvents.length === 0) return;
+            selectableCellIds.add(cellId);
+          }
+        });
+
+        if (selectableCellIds.size === 0) {
+          window.alert(this.translationService.tOrFallback("map.spells.errors.noCellTargets", "No valid cells available for this spell."));
+          return;
+        }
+
+        const prompt = spell.effect.type === "reveal-cell"
+          ? this.translationService.tOrFallback("map.cellSelection.promptReveal", "Select a cell to reveal")
+          : this.translationService.tOrFallback("map.cellSelection.promptDestroy", "Select a cell to remove its event");
+
+        const selectedCell = await this.openCellSelection(selectableCellIds, prompt, true);
+        if (!selectedCell) {
+          return;
+        }
+        target = selectedCell;
+      }
+    }
+
+    let targetPlayerId: string | null = null;
+    if (this.spellCatalogService.needsPlayerTarget(spell)) {
+      const otherPlayers = input.allPlayers.filter((p) => p.id !== player.id);
+      if (otherPlayers.length === 0) {
+        window.alert(this.translationService.tOrFallback("map.spells.errors.noTargets", "No valid targets available."));
+        return;
+      }
+      const selectedTarget = await this.openPlayerSelectDialog({
+        spellName: this.spellCatalogService.getLocalizedName(spell),
+        players: otherPlayers.map((p) => ({ id: p.id, name: p.name, color: p.color })),
+      });
+      if (!selectedTarget) {
+        return;
+      }
+      targetPlayerId = selectedTarget.playerId;
+    }
+
+    let selectedSpellId: string | null = null;
+    if (this.spellCatalogService.needsSpellSelectionFromTarget(spell)) {
+      const targetPlayer = input.allPlayers.find((p) => p.id === targetPlayerId);
+      const targetSpells = (targetPlayer?.spellbook?.spells ?? [])
+        .map((entry) => this.spellCatalogService.getSpell(entry.spellId))
+        .filter((s): s is NonNullable<typeof s> => s !== null);
+      if (targetSpells.length === 0) {
+        window.alert(this.translationService.tOrFallback("map.spells.errors.noTargetSpells", "Target has no spells."));
+        return;
+      }
+      const isChoosing = spell.effect.type === "copy-chosen-spell";
+      const spellSelected = await this.openSpellSelectDialog({
+        title: this.translationService.tOrFallback(
+          isChoosing ? "dialogs.spellSelect.titleCopy" : "dialogs.spellSelect.titleForget",
+          isChoosing ? "Choose a spell to copy" : "Choose a spell to remove",
+        ),
+        confirmText: this.translationService.tOrFallback(
+          isChoosing ? "dialogs.spellSelect.confirmCopy" : "dialogs.spellSelect.confirmForget",
+          isChoosing ? "Copy" : "Remove",
+        ),
+        options: targetSpells.map((s) => ({
+          spellId: s.id,
+          name: this.spellCatalogService.getLocalizedName(s),
+          mpCost: s.mpCost,
+        })),
+      });
+      if (!spellSelected) {
+        return;
+      }
+      selectedSpellId = spellSelected.spellId;
+    }
+
+    let selectedKey: string | null = null;
+    if (this.spellCatalogService.needsSelfItemSelection(spell)) {
+      const ownItems = (player.inventory?.items ?? [])
+        .map((entry) => this.itemCatalogService.getCachedItemById(entry.itemId))
+        .filter((item): item is NonNullable<typeof item> => item !== null);
+      if (ownItems.length === 0) {
+        window.alert(this.translationService.tOrFallback("map.spells.errors.noItems", "You have no items to alchemize."));
+        return;
+      }
+      const itemSelected = await this.openSelfSelectDialog({
+        title: this.translationService.tOrFallback("dialogs.selfSelect.titleAlchemy", "Choose an item to alchemize"),
+        confirmText: this.translationService.tOrFallback("dialogs.selfSelect.confirmAlchemy", "Alchemize"),
+        options: ownItems.map((item) => ({
+          key: item.id,
+          label: this.itemCatalogService.getLocalizedName(item),
+          sublabel: `${item.purchaseValue} monete`,
+        })),
+      });
+      if (!itemSelected) {
+        return;
+      }
+      selectedKey = itemSelected.key;
+    }
+
+    if (this.spellCatalogService.needsSelfResourceSelection(spell)) {
+      const resources: ResourceLabel[] = ["timber", "food", "minerals", "cloth"];
+      const ownResources = (player.inventory?.resources ?? [])
+        .filter((r) => r.quantity > 0 && resources.includes(r.label));
+      if (ownResources.length === 0) {
+        window.alert(this.translationService.tOrFallback("map.spells.errors.noResources", "You have no resources to transmute."));
+        return;
+      }
+      const resourceSelected = await this.openSelfSelectDialog({
+        title: this.translationService.tOrFallback("dialogs.selfSelect.titleTransmute", "Choose a resource to transmute"),
+        confirmText: this.translationService.tOrFallback("dialogs.selfSelect.confirmTransmute", "Transmute"),
+        options: ownResources.map((r) => ({
+          key: r.label,
+          label: this.translationService.tOrFallback(`resources.${r.label}`, r.label),
+          sublabel: `×${r.quantity}`,
+        })),
+      });
+      if (!resourceSelected) {
+        return;
+      }
+      selectedKey = resourceSelected.key;
+    }
+
+    if (this.spellCatalogService.needsElementSelection(spell)) {
+      const elements: SanctuaryElement[] = ["fire", "water", "wind", "earth"];
+      const elementSelected = await this.openSelfSelectDialog({
+        title: this.translationService.tOrFallback("dialogs.selfSelect.titleElement", "Choose an element"),
+        confirmText: this.translationService.tOrFallback("dialogs.selfSelect.confirmElement", "Attune"),
+        options: elements.map((el) => ({
+          key: el,
+          label: this.translationService.tOrFallback(`sanctuaries.elements.${el}`, el),
+        })),
+      });
+      if (!elementSelected) {
+        return;
+      }
+      selectedKey = elementSelected.key;
+    }
+
+    if (this.spellCatalogService.needsChaosEffectPreview(spell)) {
+      const effectsTable = await this.chaosEffectsConfigService.buildDialogRows();
+      const targetPlayer = input.allPlayers.find((p) => p.id === targetPlayerId);
+      await this.openChaosDialog({
+        spellName: this.spellCatalogService.getLocalizedName(spell),
+        targetPlayerName: targetPlayer?.name ?? "",
+        effectsTable,
+        onCast: async () => {
+          await this.actionExecutorService.castSpell(input.gameId, {
+            id: player.id,
+            name: player.name,
+          }, { spellId: spell.id, targetPlayerId });
+        },
+      });
+      return;
     }
 
     await this.runNamedAction(spell.id, async () => {
@@ -526,6 +764,9 @@ export class MapPageInteractionService {
       }, {
         spellId: spell.id,
         target,
+        targetPlayerId,
+        selectedSpellId,
+        selectedKey,
       });
     }, this.translationService.tOrFallback("map.spells.errors.cast", "Error while casting spell."));
   }
@@ -591,6 +832,63 @@ export class MapPageInteractionService {
     }
 
     return response.data as SpellTeleportDialogResult;
+  }
+
+  private async openSpellCastConfirmDialog(data: SpellCastConfirmDialogData): Promise<boolean> {
+    const dialogRef = this.dialog.open(SpellCastConfirmDialog, {
+      ...SPELL_CAST_DIALOG_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    return this.isConfirmResult(response);
+  }
+
+  private async openPlayerSelectDialog(data: PlayerSelectDialogData): Promise<PlayerSelectDialogResult | null> {
+    const dialogRef = this.dialog.open(PlayerSelectDialog, {
+      ...DIALOGS_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    if (!this.isConfirmResult(response) || !response.data) {
+      return null;
+    }
+    return response.data as PlayerSelectDialogResult;
+  }
+
+  private async openSpellSelectDialog(data: SpellSelectDialogData): Promise<SpellSelectDialogResult | null> {
+    const dialogRef = this.dialog.open(SpellSelectDialog, {
+      ...DIALOGS_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    if (!this.isConfirmResult(response) || !response.data) {
+      return null;
+    }
+    return response.data as SpellSelectDialogResult;
+  }
+
+  private async openSelfSelectDialog(data: SelfSelectDialogData): Promise<SelfSelectDialogResult | null> {
+    const dialogRef = this.dialog.open(SelfSelectDialog, {
+      ...DIALOGS_CONFIG,
+      data,
+    });
+
+    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+    if (!this.isConfirmResult(response) || !response.data) {
+      return null;
+    }
+    return response.data as SelfSelectDialogResult;
+  }
+
+  private openCellSelection(
+    selectableCellIds: Set<string>,
+    prompt: string,
+    withCancel = true,
+  ): Promise<{ x: number; y: number } | null> {
+    return this.cellSelectionService.openCellSelection(selectableCellIds, prompt, withCancel);
   }
 
   private async executeCommandActionFlow(
@@ -819,6 +1117,49 @@ export class MapPageInteractionService {
             name: player.name,
           });
         },
+      });
+      return;
+    }
+
+    if (handler === "academy-spell-upgrader") {
+      if (!player) return;
+
+      await this.spellCatalogService.loadConfig();
+      const upgradePairs = await this.academySpellUpgradeConfigService.loadConfig();
+      const playerSpells = player.spellbook?.spells ?? [];
+      const playerMoney = player.inventory?.money ?? 0;
+
+      const options = upgradePairs
+        .filter((pair) =>
+          playerSpells.some((e) => e.spellId === pair.from) &&
+          !playerSpells.some((e) => e.spellId === pair.to),
+        )
+        .map((pair) => {
+          const fromSpell = this.spellCatalogService.getSpell(pair.from);
+          const toSpell = this.spellCatalogService.getSpell(pair.to);
+          return {
+            fromSpellId: pair.from,
+            fromSpellName: fromSpell ? this.spellCatalogService.getLocalizedName(fromSpell) : pair.from,
+            toSpellId: pair.to,
+            toSpellName: toSpell ? this.spellCatalogService.getLocalizedName(toSpell) : pair.to,
+            cost: pair.cost,
+            canAfford: playerMoney >= pair.cost,
+          };
+        });
+
+      if (options.length === 0) {
+        await this.openGenericConfirmDialog({
+          title: this.translationService.tOrFallback("dialogs.academySpellUpgrader.title", "Spell Master"),
+          message: this.translationService.tOrFallback("dialogs.academySpellUpgrader.noOptions", "You have no spells eligible for upgrading."),
+          confirmText: this.translationService.tOrFallback("dialogs.common.close", "Close"),
+        });
+        return;
+      }
+
+      await this.openAcademySpellUpgraderDialog({
+        options,
+        onUpgrade: async (fromSpellId) =>
+          this.actionExecutorService.academySpellUpgrade(input.gameId, { id: player.id, name: player.name }, fromSpellId),
       });
       return;
     }
@@ -1645,6 +1986,15 @@ export class MapPageInteractionService {
     await firstValueFrom(dialogRef.closed.pipe(take(1)));
   }
 
+  private async openChaosDialog(data: ChaosDialogData): Promise<void> {
+    const dialogRef = this.dialog.open(ChaosDialog, {
+      ...VARIABLE_REWARD_DIALOG_CONFIG,
+      data,
+    });
+
+    await firstValueFrom(dialogRef.closed.pipe(take(1)));
+  }
+
   private async openGenericConfirmDialog(data: GenericConfirmDialogData): Promise<boolean> {
     const dialogRef = this.dialog.open(GenericConfirmDialog, {
       ...DIALOGS_CONFIG,
@@ -1653,6 +2003,15 @@ export class MapPageInteractionService {
 
     const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
     return this.isConfirmResult(response);
+  }
+
+  private async openAcademySpellUpgraderDialog(data: AcademySpellUpgraderDialogData): Promise<void> {
+    const dialogRef = this.dialog.open(AcademySpellUpgraderDialog, {
+      ...DIALOGS_CONFIG,
+      data,
+    });
+
+    await firstValueFrom(dialogRef.closed.pipe(take(1)));
   }
 
   private async openFollowerSelectionDialog(data: FollowerSelectDialogData): Promise<string | null> {

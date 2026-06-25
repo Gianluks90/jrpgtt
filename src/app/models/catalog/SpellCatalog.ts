@@ -8,7 +8,36 @@ export type SpellEffectType =
   | "teleport-explored-orthogonal"
   | "transform-current-cell-biome"
   | "apply-status-self"
-  | "enable-diagonal-movement";
+  | "enable-diagonal-movement"
+  | "apply-status-target"
+  | "steal-follower"
+  | "steal-coins"
+  | "gain-coins"
+  | "combat-strength-boost"
+  | "apply-random-effect-target"
+  | "remove-status-self"
+  | "remove-all-negative-statuses-self"
+  | "skip-turn-target"
+  | "return-to-attuned-sanctuary"
+  | "reveal-cell"
+  | "ignore-next-cell-hazard"
+  | "preview-next-events"
+  | "transmute-resource"
+  | "alchemize-item"
+  | "drain-mp-target"
+  | "remove-local-event"
+  | "copy-random-spell"
+  | "copy-chosen-spell"
+  | "forget-random-spell-target"
+  | "forget-chosen-spell-target"
+  | "block-all-spells"
+  | "copy-stat-gain"
+  | "multi-move"
+  | "shield-next-spell"
+  | "counter-spell-reaction"
+  | "mp-shield"
+  | "change-element-temp"
+  | "remove-negative-follower-self";
 
 export interface SpellCatalogI18nKeys {
   nameKey?: string;
@@ -36,8 +65,10 @@ export interface SpellEffectDefinition {
   rangePerMagic?: number;
   biome?: string;
   statusKey?: string;
+  additionalStatusKeys?: string[];
   baseDurationTurns?: number;
   durationPerMagic?: number;
+  luckThreshold?: number;
 }
 
 export interface SpellCatalogEntry {

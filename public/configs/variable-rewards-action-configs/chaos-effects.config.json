@@ -1,0 +1,74 @@
+{
+  "effects": [
+    {
+      "id": "chaos-poison",
+      "weight": 3,
+      "label": "Veleno (2 turni)",
+      "labelKey": "chaos.effects.poison",
+      "effectType": "apply-status",
+      "statusKey": "poison",
+      "durationTurns": 2
+    },
+    {
+      "id": "chaos-hexed",
+      "weight": 3,
+      "label": "Maledizione (2 turni)",
+      "labelKey": "chaos.effects.hexed",
+      "effectType": "apply-status",
+      "statusKey": "hexed",
+      "durationTurns": 2
+    },
+    {
+      "id": "chaos-weakened",
+      "weight": 2,
+      "label": "Indebolimento (2 turni)",
+      "labelKey": "chaos.effects.weakened",
+      "effectType": "apply-status",
+      "statusKey": "weakened",
+      "durationTurns": 2
+    },
+    {
+      "id": "chaos-sleep",
+      "weight": 2,
+      "label": "Sonno (1 turno)",
+      "labelKey": "chaos.effects.sleep",
+      "effectType": "apply-status",
+      "statusKey": "sleep",
+      "durationTurns": 1
+    },
+    {
+      "id": "chaos-minified",
+      "weight": 2,
+      "label": "Miniaturizzazione (2 turni)",
+      "labelKey": "chaos.effects.minified",
+      "effectType": "apply-status",
+      "statusKey": "minified",
+      "durationTurns": 2
+    },
+    {
+      "id": "chaos-silence",
+      "weight": 1,
+      "label": "Silenzio (2 turni)",
+      "labelKey": "chaos.effects.silence",
+      "effectType": "apply-status",
+      "statusKey": "silence",
+      "durationTurns": 2
+    },
+    {
+      "id": "chaos-steal-coins",
+      "weight": 2,
+      "label": "Furto di monete (5)",
+      "labelKey": "chaos.effects.stealCoins",
+      "effectType": "steal-coins",
+      "amount": 5
+    },
+    {
+      "id": "chaos-drain-mp",
+      "weight": 1,
+      "label": "Prosciugamento PM (3)",
+      "labelKey": "chaos.effects.drainMp",
+      "effectType": "drain-mp",
+      "amount": 3
+    }
+  ]
+}

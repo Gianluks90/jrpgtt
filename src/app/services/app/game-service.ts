@@ -16,6 +16,8 @@ import { LandmarksService } from "@services/map/landmarks-service";
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { ExplorationDeckService } from "@services/exploration/exploration-deck-service";
 import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
+import { SpellDeckService } from "@services/gameplay/spell-deck-service";
+import { SpellDeckConfigService } from "@services/catalog/spell-deck-config-service";
 
 interface StartGameSetupContext {
   game: Game;
@@ -48,6 +50,8 @@ export class GameService {
     private worldZonesService: WorldZonesService,
     private explorationDeckService: ExplorationDeckService,
     private explorationCatalogService: ExplorationCatalogService,
+    private spellDeckService: SpellDeckService,
+    private spellDeckConfigService: SpellDeckConfigService,
   ) { }
 
   public startMyGameSnapshot(playerId: string): void {
@@ -690,6 +694,7 @@ export class GameService {
     const setupPipeline: Array<(setup: StartGameSetupContext) => void | Promise<void>> = [
       this.setupBiomeDeck,
       this.setupExplorationDeck,
+      this.setupSpellDeck,
       this.setupTurnOrder,
       this.setupPlayerSpawns,
       this.setupLandmarks,
@@ -712,6 +717,12 @@ export class GameService {
     const deckConfigs = await this.explorationCatalogService.loadDeckConfigs();
     context.worldState.explorationDeck = this.explorationDeckService.buildAndShuffleDeck(deckConfigs);
     context.worldState.explorationDiscardedDeck = [];
+  }
+
+  private async setupSpellDeck(context: StartGameSetupContext): Promise<void> {
+    const deckConfigs = await this.spellDeckConfigService.loadDeckConfigs();
+    context.worldState.spellDeck = this.spellDeckService.buildAndShuffleDeck(deckConfigs);
+    context.worldState.spellDiscardedDeck = [];
   }
 
   private setupTurnOrder(context: StartGameSetupContext): void {

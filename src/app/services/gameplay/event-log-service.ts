@@ -149,15 +149,21 @@ export class EventLogService {
             const place = String(args["place"] ?? "safe place");
             return `${playerName} waited at ${place} using ${source}, simulated movement on the same cell and ended the turn.`;
         },
+        "player.academySpellUpgrade": ({ playerName, args }) => {
+            const source = this.getActionSourceLabel("academy-spell-upgrader", "Spell Master");
+            const fromSpellName = String(args["fromSpellName"] ?? "");
+            const toSpellName = String(args["toSpellName"] ?? "");
+            const spentCoins = Number(args["spentCoins"] ?? 0);
+            return `${playerName} upgraded ${fromSpellName}→${toSpellName} at ${source}, paid ${spentCoins} coins and ended the turn.`;
+        },
         "player.capitalEnchantress": ({ playerName, args }) => {
             const source = this.getActionSourceLabel("capital-enchantress", "Capital Enchantress");
             const spentCoins = Number(args["spentCoins"] ?? 0);
             const rewardLabel = String(args["rewardLabel"] ?? "Arcane Fate");
-            const pendingMagicReward = Boolean(args["pendingMagicReward"]);
-            if (pendingMagicReward) {
-                return `${playerName} consulted ${source}, paid ${spentCoins} coins, drew ${rewardLabel}, and unlocked a future magic reward placeholder.`;
+            const learnedSpellName = String(args["learnedSpellName"] ?? "");
+            if (learnedSpellName) {
+                return `${playerName} consulted ${source}, paid ${spentCoins} coins, drew ${rewardLabel} and learned the spell: ${learnedSpellName}.`;
             }
-
             return `${playerName} consulted ${source}, paid ${spentCoins} coins and drew ${rewardLabel}.`;
         },
         "player.cityMystic": ({ playerName, args }) => {
@@ -460,15 +466,16 @@ export class EventLogService {
             const source = this.getLocalizedActionLabel("capital-enchantress", "Capital Enchantress");
             const spentCoins = Number(args["spentCoins"] ?? 0);
             const rewardLabel = String(args["rewardLabel"] ?? "Arcane Fate");
-            const pendingMagicReward = Boolean(args["pendingMagicReward"]);
-            const key = pendingMagicReward
-                ? "logs.player.capitalEnchantress.pending"
-                : "logs.player.capitalEnchantress.base";
+            const learnedSpellName = String(args["learnedSpellName"] ?? "");
+            const key = learnedSpellName
+                ? "logs.player.capitalEnchantress.spell"
+                : "logs.player.capitalEnchantress";
             return this.translationService.tOrFallback(key, fallback, {
                 ...baseParams,
                 source,
                 spentCoins,
                 rewardLabel,
+                learnedSpellName,
             });
         }
 

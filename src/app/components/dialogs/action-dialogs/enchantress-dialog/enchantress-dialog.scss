@@ -57,10 +57,23 @@
   line-height: 1.35;
 }
 
-.result-text {
-  margin: 0;
-  font-size: 0.56rem;
-  color: #9fe870;
+.learned-spell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--magic-color) 50%, transparent);
+  background: color-mix(in srgb, var(--magic-color) 10%, transparent);
+}
+
+.learned-spell-label {
+  font-size: 0.5rem;
+  color: color-mix(in srgb, var(--fg-color) 60%, transparent);
+}
+
+.learned-spell-name {
+  font-size: 0.6rem;
+  color: var(--magic-color);
 }
 
 .error-text {
@@ -106,6 +119,7 @@
   }
 }
 
+
 .reward-table {
   flex: 1 1 0;
   min-height: 0;
@@ -143,18 +157,6 @@
   font-size: 0.54rem;
 }
 
-@media screen and (max-width: 768px) {
-  .enchantress-layout {
-    grid-template-columns: 1fr;
-    max-height: none;
-  }
-
-  .left-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
 @keyframes reward-flash {
   0% {
     transform: scale(1);
@@ -169,3 +171,16 @@
     box-shadow: 0 0 0 0 color-mix(in srgb, #41d175 0%, transparent);
   }
 }
+
+@media screen and (max-width: 768px) {
+  .enchantress-layout {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .left-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
+

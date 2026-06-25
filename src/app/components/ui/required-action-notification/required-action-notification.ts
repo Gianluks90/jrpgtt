@@ -25,9 +25,11 @@ export class RequiredActionNotification {
   public localPlayerId = input.required<string>();
   public ownerPlayerId = input<string | null>(null);
   public allowOwnerOverride = input<boolean>(true);
+  public counterActionLabel = input<string | null>(null);
 
   public acknowledgeRequested = output<string>();
   public forceContinueRequested = output<void>();
+  public counterRequested = output<void>();
 
   public allAcknowledged = computed(() => this.players().length > 0 && this.players().every((player) => player.acknowledged));
   public okIconUrl = RequiredActionNotification.checkIconUrl;
@@ -49,5 +51,14 @@ export class RequiredActionNotification {
 
   public forceContinue(): void {
     this.forceContinueRequested.emit();
+  }
+
+  public counter(): void {
+    this.counterRequested.emit();
+  }
+
+  public canCounter(): boolean {
+    return !!this.counterActionLabel()
+      && this.players().some((p) => p.id === this.localPlayerId() && !p.acknowledged);
   }
 }

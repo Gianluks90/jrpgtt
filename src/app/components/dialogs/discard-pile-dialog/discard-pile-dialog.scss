@@ -8,10 +8,30 @@
 .discard-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
   max-height: min(62vh, 620px);
   overflow-y: auto;
   padding-right: 4px;
+}
+
+.discard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.discard-section-title {
+  margin: 0;
+  font-size: 0.54rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.discard-section-title-spell {
+  color: var(--magic-color);
+  opacity: 0.8;
 }
 
 .discard-empty {
@@ -36,6 +56,10 @@
 
 .discard-card-item {
   border-color: rgba(130, 199, 255, 0.62);
+}
+
+.discard-card-spell {
+  border-color: color-mix(in srgb, var(--magic-color) 55%, transparent);
 }
 
 .discard-card-head {

@@ -12,6 +12,7 @@ import {
   PlayerLevelUpDialogResult,
 } from "../../components/dialogs/player-level-up-dialog/player-level-up-dialog";
 import { FirebaseService } from "@services/app/firebase-service";
+import { WorldState } from "@models/world/WorldState";
 
 @Injectable({
   providedIn: "root",
@@ -87,6 +88,7 @@ export class PlayerProgressionService {
 
   public async applyNextPendingLevelUp(gameId: string, playerId: string, currentPlayer?: Player): Promise<Player> {
     const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
     const player = currentPlayer ? this.normalizePlayer(currentPlayer) : await this.getPlayer(gameId, playerId);
     const pendingChoices = Math.max(0, Math.floor(Number(player.pendingLevelUpChoices ?? 0)));
 
@@ -102,6 +104,22 @@ export class PlayerProgressionService {
       parameters: upgradedPlayer.parameters,
       pendingLevelUpChoices: nextPendingChoices,
     }, { merge: true });
+
+    if (selectedCharacteristic === "strength" || selectedCharacteristic === "magic") {
+      const worldStateSnap = await getDoc(worldStateRef);
+      if (worldStateSnap.exists()) {
+        const worldState = worldStateSnap.data() as WorldState;
+        await setDoc(worldStateRef, {
+          ...worldState,
+          lastStatGain: {
+            parameter: selectedCharacteristic,
+            gainedByPlayerId: playerId,
+            gainedByPlayerName: player.name,
+            gainedAtTurn: worldState.currentTurn ?? 0,
+          },
+        });
+      }
+    }
 
     return {
       ...upgradedPlayer,

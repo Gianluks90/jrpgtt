@@ -1,0 +1,29 @@
+<dialog-wrapper [title]="'dialogs.playerSelect.title' | t">
+
+  <p class="spell-label">{{ data.spellName }}</p>
+
+  <ul class="player-list">
+    @for (player of data.players; track player.id) {
+      <li
+        class="player-row"
+        [class.player-row--selected]="selectedId === player.id"
+        (click)="select(player.id)"
+        (keydown.enter)="select(player.id)"
+        tabindex="0"
+        role="option"
+        [attr.aria-selected]="selectedId === player.id">
+        <span class="player-color-dot" [style.background-color]="player.color"></span>
+        <span class="player-name">{{ player.name }}</span>
+      </li>
+    }
+  </ul>
+
+  <text-button
+    dialog-action
+    [text]="'dialogs.playerSelect.confirm' | t"
+    [disabled]="!canConfirm"
+    (clicked)="confirm()"
+  ></text-button>
+  <text-button dialog-action [text]="'dialogs.common.cancel' | t" (clicked)="close()"></text-button>
+
+</dialog-wrapper>

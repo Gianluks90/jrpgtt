@@ -111,6 +111,14 @@
     }
   },
   "dialogs": {
+    "spellCast": {
+      "title": "Spell",
+      "cast": "Cast spell"
+    },
+    "playerSelect": {
+      "title": "Choose a target",
+      "confirm": "Confirm"
+    },
     "common": {
       "cancel": "Cancel",
       "close": "Close",
@@ -125,10 +133,13 @@
       "sanctuaryActivatedDescription": "{sanctuaryLabel} has been activated by {playerName}",
       "worldEventActivatedTitle": "World Event Activated: {eventName}",
       "worldEventActivatedDescription": "Triggered by {playerName}. {description}",
+      "spellEffectTitle": "Spell Cast: {spellName}",
+      "spellEffectDescription": "{casterName} cast {spellName} on you. {summary}",
       "actions": {
         "ok": "Ok",
         "playerOk": "{playerName}: Ok",
-        "ownerContinue": "Continue"
+        "ownerContinue": "Continue",
+        "counter": "Use Counter-Spell"
       }
     },
     "worldEventHelp": {
@@ -203,7 +214,12 @@
         "follower": "Follower",
         "item": "Item",
         "tile": "Tile",
-        "event": "Event"
+        "event": "Event",
+        "spell": "Spell"
+      },
+      "section": {
+        "exploration": "Exploration",
+        "spells": "Spells"
       },
       "unknownCard": "Unknown card",
       "unknownTime": "Unknown time",
@@ -311,11 +327,22 @@
         "consult": "Error while consulting the mystic."
       }
     },
+    "chaos": {
+      "title": "Chaos",
+      "flavorText": "Chaos energy is unpredictable. Nobody knows what will happen...",
+      "targetInfo": "{spellName} on {targetName}. One of the following effects will be applied at random.",
+      "actions": {
+        "cast": "Cast"
+      },
+      "errors": {
+        "cast": "Error while casting chaos spell."
+      }
+    },
     "enchantress": {
       "title": "Capital Enchantress",
       "flavorText": "She shuffles her ancient cards and beckons you closer...",
       "offerInfo": "Offer exactly {cost} coins to draw your fate.",
-      "result": "Result:",
+      "learnedSpell": "You learned:",
       "actions": {
         "pay": "Pay",
         "continue": "Continue"
@@ -343,12 +370,25 @@
         },
         "jackpot": {
           "label": "Arcane Jackpot",
-          "preview": "Magic placeholder: Bravery + Focus for 3 turns"
+          "preview": "Bravery + Focus for 3 turns. On exactly 100: Toadify. On 100+: draw spell from deck."
         }
       },
       "errors": {
         "notEnoughCoins": "You do not have enough coins to pay the Enchantress.",
         "consult": "Error while consulting the enchantress."
+      }
+    },
+    "academySpellUpgrader": {
+      "title": "Spell Master",
+      "info": "Choose a spell to upgrade. The base version will be removed from your spellbook.",
+      "noOptions": "You have no spells eligible for upgrading.",
+      "result": "{from} has been upgraded to {to}!",
+      "actions": {
+        "confirm": "Upgrade (−{cost} coins)"
+      },
+      "errors": {
+        "notEnoughCoins": "You do not have enough coins for this upgrade.",
+        "upgrade": "Error while upgrading the spell."
       }
     },
     "merchant": {
@@ -370,6 +410,9 @@
         "category": "Category",
         "stock": "Stock",
         "owned": "Owned"
+      },
+      "categories": {
+        "spell": "Spell"
       },
       "empty": {
         "noStock": "No stock available.",
@@ -581,8 +624,15 @@
         "cooldown": "This spell is on cooldown.",
         "notEnoughMp": "Not enough MP to cast this spell.",
         "noTeleportTargets": "No valid explored target is available for this spell.",
+        "noTargets": "No valid targets available.",
+        "noCellTargets": "No valid cells available for this spell.",
         "cast": "Error while casting spell."
       }
+    },
+    "cellSelection": {
+      "label": "Select cell",
+      "promptReveal": "Select a cell to reveal",
+      "promptDestroy": "Select a cell to remove its event"
     },
     "locationInfo": {
       "contextObserving": "Observing cell",
@@ -1035,10 +1085,9 @@
       "villageCraftsmanExchange": "{playerName} exchanged {amount} {giveLabel} for {amount} {receiveLabel} at the {source} and ended the turn.",
       "campReward": "{playerName} used {source} and gained {rewards}.",
       "safePlaceWait": "{playerName} waited at {place} using {source}, simulated movement on the same cell and ended the turn.",
-      "capitalEnchantress": {
-        "base": "{playerName} consulted {source}, paid {spentCoins} coins and drew {rewardLabel}.",
-        "pending": "{playerName} consulted {source}, paid {spentCoins} coins, drew {rewardLabel}, and unlocked a future magic reward placeholder."
-      },
+      "capitalEnchantress": "{playerName} consulted {source}, paid {spentCoins} coins and drew {rewardLabel}.",
+      "capitalEnchantress.spell": "{playerName} consulted {source}, paid {spentCoins} coins, drew {rewardLabel} and learned the spell: {learnedSpellName}.",
+      "academySpellUpgrade": "{playerName} upgraded {fromSpellName}→{toSpellName} at {source}, paid {spentCoins} coins and ended the turn.",
       "cityMystic": "{playerName} consulted {source}, paid {spentCoins} coins and drew {rewardLabel}{extras}.",
       "graveyardResurrect": "{playerName} attempted resurrection at {source} for {followerId}. Outcome: {appliedOutcome}.",
       "templeSendDevotee": "{playerName} sent a devotee at {source}, became GOOD and gained {gainedExperience} XP.",
@@ -1061,7 +1110,29 @@
       "castSpellStatus": "{playerName} cast {spellName}, applied {statusKey} for {durationTurns} turns and spent {spentMp} MP.",
       "castSpellTeleport": "{playerName} cast {spellName}, teleported to {targetX}, {targetY} and spent {spentMp} MP.",
       "castSpellTransform": "{playerName} cast {spellName}, transformed cell {x}, {y} into {biome} and spent {spentMp} MP.",
-      "castSpellDiagonal": "{playerName} cast {spellName}, enabling diagonal movement (−{spentMp} MP)."
+      "castSpellDiagonal": "{playerName} cast {spellName}, enabling diagonal movement (−{spentMp} MP).",
+      "castSpellStatusTarget": "{playerName} cast {spellName} on {targetPlayerName}, applied {statusKey} for {durationTurns} turns (−{spentMp} MP).",
+      "castSpellStealCoins": "{playerName} cast {spellName} on {targetPlayerName}: {success, select, true {stole {amount} coins} other {failed}} (−{spentMp} MP).",
+      "castSpellDrainMp": "{playerName} cast {spellName} on {targetPlayerName}: {success, select, true {drained {amount} MP} other {failed}} (−{spentMp} MP).",
+      "castSpellStealFollower": "{playerName} cast {spellName} on {targetPlayerName}: {success, select, true {stole follower {followerId}} other {failed}} (−{spentMp} MP).",
+      "castSpellCopySpell": "{playerName} cast {spellName} on {targetPlayerName} and copied {copiedSpellId} (−{spentMp} MP).",
+      "castSpellForgetSpell": "{playerName} cast {spellName} on {targetPlayerName}: {forgottenSpellId} forgotten (−{spentMp} MP).",
+      "castSpellAlchemy": "{playerName} cast {spellName}: alchemized item {itemId} for {goldValue} coins (−{spentMp} MP).",
+      "castSpellReveal": "{playerName} cast {spellName} and revealed cell ({targetX},{targetY}) (−{spentMp} MP).",
+      "castSpellDestroy": "{playerName} cast {spellName} and removed an event from cell ({targetX},{targetY}) (−{spentMp} MP).",
+      "castSpellBlockAllSpells": "{playerName} cast {spellName}: all players silenced for {durationTurns} turns (−{spentMp} MP).",
+      "castSpellRecall": "{playerName} cast {spellName} and teleported to their sanctuary (−{spentMp} MP).",
+      "castSpellChaos": "{playerName} cast {spellName} on {targetPlayerName}: chaos effect '{effectId}' (−{spentMp} MP).",
+      "castSpellTransmute": "{playerName} cast {spellName}: transmuted {sourceLabel} into {targetLabel} (−{spentMp} MP).",
+      "castSpellElementalBond": "{playerName} cast {spellName}: temporary attunement to {newElement} (−{spentMp} MP).",
+      "castSpellGainCoins": "{playerName} cast {spellName}, gained {coinsGained} coins and spent {spentMp} MP.",
+      "castSpellDispel": "{playerName} cast {spellName} and removed status {removedStatus} (−{spentMp} MP).",
+      "castSpellPurify": "{playerName} cast {spellName}, removed {removedCount} negative statuses and spent {spentMp} MP.",
+      "castSpellRemoveFollower": "{playerName} cast {spellName} and banished follower {removedFollowerId} (−{spentMp} MP).",
+      "castSpellCopyStatGain": "{playerName} cast {spellName}: copied +1 {parameter} from {copiedFromPlayerName} (new value: {newValue}) (−{spentMp} MP).",
+      "castSpellCounterPending": "{playerName} cast {spellName} on {targetPlayerName} — awaiting counter-spell response (−{spentMp} MP).",
+      "counterSpell": "{playerName} used {counterSpellName} to deflect {spellName}!",
+      "acceptPendingSpell": "{playerName} accepted the effect of {spellId}."
     }
   },
   "actions": {
@@ -1163,6 +1234,14 @@
       "label": "Arcane Merchant",
       "description": "Visit the Academy Merchant. Buy magical stock and sell only magical items. Buying ends your turn."
     },
+    "academySpellUpgrader": {
+      "label": "Spell Master",
+      "description": "Upgrade Mimicry→Mimicry+ or Negate→Negate+ for 12 coins. Ends your turn."
+    },
+    "manorCounterfeiter": {
+      "label": "Arcane Counterfeiter",
+      "description": "Visit the Arcane Counterfeiter at the Manor. Buy from a shady stock. Buying ends your turn."
+    },
     "villageCraftsman": {
       "label": "Craftsman",
       "description": "Trade resources 1:1 at the Village Craftsman, then end your turn."
@@ -1203,6 +1282,9 @@
     }
   },
   "spells": {
+    "meta": {
+      "singleUse": "single use"
+    },
     "fly": {
       "name": "Fly",
       "description": "Enables diagonal movement for this turn. Must be cast before moving."
@@ -1218,6 +1300,178 @@
     "reinvigorate": {
       "name": "Reinvigorate",
       "description": "Restore HP equal to your current Magic value."
+    },
+    "teleport": {
+      "name": "Teleport",
+      "description": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn."
+    },
+    "empower": {
+      "name": "Empower",
+      "description": "Add your Magic to your Strength for the duration of this combat."
+    },
+    "chaos": {
+      "name": "Chaos",
+      "description": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect."
+    },
+    "filch": {
+      "name": "Filch",
+      "description": "Steal 10 coins from a target player on a luck check of 70 or more."
+    },
+    "vigor": {
+      "name": "Vigor",
+      "description": "Restore 5 HP."
+    },
+    "ward": {
+      "name": "Ward",
+      "description": "Apply Protection to yourself."
+    },
+    "alchemy": {
+      "name": "Alchemy",
+      "description": "Convert an item you own into its coin value."
+    },
+    "immobilize": {
+      "name": "Immobilize",
+      "description": "Apply Immobilized to a target player for 1 turn."
+    },
+    "dispel": {
+      "name": "Dispel",
+      "description": "Remove one negative status from yourself."
+    },
+    "fortune": {
+      "name": "Fortune",
+      "description": "Apply Fortune to yourself for 1 turn."
+    },
+    "focus": {
+      "name": "Focus",
+      "description": "Apply Focus to yourself for 1 turn."
+    },
+    "scout": {
+      "name": "Scout",
+      "description": "Reveal an unexplored cell within {range} orthogonal steps."
+    },
+    "safePassage": {
+      "name": "Safe Passage",
+      "description": "Ignore the next environmental hazard or negative cell effect when entering a cell."
+    },
+    "fateRead": {
+      "name": "Fate Reading",
+      "description": "Preview the next 2 local events that could be drawn or resolved."
+    },
+    "transmute": {
+      "name": "Transmute",
+      "description": "Transform 1 common resource into a different common resource."
+    },
+    "foresight": {
+      "name": "Foresight",
+      "description": "Preview the next 2 local events. Order is not changed."
+    },
+    "wealth": {
+      "name": "Wealth",
+      "description": "Gain 10 coins."
+    },
+    "invisibility": {
+      "name": "Invisibility",
+      "description": "Apply Invisibility to yourself."
+    },
+    "mesmerize": {
+      "name": "Mesmerize",
+      "description": "Steal a follower from a target player on a luck check of 70 or more."
+    },
+    "curse": {
+      "name": "Curse",
+      "description": "Apply Hexed and Weakened to a target player for 3 turns."
+    },
+    "petrify": {
+      "name": "Petrify",
+      "description": "A target player skips their next turn."
+    },
+    "purify": {
+      "name": "Purify",
+      "description": "Remove all negative statuses from yourself."
+    },
+    "recall": {
+      "name": "Recall",
+      "description": "Return to your last visited or activated sanctuary. Cannot move further this turn."
+    },
+    "minorExile": {
+      "name": "Minor Exile",
+      "description": "Remove a negative follower from your party."
+    },
+    "divination": {
+      "name": "Divination",
+      "description": "Preview the next 5 local events. Order is not changed."
+    },
+    "spellBreak": {
+      "name": "Spell Break",
+      "description": "No player, including you, can cast spells until the end of the next round."
+    },
+    "destroy": {
+      "name": "Destroy",
+      "description": "Remove a temporary or permanent local event from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives."
+    },
+    "counterspell": {
+      "name": "Counterspell",
+      "description": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects."
+    },
+    "timeFold": {
+      "name": "Time Fold",
+      "description": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves."
+    },
+    "mimicry": {
+      "name": "Mimicry",
+      "description": "Copy a random spell from a target player and learn it."
+    },
+    "mimicryPlus": {
+      "name": "Mimicry+",
+      "description": "Copy a spell of your choice from a target player and learn it."
+    },
+    "negate": {
+      "name": "Negate",
+      "description": "Make a target player forget a random spell."
+    },
+    "negatePlus": {
+      "name": "Negate+",
+      "description": "Make a target player forget a spell of your choice."
+    },
+    "silence": {
+      "name": "Silence",
+      "description": "Apply Silence to a target player for 3 turns."
+    },
+    "manaShield": {
+      "name": "Mana Shield",
+      "description": "Reduce the next damage you take by consuming remaining MP."
+    },
+    "manaDrain": {
+      "name": "Mana Drain",
+      "description": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more."
+    },
+    "seal": {
+      "name": "Seal",
+      "description": "The next hostile spell targeting you has no effect."
+    },
+    "disciple": {
+      "name": "Disciple",
+      "description": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat."
+    },
+    "elementalBond": {
+      "name": "Elemental Bond",
+      "description": "Temporarily change your elemental attunement to a chosen element for 1 turn."
+    },
+    "toadify": {
+      "name": "Toadify",
+      "description": "Apply Minified to a target player for 2 turns on a luck check of 70 or more."
+    }
+  },
+  "chaos": {
+    "effects": {
+      "poison": "Poison (2 turns)",
+      "hexed": "Hexed (2 turns)",
+      "weakened": "Weakened (2 turns)",
+      "sleep": "Sleep (1 turn)",
+      "minified": "Minified (2 turns)",
+      "silence": "Silence (2 turns)",
+      "stealCoins": "Steal Coins (5)",
+      "drainMp": "Drain MP (3)"
     }
   },
   "statuses": {

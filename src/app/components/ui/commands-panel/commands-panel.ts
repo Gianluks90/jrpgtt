@@ -8,6 +8,7 @@ export interface CommandPanelAction {
   warning?: string;
   moneyCost?: number | null;
   magicCost?: number | null;
+  consumableOnCast?: boolean;
   disabled?: boolean;
   pending?: boolean;
 }
@@ -22,6 +23,7 @@ export interface CommandPanelAction {
 export class CommandsPanel {
   public actions = input<CommandPanelAction[]>([]);
   public emptyStateKey = input<string>("map.commands.empty");
+  public spellVariant = input(false);
 
   public actionRequested = output<string>();
 

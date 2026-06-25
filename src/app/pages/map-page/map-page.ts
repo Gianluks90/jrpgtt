@@ -13,6 +13,8 @@ import { WorldStatePanel } from "../../components/core/world-state-panel/world-s
 import { MapUtilitiesPanel } from "../../components/core/map-utilities-panel/map-utilities-panel";
 import { MapPlayerUtilitiesPanel } from "../../components/core/map-player-utilities-panel/map-player-utilities-panel";
 import { MapLocationDiscardHud } from "../../components/core/map-location-discard-hud/map-location-discard-hud";
+import { MapCellSelectionHud } from "../../components/core/map-cell-selection-hud/map-cell-selection-hud";
+import { MapCellSelectionService } from "@services/map/map-cell-selection-service";
 import { MapPageStateService } from "@services/map/map-page-state-service";
 import { MapPageLayoutService } from "@services/map/map-page-layout-service";
 import { MapPageActionsService } from "@services/map/map-page-actions-service";
@@ -41,6 +43,7 @@ import { MapSettingsDialogService } from "@services/ui/map-settings-dialog-servi
 import { CombatOverlay } from "../../components/ui/combat-overlay/combat-overlay";
 import { ExplorationPhaseOverlay } from "../../components/ui/exploration-phase-overlay/exploration-phase-overlay";
 import { ExplorationEventService } from "@services/exploration/exploration-event-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
 
 type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed";
 
@@ -53,6 +56,7 @@ type WorldEventFlowPhase = "announcing" | "propagating" | "summary" | "completed
     WorldStatePanel,
     MapPlayerUtilitiesPanel,
     MapLocationDiscardHud,
+    MapCellSelectionHud,
     LuckIndicator,
     DayNightCyclePanel,
     BiomesCounter,
@@ -89,6 +93,8 @@ export class MapPage implements OnInit, OnDestroy {
   private rulebookDialogService = inject(RulebookDialogService);
   private mapSettingsDialogService = inject(MapSettingsDialogService);
   private explorationEventService = inject(ExplorationEventService);
+  private spellCatalogService = inject(SpellCatalogService);
+  public cellSelectionService = inject(MapCellSelectionService);
 
   public gameId = this.route.snapshot.paramMap.get("gameId") ?? "";
   public mapSize = this.mapPageState.mapSize;
@@ -374,6 +380,15 @@ export class MapPage implements OnInit, OnDestroy {
       );
     }
 
+    if (notification.type === "spell-effect-on-player" || notification.type === "spell-pending-counter") {
+      const spellName = notification.spellName ?? "";
+      return this.translationService.tOrFallback(
+        "dialogs.requiredActionNotification.spellEffectTitle",
+        "Spell Cast: {spellName}",
+        { spellName },
+      );
+    }
+
     return this.sanctuaryElementToLabel(notification.sanctuaryElement);
   });
 
@@ -391,6 +406,17 @@ export class MapPage implements OnInit, OnDestroy {
         "dialogs.requiredActionNotification.worldEventActivatedDescription",
         "Triggered by {playerName}. {description}",
         { playerName, description: flowDescription },
+      );
+    }
+
+    if (notification.type === "spell-effect-on-player" || notification.type === "spell-pending-counter") {
+      const casterName = notification.activatedByPlayerName;
+      const spellName = notification.spellName ?? "";
+      const summary = notification.spellEffectSummary ?? "";
+      return this.translationService.tOrFallback(
+        "dialogs.requiredActionNotification.spellEffectDescription",
+        "{casterName} cast {spellName} on you. {summary}",
+        { casterName, spellName, summary },
       );
     }
 
@@ -417,6 +443,28 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     return this.worldEventFlowNowMs() >= effectiveAnchorMs + 5000;
+  });
+
+  public requiredActionNotificationCanCounter = computed<boolean>(() => {
+    const notification = this.requiredActionNotification();
+    if (!notification || notification.type !== "spell-pending-counter" || !notification.canTargetCounter) {
+      return false;
+    }
+    const myPlayer = this.myPlayer();
+    if (!myPlayer) {
+      return false;
+    }
+    const isRequired = (notification.requiredPlayerIds ?? []).includes(myPlayer.id);
+    const alreadyAcknowledged = (notification.acknowledgedPlayerIds ?? []).includes(myPlayer.id);
+    if (!isRequired || alreadyAcknowledged) {
+      return false;
+    }
+    const worldTurn = this.worldState()?.currentTurn ?? 0;
+    return (myPlayer.spellbook?.spells ?? []).some((entry) => {
+      const s = this.spellCatalogService.getSpell(entry.spellId);
+      return s?.effect.type === "counter-spell-reaction"
+        && Math.max(0, Math.floor(Number(entry.blockedUntilTurn ?? 0))) <= worldTurn;
+    });
   });
 
   public canEndTurn = computed<boolean>(() => {
@@ -565,6 +613,12 @@ export class MapPage implements OnInit, OnDestroy {
     }
 
     return filteredTargets;
+  });
+
+  public effectiveMovableCellIds = computed<Set<string>>(() => {
+    const selectionState = this.cellSelectionService.state();
+    if (selectionState) return selectionState.selectableCellIds;
+    return this.movableCellIds();
   });
 
   public regionIToIIWarning = computed(() => {
@@ -791,6 +845,8 @@ export class MapPage implements OnInit, OnDestroy {
   }
 
   public async onCellClick(cell: MapGridPanelCell): Promise<void> {
+    if (this.cellSelectionService.handleCellClick(cell.x, cell.y)) return;
+
     if (this.isMoving() || this.isMyTravelLockActive() || this.isWorldEventFlowLockActive() || this.isRequiredActionNotificationLockActive()) return;
 
     this.isMoving.set(true);
@@ -840,6 +896,7 @@ export class MapPage implements OnInit, OnDestroy {
       worldState: this.worldState(),
       mapCellsById: this.mapCellsById(),
       mapSize: this.mapSize(),
+      allPlayers: this.players(),
     });
   }
 
@@ -857,11 +914,32 @@ export class MapPage implements OnInit, OnDestroy {
       return;
     }
 
+    const notification = this.requiredActionNotification();
+    if (notification?.type === "spell-pending-counter") {
+      void this.mapPageInteractionService.acceptPendingSpellEffect(this.gameId, myPlayer);
+      return;
+    }
+
     void this.mapPageInteractionService.acknowledgeRequiredActionNotification(this.gameId, myPlayer);
   }
 
   public onForceContinueRequiredActionRequested(): void {
-    void this.mapPageInteractionService.forceContinueRequiredActionNotification(this.gameId, this.myPlayer());
+    const myPlayer = this.myPlayer();
+    const notification = this.requiredActionNotification();
+    if (notification?.type === "spell-pending-counter") {
+      void this.mapPageInteractionService.acceptPendingSpellEffect(this.gameId, myPlayer);
+      return;
+    }
+
+    void this.mapPageInteractionService.forceContinueRequiredActionNotification(this.gameId, myPlayer);
+  }
+
+  public onCounterSpellRequested(): void {
+    const myPlayer = this.myPlayer();
+    if (!myPlayer) {
+      return;
+    }
+    void this.mapPageInteractionService.counterSpell(this.gameId, myPlayer);
   }
 
   private cellHasConditionEffect(

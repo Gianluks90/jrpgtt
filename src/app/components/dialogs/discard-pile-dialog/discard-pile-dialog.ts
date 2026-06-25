@@ -1,5 +1,6 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
+import { NgTemplateOutlet } from "@angular/common";
 import { DialogResponse } from "@models/ui/DialogResponse";
 import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
@@ -14,24 +15,37 @@ export interface DiscardPileDialogData {
 @Component({
   selector: "app-discard-pile-dialog",
   standalone: true,
-  imports: [DialogWrapper, TextButton, TranslationPipe],
+  imports: [DialogWrapper, TextButton, TranslationPipe, NgTemplateOutlet],
   templateUrl: "./discard-pile-dialog.html",
   styleUrl: "./discard-pile-dialog.scss",
 })
 export class DiscardPileDialog {
-  public readonly entries: DiscardPileEntry[];
+  public readonly explorationEntries: DiscardPileEntry[];
+  public readonly spellEntries: DiscardPileEntry[];
   public readonly dialogTitle: string;
+  public readonly explorationSectionLabel: string;
+  public readonly spellSectionLabel: string;
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<never>>,
     private translationService: TranslationService,
     @Inject(DIALOG_DATA) data: DiscardPileDialogData,
   ) {
-    this.entries = Array.isArray(data?.entries) ? data.entries : [];
+    const all = Array.isArray(data?.entries) ? data.entries : [];
+    this.spellEntries = all.filter((e) => e.card?.kind === "spell");
+    this.explorationEntries = all.filter((e) => e.card?.kind !== "spell");
     this.dialogTitle = this.translationService.tOrFallback(
       "dialogs.discardPile.title",
       "Discard Pile ({count})",
-      { count: this.entries.length },
+      { count: all.length },
+    );
+    this.explorationSectionLabel = this.translationService.tOrFallback(
+      "dialogs.discardPile.section.exploration",
+      "Exploration",
+    );
+    this.spellSectionLabel = this.translationService.tOrFallback(
+      "dialogs.discardPile.section.spells",
+      "Spells",
     );
   }
 
@@ -47,6 +61,7 @@ export class DiscardPileDialog {
     if (kind === "item") return this.translationService.tOrFallback("dialogs.discardPile.kind.item", "Item");
     if (kind === "tile") return this.translationService.tOrFallback("dialogs.discardPile.kind.tile", "Tile");
     if (kind === "event") return this.translationService.tOrFallback("dialogs.discardPile.kind.event", "Event");
+    if (kind === "spell") return this.translationService.tOrFallback("dialogs.discardPile.kind.spell", "Spell");
     return kind;
   }
 

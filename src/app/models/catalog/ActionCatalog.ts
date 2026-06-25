@@ -24,7 +24,8 @@ export type ActionFlowHandler =
   | "temple-send-devotee"
   | "altar-sacrifice"
   | "elemental-ritual"
-  | "follower-eliminate-zombie";
+  | "follower-eliminate-zombie"
+  | "academy-spell-upgrader";
 
 export type ActionFlowTrigger = "command-panel";
 

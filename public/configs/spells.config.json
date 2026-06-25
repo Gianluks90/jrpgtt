@@ -19,7 +19,10 @@
         }
       },
       "effect": {
-        "type": "enable-diagonal-movement"
+        "type": "apply-status-self",
+        "statusKey": "flying",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
       },
       "acquisition": [
         {
@@ -65,7 +68,7 @@
       "timing": "my-turn",
       "ui": {
         "name": "Inner Fire",
-        "descriptionTemplate": "Apply Bravery to yourself for 1 turn. Increases Strength by 1.",
+        "descriptionTemplate": "Apply Bravery to yourself for 1 turn.",
         "i18n": {
           "nameKey": "spells.innerFire.name",
           "descriptionKey": "spells.innerFire.description"
@@ -108,6 +111,977 @@
         {
           "source": "sanctuary",
           "sanctuaryElement": "earth"
+        }
+      ]
+    },
+    {
+      "id": "teleport",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Teleport",
+        "descriptionTemplate": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn.",
+        "i18n": {
+          "nameKey": "spells.teleport.name",
+          "descriptionKey": "spells.teleport.description"
+        }
+      },
+      "effect": {
+        "type": "teleport-explored-orthogonal",
+        "baseRange": 3,
+        "rangePerMagic": 1
+      }
+    },
+    {
+      "id": "empower",
+      "mpCost": 4,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Empower",
+        "descriptionTemplate": "Add your Magic to your Strength for the duration of this combat.",
+        "i18n": {
+          "nameKey": "spells.empower.name",
+          "descriptionKey": "spells.empower.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "empowered",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "chaos",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Chaos",
+        "descriptionTemplate": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect.",
+        "i18n": {
+          "nameKey": "spells.chaos.name",
+          "descriptionKey": "spells.chaos.description"
+        }
+      },
+      "effect": {
+        "type": "apply-random-effect-target"
+      }
+    },
+    {
+      "id": "filch",
+      "mpCost": 2,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Filch",
+        "descriptionTemplate": "Steal 10 coins from a target player on a luck check of 70 or more.",
+        "i18n": {
+          "nameKey": "spells.filch.name",
+          "descriptionKey": "spells.filch.description"
+        }
+      },
+      "effect": {
+        "type": "steal-coins",
+        "baseAmount": 10,
+        "luckThreshold": 70
+      }
+    },
+    {
+      "id": "vigor",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Vigor",
+        "descriptionTemplate": "Restore 5 HP.",
+        "i18n": {
+          "nameKey": "spells.vigor.name",
+          "descriptionKey": "spells.vigor.description"
+        }
+      },
+      "effect": {
+        "type": "heal-self",
+        "baseAmount": 5,
+        "amountPerMagic": 0
+      }
+    },
+    {
+      "id": "ward",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Ward",
+        "descriptionTemplate": "Apply Protection to yourself.",
+        "i18n": {
+          "nameKey": "spells.ward.name",
+          "descriptionKey": "spells.ward.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "protection",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "alchemy",
+      "mpCost": 1,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Alchemy",
+        "descriptionTemplate": "Convert an item you own into its coin value.",
+        "i18n": {
+          "nameKey": "spells.alchemy.name",
+          "descriptionKey": "spells.alchemy.description"
+        }
+      },
+      "effect": {
+        "type": "alchemize-item"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "immobilize",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Immobilize",
+        "descriptionTemplate": "Apply Immobilized to a target player for 1 turn.",
+        "i18n": {
+          "nameKey": "spells.immobilize.name",
+          "descriptionKey": "spells.immobilize.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-target",
+        "statusKey": "immobilized",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "dispel",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Dispel",
+        "descriptionTemplate": "Remove one negative status from yourself.",
+        "i18n": {
+          "nameKey": "spells.dispel.name",
+          "descriptionKey": "spells.dispel.description"
+        }
+      },
+      "effect": {
+        "type": "remove-status-self"
+      }
+    },
+    {
+      "id": "fortune",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Fortune",
+        "descriptionTemplate": "Apply Fortune to yourself for 1 turn.",
+        "i18n": {
+          "nameKey": "spells.fortune.name",
+          "descriptionKey": "spells.fortune.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "fortune",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "focus",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Focus",
+        "descriptionTemplate": "Apply Focus to yourself for 1 turn.",
+        "i18n": {
+          "nameKey": "spells.focus.name",
+          "descriptionKey": "spells.focus.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "focus",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scout",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Scout",
+        "descriptionTemplate": "Reveal an unexplored cell within {range} orthogonal steps.",
+        "i18n": {
+          "nameKey": "spells.scout.name",
+          "descriptionKey": "spells.scout.description"
+        }
+      },
+      "effect": {
+        "type": "reveal-cell",
+        "baseRange": 2,
+        "rangePerMagic": 1
+      }
+    },
+    {
+      "id": "safe-passage",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Safe Passage",
+        "descriptionTemplate": "Ignore the next environmental hazard or negative cell effect when entering a cell.",
+        "i18n": {
+          "nameKey": "spells.safePassage.name",
+          "descriptionKey": "spells.safePassage.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "safe-step",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "fate-read",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Fate Reading",
+        "descriptionTemplate": "Preview the next 2 local events that could be drawn or resolved.",
+        "i18n": {
+          "nameKey": "spells.fateRead.name",
+          "descriptionKey": "spells.fateRead.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "fate-sight",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "transmute",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Transmute",
+        "descriptionTemplate": "Transform 1 common resource into a different common resource.",
+        "i18n": {
+          "nameKey": "spells.transmute.name",
+          "descriptionKey": "spells.transmute.description"
+        }
+      },
+      "effect": {
+        "type": "transmute-resource"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "foresight",
+      "mpCost": 2,
+      "cooldownTurns": 0,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Foresight",
+        "descriptionTemplate": "Preview the next 2 local events. Order is not changed.",
+        "i18n": {
+          "nameKey": "spells.foresight.name",
+          "descriptionKey": "spells.foresight.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "fate-sight",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "wealth",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Wealth",
+        "descriptionTemplate": "Gain 10 coins.",
+        "i18n": {
+          "nameKey": "spells.wealth.name",
+          "descriptionKey": "spells.wealth.description"
+        }
+      },
+      "effect": {
+        "type": "gain-coins",
+        "baseAmount": 10
+      }
+    },
+    {
+      "id": "invisibility",
+      "mpCost": 4,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Invisibility",
+        "descriptionTemplate": "Apply Invisibility to yourself.",
+        "i18n": {
+          "nameKey": "spells.invisibility.name",
+          "descriptionKey": "spells.invisibility.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "invisibility",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mesmerize",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Mesmerize",
+        "descriptionTemplate": "Steal a follower from a target player on a luck check of 70 or more.",
+        "i18n": {
+          "nameKey": "spells.mesmerize.name",
+          "descriptionKey": "spells.mesmerize.description"
+        }
+      },
+      "effect": {
+        "type": "steal-follower",
+        "luckThreshold": 70
+      }
+    },
+    {
+      "id": "curse",
+      "mpCost": 4,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Curse",
+        "descriptionTemplate": "Apply Hexed and Weakened to a target player for 3 turns.",
+        "i18n": {
+          "nameKey": "spells.curse.name",
+          "descriptionKey": "spells.curse.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-target",
+        "statusKey": "hexed",
+        "additionalStatusKeys": [
+          "weakened"
+        ],
+        "baseDurationTurns": 3,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "petrify",
+      "mpCost": 5,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Petrify",
+        "descriptionTemplate": "A target player skips their next turn.",
+        "i18n": {
+          "nameKey": "spells.petrify.name",
+          "descriptionKey": "spells.petrify.description"
+        }
+      },
+      "effect": {
+        "type": "skip-turn-target",
+        "statusKey": "petrified",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "purify",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Purify",
+        "descriptionTemplate": "Remove all negative statuses from yourself.",
+        "i18n": {
+          "nameKey": "spells.purify.name",
+          "descriptionKey": "spells.purify.description"
+        }
+      },
+      "effect": {
+        "type": "remove-all-negative-statuses-self"
+      },
+      "acquisition": [
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "water"
+        }
+      ]
+    },
+    {
+      "id": "recall",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Recall",
+        "descriptionTemplate": "Return to your last visited or activated sanctuary. Cannot move further this turn.",
+        "i18n": {
+          "nameKey": "spells.recall.name",
+          "descriptionKey": "spells.recall.description"
+        }
+      },
+      "effect": {
+        "type": "return-to-attuned-sanctuary"
+      }
+    },
+    {
+      "id": "minor-exile",
+      "mpCost": 3,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Minor Exile",
+        "descriptionTemplate": "Remove a negative follower from your party.",
+        "i18n": {
+          "nameKey": "spells.minorExile.name",
+          "descriptionKey": "spells.minorExile.description"
+        }
+      },
+      "effect": {
+        "type": "remove-negative-follower-self"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "divination",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Divination",
+        "descriptionTemplate": "Preview the next 5 local events. Order is not changed.",
+        "i18n": {
+          "nameKey": "spells.divination.name",
+          "descriptionKey": "spells.divination.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "fate-sight",
+        "baseDurationTurns": 3,
+        "durationPerMagic": 0
+      }
+    },
+    {
+      "id": "spell-break",
+      "mpCost": 5,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Spell Break",
+        "descriptionTemplate": "No player, including you, can cast spells until the end of the next round.",
+        "i18n": {
+          "nameKey": "spells.spellBreak.name",
+          "descriptionKey": "spells.spellBreak.description"
+        }
+      },
+      "effect": {
+        "type": "block-all-spells"
+      }
+    },
+    {
+      "id": "destroy",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Destroy",
+        "descriptionTemplate": "Remove a temporary or permanent local event from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives.",
+        "i18n": {
+          "nameKey": "spells.destroy.name",
+          "descriptionKey": "spells.destroy.description"
+        }
+      },
+      "effect": {
+        "type": "remove-local-event"
+      }
+    },
+    {
+      "id": "counterspell",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Counterspell",
+        "descriptionTemplate": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects.",
+        "i18n": {
+          "nameKey": "spells.counterspell.name",
+          "descriptionKey": "spells.counterspell.description"
+        }
+      },
+      "effect": {
+        "type": "counter-spell-reaction"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "time-fold",
+      "mpCost": 6,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Time Fold",
+        "descriptionTemplate": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves.",
+        "i18n": {
+          "nameKey": "spells.timeFold.name",
+          "descriptionKey": "spells.timeFold.description"
+        }
+      },
+      "effect": {
+        "type": "multi-move",
+        "baseAmount": 2
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mimicry",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Mimicry",
+        "descriptionTemplate": "Copy a random spell from a target player and learn it.",
+        "i18n": {
+          "nameKey": "spells.mimicry.name",
+          "descriptionKey": "spells.mimicry.description"
+        }
+      },
+      "effect": {
+        "type": "copy-random-spell"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mimicry-plus",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Mimicry+",
+        "descriptionTemplate": "Copy a spell of your choice from a target player and learn it.",
+        "i18n": {
+          "nameKey": "spells.mimicryPlus.name",
+          "descriptionKey": "spells.mimicryPlus.description"
+        }
+      },
+      "effect": {
+        "type": "copy-chosen-spell"
+      }
+    },
+    {
+      "id": "negate",
+      "mpCost": 5,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Negate",
+        "descriptionTemplate": "Make a target player forget a random spell.",
+        "i18n": {
+          "nameKey": "spells.negate.name",
+          "descriptionKey": "spells.negate.description"
+        }
+      },
+      "effect": {
+        "type": "forget-random-spell-target"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "negate-plus",
+      "mpCost": 6,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Negate+",
+        "descriptionTemplate": "Make a target player forget a spell of your choice.",
+        "i18n": {
+          "nameKey": "spells.negatePlus.name",
+          "descriptionKey": "spells.negatePlus.description"
+        }
+      },
+      "effect": {
+        "type": "forget-chosen-spell-target"
+      }
+    },
+    {
+      "id": "silence",
+      "mpCost": 5,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Silence",
+        "descriptionTemplate": "Apply Silence to a target player for 3 turns.",
+        "i18n": {
+          "nameKey": "spells.silence.name",
+          "descriptionKey": "spells.silence.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-target",
+        "statusKey": "silence",
+        "baseDurationTurns": 3,
+        "durationPerMagic": 0
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mana-shield",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Mana Shield",
+        "descriptionTemplate": "Reduce the next damage you take by consuming remaining MP.",
+        "i18n": {
+          "nameKey": "spells.manaShield.name",
+          "descriptionKey": "spells.manaShield.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "mana-shield",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mana-drain",
+      "mpCost": 2,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Mana Drain",
+        "descriptionTemplate": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more.",
+        "i18n": {
+          "nameKey": "spells.manaDrain.name",
+          "descriptionKey": "spells.manaDrain.description"
+        }
+      },
+      "effect": {
+        "type": "drain-mp-target",
+        "baseAmount": 1,
+        "luckThreshold": 70
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seal",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Seal",
+        "descriptionTemplate": "The next hostile spell targeting you has no effect.",
+        "i18n": {
+          "nameKey": "spells.seal.name",
+          "descriptionKey": "spells.seal.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-self",
+        "statusKey": "spell-ward",
+        "baseDurationTurns": 1,
+        "durationPerMagic": 0
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "disciple",
+      "mpCost": 4,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Disciple",
+        "descriptionTemplate": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat.",
+        "i18n": {
+          "nameKey": "spells.disciple.name",
+          "descriptionKey": "spells.disciple.description"
+        }
+      },
+      "effect": {
+        "type": "copy-stat-gain"
+      },
+      "acquisition": [
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elemental-bond",
+      "mpCost": 3,
+      "cooldownTurns": 1,
+      "consumableOnCast": false,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Elemental Bond",
+        "descriptionTemplate": "Temporarily change your elemental attunement to a chosen element for 1 turn.",
+        "i18n": {
+          "nameKey": "spells.elementalBond.name",
+          "descriptionKey": "spells.elementalBond.description"
+        }
+      },
+      "effect": {
+        "type": "change-element-temp"
+      },
+      "acquisition": [
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "fire"
+        },
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "water"
+        },
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "wind"
+        },
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "earth"
+        },
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toadify",
+      "mpCost": 5,
+      "cooldownTurns": 0,
+      "consumableOnCast": true,
+      "occupiesSlot": true,
+      "timing": "my-turn",
+      "ui": {
+        "name": "Toadify",
+        "descriptionTemplate": "Apply Minified to a target player for 2 turns on a luck check of 70 or more.",
+        "i18n": {
+          "nameKey": "spells.toadify.name",
+          "descriptionKey": "spells.toadify.description"
+        }
+      },
+      "effect": {
+        "type": "apply-status-target",
+        "statusKey": "minified",
+        "baseDurationTurns": 2,
+        "durationPerMagic": 0
+      },
+      "acquisition": [
+        {
+          "source": "enchantress"
         }
       ]
     }

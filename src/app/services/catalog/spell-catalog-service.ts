@@ -5,6 +5,7 @@ import {
   SpellCatalogUiDefinition,
   SpellAcquisitionDefinition,
   SpellEffectDefinition,
+  SpellEffectType,
   SpellsCatalogConfig,
 } from "@models/catalog/SpellCatalog";
 import { SanctuaryElement } from "@models/world/MapCell";
@@ -72,11 +73,50 @@ export class SpellCatalogService {
       return Math.max(1, Math.floor(Number(effect.baseRange ?? 1) + safeMagic * Number(effect.rangePerMagic ?? 0)));
     }
 
-    if (effect.type === "apply-status-self") {
+    if (effect.type === "apply-status-self" || effect.type === "apply-status-target") {
       return Math.max(1, Math.floor(Number(effect.baseDurationTurns ?? 1) + safeMagic * Number(effect.durationPerMagic ?? 0)));
     }
 
     return 0;
+  }
+
+  public needsPlayerTarget(spell: SpellCatalogEntry): boolean {
+    return (
+      spell.effect.type === "apply-status-target" ||
+      spell.effect.type === "skip-turn-target" ||
+      spell.effect.type === "steal-coins" ||
+      spell.effect.type === "drain-mp-target" ||
+      spell.effect.type === "steal-follower" ||
+      spell.effect.type === "copy-random-spell" ||
+      spell.effect.type === "forget-random-spell-target" ||
+      spell.effect.type === "copy-chosen-spell" ||
+      spell.effect.type === "forget-chosen-spell-target" ||
+      spell.effect.type === "apply-random-effect-target"
+    );
+  }
+
+  public needsChaosEffectPreview(spell: SpellCatalogEntry): boolean {
+    return spell.effect.type === "apply-random-effect-target";
+  }
+
+  public needsSpellSelectionFromTarget(spell: SpellCatalogEntry): boolean {
+    return spell.effect.type === "copy-chosen-spell" || spell.effect.type === "forget-chosen-spell-target";
+  }
+
+  public needsSelfItemSelection(spell: SpellCatalogEntry): boolean {
+    return spell.effect.type === "alchemize-item";
+  }
+
+  public needsSelfResourceSelection(spell: SpellCatalogEntry): boolean {
+    return spell.effect.type === "transmute-resource";
+  }
+
+  public needsElementSelection(spell: SpellCatalogEntry): boolean {
+    return spell.effect.type === "change-element-temp";
+  }
+
+  public needsCellSelection(spell: SpellCatalogEntry): boolean {
+    return spell.effect.type === "reveal-cell" || spell.effect.type === "remove-local-event";
   }
 
   public async loadConfig(): Promise<void> {
@@ -259,13 +299,19 @@ export class SpellCatalogService {
     }
 
     const typed = raw as SpellEffectDefinition;
-    if (
-      typed.type !== "heal-self"
-      && typed.type !== "teleport-explored-orthogonal"
-      && typed.type !== "transform-current-cell-biome"
-      && typed.type !== "apply-status-self"
-      && typed.type !== "enable-diagonal-movement"
-    ) {
+    const validEffectTypes: SpellEffectType[] = [
+      "heal-self", "teleport-explored-orthogonal", "transform-current-cell-biome",
+      "apply-status-self", "enable-diagonal-movement", "apply-status-target",
+      "steal-follower", "steal-coins", "gain-coins", "combat-strength-boost",
+      "apply-random-effect-target", "remove-status-self", "remove-all-negative-statuses-self",
+      "skip-turn-target", "return-to-attuned-sanctuary", "reveal-cell", "ignore-next-cell-hazard",
+      "preview-next-events", "transmute-resource", "alchemize-item", "drain-mp-target",
+      "remove-local-event", "copy-random-spell", "copy-chosen-spell",
+      "forget-random-spell-target", "forget-chosen-spell-target", "block-all-spells",
+      "copy-stat-gain", "multi-move", "shield-next-spell", "counter-spell-reaction",
+      "mp-shield", "change-element-temp", "remove-negative-follower-self",
+    ];
+    if (!validEffectTypes.includes(typed.type)) {
       throw new Error(`Invalid spell catalog configuration: spell '${spellId}' has invalid effect.type`);
     }
 
@@ -277,8 +323,12 @@ export class SpellCatalogService {
       rangePerMagic: this.toFiniteNumber(typed.rangePerMagic),
       biome: typeof typed.biome === "string" ? typed.biome : undefined,
       statusKey: typeof typed.statusKey === "string" ? typed.statusKey : undefined,
+      additionalStatusKeys: Array.isArray(typed.additionalStatusKeys)
+        ? typed.additionalStatusKeys.filter((k): k is string => typeof k === "string")
+        : undefined,
       baseDurationTurns: this.toFiniteNumber(typed.baseDurationTurns),
       durationPerMagic: this.toFiniteNumber(typed.durationPerMagic),
+      luckThreshold: this.toFiniteNumber(typed.luckThreshold),
     };
   }
 

@@ -57,12 +57,12 @@
     "graveyard": ["graveyard-resurrect"],
     "temple": ["temple-send-devotee"],
     "castle": ["castle-rest", "castle-trainer"],
-    "academy": ["academy-merchant", "academy-trainer"]
+    "academy": ["academy-merchant", "academy-trainer", "academy-spell-upgrader"]
   },
   "badPlaceActionsByLandmark": {
     "cave": [],
     "dungeon": [],
-    "manor": [],
+    "manor": ["manor-counterfeiter"],
     "altar": ["altar-sacrifice", "elemental-ritual"]
   }
 }

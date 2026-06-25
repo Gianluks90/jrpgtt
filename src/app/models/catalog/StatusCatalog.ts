@@ -27,6 +27,7 @@ export interface StatusDefinition {
   label: string;
   description: string;
   defaultDurationTurns: number;
+  isNegative?: boolean;
   iconUrl?: string;
   i18n?: StatusI18nKeys;
   effects?: StatusEffectsDefinition;

@@ -1,0 +1,4 @@
+[
+  { "from": "mimicry", "to": "mimicry-plus", "cost": 12 },
+  { "from": "negate",  "to": "negate-plus",  "cost": 12 }
+]

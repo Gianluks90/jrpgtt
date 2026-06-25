@@ -30,6 +30,7 @@ import { PlacedExplorationCard } from "@models/exploration/ExplorationCard";
 import { ExplorationDeckService } from "@services/exploration/exploration-deck-service";
 import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
 import { ExplorationActionService } from "@services/exploration/exploration-action-service";
+import { SpellDeckService } from "@services/gameplay/spell-deck-service";
 import { ExplorationDeckSlot } from "@models/catalog/ExplorationCardCatalog";
 
 interface WorldEventLogSummary {
@@ -70,6 +71,7 @@ export class MapService {
     private explorationDeckService: ExplorationDeckService,
     private explorationCatalogService: ExplorationCatalogService,
     private explorationActionService: ExplorationActionService,
+    private spellDeckService: SpellDeckService,
   ) { }
 
   public async movePlayer(gameId: string, playerId: string, targetX: number, targetY: number): Promise<MapCell | null> {
@@ -1123,6 +1125,22 @@ export class MapService {
 
   private isInsideBounds(x: number, y: number, size: number): boolean {
     return x >= 0 && x < size && y >= 0 && y < size;
+  }
+
+  /**
+   * Draws one spell ID from the spell deck, reshuffling the discard pile when
+   * the deck is empty. Mutates `worldState.spellDeck` and `worldState.spellDiscardedDeck`
+   * in place and returns the drawn spell ID, or `null` if both piles are empty.
+   */
+  public drawFromSpellDeck(worldState: WorldState): string | null {
+    const result = this.spellDeckService.draw(
+      worldState.spellDeck ?? [],
+      worldState.spellDiscardedDeck ?? [],
+      1,
+    );
+    worldState.spellDeck = result.remaining;
+    worldState.spellDiscardedDeck = result.discard;
+    return result.drawn[0] ?? null;
   }
 
   private shuffleArray<T>(items: T[]): T[] {

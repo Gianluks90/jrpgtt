@@ -9,8 +9,10 @@
         [localPlayerId]="currentUserId()"
         [ownerPlayerId]="requiredActionNotification()?.ownerPlayerId ?? null"
         [allowOwnerOverride]="requiredActionNotificationOwnerOverrideVisible()"
+        [counterActionLabel]="requiredActionNotificationCanCounter() ? ('dialogs.requiredActionNotification.actions.counter' | t) : null"
         (acknowledgeRequested)="onAcknowledgeRequiredActionRequested($event)"
         (forceContinueRequested)="onForceContinueRequiredActionRequested()"
+        (counterRequested)="onCounterSpellRequested()"
     ></app-required-action-notification>
 
     <div class="page-shell">
@@ -66,7 +68,7 @@
                         [mapCellsById]="mapCellsById()"
                         [players]="players()"
                         [activePlayerId]="worldState()?.activePlayerId ?? null"
-                        [movableCellIds]="movableCellIds()"
+                        [movableCellIds]="effectiveMovableCellIds()"
                         [tilesConfig]="tilesConfig()"
                         [regionIToIIWarning]="regionIToIIWarning()"
                         [sanctuaryStylesByElement]="sanctuaryStylesByElement()"
@@ -87,12 +89,20 @@
                         (discardPileRequested)="openDiscardPileDialog()"
                     ></app-biomes-counter>
 
-                    <app-map-location-discard-hud
-                        [inspectedCell]="inspectedCell()"
-                        [activePlayer]="activePlayer()"
-                        [mapCellsById]="mapCellsById()"
-                        (locationInfoRequested)="openLocationInfoDialog($event)"
-                    ></app-map-location-discard-hud>
+                    @if (cellSelectionService.state(); as selectionState) {
+                        <app-map-cell-selection-hud
+                            [prompt]="selectionState.prompt"
+                            [withCancel]="selectionState.onCancel !== null"
+                            (cancelRequested)="cellSelectionService.cancel()"
+                        ></app-map-cell-selection-hud>
+                    } @else {
+                        <app-map-location-discard-hud
+                            [inspectedCell]="inspectedCell()"
+                            [activePlayer]="activePlayer()"
+                            [mapCellsById]="mapCellsById()"
+                            (locationInfoRequested)="openLocationInfoDialog($event)"
+                        ></app-map-location-discard-hud>
+                    }
                 </div>
             </div>
 

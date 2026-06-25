@@ -111,6 +111,14 @@
         }
     },
     "dialogs": {
+        "spellCast": {
+            "title": "Incantesimo",
+            "cast": "Lancia incantesimo"
+        },
+        "playerSelect": {
+            "title": "Scegli un bersaglio",
+            "confirm": "Conferma"
+        },
         "common": {
             "cancel": "Annulla",
             "close": "Chiudi",
@@ -125,10 +133,13 @@
             "sanctuaryActivatedDescription": "Il {sanctuaryLabel} e stato attivato da {playerName}!",
             "worldEventActivatedTitle": "Evento Mondiale Attivato: {eventName}",
             "worldEventActivatedDescription": "Attivato da {playerName}. {description}",
+            "spellEffectTitle": "Magia lanciata: {spellName}",
+            "spellEffectDescription": "{casterName} ha lanciato {spellName} su di te. {summary}",
             "actions": {
                 "ok": "Ok",
                 "playerOk": "{playerName}: Conferma",
-                "ownerContinue": "Prosegui comunque"
+                "ownerContinue": "Prosegui comunque",
+                "counter": "Usa Contromagia"
             }
         },
         "worldEventHelp": {
@@ -203,7 +214,12 @@
                 "follower": "Seguace",
                 "item": "Oggetto",
                 "tile": "Tessera",
-                "event": "Evento"
+                "event": "Evento",
+                "spell": "Magia"
+            },
+            "section": {
+                "exploration": "Esplorazione",
+                "spells": "Magie"
             },
             "unknownCard": "Carta sconosciuta",
             "unknownTime": "Orario sconosciuto",
@@ -311,11 +327,22 @@
                 "consult": "Errore durante la consultazione del mistico."
             }
         },
+        "chaos": {
+            "title": "Caos",
+            "flavorText": "L'energia del caos è imprevedibile. Nessuno sa cosa succederà...",
+            "targetInfo": "{spellName} su {targetName}. Uno degli effetti seguenti verrà applicato casualmente.",
+            "actions": {
+                "cast": "Lancia"
+            },
+            "errors": {
+                "cast": "Errore durante il lancio della magia del caos."
+            }
+        },
         "enchantress": {
             "title": "Incantatrice della Capitale",
             "flavorText": "Una giovane incantatrice mescola le sue antiche e misteriose carte mentre ti dice di avvicinarti...",
             "offerInfo": "Al costo di {cost} monete potrai scoprire il tuo destino.",
-            "result": "Risultato:",
+            "learnedSpell": "Hai imparato:",
             "actions": {
                 "pay": "Paga",
                 "continue": "Continua"
@@ -343,12 +370,25 @@
                 },
                 "jackpot": {
                     "label": "Jackpot Arcano",
-                    "preview": "Premio magico provvisorio: Coraggio + Concentrazione per 3 turni"
+                    "preview": "Coraggio + Concentrazione per 3 turni. Su 100 esatto: Rospificazione. Su 100+: magia dal mazzo."
                 }
             },
             "errors": {
                 "notEnoughCoins": "Non hai abbastanza monete per pagare l'Incantatrice.",
                 "consult": "Errore durante la consultazione dell'incantatrice."
+            }
+        },
+        "academySpellUpgrader": {
+            "title": "Maestro degli Incantesimi",
+            "info": "Scegli una magia da potenziare. La versione base verrà rimossa dal tuo grimorio.",
+            "noOptions": "Non hai magie potenziabili nel tuo grimorio.",
+            "result": "{from} è stata potenziata in {to}!",
+            "actions": {
+                "confirm": "Potenzia (−{cost} monete)"
+            },
+            "errors": {
+                "notEnoughCoins": "Non hai abbastanza monete per questo potenziamento.",
+                "upgrade": "Errore durante il potenziamento della magia."
             }
         },
         "merchant": {
@@ -370,6 +410,9 @@
                 "category": "Categoria",
                 "stock": "Scorte",
                 "owned": "Posseduti"
+            },
+            "categories": {
+                "spell": "Incantesimo"
             },
             "empty": {
                 "noStock": "Nessuna scorta disponibile.",
@@ -581,8 +624,15 @@
                 "cooldown": "Questo incantesimo e in recupero.",
                 "notEnoughMp": "MP insufficienti per lanciare questo incantesimo.",
                 "noTeleportTargets": "Nessuna destinazione esplorata valida per questo incantesimo.",
+                "noTargets": "Nessun bersaglio valido disponibile.",
+                "noCellTargets": "Nessuna cella valida disponibile per questo incantesimo.",
                 "cast": "Errore durante il lancio dell'incantesimo."
             }
+        },
+        "cellSelection": {
+            "label": "Seleziona cella",
+            "promptReveal": "Seleziona una cella da rivelare",
+            "promptDestroy": "Seleziona una cella per rimuovere il suo evento"
         },
         "locationInfo": {
             "contextObserving": "Osservazione cella",
@@ -1045,10 +1095,9 @@
             "villageCraftsmanExchange": "{playerName} ha scambiato {amount} {giveLabel} con {amount} {receiveLabel} presso {source} e ha terminato il turno.",
             "campReward": "{playerName} ha usato {source} e ottenuto {rewards}.",
             "safePlaceWait": "{playerName} ha atteso in {place} usando {source}, simulato il movimento sulla stessa casella e terminato il turno.",
-            "capitalEnchantress": {
-                "base": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}.",
-                "pending": "{playerName} ha consultato {source}, pagato {spentCoins} monete, estratto {rewardLabel} e sbloccato una futura ricompensa magica provvisoria."
-            },
+            "capitalEnchantress": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}.",
+            "capitalEnchantress.spell": "{playerName} ha consultato {source}, pagato {spentCoins} monete, estratto {rewardLabel} e imparato la magia: {learnedSpellName}.",
+            "academySpellUpgrade": "{playerName} ha potenziato {fromSpellName}→{toSpellName} al {source}, pagato {spentCoins} monete e terminato il turno.",
             "cityMystic": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}{extras}.",
             "graveyardResurrect": "{playerName} ha tentato la resurrezione al {source} per {followerId}. Esito: {appliedOutcome}.",
             "templeSendDevotee": "{playerName} ha inviato un devoto al {source}, e diventato BUONO e ha ottenuto {gainedExperience} XP.",
@@ -1072,6 +1121,28 @@
             "castSpellTeleport": "{playerName} ha lanciato {spellName}, teletrasportandosi in {targetX}, {targetY} e spendendo {spentMp} MP.",
             "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP.",
             "castSpellDiagonal": "{playerName} ha lanciato {spellName}, abilitando il movimento diagonale (−{spentMp} MP).",
+            "castSpellStatusTarget": "{playerName} ha lanciato {spellName} su {targetPlayerName}, applicato {statusKey} per {durationTurns} turni (−{spentMp} MP).",
+            "castSpellStealCoins": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {rubato {amount} monete} other {fallito}} (−{spentMp} MP).",
+            "castSpellDrainMp": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {drenato {amount} MP} other {fallito}} (−{spentMp} MP).",
+            "castSpellStealFollower": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {rubato il seguace {followerId}} other {fallito}} (−{spentMp} MP).",
+            "castSpellCopySpell": "{playerName} ha lanciato {spellName} su {targetPlayerName} e copiato {copiedSpellId} (−{spentMp} MP).",
+            "castSpellForgetSpell": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {forgottenSpellId} dimenticato (−{spentMp} MP).",
+            "castSpellAlchemy": "{playerName} ha lanciato {spellName}: oggetto {itemId} alchemizzato per {goldValue} monete (−{spentMp} MP).",
+            "castSpellReveal": "{playerName} ha lanciato {spellName} e rivelato la cella ({targetX},{targetY}) (−{spentMp} MP).",
+            "castSpellDestroy": "{playerName} ha lanciato {spellName} e rimosso un evento dalla cella ({targetX},{targetY}) (−{spentMp} MP).",
+            "castSpellBlockAllSpells": "{playerName} ha lanciato {spellName}: tutti i giocatori sono silenziati per {durationTurns} turni (−{spentMp} MP).",
+            "castSpellRecall": "{playerName} ha lanciato {spellName} e si è teletrasportato al santuario (−{spentMp} MP).",
+            "castSpellChaos": "{playerName} ha lanciato {spellName} su {targetPlayerName}: effetto caos '{effectId}' (−{spentMp} MP).",
+            "castSpellTransmute": "{playerName} ha lanciato {spellName}: {sourceLabel} trasmutato in {targetLabel} (−{spentMp} MP).",
+            "castSpellElementalBond": "{playerName} ha lanciato {spellName}: attunement temporaneo a {newElement} (−{spentMp} MP).",
+            "castSpellGainCoins": "{playerName} ha lanciato {spellName}, guadagnato {coinsGained} monete e speso {spentMp} MP.",
+            "castSpellDispel": "{playerName} ha lanciato {spellName} e rimosso lo stato {removedStatus} (−{spentMp} MP).",
+            "castSpellPurify": "{playerName} ha lanciato {spellName}, rimosso {removedCount} stati negativi e speso {spentMp} MP.",
+            "castSpellRemoveFollower": "{playerName} ha lanciato {spellName} e allontanato il seguace {removedFollowerId} (−{spentMp} MP).",
+            "castSpellCopyStatGain": "{playerName} ha lanciato {spellName}: copiato +1 {parameter} da {copiedFromPlayerName} (nuovo valore: {newValue}) (−{spentMp} MP).",
+            "castSpellCounterPending": "{playerName} ha lanciato {spellName} su {targetPlayerName} — in attesa risposta contromagia (−{spentMp} MP).",
+            "counterSpell": "{playerName} ha usato {counterSpellName} per deflettere {spellName}!",
+            "acceptPendingSpell": "{playerName} ha subito l'effetto di {spellId}.",
             "combatResult": {
                 "win": "{playerName} ha sconfitto {enemy} (+{xp} XP).",
                 "loss": "{playerName} è stato sconfitto da {enemy} (−{damage} HP).",
@@ -1179,6 +1250,14 @@
             "label": "Mercante Arcano",
             "description": "Visita il Mercante dell'Accademia. Compra stock magico e vendi solo oggetti magici. Acquistare termina il turno."
         },
+        "academySpellUpgrader": {
+            "label": "Maestro degli Incantesimi",
+            "description": "Potenzia Mimica→Mimica+ o Annullamento→Annullamento+ per 12 monete. Termina il turno."
+        },
+        "manorCounterfeiter": {
+            "label": "Contraffattore Arcano",
+            "description": "Visita il Contraffattore Arcano nel Maniero. Compra dal suo stock discutibile. Acquistare termina il turno."
+        },
         "villageCraftsman": {
             "label": "Artigiano",
             "description": "Scambia risorse 1:1 dall'Artigiano del Villaggio, poi termina il turno."
@@ -1219,6 +1298,9 @@
         }
     },
     "spells": {
+        "meta": {
+            "singleUse": "uso singolo"
+        },
         "fly": {
             "name": "Volare",
             "description": "Abilita il movimento diagonale per questo turno. Deve essere lanciato prima di muoversi."
@@ -1234,6 +1316,178 @@
         "reinvigorate": {
             "name": "Rinvigorimento",
             "description": "Ripristina HP pari al tuo valore di Magia attuale."
+        },
+        "teleport": {
+            "name": "Teletrasporto",
+            "description": "Teletrasportati in qualsiasi cella esplorata entro {range} passi ortogonali. Non puoi muoverti ulteriormente in questo turno."
+        },
+        "empower": {
+            "name": "Potenziamento",
+            "description": "Aggiungi il tuo valore di Magia alla Forza per la durata di questo combattimento."
+        },
+        "chaos": {
+            "name": "Caos",
+            "description": "Scegli un giocatore bersaglio. Effettua un tiro fortuna con effetto casuale: guadagna o perde HP, monete o un effetto di stato."
+        },
+        "filch": {
+            "name": "Borseggio",
+            "description": "Ruba 10 monete a un giocatore bersaglio con un tiro fortuna di 70 o superiore."
+        },
+        "vigor": {
+            "name": "Vigore",
+            "description": "Ripristina 5 HP."
+        },
+        "ward": {
+            "name": "Scudo Arcano",
+            "description": "Applica Protezione su di te."
+        },
+        "alchemy": {
+            "name": "Alchimia",
+            "description": "Converti un oggetto che possiedi nel suo valore in monete."
+        },
+        "immobilize": {
+            "name": "Immobilizzazione",
+            "description": "Applica Immobilizzato a un giocatore bersaglio per 1 turno."
+        },
+        "dispel": {
+            "name": "Dissolvi",
+            "description": "Rimuovi uno stato negativo da te stesso."
+        },
+        "fortune": {
+            "name": "Fortuna",
+            "description": "Applica Fortuna su di te per 1 turno."
+        },
+        "focus": {
+            "name": "Concentrazione",
+            "description": "Applica Concentrazione su di te per 1 turno."
+        },
+        "scout": {
+            "name": "Ricognizione",
+            "description": "Rivela una cella inesplorata entro {range} passi ortogonali."
+        },
+        "safePassage": {
+            "name": "Passaggio Sicuro",
+            "description": "Ignora il prossimo pericolo ambientale o effetto negativo di cella all'ingresso."
+        },
+        "fateRead": {
+            "name": "Lettura del Destino",
+            "description": "Vedi in anteprima i prossimi 2 eventi locali che potrebbero essere pescati o risolti."
+        },
+        "transmute": {
+            "name": "Trasmutazione",
+            "description": "Trasforma 1 risorsa comune in un'altra risorsa comune diversa."
+        },
+        "foresight": {
+            "name": "Preveggenza",
+            "description": "Vedi in anteprima i prossimi 2 eventi locali. L'ordine non cambia."
+        },
+        "wealth": {
+            "name": "Ricchezza",
+            "description": "Guadagna 10 monete."
+        },
+        "invisibility": {
+            "name": "Invisibilità",
+            "description": "Applica Invisibilità su di te."
+        },
+        "mesmerize": {
+            "name": "Magnetismo",
+            "description": "Ruba un seguace da un giocatore bersaglio con un tiro fortuna di 70 o superiore."
+        },
+        "curse": {
+            "name": "Maledizione",
+            "description": "Applica Stregato e Indebolito a un giocatore bersaglio per 3 turni."
+        },
+        "petrify": {
+            "name": "Pietrificazione",
+            "description": "Un giocatore bersaglio salta il suo prossimo turno."
+        },
+        "purify": {
+            "name": "Purificazione",
+            "description": "Rimuovi tutti gli stati negativi da te stesso."
+        },
+        "recall": {
+            "name": "Richiamo",
+            "description": "Torna all'ultimo santuario visitato o attivato. Non puoi muoverti ulteriormente in questo turno."
+        },
+        "minorExile": {
+            "name": "Esilio Minore",
+            "description": "Rimuovi un seguace negativo dalla tua compagnia."
+        },
+        "divination": {
+            "name": "Divinazione",
+            "description": "Vedi in anteprima i prossimi 5 eventi locali. L'ordine non cambia."
+        },
+        "spellBreak": {
+            "name": "Rottura Magica",
+            "description": "Nessun giocatore, incluso te, può lanciare incantesimi fino alla fine del prossimo round."
+        },
+        "destroy": {
+            "name": "Distruzione",
+            "description": "Rimuovi un evento locale temporaneo o permanente da una cella visibile. Non è possibile rimuovere luoghi, santuari, boss o obiettivi di missione."
+        },
+        "counterspell": {
+            "name": "Controincantesimo",
+            "description": "Annulla un incantesimo ostile diretto a te nel momento in cui viene lanciato. Non annulla effetti già risolti."
+        },
+        "timeFold": {
+            "name": "Piega Temporale",
+            "description": "Esegui fino a 2 spostamenti consecutivi prima di risolvere eventi o combattimenti. Non puoi attaccare giocatori, lanciare altri incantesimi o raccogliere risorse durante questi spostamenti."
+        },
+        "mimicry": {
+            "name": "Mimica",
+            "description": "Copia un incantesimo casuale da un giocatore bersaglio e apprendilo."
+        },
+        "mimicryPlus": {
+            "name": "Mimica+",
+            "description": "Copia un incantesimo a tua scelta da un giocatore bersaglio e apprendilo."
+        },
+        "negate": {
+            "name": "Negazione",
+            "description": "Fai dimenticare un incantesimo casuale a un giocatore bersaglio."
+        },
+        "negatePlus": {
+            "name": "Negazione+",
+            "description": "Fai dimenticare un incantesimo a tua scelta a un giocatore bersaglio."
+        },
+        "silence": {
+            "name": "Silenzio",
+            "description": "Applica Silenzio a un giocatore bersaglio per 3 turni."
+        },
+        "manaShield": {
+            "name": "Scudo di Mana",
+            "description": "Riduci il prossimo danno che subisci consumando i PM rimanenti."
+        },
+        "manaDrain": {
+            "name": "Drenaggio Mana",
+            "description": "Ruba 1 PM a un giocatore bersaglio e recupera 1 PM con un tiro fortuna di 70 o superiore."
+        },
+        "seal": {
+            "name": "Sigillo",
+            "description": "Il prossimo incantesimo ostile diretto a te non ha alcun effetto."
+        },
+        "disciple": {
+            "name": "Discepolo",
+            "description": "Quando un altro giocatore guadagna Forza o Magia tramite aumento di livello o ricompensa permanente, guadagni +1 allo stesso attributo."
+        },
+        "elementalBond": {
+            "name": "Legame Elementale",
+            "description": "Cambia temporaneamente la tua affinità elementale in un elemento scelto per 1 turno."
+        },
+        "toadify": {
+            "name": "Rospificazione",
+            "description": "Applica Miniaturizzato a un giocatore bersaglio per 2 turni con un tiro fortuna di 70 o superiore."
+        }
+    },
+    "chaos": {
+        "effects": {
+            "poison": "Veleno (2 turni)",
+            "hexed": "Maledizione (2 turni)",
+            "weakened": "Indebolimento (2 turni)",
+            "sleep": "Sonno (1 turno)",
+            "minified": "Miniaturizzazione (2 turni)",
+            "silence": "Silenzio (2 turni)",
+            "stealCoins": "Furto di monete (5)",
+            "drainMp": "Prosciugamento PM (3)"
         }
     },
     "statuses": {

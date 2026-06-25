@@ -18,6 +18,7 @@ export interface FollowerDefinition {
   descriptionKey?: string;
   category: FollowerCategory;
   maxHp: number;
+  isNegative?: boolean;
   itemCapacityBonus?: number;
   actions: string[];
   allowedBiomes?: BiomeType[];

@@ -80,7 +80,7 @@
       "minTotal": 81,
       "maxTotal": 100,
       "label": "Arcane Jackpot",
-      "previewLabel": "Magic placeholder: Bravery + Focus for 3 turns",
+      "previewLabel": "Bravery + Focus for 3 turns. Exactly 100: Toadify. Over 100: draw spell from deck.",
       "labelKey": "dialogs.enchantress.rewards.jackpot.label",
       "previewLabelKey": "dialogs.enchantress.rewards.jackpot.preview",
       "pendingMagicReward": true,

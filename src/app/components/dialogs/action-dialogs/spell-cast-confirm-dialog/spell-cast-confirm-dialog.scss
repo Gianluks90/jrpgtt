@@ -1,0 +1,165 @@
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.scroll-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--overlay-bg-color);
+    color: var(--overlay-fg-color);
+    border: 2px solid var(--magic-color);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--magic-color) 35%, transparent),
+                inset 0 0 18px color-mix(in srgb, var(--magic-color) 8%, transparent);
+    position: relative;
+    padding: 0;
+    overflow: visible;
+}
+
+/* ── Header ── */
+.scroll-header {
+    position: relative;
+    height: 0;
+    flex-shrink: 0;
+}
+
+.scroll-title {
+    position: absolute;
+    top: -14px;
+    left: 14px;
+    background-color: var(--bg-color);
+    color: var(--magic-color);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 2px 10px;
+    border: 1px solid var(--magic-color);
+}
+
+.scroll-mp-badge {
+    position: absolute;
+    top: -14px;
+    right: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: var(--bg-color);
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--magic-color) 70%, transparent);
+}
+
+.scroll-mp-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--magic-color);
+    box-shadow: 0 0 5px color-mix(in srgb, var(--magic-color) 80%, transparent);
+    flex-shrink: 0;
+}
+
+.scroll-mp-value {
+    font-size: 0.52rem;
+    color: var(--magic-color);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+/* ── Body ── */
+.scroll-body {
+    flex: 1;
+    min-height: 0;
+    padding: 32px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.spell-name {
+    margin: 0;
+    font-family: 'Jacquard 12', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--magic-color);
+    text-align: center;
+    line-height: 1.1;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--magic-color) 50%, transparent);
+}
+
+.spell-divider {
+    width: 60%;
+    height: 1px;
+    margin: 0 auto;
+    background: linear-gradient(
+        to right,
+        transparent,
+        color-mix(in srgb, var(--magic-color) 60%, transparent),
+        transparent
+    );
+}
+
+.single-use-tag {
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    min-height: 16px;
+    padding: 2px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 0.44rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.85;
+}
+
+.spell-description {
+    margin: 0;
+    font-size: 0.56rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.78);
+    text-align: center;
+}
+
+/* ── Footer / Cast button ── */
+.scroll-footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.cast-button {
+    position: relative;
+    bottom: -18px;
+    padding: 8px 28px;
+    background-color: var(--bg-color);
+    color: var(--magic-color);
+    border: 2px solid var(--magic-color);
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: background-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+}
+
+.cast-button:hover {
+    background-color: color-mix(in srgb, var(--magic-color) 15%, var(--bg-color));
+    color: #ffffff;
+    box-shadow: 0 0 14px color-mix(in srgb, var(--magic-color) 70%, transparent),
+                0 0 4px color-mix(in srgb, var(--magic-color) 40%, transparent);
+    animation: cast-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cast-pulse {
+    0%, 100% { box-shadow: 0 0 10px color-mix(in srgb, var(--magic-color) 55%, transparent); }
+    50%       { box-shadow: 0 0 22px color-mix(in srgb, var(--magic-color) 85%, transparent),
+                            0 0 6px  color-mix(in srgb, var(--magic-color) 50%, transparent); }
+}

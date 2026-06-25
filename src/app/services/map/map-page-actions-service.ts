@@ -130,6 +130,7 @@ export class MapPageActionsService {
           description,
           warning,
           magicCost: spell.mpCost,
+          consumableOnCast: spell.consumableOnCast === true ? true : undefined,
           disabled,
           pending: input.pendingActionId === spell.id,
         } as CommandPanelAction;

@@ -1,0 +1,251 @@
+[
+  {
+    "type": "event",
+    "id": "B-EV-001",
+    "name": "Devil",
+    "nameKey": "catalogs.events.B-EV-001.name",
+    "description": "Alignment-based: Evil gains +5% max HP. Good loses 10% HP. Neutral is unaffected.",
+    "descriptionKey": "catalogs.events.B-EV-001.description",
+    "duration": "instant",
+    "effect": {
+      "type": "alignment-branch",
+      "evil": {
+        "type": "max-hp-percent-gain",
+        "amount": 5
+      },
+      "good": {
+        "type": "hp-percent-damage",
+        "amount": 10
+      },
+      "neutral": {
+        "type": "none"
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-002",
+    "name": "Siren",
+    "nameKey": "catalogs.events.B-EV-002.name",
+    "description": "Every character in this region must pass a fortune check (51+). On failure, skip your next turn.",
+    "descriptionKey": "catalogs.events.B-EV-002.description",
+    "duration": "instant",
+    "effect": {
+      "type": "region-fortune-check",
+      "failBelow": 51,
+      "onFail": {
+        "type": "skip-turn",
+        "amount": 1
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-003",
+    "name": "Storm",
+    "nameKey": "catalogs.events.B-EV-003.name",
+    "description": "All characters in this region skip their next turn.",
+    "descriptionKey": "catalogs.events.B-EV-003.description",
+    "duration": "instant",
+    "effect": {
+      "type": "region-effect",
+      "effect": {
+        "type": "skip-turn",
+        "amount": 1
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-004",
+    "name": "Corruption",
+    "nameKey": "catalogs.events.B-EV-004.name",
+    "description": "Every character holding an Amulet, anywhere on the map, loses 10% of their max HP.",
+    "descriptionKey": "catalogs.events.B-EV-004.description",
+    "duration": "instant",
+    "effect": {
+      "type": "global-amulet-hp-percent-damage",
+      "amount": 10
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-005",
+    "name": "Plague",
+    "nameKey": "catalogs.events.B-EV-005.name",
+    "description": "All characters in this region receive the Poison status for 3 turns.",
+    "descriptionKey": "catalogs.events.B-EV-005.description",
+    "duration": "instant",
+    "effect": {
+      "type": "region-apply-status",
+      "statusKey": "poison",
+      "durationTurns": 3
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-006",
+    "name": "Raiders",
+    "nameKey": "catalogs.events.B-EV-006.name",
+    "description": "Lose all gold. At night they vanish with the loot; during the day they flee to the nearest Desert — hunt them down to recover your wealth.",
+    "descriptionKey": "catalogs.events.B-EV-006.description",
+    "duration": "instant",
+    "effect": {
+      "type": "time-branch",
+      "night": {
+        "type": "lose-all-gold"
+      },
+      "day": {
+        "type": "composite",
+        "effects": [
+          { "type": "spawn-nearest-biome-enemy", "enemyId": "B-EN-001", "biome": "desert" },
+          { "type": "lose-all-gold" }
+        ]
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-007",
+    "name": "Dire Fate",
+    "nameKey": "catalogs.events.B-EV-007.name",
+    "description": "Lose all accumulated experience.",
+    "descriptionKey": "catalogs.events.B-EV-007.description",
+    "duration": "instant",
+    "effect": {
+      "type": "lose-all-exp"
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-008",
+    "name": "Calamity",
+    "nameKey": "catalogs.events.B-EV-008.name",
+    "description": "Alignment-based: Evil gains +1 Magic permanently. Good or Neutral alignment becomes Evil.",
+    "descriptionKey": "catalogs.events.B-EV-008.description",
+    "duration": "instant",
+    "effect": {
+      "type": "alignment-branch",
+      "evil": {
+        "type": "magic-permanent-delta",
+        "amount": 1
+      },
+      "good": {
+        "type": "change-alignment",
+        "to": "evil"
+      },
+      "neutral": {
+        "type": "change-alignment",
+        "to": "evil"
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-009",
+    "name": "Dark Resurgence",
+    "nameKey": "catalogs.events.B-EV-009.name",
+    "description": "All enemy cards in the discard pile return to the Exploration Deck, which is then reshuffled.",
+    "descriptionKey": "catalogs.events.B-EV-009.description",
+    "duration": "instant",
+    "effect": {
+      "type": "reshuffle-enemies-from-discard"
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-010",
+    "name": "Lost Grimoire",
+    "nameKey": "catalogs.events.B-EV-010.name",
+    "description": "Gain 2 spells.",
+    "descriptionKey": "catalogs.events.B-EV-010.description",
+    "duration": "instant",
+    "effect": {
+      "type": "gain-spells",
+      "amount": 2
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-011",
+    "name": "Magic Vortex",
+    "nameKey": "catalogs.events.B-EV-011.name",
+    "description": "All characters in this region forget every learned spell except those granted by sanctuaries.",
+    "descriptionKey": "catalogs.events.B-EV-011.description",
+    "duration": "instant",
+    "effect": {
+      "type": "region-forget-spells"
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-012",
+    "name": "Winter",
+    "nameKey": "catalogs.events.B-EV-012.name",
+    "description": "All characters in this region suffer 5% HP damage at the start of each round for 3 rounds.",
+    "descriptionKey": "catalogs.events.B-EV-012.description",
+    "duration": "instant",
+    "effect": {
+      "type": "region-persistent-effect",
+      "rounds": 3,
+      "effect": {
+        "type": "hp-percent-damage",
+        "amount": 5
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-013",
+    "name": "Angel",
+    "nameKey": "catalogs.events.B-EV-013.name",
+    "description": "Alignment-based: Good gains +5% max HP. Evil loses 10% HP. Neutral is unaffected.",
+    "descriptionKey": "catalogs.events.B-EV-013.description",
+    "duration": "instant",
+    "effect": {
+      "type": "alignment-branch",
+      "good": {
+        "type": "max-hp-percent-gain",
+        "amount": 5
+      },
+      "evil": {
+        "type": "hp-percent-damage",
+        "amount": 10
+      },
+      "neutral": {
+        "type": "none"
+      }
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-014",
+    "name": "Imp",
+    "nameKey": "catalogs.events.B-EV-014.name",
+    "description": "Teleport to a random already-explored cell.",
+    "descriptionKey": "catalogs.events.B-EV-014.description",
+    "duration": "instant",
+    "effect": {
+      "type": "teleport-random-explored"
+    }
+  },
+  {
+    "type": "event",
+    "id": "B-EV-015",
+    "name": "Abandoned Pack",
+    "nameKey": "catalogs.events.B-EV-015.name",
+    "description": "Contains 2 random resources: food, timber, minerals, or cloth.",
+    "descriptionKey": "catalogs.events.B-EV-015.description",
+    "duration": "instant",
+    "effect": {
+      "type": "gain-random-resources",
+      "amount": 2,
+      "pool": [
+        "food",
+        "timber",
+        "minerals",
+        "cloth"
+      ]
+    }
+  }
+]

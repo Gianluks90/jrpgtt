@@ -9,7 +9,7 @@ import { TranslationService } from "@services/shared/translation-service";
 export class EnemyCatalogService {
   constructor(private translationService: TranslationService) {}
 
-  private readonly configUrl = "/configs/enemies.config.json";
+  private readonly configUrl = "/configs/cards/base/enemies.config.json";
   private configCache: EnemiesCatalogConfig | null = null;
   private configLoadPromise: Promise<EnemiesCatalogConfig> | null = null;
 
@@ -291,7 +291,7 @@ export class EnemyCatalogService {
   }
 
   private validateLootType(type: string, enemyId: string, validResources: Set<string>): void {
-    if (type === "exp" || type === "gold") return;
+    if (type === "exp" || type === "gold" || type === "stolen-gold") return;
 
     if (type.startsWith("resource:")) {
       const resourceId = type.slice("resource:".length);

@@ -8,7 +8,7 @@ import { TranslationService } from "@services/shared/translation-service";
 export class ItemCatalogService {
   constructor(private translationService: TranslationService) {}
 
-  private readonly configUrl = "/configs/items.config.json";
+  private readonly configUrl = "/configs/cards/base/items.config.json";
   private configCache: ItemCatalogConfig | null = null;
   private configLoadPromise: Promise<ItemCatalogConfig> | null = null;
 

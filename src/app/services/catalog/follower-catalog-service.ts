@@ -8,7 +8,7 @@ import { TranslationService } from "@services/shared/translation-service";
 export class FollowerCatalogService {
   constructor(private translationService: TranslationService) {}
 
-  private readonly configUrl = "/configs/followers.config.json";
+  private readonly configUrl = "/configs/cards/base/followers.config.json";
   private configCache: FollowersCatalogConfig | null = null;
   private configLoadPromise: Promise<FollowersCatalogConfig> | null = null;
 

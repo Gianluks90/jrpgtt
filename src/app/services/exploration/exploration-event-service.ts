@@ -424,6 +424,7 @@ export class ExplorationEventService {
       worldState: input.worldState,
       card: card as Parameters<typeof this.explorationActionService.applyEventEffect>[0]["card"],
       effect: def?.effect,
+      mapSize: input.mapSize,
     });
   }
 

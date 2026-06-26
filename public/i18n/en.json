@@ -996,6 +996,73 @@
     }
   },
   "catalogs": {
+    "events": {
+      "B-EV-001": {
+        "name": "Devil",
+        "description": "Alignment-based: Evil gains +5% max HP. Good loses 10% HP. Neutral is unaffected."
+      },
+      "B-EV-002": {
+        "name": "Siren",
+        "description": "Every character in this region must pass a fortune check (51+). On failure, skip your next turn."
+      },
+      "B-EV-003": {
+        "name": "Storm",
+        "description": "All characters in this region skip their next turn."
+      },
+      "B-EV-004": {
+        "name": "Corruption",
+        "description": "Every character holding an Amulet, anywhere on the map, loses 10% of their max HP."
+      },
+      "B-EV-005": {
+        "name": "Plague",
+        "description": "All characters in this region receive the Poison status for 3 turns."
+      },
+      "B-EV-006": {
+        "name": "Raiders",
+        "description": "Lose all gold. At night they vanish with the loot. During the day a Raider appears in the nearest Desert cell — defeat it to recover your wealth."
+      },
+      "B-EV-007": {
+        "name": "Dire Fate",
+        "description": "Lose all accumulated experience."
+      },
+      "B-EV-008": {
+        "name": "Calamity",
+        "description": "Alignment-based: Evil gains +1 Magic permanently. Good or Neutral alignment becomes Evil."
+      },
+      "B-EV-009": {
+        "name": "Dark Resurgence",
+        "description": "All enemy cards in the discard pile return to the Exploration Deck, which is then reshuffled."
+      },
+      "B-EV-010": {
+        "name": "Lost Grimoire",
+        "description": "Gain 2 spells."
+      },
+      "B-EV-011": {
+        "name": "Magic Vortex",
+        "description": "All characters in this region forget every learned spell except those granted by sanctuaries."
+      },
+      "B-EV-012": {
+        "name": "Winter",
+        "description": "All characters in this region suffer 5% HP damage at the start of each round for 3 rounds."
+      },
+      "B-EV-013": {
+        "name": "Angel",
+        "description": "Alignment-based: Good gains +5% max HP. Evil loses 10% HP. Neutral is unaffected."
+      },
+      "B-EV-014": {
+        "name": "Imp",
+        "description": "Teleport to a random already-explored cell."
+      },
+      "B-EV-015": {
+        "name": "Abandoned Pack",
+        "description": "Contains 2 random resources: food, timber, minerals, or cloth."
+      }
+    },
+    "enemies": {
+      "B-EN-001": {
+        "name": "Raider"
+      }
+    },
     "followers": {
       "horse": {
         "name": "Horse",

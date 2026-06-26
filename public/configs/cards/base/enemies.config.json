@@ -1,6 +1,18 @@
 {
   "enemies": [
     {
+      "id": "B-EN-001",
+      "name": "Raider",
+      "nameKey": "catalogs.enemies.B-EN-001.name",
+      "combatStat": "strength",
+      "levelUpMode": "BestFirst",
+      "time": "both",
+      "baseStrength": 5,
+      "baseMagic": 1,
+      "baseLuck": 2,
+      "loot": ["exp", "stolen-gold"]
+    },
+    {
       "id": "plains-wolf",
       "name": "Plains Wolf",
       "nameKey": "catalogs.enemies.plains-wolf.name",

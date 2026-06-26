@@ -5,7 +5,7 @@ import { SpellDeckConfig, SpellDeckEntry } from "@models/catalog/SpellDeckCatalo
   providedIn: "root",
 })
 export class SpellDeckConfigService {
-  private readonly configUrl = "/configs/spell-deck.config.json";
+  private readonly configUrl = "/configs/cards/spell-deck.config.json";
   private cache: SpellDeckConfig[] | null = null;
   private loadPromise: Promise<SpellDeckConfig[]> | null = null;
 

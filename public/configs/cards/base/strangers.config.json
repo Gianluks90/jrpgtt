@@ -1,0 +1,14 @@
+[
+  {
+    "type": "stranger",
+    "id": "stranger-wandering-healer",
+    "name": "Wandering Healer",
+    "description": "A robed figure offers to mend your wounds for a modest fee.",
+    "persistent": false,
+    "dialogType": "healer",
+    "dialogParams": {
+      "healAmount": 3,
+      "cost": 2
+    }
+  }
+]

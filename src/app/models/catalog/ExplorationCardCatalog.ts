@@ -8,11 +8,57 @@ export type ExplorationEventEffectType =
     | 'lose-gold'
     | 'gain-gold'
     | 'skip-turn'
-    | 'none';
+    | 'none'
+    | 'lose-all-gold'
+    | 'lose-all-exp'
+    | 'hp-percent-damage'
+    | 'max-hp-percent-gain'
+    | 'magic-permanent-delta'
+    | 'change-alignment'
+    | 'teleport-random-explored'
+    | 'gain-spells'
+    | 'gain-random-resources'
+    | 'reshuffle-enemies-from-discard'
+    | 'alignment-branch'
+    | 'time-branch'
+    | 'region-effect'
+    | 'region-fortune-check'
+    | 'region-apply-status'
+    | 'region-forget-spells'
+    | 'global-amulet-hp-percent-damage'
+    | 'composite'
+    | 'spawn-nearest-biome-enemy'
+    | 'region-persistent-effect';
 
 export interface ExplorationEventEffect {
     type: ExplorationEventEffectType;
     amount?: number;
+    /** For change-alignment */
+    to?: 'evil' | 'neutral' | 'good';
+    /** For gain-random-resources */
+    pool?: string[];
+    /** For alignment-branch */
+    evil?: ExplorationEventEffect;
+    good?: ExplorationEventEffect;
+    neutral?: ExplorationEventEffect;
+    /** For time-branch */
+    day?: ExplorationEventEffect;
+    night?: ExplorationEventEffect;
+    /** For region-effect / region-persistent-effect */
+    effect?: ExplorationEventEffect;
+    /** For region-fortune-check */
+    failBelow?: number;
+    onFail?: ExplorationEventEffect;
+    /** For region-apply-status */
+    statusKey?: string;
+    durationTurns?: number;
+    /** For composite: ordered list of sub-effects */
+    effects?: ExplorationEventEffect[];
+    /** For spawn-nearest-biome-enemy */
+    enemyId?: string;
+    biome?: string;
+    /** For region-persistent-effect: how many rounds it fires */
+    rounds?: number;
 }
 
 interface ExplorationCardDefBase {

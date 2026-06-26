@@ -1,0 +1,120 @@
+[
+  {
+    "id": "base",
+    "label": "Base Set",
+    "cards": [
+      {
+        "spellId": "teleport",
+        "quantity": 2
+      },
+      {
+        "spellId": "empower",
+        "quantity": 2
+      },
+      {
+        "spellId": "chaos",
+        "quantity": 2
+      },
+      {
+        "spellId": "filch",
+        "quantity": 2
+      },
+      {
+        "spellId": "vigor",
+        "quantity": 2
+      },
+      {
+        "spellId": "ward",
+        "quantity": 2
+      },
+      {
+        "spellId": "alchemy",
+        "quantity": 2
+      },
+      {
+        "spellId": "immobilize",
+        "quantity": 2
+      },
+      {
+        "spellId": "dispel",
+        "quantity": 2
+      },
+      {
+        "spellId": "fortune",
+        "quantity": 2
+      },
+      {
+        "spellId": "focus",
+        "quantity": 2
+      },
+      {
+        "spellId": "scout",
+        "quantity": 2
+      },
+      {
+        "spellId": "safe-passage",
+        "quantity": 2
+      },
+      {
+        "spellId": "fate-read",
+        "quantity": 2
+      },
+      {
+        "spellId": "transmute",
+        "quantity": 2
+      },
+      {
+        "spellId": "foresight",
+        "quantity": 2
+      },
+      {
+        "spellId": "wealth",
+        "quantity": 1
+      },
+      {
+        "spellId": "invisibility",
+        "quantity": 1
+      },
+      {
+        "spellId": "mesmerize",
+        "quantity": 1
+      },
+      {
+        "spellId": "curse",
+        "quantity": 1
+      },
+      {
+        "spellId": "petrify",
+        "quantity": 1
+      },
+      {
+        "spellId": "purify",
+        "quantity": 1
+      },
+      {
+        "spellId": "recall",
+        "quantity": 1
+      },
+      {
+        "spellId": "minor-exile",
+        "quantity": 1
+      },
+      {
+        "spellId": "divination",
+        "quantity": 1
+      },
+      {
+        "spellId": "spell-break",
+        "quantity": 1
+      },
+      {
+        "spellId": "destroy",
+        "quantity": 1
+      },
+      {
+        "spellId": "counterspell",
+        "quantity": 1
+      }
+    ]
+  }
+]

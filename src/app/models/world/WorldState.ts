@@ -115,6 +115,17 @@ export interface RequiredActionNotificationState {
     forcedAtMs?: number;
 }
 
+export interface ActiveRegionEffect {
+    id: string;
+    effectType: 'hp-percent-damage';
+    amount: number;
+    regionLabel: string;
+    /** Exact x-column indices belonging to this region (precomputed at creation time). */
+    regionColumns: number[];
+    remainingRounds: number;
+    sourceCardId?: string;
+}
+
 export interface WorldState {
     currentTurn: number;
     phase: 'lobby' | 'turn' | 'resolution';
@@ -144,4 +155,6 @@ export interface WorldState {
     pendingSpellEffect?: PendingSpellEffectState;
     activeCombat?: CombatState;
     activeExplorationSession?: ExplorationSessionState;
+    activeRegionEffects?: ActiveRegionEffect[];
+    pendingStolenGoldByPlayer?: Record<string, number>;
 }

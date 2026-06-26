@@ -5276,10 +5276,18 @@ export class ActionExecutorService {
     preloadedPlayers: Record<string, Player> = {},
   ): Promise<void> {
     const turnAdvance = this.turnService.advanceTurn(nextWorldState);
+    const firingRegionEffects = turnAdvance.firingRegionEffects;
 
     const playerIdsToLoad = new Set<string>(turnAdvance.skippedPlayerIds);
     if (nextWorldState.activePlayerId) {
       playerIdsToLoad.add(nextWorldState.activePlayerId);
+    }
+
+    // When region effects fire we need every player's location to check if they're in the affected region.
+    if (firingRegionEffects.length > 0) {
+      for (const id of (nextWorldState.turnOrder ?? [])) {
+        playerIdsToLoad.add(id);
+      }
     }
 
     for (const preloadedPlayerId of Object.keys(preloadedPlayers)) {
@@ -5299,6 +5307,37 @@ export class ActionExecutorService {
     );
 
     const playerDocById = new Map(playerDocs.map((entry) => [entry.playerId, entry]));
+
+    // Precompute per-player HP damage from firing region effects.
+    const regionDamageByPlayer = new Map<string, number>();
+    if (firingRegionEffects.length > 0) {
+      const allPlayerEntries: Array<{ id: string; player: Player }> = [];
+      for (const [id, data] of Object.entries(preloadedPlayers)) {
+        allPlayerEntries.push({ id, player: data });
+      }
+      for (const [id, entry] of playerDocById) {
+        if (preloadedPlayers[id]) continue;
+        if (!entry.playerSnap.exists()) continue;
+        allPlayerEntries.push({ id, player: entry.playerSnap.data() as Player });
+      }
+
+      for (const regionEffect of firingRegionEffects) {
+        const affectedCols = new Set(regionEffect.regionColumns);
+        for (const { id, player } of allPlayerEntries) {
+          if (!affectedCols.has(player.location?.x)) continue;
+          if (regionEffect.effectType === "hp-percent-damage") {
+            const hpMax = Math.max(1, Math.floor(Number(
+              typeof player.parameters?.hp?.max === "number"
+                ? player.parameters.hp.max
+                : player.parameters?.hp?.base ?? 1,
+            )));
+            const damage = Math.max(1, Math.floor(hpMax * regionEffect.amount / 100));
+            regionDamageByPlayer.set(id, (regionDamageByPlayer.get(id) ?? 0) + damage);
+          }
+        }
+      }
+    }
+
     const skippedPlayers = turnAdvance.skippedPlayerIds
       .map((playerId) => {
         const preloadedPlayer = preloadedPlayers[playerId];
@@ -5335,6 +5374,8 @@ export class ActionExecutorService {
       await this.statusCatalogService.loadConfig();
     }
 
+    const processedPlayerIds = new Set<string>();
+
     for (const skippedPlayerId of turnAdvance.skippedPlayerIds) {
       const preloadedPlayer = preloadedPlayers[skippedPlayerId];
       const skippedPlayerDoc = preloadedPlayer
@@ -5356,6 +5397,8 @@ export class ActionExecutorService {
         continue;
       }
 
+      processedPlayerIds.add(skippedPlayerId);
+
       const statusSnapshot = this.buildStatusEffectsSnapshot(this.normalizeStatuses(skippedPlayer.statuses));
       const nextStatuses = this.decrementNormalizedStatuses(statusSnapshot.activeStatuses);
 
@@ -5368,12 +5411,14 @@ export class ActionExecutorService {
             : skippedPlayer.parameters.hp.base,
         )),
       );
-      const nextHpCurrent = this.applyTurnEndHpPercentDelta(
+      const hpAfterStatus = this.applyTurnEndHpPercentDelta(
         hpCurrent,
         hpMax,
         statusSnapshot.turnEndHpPercentDelta,
         !statusSnapshot.disableHpRecovery,
       );
+      const regionDamage = regionDamageByPlayer.get(skippedPlayerId) ?? 0;
+      const nextHpCurrent = regionDamage > 0 ? Math.max(0, hpAfterStatus - regionDamage) : hpAfterStatus;
 
       const currentHp = Math.max(0, Math.floor(Number(skippedPlayer.parameters.hp.current ?? 0)));
       const skippedPlayerPatch: Partial<Player> = {};
@@ -5397,6 +5442,7 @@ export class ActionExecutorService {
     }
 
     if (activePlayerId) {
+      processedPlayerIds.add(activePlayerId);
       const activePlayerDoc = playerDocById.get(activePlayerId);
       const resolvedActivePlayer = activePlayer
         ?? (activePlayerDoc?.playerSnap.exists() ? (activePlayerDoc.playerSnap.data() as Player) : null);
@@ -5407,18 +5453,46 @@ export class ActionExecutorService {
       if (resolvedActivePlayer && activePlayerRef) {
         const recoveredMpCurrent = this.resolveMpRecoveredOnTurnStart(resolvedActivePlayer);
         const currentMp = Math.max(0, Math.floor(Number(resolvedActivePlayer.parameters.mp.current ?? 0)));
+        const activeRegionDamage = regionDamageByPlayer.get(activePlayerId) ?? 0;
+        const hpCurrentActive = Math.max(0, Math.floor(Number(resolvedActivePlayer.parameters.hp.current ?? 0)));
+        const newHpActive = activeRegionDamage > 0 ? Math.max(0, hpCurrentActive - activeRegionDamage) : hpCurrentActive;
 
-        if (recoveredMpCurrent !== currentMp) {
+        const mpChanged = recoveredMpCurrent !== currentMp;
+        const hpChanged = newHpActive !== hpCurrentActive;
+
+        if (mpChanged || hpChanged) {
           transaction.set(activePlayerRef, {
             parameters: {
               ...resolvedActivePlayer.parameters,
-              mp: {
-                ...resolvedActivePlayer.parameters.mp,
-                current: recoveredMpCurrent,
-              },
+              ...(mpChanged ? { mp: { ...resolvedActivePlayer.parameters.mp, current: recoveredMpCurrent } } : {}),
+              ...(hpChanged ? { hp: { ...resolvedActivePlayer.parameters.hp, current: newHpActive } } : {}),
             },
           }, { merge: true });
         }
+      }
+    }
+
+    // Apply region effect HP damage to all other players (not skipped, not active).
+    for (const [playerId, damage] of regionDamageByPlayer) {
+      if (processedPlayerIds.has(playerId)) continue;
+      const preloaded = preloadedPlayers[playerId];
+      const doc_ = playerDocById.get(playerId);
+      const playerData = preloaded ?? (doc_?.playerSnap.exists() ? (doc_.playerSnap.data() as Player) : null);
+      const playerRef = preloaded
+        ? doc(this.firebaseService.database, "games", gameId, "players", playerId)
+        : doc_?.playerRef;
+
+      if (!playerData || !playerRef) continue;
+
+      const hpCurrent = Math.max(0, Math.floor(Number(playerData.parameters.hp.current ?? 0)));
+      const newHp = Math.max(0, hpCurrent - damage);
+      if (newHp !== hpCurrent) {
+        transaction.set(playerRef, {
+          parameters: {
+            ...playerData.parameters,
+            hp: { ...playerData.parameters.hp, current: newHp },
+          },
+        }, { merge: true });
       }
     }
 

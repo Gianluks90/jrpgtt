@@ -17,7 +17,7 @@ import { TranslationService } from "@services/shared/translation-service";
   providedIn: "root",
 })
 export class SpellCatalogService {
-  private readonly spellsConfigUrl = "/configs/spells.config.json";
+  private readonly spellsConfigUrl = "/configs/cards/base/spells.config.json";
   private hasLoadedRemoteConfig = false;
   private spellsById = this.toMap(DEFAULT_SPELLS_CATALOG_CONFIG.spells);
   private defaultSpellbookCapacity = DEFAULT_SPELLS_CATALOG_CONFIG.spellbook.defaultCapacity;

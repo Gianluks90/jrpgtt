@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { DAY_NIGHT_ROUNDS_PER_TOGGLE } from "../../consts/gameplay/day-night-cycle";
-import { PendingTeleportState, WorldState } from "@models/world/WorldState";
+import { ActiveRegionEffect, PendingTeleportState, WorldState } from "@models/world/WorldState";
 import { PlayerTurnEffectsService } from "@services/player/player-turn-effects-service";
 
 export interface TurnAdvanceResult {
@@ -9,6 +9,7 @@ export interface TurnAdvanceResult {
     playerId: string;
     destination: PendingTeleportState;
   }>;
+  firingRegionEffects: ActiveRegionEffect[];
 }
 
 @Injectable({
@@ -21,6 +22,7 @@ export class TurnService {
     const result: TurnAdvanceResult = {
       skippedPlayerIds: [],
       teleportArrivals: [],
+      firingRegionEffects: [],
     };
 
     const order = worldState.turnOrder ?? [];
@@ -39,6 +41,7 @@ export class TurnService {
       if (nextIndex === 0) {
         worldState.currentTurn += 1;
         this.toggleTimeOnRoundChange(worldState);
+        this.processRegionEffectsOnRoundStart(worldState, result);
       }
 
       const candidatePlayerId = order[nextIndex];
@@ -94,5 +97,21 @@ export class TurnService {
 
     const currentTime = worldState.timeOfDay ?? "day";
     worldState.timeOfDay = currentTime === "day" ? "night" : "day";
+  }
+
+  private processRegionEffectsOnRoundStart(worldState: WorldState, result: TurnAdvanceResult): void {
+    const active = worldState.activeRegionEffects;
+    if (!active || active.length === 0) return;
+
+    const surviving: typeof active = [];
+    for (const effect of active) {
+      if (effect.remainingRounds <= 0) continue;
+      result.firingRegionEffects.push(effect);
+      const remaining = effect.remainingRounds - 1;
+      if (remaining > 0) {
+        surviving.push({ ...effect, remainingRounds: remaining });
+      }
+    }
+    worldState.activeRegionEffects = surviving;
   }
 }

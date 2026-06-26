@@ -27,8 +27,10 @@ import { FollowerCatalogService } from "@services/catalog/follower-catalog-servi
     providedIn: "root",
 })
 export class ExplorationCatalogService {
-    private readonly cardsConfigUrl = "/configs/exploration-cards.config.json";
-    private readonly deckConfigUrl = "/configs/exploration-deck.config.json";
+    private readonly eventsConfigUrl   = "/configs/cards/base/events.config.json";
+    private readonly placesConfigUrl   = "/configs/cards/base/places.config.json";
+    private readonly strangersConfigUrl = "/configs/cards/base/strangers.config.json";
+    private readonly deckConfigUrl = "/configs/cards/exploration-deck.config.json";
 
     private catalogCache: ExplorationCardCatalog | null = null;
     private catalogLoadPromise: Promise<ExplorationCardCatalog> | null = null;
@@ -49,10 +51,24 @@ export class ExplorationCatalogService {
         if (this.catalogLoadPromise) return this.catalogLoadPromise;
 
         this.catalogLoadPromise = (async () => {
-            const response = await fetch(this.cardsConfigUrl, { headers: { "content-type": "application/json" } });
-            if (!response.ok) throw new Error("Unable to load exploration cards configuration");
-            const raw = await response.json() as unknown;
-            const parsed = this.parseCatalog(raw);
+            const [eventsRes, placesRes, strangersRes] = await Promise.all([
+                fetch(this.eventsConfigUrl,   { headers: { "content-type": "application/json" } }),
+                fetch(this.placesConfigUrl,   { headers: { "content-type": "application/json" } }),
+                fetch(this.strangersConfigUrl, { headers: { "content-type": "application/json" } }),
+            ]);
+            if (!eventsRes.ok)   throw new Error("Unable to load events configuration");
+            if (!placesRes.ok)   throw new Error("Unable to load places configuration");
+            if (!strangersRes.ok) throw new Error("Unable to load strangers configuration");
+            const [eventsRaw, placesRaw, strangersRaw] = await Promise.all([
+                eventsRes.json() as Promise<unknown>,
+                placesRes.json() as Promise<unknown>,
+                strangersRes.json() as Promise<unknown>,
+            ]);
+            const parsed: ExplorationCardCatalog = {
+                events:   this.parseEventDefs(eventsRaw),
+                places:   this.parsePlaceDefs(placesRaw),
+                strangers: this.parseStrangerDefs(strangersRaw),
+            };
             this.catalogCache = parsed;
             return parsed;
         })();
@@ -193,20 +209,8 @@ export class ExplorationCatalogService {
 
     // ── Parsing ───────────────────────────────────────────────────────────────
 
-    private parseCatalog(raw: unknown): ExplorationCardCatalog {
-        if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-            throw new Error("Invalid exploration cards config: root must be an object");
-        }
-        const r = raw as Record<string, unknown>;
-        return {
-            events:   this.parseEventDefs(r["events"]),
-            places:   this.parsePlaceDefs(r["places"]),
-            strangers: this.parseStrangerDefs(r["strangers"]),
-        };
-    }
-
     private parseEventDefs(raw: unknown): EventCardDef[] {
-        if (!Array.isArray(raw)) throw new Error("exploration-cards: 'events' must be an array");
+        if (!Array.isArray(raw)) throw new Error("events.config.json: root must be an array");
         return raw.map((entry, i) => {
             const e = this.assertObj(entry, `events[${i}]`);
             return {
@@ -223,7 +227,7 @@ export class ExplorationCatalogService {
     }
 
     private parsePlaceDefs(raw: unknown): PlaceCardDef[] {
-        if (!Array.isArray(raw)) throw new Error("exploration-cards: 'places' must be an array");
+        if (!Array.isArray(raw)) throw new Error("places.config.json: root must be an array");
         return raw.map((entry, i) => {
             const e = this.assertObj(entry, `places[${i}]`);
             return {
@@ -238,7 +242,7 @@ export class ExplorationCatalogService {
     }
 
     private parseStrangerDefs(raw: unknown): StrangerCardDef[] {
-        if (!Array.isArray(raw)) throw new Error("exploration-cards: 'strangers' must be an array");
+        if (!Array.isArray(raw)) throw new Error("strangers.config.json: root must be an array");
         return raw.map((entry, i) => {
             const e = this.assertObj(entry, `strangers[${i}]`);
             return {
@@ -258,13 +262,30 @@ export class ExplorationCatalogService {
 
     private parseEffect(raw: unknown, path: string): import("@models/catalog/ExplorationCardCatalog").ExplorationEventEffect {
         const e = this.assertObj(raw, path);
-        const validTypes = ["lose-hp", "gain-hp", "lose-gold", "gain-gold", "skip-turn", "none"];
         const type = this.assertString(e["type"], `${path}.type`);
-        if (!validTypes.includes(type)) throw new Error(`${path}.type must be one of: ${validTypes.join(", ")}`);
-        return {
+        const base: import("@models/catalog/ExplorationCardCatalog").ExplorationEventEffect = {
             type: type as import("@models/catalog/ExplorationCardCatalog").ExplorationEventEffectType,
-            ...(e["amount"] !== undefined ? { amount: Number(e["amount"]) } : {}),
+            ...(e["amount"]        !== undefined ? { amount:        Number(e["amount"]) }        : {}),
+            ...(e["to"]            !== undefined ? { to:            String(e["to"]) as "evil" | "neutral" | "good" } : {}),
+            ...(e["failBelow"]     !== undefined ? { failBelow:     Number(e["failBelow"]) }     : {}),
+            ...(e["statusKey"]     !== undefined ? { statusKey:     String(e["statusKey"]) }     : {}),
+            ...(e["durationTurns"] !== undefined ? { durationTurns: Number(e["durationTurns"]) } : {}),
+            ...(e["rounds"]        !== undefined ? { rounds:        Number(e["rounds"]) }        : {}),
+            ...(e["enemyId"]       !== undefined ? { enemyId:       String(e["enemyId"]) }       : {}),
+            ...(e["biome"]         !== undefined ? { biome:         String(e["biome"]) }         : {}),
+            ...(Array.isArray(e["pool"]) ? { pool: (e["pool"] as unknown[]).map(String) } : {}),
         };
+        if (e["evil"])    base.evil    = this.parseEffect(e["evil"],    `${path}.evil`);
+        if (e["good"])    base.good    = this.parseEffect(e["good"],    `${path}.good`);
+        if (e["neutral"]) base.neutral = this.parseEffect(e["neutral"], `${path}.neutral`);
+        if (e["day"])     base.day     = this.parseEffect(e["day"],     `${path}.day`);
+        if (e["night"])   base.night   = this.parseEffect(e["night"],   `${path}.night`);
+        if (e["effect"])  base.effect  = this.parseEffect(e["effect"],  `${path}.effect`);
+        if (e["onFail"])  base.onFail  = this.parseEffect(e["onFail"],  `${path}.onFail`);
+        if (Array.isArray(e["effects"])) {
+            base.effects = (e["effects"] as unknown[]).map((sub, i) => this.parseEffect(sub, `${path}.effects[${i}]`));
+        }
+        return base;
     }
 
     private parseDeckConfigs(raw: unknown): ExplorationDeckConfig[] {

@@ -1006,6 +1006,73 @@
         }
     },
     "catalogs": {
+        "events": {
+            "B-EV-001": {
+                "name": "Diavolo",
+                "description": "In base all'allineamento: i Malvagi guadagnano il 5% di HP massimi. I Buoni perdono il 10% degli HP. I Neutrali non subiscono effetti."
+            },
+            "B-EV-002": {
+                "name": "Sirena",
+                "description": "Ogni personaggio in questa regione deve superare un controllo fortuna (51+). In caso di fallimento, salta il prossimo turno."
+            },
+            "B-EV-003": {
+                "name": "Tempesta",
+                "description": "Tutti i personaggi in questa regione saltano il prossimo turno."
+            },
+            "B-EV-004": {
+                "name": "Corruzione",
+                "description": "Ogni personaggio in possesso di un Amuleto, ovunque si trovi, perde il 10% degli HP massimi."
+            },
+            "B-EV-005": {
+                "name": "Pestilenza",
+                "description": "Tutti i personaggi in questa regione ricevono lo stato Veleno per 3 turni."
+            },
+            "B-EV-006": {
+                "name": "Predoni",
+                "description": "Perdi tutto l'oro. Di notte fuggono col bottino. Di giorno un Predone compare nella cella del Deserto più vicina — sconfiggilo per recuperare le ricchezze."
+            },
+            "B-EV-007": {
+                "name": "Destino Avverso",
+                "description": "Perdi tutta l'esperienza accumulata."
+            },
+            "B-EV-008": {
+                "name": "Calamità",
+                "description": "In base all'allineamento: i Malvagi guadagnano +1 Magia permanente. I Buoni o i Neutrali diventano Malvagi."
+            },
+            "B-EV-009": {
+                "name": "Oscurità Malefica",
+                "description": "Tutte le Carte Esplorazione nemico negli scarti tornano nel mazzo, che viene poi rimescolato."
+            },
+            "B-EV-010": {
+                "name": "Grimorio Perduto",
+                "description": "Ottieni 2 magie."
+            },
+            "B-EV-011": {
+                "name": "Vortice Magico",
+                "description": "Tutti i personaggi in questa regione dimenticano ogni magia appresa, eccetto quelle dei santuari."
+            },
+            "B-EV-012": {
+                "name": "Inverno",
+                "description": "Tutti i personaggi in questa regione subiscono il 5% di danno agli HP all'inizio di ogni round per 3 round."
+            },
+            "B-EV-013": {
+                "name": "Angelo",
+                "description": "In base all'allineamento: i Buoni guadagnano il 5% di HP massimi. I Malvagi perdono il 10% degli HP. I Neutrali non subiscono effetti."
+            },
+            "B-EV-014": {
+                "name": "Diavoletto",
+                "description": "Ti teletrasporta in una cella casuale già esplorata."
+            },
+            "B-EV-015": {
+                "name": "Zaino Abbandonato",
+                "description": "Contiene 2 risorse casuali tra: cibo, legname, minerali, tessuto."
+            }
+        },
+        "enemies": {
+            "B-EN-001": {
+                "name": "Predone"
+            }
+        },
         "followers": {
             "horse": {
                 "name": "Cavallo",

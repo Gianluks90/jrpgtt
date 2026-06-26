@@ -4,10 +4,10 @@
 **Elmo**: Controllo fortuna, ottieni 80+ per ridurre di 1 il danno subito in combattimento (non magico);
 **Scudo**: Controllo fortuna, ottieni 65+ per ridurre di 1 il danno subito in combattimento (non magico);
 **Armatura**: Controllo fortuna, ottieni 50+ per ridurre di 1 il danno subito in combattimento (non magico);
-**Amuleto della Fortuna**: (magico) Ogni volta che ottieni un colpo di fortuna applica su di se lo stato Fortuna per 1 turno.
+**Ciondolo della Fortuna**: (magico) Ogni volta che ottieni un colpo di fortuna applica su di se lo stato Fortuna per 1 turno.
 **Calice santo**: (magico) Inutilizzabile da un personaggio malvagio. Magia +1. Rende immuni all'ambiente ostile del deserto.
 **Talismano**: (magico) Applica su di se lo stato Silenzio finchè si possiede questo oggetto. Si è tuttavia anche immuni alle magie degli altri giocatori.
-**Amuleto del Coraggio**: (magico) Effettua nuovamente un tiro fortuna in combattimento (non magico) se il primo tiro ha dato un risultato inferiore all'avversario. Una volta per combattimento.
+**Stemma del Coraggio**: (magico) Effettua nuovamente un tiro fortuna in combattimento (non magico) se il primo tiro ha dato un risultato inferiore all'avversario. Una volta per combattimento.
 **Sfera di Cristallo**: (magico) Una volta per turno puoi ignorare una carta esplorazione e pescarne una in sostituzione. Devi comunque affrontare la nuova carta.
 **Pozione di Forza**: Aumenta la Forza di 2 durante il turno corrente.
 **Bacchetta magica**: (magico) Quando esaurisci le magie ottieni una magia.
@@ -19,3 +19,6 @@
 **Grossa borsa di monete**: Contiene da 10 a 20 monete d'oro.
 **Anello**: (magico) Forza +1. Magia +1. 
 **Cintura magica**: (magico) Forza +1.
+**Spada**: Forza +1.
+**Ascia**: Forza +1. Azione "chop tree" solo in foresta;
+**Amuleto**: (magico) Oggetto speciale che consente l'ingresso alla Regione III, essenziale per sopravvivere al suo interno.

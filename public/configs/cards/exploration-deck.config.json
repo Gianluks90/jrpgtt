@@ -1,0 +1,190 @@
+[
+  {
+    "id": "base",
+    "label": "Base Set",
+    "cards": [
+      {
+        "type": "enemy",
+        "cardId": "forest-goblin",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "mountain-troll",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "desert-scorpion",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "ruins-specter",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "water-serpent",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "lucky-rat",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "bandit",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "gorilla",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "enemy",
+        "cardId": "giant-spider",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-001",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-002",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-003",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-004",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-005",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-006",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-007",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-008",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-009",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-010",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-011",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-012",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-013",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-014",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "event",
+        "cardId": "B-EV-015",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "place-abandoned-camp",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "stranger-wandering-healer",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "follower",
+        "cardId": "horse",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "unicorn",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "item",
+        "cardId": "common-sword",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "amulet",
+        "cardId": "talisman",
+        "quantity": 1,
+        "expansion": "base"
+      }
+    ]
+  }
+]

@@ -28,7 +28,7 @@
 
 .scroll-title {
     position: absolute;
-    top: -14px;
+    top: -8px;
     left: 14px;
     background-color: var(--bg-color);
     color: var(--magic-color);
@@ -37,12 +37,11 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 2px 10px;
-    border: 1px solid var(--magic-color);
 }
 
 .scroll-mp-badge {
     position: absolute;
-    top: -14px;
+    top: -8px;
     right: 14px;
     display: inline-flex;
     align-items: center;
@@ -64,7 +63,7 @@
 
 .scroll-mp-value {
     font-size: 0.52rem;
-    color: var(--magic-color);
+    color: var(--fg-color);
     font-weight: 600;
     letter-spacing: 0.04em;
 }
@@ -85,7 +84,7 @@
     font-family: 'Jacquard 12', serif;
     font-size: 2rem;
     font-weight: 400;
-    color: var(--magic-color);
+    color: var(--fg-color);
     text-align: center;
     line-height: 1.1;
     text-shadow: 0 0 12px color-mix(in srgb, var(--magic-color) 50%, transparent);
@@ -103,9 +102,16 @@
     );
 }
 
+.spell-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .single-use-tag {
     display: inline-flex;
-    align-self: center;
     align-items: center;
     min-height: 16px;
     padding: 2px 8px;
@@ -117,12 +123,35 @@
     opacity: 0.85;
 }
 
+.spell-mp-cost-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 16px;
+    padding: 2px 8px;
+    border: 1px solid color-mix(in srgb, var(--magic-color) 55%, transparent);
+    background: color-mix(in srgb, var(--magic-color) 10%, transparent);
+    color: var(--magic-color);
+    font-size: 0.44rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
 .spell-description {
     margin: 0;
     font-size: 0.56rem;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.78);
     text-align: center;
+}
+
+.spell-long-description {
+    margin: 0;
+    font-size: 0.5rem;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.52);
+    text-align: center;
+    font-style: italic;
 }
 
 /* ── Footer / Cast button ── */

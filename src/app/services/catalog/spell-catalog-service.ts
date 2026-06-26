@@ -54,6 +54,16 @@ export class SpellCatalogService {
     return spell.ui.descriptionTemplate;
   }
 
+  public getLocalizedLongDescription(spell: SpellCatalogEntry): string {
+    const template = spell.ui.longDescriptionTemplate ?? "";
+    const key = spell.ui.i18n?.longDescriptionKey;
+    if (typeof key === "string" && key.trim().length > 0) {
+      return this.translationService.tOrFallback(key, template);
+    }
+
+    return template;
+  }
+
   public getSanctuaryRewardSpell(element: SanctuaryElement): SpellCatalogEntry | null {
     return this.getAllSpells().find((spell) => {
       const acquisition = Array.isArray(spell.acquisition) ? spell.acquisition : [];
@@ -245,6 +255,7 @@ export class SpellCatalogService {
     const typed = raw as {
       name?: unknown;
       descriptionTemplate?: unknown;
+      longDescriptionTemplate?: unknown;
       i18n?: unknown;
     };
 
@@ -256,11 +267,16 @@ export class SpellCatalogService {
       throw new Error(`Invalid spell catalog configuration: spell '${spellId}' has invalid ui.descriptionTemplate`);
     }
 
+    if (typeof typed.longDescriptionTemplate !== "undefined" && typeof typed.longDescriptionTemplate !== "string") {
+      throw new Error(`Invalid spell catalog configuration: spell '${spellId}' has invalid ui.longDescriptionTemplate`);
+    }
+
     const i18n = this.parseUiI18n(typed.i18n, spellId);
 
     return {
       name: typed.name,
       descriptionTemplate: typed.descriptionTemplate,
+      ...(typeof typed.longDescriptionTemplate === "string" ? { longDescriptionTemplate: typed.longDescriptionTemplate } : {}),
       ...(i18n ? { i18n } : {}),
     };
   }
@@ -277,6 +293,7 @@ export class SpellCatalogService {
     const typed = raw as {
       nameKey?: unknown;
       descriptionKey?: unknown;
+      longDescriptionKey?: unknown;
     };
 
     if (typeof typed.nameKey !== "undefined" && typeof typed.nameKey !== "string") {
@@ -287,9 +304,14 @@ export class SpellCatalogService {
       throw new Error(`Invalid spell catalog configuration: spell '${spellId}' has invalid ui.i18n.descriptionKey`);
     }
 
+    if (typeof typed.longDescriptionKey !== "undefined" && typeof typed.longDescriptionKey !== "string") {
+      throw new Error(`Invalid spell catalog configuration: spell '${spellId}' has invalid ui.i18n.longDescriptionKey`);
+    }
+
     return {
       nameKey: typed.nameKey,
       descriptionKey: typed.descriptionKey,
+      ...(typed.longDescriptionKey ? { longDescriptionKey: typed.longDescriptionKey } : {}),
     };
   }
 

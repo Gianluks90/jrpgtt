@@ -7,7 +7,10 @@ export interface SpellCastConfirmDialogData {
   spellId: string;
   spellName: string;
   description: string;
+  longDescription?: string;
   mpCost: number;
+  mpCurrent: number;
+  mpMax: number;
   consumableOnCast: boolean;
 }
 

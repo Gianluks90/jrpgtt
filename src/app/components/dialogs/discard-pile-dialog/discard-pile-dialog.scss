@@ -8,30 +8,10 @@
 .discard-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   max-height: min(62vh, 620px);
   overflow-y: auto;
   padding-right: 4px;
-}
-
-.discard-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.discard-section-title {
-  margin: 0;
-  font-size: 0.54rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0.5;
-  font-weight: 600;
-}
-
-.discard-section-title-spell {
-  color: var(--magic-color);
-  opacity: 0.8;
 }
 
 .discard-empty {
@@ -40,7 +20,39 @@
   opacity: 0.72;
 }
 
+.discard-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.discard-back {
+  flex-shrink: 0;
+  width: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 2px;
+  background: #0c0c0c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discard-back-letter {
+  font-family: 'Jacquard 12', serif;
+  color: var(--bad-color);
+  font-size: 2rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.discard-back-spell .discard-back-letter {
+  color: var(--magic-color);
+}
+
 .discard-card {
+  flex: 1;
+  min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.38);
   background: rgba(255, 255, 255, 0.07);
   padding: 8px 10px;
@@ -51,7 +63,6 @@
 
 .discard-card-follower {
   border-color: var(--fg-color);
-  box-shadow: none;
 }
 
 .discard-card-item {

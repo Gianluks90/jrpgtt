@@ -1287,179 +1287,223 @@
     },
     "fly": {
       "name": "Fly",
-      "description": "Enables diagonal movement for this turn. Must be cast before moving."
+      "description": "Enables diagonal movement for this turn. Must be cast before moving.",
+      "longDescription": "Flying enables 8-directional movement — you may step diagonally in addition to the four cardinal directions. The effect must be active before you move."
     },
     "healingWaters": {
       "name": "Healing Waters",
-      "description": "Apply Nutrition to yourself."
+      "description": "Apply Nutrition to yourself.",
+      "longDescription": "Nutrition prevents all damage dealt by hostile biomes or environmental conditions at the end of your turn."
     },
     "innerFire": {
       "name": "Inner Fire",
-      "description": "Apply Bravery to yourself for 1 turn. Increases Strength by 1."
+      "description": "Apply Bravery to yourself for 1 turn.",
+      "longDescription": "Bravery increases your Strength by 1 for the duration of the effect."
     },
     "reinvigorate": {
       "name": "Reinvigorate",
-      "description": "Restore HP equal to your current Magic value."
+      "description": "Restore HP equal to your current Magic value.",
+      "longDescription": "The amount healed equals your current Magic value, not the base. Higher Magic means better recovery."
     },
     "teleport": {
       "name": "Teleport",
-      "description": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn."
+      "description": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn.",
+      "longDescription": "Range is 3 orthogonal steps, plus 1 per point of Magic. After teleporting you cannot move again this turn, but landmark use, spell casting, and combat remain available."
     },
     "empower": {
       "name": "Empower",
-      "description": "Add your Magic to your Strength for the duration of this combat."
+      "description": "Apply Empowered to yourself.",
+      "longDescription": "While Empowered, your Magic value is added directly to your combat Strength for any fight this turn. Useful when you have high Magic but need a physical edge."
     },
     "chaos": {
       "name": "Chaos",
-      "description": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect."
+      "description": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect.",
+      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     },
     "filch": {
       "name": "Filch",
-      "description": "Steal 10 coins from a target player on a luck check of 70 or more."
+      "description": "Steal 10 coins from a target player on a luck check of 70 or more.",
+      "longDescription": "On a luck check result of 70 or more, 10 coins transfer instantly from the target to you. Nothing happens on failure."
     },
     "vigor": {
       "name": "Vigor",
-      "description": "Restore 5 HP."
+      "description": "Restore 5 HP.",
+      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     },
     "ward": {
       "name": "Ward",
-      "description": "Apply Protection to yourself."
+      "description": "Apply Protection to yourself.",
+      "longDescription": "Protection halves the next incoming damage you receive (rounded down). The status is consumed after blocking one hit."
     },
     "alchemy": {
       "name": "Alchemy",
-      "description": "Convert an item you own into its coin value."
+      "description": "Convert an item you own into its coin value.",
+      "longDescription": "Select one item from your inventory; it is permanently destroyed and its base coin value is added to your wallet."
     },
     "immobilize": {
       "name": "Immobilize",
-      "description": "Apply Immobilized to a target player for 1 turn."
+      "description": "Apply Immobilized to a target player for 1 turn.",
+      "longDescription": "The target cannot move on their turn. Landmark use, spell casting, and combat can still apply if triggered."
     },
     "dispel": {
       "name": "Dispel",
-      "description": "Remove one negative status from yourself."
+      "description": "Remove one negative status from yourself.",
+      "longDescription": "Removes the oldest active negative status. Positive statuses are not affected."
     },
     "fortune": {
       "name": "Fortune",
-      "description": "Apply Fortune to yourself for 1 turn."
+      "description": "Apply Fortune to yourself for 1 turn.",
+      "longDescription": "Your Luck bonus is doubled for every check made while this status is active, significantly improving odds on high-threshold rolls."
     },
     "focus": {
       "name": "Focus",
-      "description": "Apply Focus to yourself for 1 turn."
+      "description": "Apply Focus to yourself for 1 turn.",
+      "longDescription": "Focus increases your Magic by 1 while active, also improving any spell that scales with Magic such as Reinvigorate or Teleport range."
     },
     "scout": {
       "name": "Scout",
-      "description": "Reveal an unexplored cell within {range} orthogonal steps."
+      "description": "Reveal an unexplored cell within {range} orthogonal steps.",
+      "longDescription": "Base range is 2 steps, plus 1 per point of Magic. The revealed cell becomes visible to all players."
     },
     "safePassage": {
       "name": "Safe Passage",
-      "description": "Ignore the next environmental hazard or negative cell effect when entering a cell."
+      "description": "Ignore the next environmental hazard or negative cell effect when entering a cell.",
+      "longDescription": "Safe Step is consumed the next time you enter a cell with a harmful biome effect or condition, leaving you completely unharmed."
     },
     "fateRead": {
       "name": "Fate Reading",
-      "description": "Preview the next 2 local events that could be drawn or resolved."
+      "description": "Preview the next 2 Exploration Cards.",
+      "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed."
     },
     "transmute": {
       "name": "Transmute",
-      "description": "Transform 1 common resource into a different common resource."
+      "description": "Transform 1 common resource into a different common resource.",
+      "longDescription": "Choose one common resource from your inventory; it is replaced with a different common resource of your choice."
     },
     "foresight": {
       "name": "Foresight",
-      "description": "Preview the next 2 local events. Order is not changed."
+      "description": "Preview the next 2 Exploration Cards. Order is not changed.",
+      "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed."
     },
     "wealth": {
       "name": "Wealth",
-      "description": "Gain 10 coins."
+      "description": "Gain 10 coins.",
+      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     },
     "invisibility": {
       "name": "Invisibility",
-      "description": "Apply Invisibility to yourself."
+      "description": "Apply Invisibility to yourself.",
+      "longDescription": "While invisible you cannot be targeted by attacks or hostile spells. Movement, landmark use, and resource collection still work normally."
     },
     "mesmerize": {
       "name": "Mesmerize",
-      "description": "Steal a follower from a target player on a luck check of 70 or more."
+      "description": "Steal a follower from a target player on a luck check of 70 or more.",
+      "longDescription": "On a luck check of 70 or more, a random follower from the target's party permanently joins yours. Nothing happens on failure."
     },
     "curse": {
       "name": "Curse",
-      "description": "Apply Hexed and Weakened to a target player for 3 turns."
+      "description": "Apply Hexed and Weakened to a target player for 3 turns.",
+      "longDescription": "Hexed reduces the target's Magic by 1 and Weakened reduces their Strength by 1 for 3 full turns. Both effects run simultaneously."
     },
     "petrify": {
       "name": "Petrify",
-      "description": "A target player skips their next turn."
+      "description": "Apply Petrified to the target for 1 turn.",
+      "longDescription": "The target's next turn is skipped entirely. They cannot move, act, or react until the effect expires."
     },
     "purify": {
       "name": "Purify",
-      "description": "Remove all negative statuses from yourself."
+      "description": "Remove all negative statuses from yourself.",
+      "longDescription": "Clears every negative status affecting you at once, regardless of their remaining duration or how many are stacked."
     },
     "recall": {
       "name": "Recall",
-      "description": "Return to your last visited or activated sanctuary. Cannot move further this turn."
+      "description": "Return to your last visited or activated sanctuary. Cannot move further this turn.",
+      "longDescription": "Teleports you directly to your last attuned or visited sanctuary. You cannot move further after recalling, but other actions remain available."
     },
     "minorExile": {
       "name": "Minor Exile",
-      "description": "Remove a negative follower from your party."
+      "description": "Remove a negative follower from your party.",
+      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
     },
     "divination": {
       "name": "Divination",
-      "description": "Preview the next 5 local events. Order is not changed."
+      "description": "Preview the next 5 Exploration Cards. Order is not changed.",
+      "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 5 upcoming cards. The order is not changed."
     },
     "spellBreak": {
       "name": "Spell Break",
-      "description": "No player, including you, can cast spells until the end of the next round."
+      "description": "No player, including you, can cast spells until the end of the next round.",
+      "longDescription": "No player — including you — can cast any spell or use reactive abilities for the rest of this round and the entire next round."
     },
     "destroy": {
       "name": "Destroy",
-      "description": "Remove a temporary or permanent local event from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives."
+      "description": "Remove an Exploration Card from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives.",
+      "longDescription": "Permanently removes one Exploration Card from a visible cell within range. Cannot target fixed map elements such as landmarks or sanctuaries."
     },
     "counterspell": {
       "name": "Counterspell",
-      "description": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects."
+      "description": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects.",
+      "longDescription": "Held passively in reserve after casting. When a hostile spell targets you, a prompt appears letting you activate Counterspell to cancel the effect entirely."
     },
     "timeFold": {
       "name": "Time Fold",
-      "description": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves."
+      "description": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves.",
+      "longDescription": "Each extra move can reveal new cells and trigger events, but player combat, resource collection, and additional spell casting are disabled during the sequence."
     },
     "mimicry": {
       "name": "Mimicry",
-      "description": "Copy a random spell from a target player and learn it."
+      "description": "Copy a random spell from a target player and learn it.",
+      "longDescription": "The copied spell is permanently added to your spellbook if a free slot is available. If your spellbook is full, the copy fails without an MP refund."
     },
     "mimicryPlus": {
       "name": "Mimicry+",
-      "description": "Copy a spell of your choice from a target player and learn it."
+      "description": "Copy a spell of your choice from a target player and learn it.",
+      "longDescription": "Choose which spell to copy from the target's spellbook. Permanently added to yours if a free slot is available."
     },
     "negate": {
       "name": "Negate",
-      "description": "Make a target player forget a random spell."
+      "description": "Make a target player forget a random spell.",
+      "longDescription": "A random spell is permanently erased from the target's spellbook. It cannot be re-learned through normal means."
     },
     "negatePlus": {
       "name": "Negate+",
-      "description": "Make a target player forget a spell of your choice."
+      "description": "Make a target player forget a spell of your choice.",
+      "longDescription": "Choose which spell the target loses. It is permanently erased from their spellbook and cannot be re-learned."
     },
     "silence": {
       "name": "Silence",
-      "description": "Apply Silence to a target player for 3 turns."
+      "description": "Apply Silence to a target player for 3 turns.",
+      "longDescription": "While Silenced the target cannot cast any spell and their MP does not regenerate naturally at turn end. Duration is 3 turns."
     },
     "manaShield": {
       "name": "Mana Shield",
-      "description": "Reduce the next damage you take by consuming remaining MP."
+      "description": "Apply Mana Shield to yourself.",
+      "longDescription": "When you take damage, remaining MP is spent first; each point of MP absorbs 1 point of damage. The status is removed after the next hit."
     },
     "manaDrain": {
       "name": "Mana Drain",
-      "description": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more."
+      "description": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more.",
+      "longDescription": "On a luck check of 70 or more, 1 MP is removed from the target and transferred to you."
     },
     "seal": {
       "name": "Seal",
-      "description": "The next hostile spell targeting you has no effect."
+      "description": "Apply Spell Ward to yourself.",
+      "longDescription": "The first hostile spell cast at you is cancelled and has no effect. The ward is then consumed. Stacks alongside Counterspell."
     },
     "disciple": {
       "name": "Disciple",
-      "description": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat."
+      "description": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat.",
+      "longDescription": "Reacts once to the next permanent Strength or Magic gain by any player. The copied stat boost is immediate and permanent."
     },
     "elementalBond": {
       "name": "Elemental Bond",
-      "description": "Temporarily change your elemental attunement to a chosen element for 1 turn."
+      "description": "Temporarily change your elemental attunement to a chosen element for 1 turn.",
+      "longDescription": "For one turn you interact with sanctuaries, shrines, and effects of the chosen element as if it were your own. Returns to your base element at turn end."
     },
     "toadify": {
       "name": "Toadify",
-      "description": "Apply Minified to a target player for 2 turns on a luck check of 70 or more."
+      "description": "Apply Minified to a target player for 2 turns on a luck check of 70 or more.",
+      "longDescription": "Minified sets all primary stats to 1 and disables HP/MP recovery and item use for 2 turns, on a luck check of 70 or more."
     }
   },
   "chaos": {

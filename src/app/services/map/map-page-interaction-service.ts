@@ -122,12 +122,7 @@ import { CommandPanelAction } from "../../components/ui/commands-panel/commands-
 import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
 import { MapCellSelectionService } from "@services/map/map-cell-selection-service";
 import { EnvironmentService } from "@services/map/environment-service";
-import {
-  SpellTeleportDialog,
-  SpellTeleportDialogData,
-  SpellTeleportDialogResult,
-  SpellTeleportTargetOption,
-} from "../../components/dialogs/action-dialogs/spell-teleport-dialog/spell-teleport-dialog";
+import { SpellTeleportTargetOption } from "../../components/dialogs/action-dialogs/spell-teleport-dialog/spell-teleport-dialog";
 import {
   WorldEventHelpDialog,
   WorldEventHelpDialogData,
@@ -544,14 +539,14 @@ export class MapPageInteractionService {
 
     let target: { x: number; y: number } | null = null;
     if (spell.effect.type === "teleport-explored-orthogonal") {
-      const options = this.buildSpellTeleportOptions({
+      const teleportOptions = this.buildSpellTeleportOptions({
         player,
         mapCellsById: input.mapCellsById,
         mapSize: input.mapSize,
         spellId: spell.id,
       });
 
-      if (options.length === 0) {
+      if (teleportOptions.length === 0) {
         window.alert(this.translationService.tOrFallback(
           "map.spells.errors.noTeleportTargets",
           "No valid explored target is available for this spell.",
@@ -559,29 +554,26 @@ export class MapPageInteractionService {
         return;
       }
 
-      const teleportDialogResult = await this.openSpellTeleportDialog({
-        spellName: this.spellCatalogService.getLocalizedName(spell),
-        maxRange: this.spellCatalogService.computeEffectScalar(
-          spell,
-          Math.max(0, Math.floor(Number(player.parameters.magic.current ?? player.parameters.magic.base ?? 0))),
-        ),
-        options,
-      });
-
-      if (!teleportDialogResult) {
+      const selectableCellIds = new Set(teleportOptions.map((opt) => opt.cellId));
+      const prompt = this.translationService.tOrFallback("map.cellSelection.promptTeleport", "Select a cell to teleport to");
+      const selectedCell = await this.openCellSelection(selectableCellIds, prompt, true);
+      if (!selectedCell) {
         return;
       }
-
-      target = {
-        x: teleportDialogResult.targetX,
-        y: teleportDialogResult.targetY,
-      };
+      target = selectedCell;
     } else {
+      const mpMax = Math.max(0, Math.floor(Number(
+        typeof player.parameters?.mp?.max === "number" ? player.parameters.mp.max : (player.parameters?.mp?.base ?? 0),
+      )));
+      const longDescription = this.spellCatalogService.getLocalizedLongDescription(spell);
       const confirmed = await this.openSpellCastConfirmDialog({
         spellId: spell.id,
         spellName: this.spellCatalogService.getLocalizedName(spell),
         description: this.spellCatalogService.getLocalizedDescription(spell),
+        ...(longDescription ? { longDescription } : {}),
         mpCost: spell.mpCost,
+        mpCurrent,
+        mpMax,
         consumableOnCast: spell.consumableOnCast === true,
       });
       if (!confirmed) {
@@ -818,20 +810,6 @@ export class MapPageInteractionService {
     });
 
     return options;
-  }
-
-  private async openSpellTeleportDialog(data: SpellTeleportDialogData): Promise<SpellTeleportDialogResult | null> {
-    const dialogRef = this.dialog.open(SpellTeleportDialog, {
-      ...FAST_TRAVEL_DIALOG_CONFIG,
-      data,
-    });
-
-    const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
-    if (!this.isConfirmResult(response) || !response.data) {
-      return null;
-    }
-
-    return response.data as SpellTeleportDialogResult;
   }
 
   private async openSpellCastConfirmDialog(data: SpellCastConfirmDialogData): Promise<boolean> {
@@ -1382,7 +1360,7 @@ export class MapPageInteractionService {
       if (!player) return;
 
       const outcomePreviewRows = await this.loadGraveyardOutcomePreviewRows();
-      const options = this.buildDeadFollowerSelectionOptions(player);
+      const options = await this.buildDeadFollowerSelectionOptions(input.gameId);
       if (options.length === 0) {
         window.alert(this.translationService.tOrFallback(
           "map.interaction.errors.noDeadFollowerForResurrection",
@@ -2229,33 +2207,26 @@ export class MapPageInteractionService {
     return items;
   }
 
-  private buildDeadFollowerSelectionOptions(player: Player): FollowerSelectDialogData["options"] {
-    const followers = Array.isArray(player.followers) ? player.followers : [];
-    return followers
-      .filter((entry) => {
-        if (!entry || typeof entry !== "object") return false;
-        if (typeof entry.followerId !== "string" || !entry.followerId.trim()) return false;
-        return entry.state === "discarded" && entry.discardReason === "dead";
-      })
-      .map((entry) => {
-        const follower = this.followerCatalogService.getCachedFollowerById(entry.followerId);
-        const localizedFollowerName = follower
-          ? this.followerCatalogService.getLocalizedName(follower)
-          : entry.followerId;
-        const followerName = String(entry.nameOverride ?? localizedFollowerName);
-        const category = String(entry.categoryOverride ?? follower?.category ?? "unknown").toLowerCase();
-        const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
-        return {
-          key: entry.followerId,
-          label: followerName,
-          description: (follower
-            ? this.followerCatalogService.getLocalizedDescription(follower).trim()
-            : "") || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
-          hpCurrent: 0,
-          hpMax,
-          labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
-        };
-      });
+  private async buildDeadFollowerSelectionOptions(gameId: string): Promise<FollowerSelectDialogData["options"]> {
+    const deadFollowers = await this.actionExecutorService.getDeadFollowersFromDiscardPile(gameId);
+    return deadFollowers.map(({ followerId }) => {
+      const follower = this.followerCatalogService.getCachedFollowerById(followerId);
+      const localizedFollowerName = follower
+        ? this.followerCatalogService.getLocalizedName(follower)
+        : followerId;
+      const category = String(follower?.category ?? "unknown").toLowerCase();
+      const hpMax = Math.max(1, Math.floor(Number(follower?.maxHp ?? 1)));
+      return {
+        key: followerId,
+        label: localizedFollowerName,
+        description: (follower
+          ? this.followerCatalogService.getLocalizedDescription(follower).trim()
+          : "") || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
+        hpCurrent: 0,
+        hpMax,
+        labels: this.buildFollowerSelectionLabels(category, follower?.parameterModifiers ?? []),
+      };
+    });
   }
 
   private buildTempleDevoteeSelectionOptions(player: Player): FollowerSelectDialogData["options"] {

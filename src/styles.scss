@@ -38,6 +38,11 @@
     text-decoration: none;
 }
 
+*:focus,
+*:focus-visible {
+    outline: none;
+}
+
 html,
 body {
     padding: 0;

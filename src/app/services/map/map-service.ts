@@ -89,6 +89,21 @@ export class MapService {
     const gameMapRef = doc(this.firebaseService.database, "games", gameId, "runtime", "gameMap");
     const mapCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", this.cellId(targetX, targetY));
 
+    const [preTargetCellSnap, preGameMapSnap] = await Promise.all([
+      getDoc(mapCellRef),
+      getDoc(gameMapRef),
+    ]);
+    let precomputedDrawCount = 1;
+    if (preTargetCellSnap.exists()) {
+      const preTargetCell = preTargetCellSnap.data() as MapCell;
+      if (preTargetCell.isSpecial !== true && preTargetCell.biome) {
+        const preMapSize = preGameMapSnap.exists() ? ((preGameMapSnap.data() as GameMap).size ?? 10) : 10;
+        const preBiome = this.getEffectiveBiome(preTargetCell);
+        const envSize = await this.computeConnectedBiomeSizeWithGetDoc(gameId, preTargetCell, preMapSize, preBiome);
+        precomputedDrawCount = Math.min(3, Math.max(1, envSize));
+      }
+    }
+
     let movedBiome: BiomeType | null = null;
     let landedOnSpecialCell = false;
     let movedPlayerLuck = 0;
@@ -444,6 +459,7 @@ export class MapService {
       }, { merge: true });
 
       const shouldDrawExplorationCards = !landedOnSpecialCell
+        && !shouldEmitWorldEvent
         && targetCellAfterMutation
         && !(targetCellAfterMutation.explorationEvents?.length)
         && ((nextWorldState.explorationDeck?.length ?? 0) > 0
@@ -453,7 +469,7 @@ export class MapService {
         const drawResult = this.explorationDeckService.draw(
           nextWorldState.explorationDeck ?? [],
           nextWorldState.explorationDiscardedDeck ?? [],
-          1,
+          precomputedDrawCount,
         );
         drawnCardIds = drawResult.drawn;
         nextWorldState.explorationDeck = drawResult.remaining;
@@ -1125,6 +1141,45 @@ export class MapService {
 
   private isInsideBounds(x: number, y: number, size: number): boolean {
     return x >= 0 && x < size && y >= 0 && y < size;
+  }
+
+  private async computeConnectedBiomeSizeWithGetDoc(
+    gameId: string,
+    startCell: MapCell,
+    mapSize: number,
+    targetBiome: BiomeType,
+  ): Promise<number> {
+    const safeSize = Math.max(1, Math.floor(mapSize));
+    const queue: Array<{ x: number; y: number }> = [{ x: startCell.x, y: startCell.y }];
+    const visited = new Set<string>();
+    let size = 0;
+    let queueIndex = 0;
+
+    while (queueIndex < queue.length) {
+      const current = queue[queueIndex];
+      queueIndex += 1;
+      if (!current) continue;
+      if (current.x < 0 || current.y < 0 || current.x >= safeSize || current.y >= safeSize) continue;
+
+      const id = this.cellId(current.x, current.y);
+      if (visited.has(id)) continue;
+      visited.add(id);
+
+      const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", id);
+      const cellSnap = await getDoc(cellRef);
+      if (!cellSnap.exists()) continue;
+
+      const cell = cellSnap.data() as MapCell;
+      if (cell.isSpecial === true || this.getEffectiveBiome(cell) !== targetBiome) continue;
+
+      size += 1;
+      queue.push({ x: current.x + 1, y: current.y });
+      queue.push({ x: current.x - 1, y: current.y });
+      queue.push({ x: current.x, y: current.y + 1 });
+      queue.push({ x: current.x, y: current.y - 1 });
+    }
+
+    return Math.max(1, size);
   }
 
   /**

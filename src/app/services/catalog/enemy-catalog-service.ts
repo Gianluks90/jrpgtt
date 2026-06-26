@@ -67,10 +67,10 @@ export class EnemyCatalogService {
    * Level = cellX ± 1 (random), minimum 1, plus any world event bonus.
    */
   public computeSpawnLevel(cellX: number, worldEventBonus?: number): number {
-    const base = Math.max(0, Math.floor(Number(cellX ?? 0)));
+    const base = Math.max(1, Math.floor(Number(cellX ?? 0)) + 1);
     const jitter = Math.floor(Math.random() * 3) - 1; // -1, 0, or +1
     const bonus = Math.max(0, Math.floor(Number(worldEventBonus ?? 0)));
-    return Math.max(1, base + jitter + bonus);
+    return Math.max(1, Math.min(10, base + jitter + bonus));
   }
 
   /**

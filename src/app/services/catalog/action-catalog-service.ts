@@ -411,7 +411,8 @@ export class ActionCatalogService {
         || value === "temple-send-devotee"
         || value === "altar-sacrifice"
         || value === "elemental-ritual"
-        || value === "follower-eliminate-zombie";
+        || value === "follower-eliminate-zombie"
+        || value === "academy-spell-upgrader";
   }
 
   private isFlowTrigger(value: unknown): value is ActionFlowTrigger {

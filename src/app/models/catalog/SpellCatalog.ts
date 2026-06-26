@@ -42,11 +42,13 @@ export type SpellEffectType =
 export interface SpellCatalogI18nKeys {
   nameKey?: string;
   descriptionKey?: string;
+  longDescriptionKey?: string;
 }
 
 export interface SpellCatalogUiDefinition {
   name: string;
   descriptionTemplate: string;
+  longDescriptionTemplate?: string;
   i18n?: SpellCatalogI18nKeys;
 }
 

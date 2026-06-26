@@ -14,3 +14,8 @@
 **Inverno**: Ogni personaggio in questa regione subisce 5% HP di danno. Dura 3 round.
 **Angelo**: Basato sull'allineamento del personaggio. Buono: gli HP massimi aumentano del 5%. Malvagio: subisci 10% danno agli HP. Neutrale: ignorato.
 **Diavoletto**: Ti teletrasporta in una cella casuale già esplorata.
+**Zaino abbandonato**: Contiene 2 risorse casuali tra: cibo, legname, minerali, tessuto.
+
+---
+
+**Nota**: gli Eventi sono istantanei e si risolvono immediatamente. Se non diversamente speficato vengono scartati immediatamente dopo l'uso.

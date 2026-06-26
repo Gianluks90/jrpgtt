@@ -1,6 +1,5 @@
 import { DIALOG_DATA, DialogRef } from "@angular/cdk/dialog";
 import { Component, Inject } from "@angular/core";
-import { NgTemplateOutlet } from "@angular/common";
 import { DialogResponse } from "@models/ui/DialogResponse";
 import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
@@ -15,16 +14,13 @@ export interface DiscardPileDialogData {
 @Component({
   selector: "app-discard-pile-dialog",
   standalone: true,
-  imports: [DialogWrapper, TextButton, TranslationPipe, NgTemplateOutlet],
+  imports: [DialogWrapper, TextButton, TranslationPipe],
   templateUrl: "./discard-pile-dialog.html",
   styleUrl: "./discard-pile-dialog.scss",
 })
 export class DiscardPileDialog {
-  public readonly explorationEntries: DiscardPileEntry[];
-  public readonly spellEntries: DiscardPileEntry[];
+  public readonly allEntries: DiscardPileEntry[];
   public readonly dialogTitle: string;
-  public readonly explorationSectionLabel: string;
-  public readonly spellSectionLabel: string;
 
   constructor(
     private dialogRef: DialogRef<DialogResponse<never>>,
@@ -32,21 +28,16 @@ export class DiscardPileDialog {
     @Inject(DIALOG_DATA) data: DiscardPileDialogData,
   ) {
     const all = Array.isArray(data?.entries) ? data.entries : [];
-    this.spellEntries = all.filter((e) => e.card?.kind === "spell");
-    this.explorationEntries = all.filter((e) => e.card?.kind !== "spell");
+    this.allEntries = [...all].sort((a, b) => (b.discardSeq ?? 0) - (a.discardSeq ?? 0));
     this.dialogTitle = this.translationService.tOrFallback(
       "dialogs.discardPile.title",
       "Discard Pile ({count})",
       { count: all.length },
     );
-    this.explorationSectionLabel = this.translationService.tOrFallback(
-      "dialogs.discardPile.section.exploration",
-      "Exploration",
-    );
-    this.spellSectionLabel = this.translationService.tOrFallback(
-      "dialogs.discardPile.section.spells",
-      "Spells",
-    );
+  }
+
+  public isSpellEntry(entry: DiscardPileEntry): boolean {
+    return entry.card?.kind === "spell";
   }
 
   public close(): void {

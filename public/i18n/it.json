@@ -1303,179 +1303,223 @@
         },
         "fly": {
             "name": "Volare",
-            "description": "Abilita il movimento diagonale per questo turno. Deve essere lanciato prima di muoversi."
+            "description": "Abilita il movimento diagonale per questo turno. Deve essere lanciato prima di muoversi.",
+            "longDescription": "Il Volo abilita il movimento in 8 direzioni — puoi muoverti in diagonale oltre che nelle quattro direzioni cardinali. L'effetto deve essere attivo prima di muoversi."
         },
         "healingWaters": {
             "name": "Acqua curativa",
-            "description": "Applica Nutrimento su di te."
+            "description": "Applica Nutrimento su di sé.",
+            "longDescription": "Il Nutrimento previene tutti i danni causati da biomi ostili o condizioni ambientali alla fine del tuo turno."
         },
         "innerFire": {
             "name": "Fuoco dentro",
-            "description": "Applica Coraggio su di te per 1 turno. Aumenta Forza di 1."
+            "description": "Applica Coraggio su di sé per 1 turno.",
+            "longDescription": "Il Coraggio aumenta la tua Forza di 1 per la durata dell'effetto."
         },
         "reinvigorate": {
             "name": "Rinvigorimento",
-            "description": "Ripristina HP pari al tuo valore di Magia attuale."
+            "description": "Ripristina HP pari al tuo valore di Magia attuale.",
+            "longDescription": "La quantità curata è pari al tuo valore di Magia attuale, non a quello base. Più alta è la Magia, migliore è la cura."
         },
         "teleport": {
             "name": "Teletrasporto",
-            "description": "Teletrasportati in qualsiasi cella esplorata entro {range} passi ortogonali. Non puoi muoverti ulteriormente in questo turno."
+            "description": "Teletrasportati in qualsiasi cella esplorata entro {range} passi ortogonali. Non puoi muoverti ulteriormente in questo turno.",
+            "longDescription": "La gittata è di 3 passi ortogonali, più 1 per ogni punto di Magia. Dopo il teletrasporto non puoi muoverti ulteriormente in questo turno, ma l'uso dei luoghi, il lancio di incantesimi e il combattimento restano disponibili."
         },
         "empower": {
             "name": "Potenziamento",
-            "description": "Aggiungi il tuo valore di Magia alla Forza per la durata di questo combattimento."
+            "description": "Applica Potenziamento su di sé.",
+            "longDescription": "Mentre sei Potenziato, il tuo valore di Magia viene aggiunto direttamente alla Forza in combattimento per qualsiasi scontro di questo turno. Utile quando hai alta Magia ma hai bisogno di un vantaggio fisico."
         },
         "chaos": {
             "name": "Caos",
-            "description": "Scegli un giocatore bersaglio. Effettua un tiro fortuna con effetto casuale: guadagna o perde HP, monete o un effetto di stato."
+            "description": "Scegli un bersaglio. Effettua un tiro fortuna con effetto casuale: guadagna o perde HP, monete o un effetto di stato.",
+            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
         },
         "filch": {
             "name": "Borseggio",
-            "description": "Ruba 10 monete a un giocatore bersaglio con un tiro fortuna di 70 o superiore."
+            "description": "Ruba 10 monete al bersaglio con un tiro fortuna di 70 o superiore.",
+            "longDescription": "Con un tiro fortuna di 70 o superiore, 10 monete passano istantaneamente dal bersaglio a te. In caso di fallimento non accade nulla."
         },
         "vigor": {
             "name": "Vigore",
-            "description": "Ripristina 5 HP."
+            "description": "Ripristina 5 HP.",
+            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
         },
         "ward": {
             "name": "Scudo Arcano",
-            "description": "Applica Protezione su di te."
+            "description": "Applica Protezione su di sé.",
+            "longDescription": "La Protezione dimezza il prossimo danno in arrivo (arrotondato per difetto). Lo stato viene consumato dopo aver bloccato un colpo."
         },
         "alchemy": {
             "name": "Alchimia",
-            "description": "Converti un oggetto che possiedi nel suo valore in monete."
+            "description": "Converti un oggetto che possiedi nel suo valore in monete.",
+            "longDescription": "Seleziona un oggetto dal tuo inventario; viene distrutto permanentemente e il suo valore base in monete viene aggiunto al tuo portafoglio."
         },
         "immobilize": {
             "name": "Immobilizzazione",
-            "description": "Applica Immobilizzato a un giocatore bersaglio per 1 turno."
+            "description": "Applica Immobilizzato al bersaglio per 1 turno.",
+            "longDescription": "Il bersaglio non può muoversi nel suo turno. L'uso dei luoghi, il lancio di incantesimi e il combattimento possono comunque attivarsi se innescati."
         },
         "dispel": {
             "name": "Dissolvi",
-            "description": "Rimuovi uno stato negativo da te stesso."
+            "description": "Rimuovi uno stato negativo da sé.",
+            "longDescription": "Rimuove lo stato negativo attivo più vecchio. Gli stati positivi non vengono influenzati."
         },
         "fortune": {
             "name": "Fortuna",
-            "description": "Applica Fortuna su di te per 1 turno."
+            "description": "Applica Fortuna su di sé per 1 turno.",
+            "longDescription": "Il tuo bonus Fortuna è raddoppiato per ogni tiro effettuato mentre questo stato è attivo, migliorando significativamente le probabilità sui tiri ad alta soglia."
         },
         "focus": {
             "name": "Concentrazione",
-            "description": "Applica Concentrazione su di te per 1 turno."
+            "description": "Applica Concentrazione su di sé per 1 turno.",
+            "longDescription": "La Concentrazione aumenta la tua Magia di 1 mentre è attiva, migliorando anche gli incantesimi che scalano con la Magia come Rinvigorimento o la gittata del Teletrasporto."
         },
         "scout": {
             "name": "Ricognizione",
-            "description": "Rivela una cella inesplorata entro {range} passi ortogonali."
+            "description": "Rivela una cella inesplorata entro {range} passi ortogonali.",
+            "longDescription": "La gittata base è di 2 passi, più 1 per ogni punto di Magia. La cella rivelata diventa visibile a tutti i giocatori."
         },
         "safePassage": {
             "name": "Passaggio Sicuro",
-            "description": "Ignora il prossimo pericolo ambientale o effetto negativo di cella all'ingresso."
+            "description": "Ignora il prossimo pericolo ambientale o effetto negativo di cella all'ingresso.",
+            "longDescription": "Il Passo Sicuro viene consumato la prossima volta che entri in una cella con un effetto di bioma dannoso o una condizione ostile, senza subire alcun danno."
         },
         "fateRead": {
             "name": "Lettura del Destino",
-            "description": "Vedi in anteprima i prossimi 2 eventi locali che potrebbero essere pescati o risolti."
+            "description": "Vedi in anteprima le prossime 2 Carte Esplorazione.",
+            "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 2 carte. L'ordine non viene modificato."
         },
         "transmute": {
             "name": "Trasmutazione",
-            "description": "Trasforma 1 risorsa comune in un'altra risorsa comune diversa."
+            "description": "Trasforma 1 risorsa comune in un'altra risorsa comune diversa.",
+            "longDescription": "Scegli una risorsa comune dal tuo inventario; viene sostituita con un'altra risorsa comune a tua scelta."
         },
         "foresight": {
             "name": "Preveggenza",
-            "description": "Vedi in anteprima i prossimi 2 eventi locali. L'ordine non cambia."
+            "description": "Vedi in anteprima le prossime 2 Carte Esplorazione. L'ordine non cambia.",
+            "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 2 carte. L'ordine non viene modificato."
         },
         "wealth": {
             "name": "Ricchezza",
-            "description": "Guadagna 10 monete."
+            "description": "Guadagna 10 monete.",
+            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
         },
         "invisibility": {
             "name": "Invisibilità",
-            "description": "Applica Invisibilità su di te."
+            "description": "Applica Invisibilità su di sé.",
+            "longDescription": "Mentre sei invisibile non puoi essere bersaglio di attacchi o incantesimi ostili. Movimento, uso dei luoghi e raccolta di risorse funzionano normalmente."
         },
         "mesmerize": {
             "name": "Magnetismo",
-            "description": "Ruba un seguace da un giocatore bersaglio con un tiro fortuna di 70 o superiore."
+            "description": "Ruba un seguace al bersaglio con un tiro fortuna di 70 o superiore.",
+            "longDescription": "Con un tiro fortuna di 70 o superiore, un seguace casuale della compagnia del bersaglio si unisce permanentemente alla tua. In caso di fallimento non accade nulla."
         },
         "curse": {
             "name": "Maledizione",
-            "description": "Applica Stregato e Indebolito a un giocatore bersaglio per 3 turni."
+            "description": "Applica Stregato e Indebolito al bersaglio per 3 turni.",
+            "longDescription": "Stregato riduce la Magia del bersaglio di 1 e Indebolito riduce la sua Forza di 1 per 3 turni interi. Entrambi gli effetti agiscono contemporaneamente."
         },
         "petrify": {
             "name": "Pietrificazione",
-            "description": "Un giocatore bersaglio salta il suo prossimo turno."
+            "description": "Applica Pietrificato al bersaglio per 1 turno.",
+            "longDescription": "Il turno successivo del bersaglio viene saltato completamente. Non può muoversi, agire o reagire fino alla scadenza dell'effetto."
         },
         "purify": {
             "name": "Purificazione",
-            "description": "Rimuovi tutti gli stati negativi da te stesso."
+            "description": "Rimuovi tutti gli stati negativi da sé.",
+            "longDescription": "Rimuove tutti gli stati negativi che ti affliggono in una sola volta, indipendentemente dalla durata residua o da quanti sono accumulati."
         },
         "recall": {
             "name": "Richiamo",
-            "description": "Torna all'ultimo santuario visitato o attivato. Non puoi muoverti ulteriormente in questo turno."
+            "description": "Torna all'ultimo santuario visitato o attivato. Non puoi muoverti ulteriormente in questo turno.",
+            "longDescription": "Ti teletrasporta direttamente all'ultimo santuario sintonizzato o visitato. Non puoi muoverti ulteriormente dopo il Richiamo, ma le altre azioni restano disponibili."
         },
         "minorExile": {
             "name": "Esilio Minore",
-            "description": "Rimuovi un seguace negativo dalla tua compagnia."
+            "description": "Rimuovi un seguace negativo dalla tua compagnia.",
+            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
         },
         "divination": {
             "name": "Divinazione",
-            "description": "Vedi in anteprima i prossimi 5 eventi locali. L'ordine non cambia."
+            "description": "Vedi in anteprima le prossime 5 Carte Esplorazione. L'ordine non cambia.",
+            "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 5 carte. L'ordine non viene modificato."
         },
         "spellBreak": {
             "name": "Rottura Magica",
-            "description": "Nessun giocatore, incluso te, può lanciare incantesimi fino alla fine del prossimo round."
+            "description": "Nessuno, te compreso, può lanciare incantesimi fino alla fine del prossimo round.",
+            "longDescription": "Nessun giocatore — incluso te — può lanciare incantesimi o usare abilità reattive per il resto di questo round e per l'intero round successivo."
         },
         "destroy": {
             "name": "Distruzione",
-            "description": "Rimuovi un evento locale temporaneo o permanente da una cella visibile. Non è possibile rimuovere luoghi, santuari, boss o obiettivi di missione."
+            "description": "Rimuovi la Carta Esplorazione da una cella visibile. Non è possibile rimuovere luoghi, santuari, boss o obiettivi di missione.",
+            "longDescription": "Rimuove permanentemente la Carta Esplorazione presente in una cella visibile nel raggio d'azione. Non può essere usato su elementi fissi della mappa come luoghi o santuari."
         },
         "counterspell": {
             "name": "Controincantesimo",
-            "description": "Annulla un incantesimo ostile diretto a te nel momento in cui viene lanciato. Non annulla effetti già risolti."
+            "description": "Annulla un incantesimo ostile diretto a te nel momento in cui viene lanciato. Non annulla effetti già risolti.",
+            "longDescription": "Rimane in riserva passivamente dopo il lancio. Quando un incantesimo ostile ti prende di mira, compare un messaggio che ti permette di attivarlo per annullarne completamente l'effetto."
         },
         "timeFold": {
             "name": "Piega Temporale",
-            "description": "Esegui fino a 2 spostamenti consecutivi prima di risolvere eventi o combattimenti. Non puoi attaccare giocatori, lanciare altri incantesimi o raccogliere risorse durante questi spostamenti."
+            "description": "Esegui fino a 2 spostamenti consecutivi prima di risolvere eventi o combattimenti. Non puoi attaccare altri, lanciare altri incantesimi o raccogliere risorse durante questi spostamenti.",
+            "longDescription": "Ogni spostamento aggiuntivo può rivelare nuove celle e innescare eventi, ma il combattimento tra giocatori, la raccolta di risorse e il lancio di altri incantesimi sono disabilitati durante la sequenza."
         },
         "mimicry": {
             "name": "Mimica",
-            "description": "Copia un incantesimo casuale da un giocatore bersaglio e apprendilo."
+            "description": "Copia un incantesimo casuale dal bersaglio e apprendilo.",
+            "longDescription": "L'incantesimo copiato viene aggiunto permanentemente al tuo libro degli incantesimi se è disponibile uno slot libero. Se il libro è pieno, la copia fallisce senza rimborso di PM."
         },
         "mimicryPlus": {
             "name": "Mimica+",
-            "description": "Copia un incantesimo a tua scelta da un giocatore bersaglio e apprendilo."
+            "description": "Copia un incantesimo a tua scelta dal bersaglio e apprendilo.",
+            "longDescription": "Scegli quale incantesimo copiare dal libro del bersaglio. Aggiunto permanentemente al tuo se è disponibile uno slot libero."
         },
         "negate": {
             "name": "Negazione",
-            "description": "Fai dimenticare un incantesimo casuale a un giocatore bersaglio."
+            "description": "Fai dimenticare un incantesimo casuale al bersaglio.",
+            "longDescription": "Un incantesimo casuale viene cancellato permanentemente dal libro degli incantesimi del bersaglio. Non può essere riappreso con mezzi normali."
         },
         "negatePlus": {
             "name": "Negazione+",
-            "description": "Fai dimenticare un incantesimo a tua scelta a un giocatore bersaglio."
+            "description": "Fai dimenticare un incantesimo a tua scelta al bersaglio.",
+            "longDescription": "Scegli quale incantesimo il bersaglio perde. Viene cancellato permanentemente dal suo libro degli incantesimi e non può essere riappreso."
         },
         "silence": {
             "name": "Silenzio",
-            "description": "Applica Silenzio a un giocatore bersaglio per 3 turni."
+            "description": "Applica Silenzio al bersaglio per 3 turni.",
+            "longDescription": "Mentre è Silenziato il bersaglio non può lanciare alcun incantesimo e i suoi PM non si rigenerano naturalmente a fine turno. Durata: 3 turni."
         },
         "manaShield": {
             "name": "Scudo di Mana",
-            "description": "Riduci il prossimo danno che subisci consumando i PM rimanenti."
+            "description": "Applica Scudo di Mana su di sé.",
+            "longDescription": "Quando subisci danni, i PM rimanenti vengono spesi per primi; ogni punto di PM assorbe 1 punto di danno. Lo stato viene rimosso dopo il prossimo colpo."
         },
         "manaDrain": {
             "name": "Drenaggio Mana",
-            "description": "Ruba 1 PM a un giocatore bersaglio e recupera 1 PM con un tiro fortuna di 70 o superiore."
+            "description": "Ruba 1 PM al bersaglio e recupera 1 PM con un tiro fortuna di 70 o superiore.",
+            "longDescription": "Con un tiro fortuna di 70 o superiore, 1 PM viene rimosso dal bersaglio e trasferito a te."
         },
         "seal": {
             "name": "Sigillo",
-            "description": "Il prossimo incantesimo ostile diretto a te non ha alcun effetto."
+            "description": "Applica Sigillo su di sé.",
+            "longDescription": "Il primo incantesimo ostile lanciato contro di te viene annullato e non ha alcun effetto. Il sigillo viene poi consumato. Si accumula insieme al Controincantesimo."
         },
         "disciple": {
             "name": "Discepolo",
-            "description": "Quando un altro giocatore guadagna Forza o Magia tramite aumento di livello o ricompensa permanente, guadagni +1 allo stesso attributo."
+            "description": "Quando qualcuno guadagna Forza o Magia tramite aumento di livello o ricompensa permanente, guadagni +1 allo stesso attributo.",
+            "longDescription": "Reagisce una volta al prossimo aumento permanente di Forza o Magia di qualsiasi giocatore. Il bonus copiato è immediato e permanente."
         },
         "elementalBond": {
             "name": "Legame Elementale",
-            "description": "Cambia temporaneamente la tua affinità elementale in un elemento scelto per 1 turno."
+            "description": "Cambia temporaneamente la tua affinità elementale in un elemento scelto per 1 turno.",
+            "longDescription": "Per un turno interagisci con santuari, altari ed effetti dell'elemento scelto come se fosse il tuo. Torna al tuo elemento base a fine turno."
         },
         "toadify": {
             "name": "Rospificazione",
-            "description": "Applica Miniaturizzato a un giocatore bersaglio per 2 turni con un tiro fortuna di 70 o superiore."
+            "description": "Applica Miniaturizzato al bersaglio per 2 turni con un tiro fortuna di 70 o superiore.",
+            "longDescription": "Miniaturizzato imposta tutti gli attributi primari a 1 e disabilita il recupero di HP/PM e l'uso degli oggetti per 2 turni, con un tiro fortuna di 70 o superiore."
         }
     },
     "chaos": {

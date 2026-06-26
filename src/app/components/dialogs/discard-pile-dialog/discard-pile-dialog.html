@@ -1,48 +1,32 @@
 <dialog-wrapper [title]="dialogTitle">
   <div class="discard-list">
+    @if (allEntries.length === 0) {
+      <p class="discard-empty">{{ 'dialogs.discardPile.empty' | t }}</p>
+    }
+    @for (entry of allEntries; track entry.id) {
+      <div class="discard-row">
+        <div class="discard-back" [class.discard-back-spell]="isSpellEntry(entry)">
+          <span class="discard-back-letter">{{ isSpellEntry(entry) ? 'M' : 'A' }}</span>
+        </div>
+        <article class="discard-card" [class.discard-card-follower]="entry.card.kind === 'follower'" [class.discard-card-item]="entry.card.kind === 'item'" [class.discard-card-spell]="entry.card.kind === 'spell'">
+          <div class="discard-title-row">
+            <p class="discard-title">{{ resolveCardTitle(entry) }}</p>
+            <span class="discard-seq">#{{ entry.discardSeq }}</span>
+          </div>
+          <span class="discard-divider"></span>
 
-    <div class="discard-section">
-      <h3 class="discard-section-title">{{ explorationSectionLabel }}</h3>
-      @if (explorationEntries.length === 0) {
-        <p class="discard-empty">{{ 'dialogs.discardPile.empty' | t }}</p>
-      } @else {
-        @for (entry of explorationEntries; track entry.id) {
-          <ng-container *ngTemplateOutlet="cardEntry; context: { $implicit: entry }"></ng-container>
-        }
-      }
-    </div>
+          <div class="discard-card-head">
+            <!-- <span class="discard-kind-pill">{{ resolveKindLabel(entry) }}</span> -->
+            @if (resolveReason(entry); as reason) {
+              <span class="discard-kind-pill discard-kind-pill-bad">{{ reason }}</span>
+            }
+          </div>
 
-    <div class="discard-section">
-      <h3 class="discard-section-title discard-section-title-spell">{{ spellSectionLabel }}</h3>
-      @if (spellEntries.length === 0) {
-        <p class="discard-empty">{{ 'dialogs.discardPile.empty' | t }}</p>
-      } @else {
-        @for (entry of spellEntries; track entry.id) {
-          <ng-container *ngTemplateOutlet="cardEntry; context: { $implicit: entry }"></ng-container>
-        }
-      }
-    </div>
-
+          <p class="discard-meta">{{ resolveMetaText(entry) }}</p>
+        </article>
+      </div>
+    }
   </div>
-
-  <ng-template #cardEntry let-entry>
-    <article class="discard-card" [class.discard-card-follower]="entry.card.kind === 'follower'" [class.discard-card-item]="entry.card.kind === 'item'" [class.discard-card-spell]="entry.card.kind === 'spell'">
-      <div class="discard-title-row">
-        <p class="discard-title">{{ resolveCardTitle(entry) }}</p>
-        <span class="discard-seq">#{{ entry.discardSeq }}</span>
-      </div>
-      <span class="discard-divider"></span>
-
-      <div class="discard-card-head">
-        <span class="discard-kind-pill">{{ resolveKindLabel(entry) }}</span>
-        @if (resolveReason(entry); as reason) {
-          <span class="discard-kind-pill discard-kind-pill-bad">{{ reason }}</span>
-        }
-      </div>
-
-      <p class="discard-meta">{{ resolveMetaText(entry) }}</p>
-    </article>
-  </ng-template>
 
   <text-button dialog-action [text]="'dialogs.common.close' | t" (clicked)="close()"></text-button>
 </dialog-wrapper>

@@ -375,21 +375,14 @@ export class ActionExecutorService {
                     turn: Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0))),
                     reason: "dead",
                   });
-
-                  return {
-                    ...allyEntry,
-                    hpCurrent: 0,
-                    state: "discarded",
-                    discardReason: "dead",
-                    discardedAtTurn: worldState.currentTurn,
-                  };
+                  return null;
                 }
 
                 return {
                   ...allyEntry,
                   hpCurrent: nextFollowerHpCurrent,
                 };
-              });
+              }).filter((f): f is PlayerFollowerEntry => f !== null);
               continue;
             }
 
@@ -1019,15 +1012,9 @@ export class ActionExecutorService {
           return def?.isNegative === true;
         });
         if (negativeFollower) {
-          nextPlayerPatch.followers = (player.followers ?? []).map((f) => {
-            if (f.followerId !== negativeFollower.followerId || f.state === "discarded") return f;
-            return {
-              ...f,
-              state: "discarded" as const,
-              discardReason: "released" as const,
-              discardedAtTurn: worldTurn,
-            };
-          });
+          nextPlayerPatch.followers = (player.followers ?? []).filter((f) =>
+            !(f.followerId === negativeFollower.followerId && f.state !== "discarded"),
+          );
         }
         logCode = "player.castSpellRemoveFollower";
         logArgs = { ...logArgs, removedFollowerId: negativeFollower?.followerId ?? "none" };
@@ -1156,11 +1143,7 @@ export class ActionExecutorService {
 
           if (luckSuccess && randomFollower) {
             transaction.set(targetPlayerRef, {
-              followers: (targetPlayer.followers ?? []).map((f) =>
-                f.followerId === randomFollower.followerId
-                  ? { ...f, state: "discarded" as const, discardReason: "stolen" as const, discardedAtTurn: worldTurn }
-                  : f,
-              ),
+              followers: (targetPlayer.followers ?? []).filter((f) => f.followerId !== randomFollower.followerId),
             }, { merge: true });
             nextPlayerPatch.followers = [
               ...(player.followers ?? []),
@@ -2000,7 +1983,6 @@ export class ActionExecutorService {
       }
       const targetPlayer = targetSnap.data() as Player;
       const casterPlayer = casterSnap.exists() ? (casterSnap.data() as Player) : null;
-      const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
 
       if (spell.effect.type === "apply-status-target" || spell.effect.type === "skip-turn-target") {
         const statusKey = typeof spell.effect.statusKey === "string" ? spell.effect.statusKey : "";
@@ -2060,11 +2042,7 @@ export class ActionExecutorService {
           : null;
         if (randomFollower) {
           transaction.set(targetPlayerRef, {
-            followers: (targetPlayer.followers ?? []).map((f) =>
-              f.followerId === randomFollower.followerId
-                ? { ...f, state: "discarded" as const, discardReason: "stolen" as const, discardedAtTurn: worldTurn }
-                : f,
-            ),
+            followers: (targetPlayer.followers ?? []).filter((f) => f.followerId !== randomFollower.followerId),
           }, { merge: true });
           transaction.set(casterPlayerRef, {
             followers: [...(casterPlayer.followers ?? []), { followerId: randomFollower.followerId, hpCurrent: randomFollower.hpCurrent }],
@@ -4682,6 +4660,26 @@ export class ActionExecutorService {
     });
   }
 
+  public async getDeadFollowersFromDiscardPile(gameId: string): Promise<Array<{ followerId: string; ownerPlayerId?: string }>> {
+    await this.followerCatalogService.loadConfig();
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const discardSnapshot = await getDocs(collection(worldStateRef, "discardPile"));
+    const seen = new Set<string>();
+    const result: Array<{ followerId: string; ownerPlayerId?: string }> = [];
+    discardSnapshot.docs
+      .map((snap) => snap.data() as DiscardPileEntry)
+      .filter((entry) => entry.card?.kind === "follower" && entry.reason === "dead" && !entry.recoveredAt)
+      .sort((a, b) => (b.discardSeq ?? 0) - (a.discardSeq ?? 0))
+      .forEach((entry) => {
+        const followerId = entry.card.cardId;
+        if (!seen.has(followerId)) {
+          seen.add(followerId);
+          result.push({ followerId, ownerPlayerId: entry.ownerPlayerId });
+        }
+      });
+    return result;
+  }
+
   public async graveyardResurrect(
     gameId: string,
     actor: Pick<Player, "id" | "name">,
@@ -4751,8 +4749,7 @@ export class ActionExecutorService {
         data: entrySnap.data() as DiscardPileEntry,
       }))
       .filter((entry) => {
-        return entry.data.ownerPlayerId === actor.id
-          && entry.data.card?.kind === "follower"
+        return entry.data.card?.kind === "follower"
           && entry.data.card?.cardId === selectedFollowerId
           && entry.data.reason === "dead"
           && !entry.data.recoveredAt;
@@ -4810,31 +4807,15 @@ export class ActionExecutorService {
       this.ensurePlayerOnLandmark(mapCell, "graveyard", "You must be at Graveyard to use resurrection");
 
       const normalizedFollowers = this.normalizeFollowers(player.followers);
-      const targetIndex = normalizedFollowers.findIndex((entry) => {
-        return entry.followerId === selectedFollowerId
-          && entry.state === "discarded"
-          && entry.discardReason === "dead";
-      });
 
-      if (targetIndex < 0) {
-        throw new Error("Selected follower is not dead in your party records");
-      }
-
-      const targetEntry = normalizedFollowers[targetIndex];
       const targetDefinition = this.followerCatalogService.getCachedFollowerById(selectedFollowerId);
-      const targetMaxHp = Math.max(1, Math.floor(Number(targetDefinition?.maxHp ?? targetEntry.hpCurrent ?? 1)));
+      const targetMaxHp = Math.max(1, Math.floor(Number(targetDefinition?.maxHp ?? 1)));
       const localizedTargetName = targetDefinition
         ? this.followerCatalogService.getLocalizedName(targetDefinition)
         : selectedFollowerId;
-      const targetName = String(targetEntry.nameOverride ?? localizedTargetName).trim() || selectedFollowerId;
+      const targetName = String(selectedDiscardEntry.data.card?.name ?? localizedTargetName).trim() || selectedFollowerId;
 
       let nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
-      nextFollowers[targetIndex] = {
-        ...targetEntry,
-        state: "discarded",
-        discardReason: "lost",
-        discardedAtTurn: worldTurn,
-      };
 
       let nextHpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current ?? 0)));
 
@@ -4875,13 +4856,13 @@ export class ActionExecutorService {
         const resurrectHp = reward.reviveTarget === "one-hp" ? 1 : targetMaxHp;
         const shouldMarkAsUndead = reward.markAsUndead === true || reward.reviveTarget === "one-hp";
 
-        nextFollowers[targetIndex] = {
-          followerId: targetEntry.followerId,
+        nextFollowers.push({
+          followerId: selectedFollowerId,
           hpCurrent: resurrectHp,
           state: "active",
           ...(shouldMarkAsUndead ? { nameOverride: `${targetName} (undead)` } : {}),
           ...(shouldMarkAsUndead ? { categoryOverride: "undead" } : {}),
-        };
+        });
       }
 
       const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
@@ -4977,7 +4958,7 @@ export class ActionExecutorService {
       targetAlignment: "evil",
       selectedFollowerId: payload.followerId,
       experienceGain: 2,
-      discardReason: "lost",
+      discardReason: "dead",
       blockedCategories: ["undead"],
       alreadyAlignedMessage: "You are already evil",
       invalidLandmarkMessage: "You must be at Altar to perform a sacrifice",
@@ -5940,7 +5921,7 @@ export class ActionExecutorService {
       targetAlignment: "good" | "evil";
       selectedFollowerId: string;
       experienceGain: number;
-      discardReason: "released" | "lost";
+      discardReason: "released" | "dead";
       blockedCategories: string[];
       alreadyAlignedMessage: string;
       invalidLandmarkMessage: string;
@@ -6032,14 +6013,7 @@ export class ActionExecutorService {
         throw new Error(input.invalidFollowerMessage);
       }
 
-      const nextFollowers = normalizedFollowers.map((entry) => ({ ...entry }));
-      nextFollowers[allyIndex] = {
-        ...selectedFollower,
-        hpCurrent: 0,
-        state: "discarded",
-        discardReason: input.discardReason,
-        discardedAtTurn: worldTurn,
-      };
+      const nextFollowers = normalizedFollowers.filter((_, i) => i !== allyIndex);
 
       const ownershipResolution = this.itemOwnershipService.enforceAlignmentConstraints({
         items: player.inventory?.items ?? [],
@@ -6064,6 +6038,24 @@ export class ActionExecutorService {
       const nextWorldState: WorldState = {
         ...worldState,
       };
+
+      if (input.discardReason === "dead") {
+        const followerDef = this.followerCatalogService.getCachedFollowerById(selectedFollower.followerId);
+        let nextDiscardSeq = Math.max(0, Math.floor(Number(worldState.nextDiscardSeq ?? 0))) + 1;
+        const discardRef = doc(collection(worldStateRef, "discardPile"));
+        transaction.set(discardRef, {
+          id: discardRef.id,
+          card: { kind: "follower", cardId: selectedFollower.followerId, name: followerDef?.name ?? selectedFollower.followerId },
+          source: "world",
+          ownerPlayerId: actor.id,
+          turn: worldTurn,
+          discardedAt: Timestamp.now(),
+          discardSeq: nextDiscardSeq,
+          reason: "dead",
+        } as DiscardPileEntry);
+        nextWorldState.nextDiscardSeq = nextDiscardSeq;
+      }
+
       await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
       const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
 

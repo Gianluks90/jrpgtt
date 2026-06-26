@@ -42,6 +42,7 @@ export interface Player {
     actionsUsedThisTurn?: Record<string, number>;
     statuses?: PlayerStatus[];
     pendingResourcePickup?: PendingResourcePickup | null;
+    pendingTeleportOnMove?: boolean;
     spellbook?: PlayerSpellbook;
 }
 

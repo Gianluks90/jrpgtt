@@ -74,6 +74,7 @@
       "baseStrength": 3,
       "baseMagic": 5,
       "baseLuck": 2,
+      "categories": ["spirit"],
       "loot": ["exp", { "type": "gold", "dropRate": 0.75 }, { "type": "resource:minerals", "dropRate": 0.40 }]
     },
     {

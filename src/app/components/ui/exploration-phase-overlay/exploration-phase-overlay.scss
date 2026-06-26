@@ -249,10 +249,16 @@
     &.type-enemy    { color: var(--bad-color); }
     &.type-event    { color: var(--warning-color); }
     &.type-place    { color: var(--neutral-color); }
-    &.type-stranger { color: var(--magic-color); }
+    &.type-stranger { color: var(--overlay-fg-color); }
     &.type-follower { color: var(--ok-color); }
     &.type-item     { color: var(--good-color); }
     &.type-amulet   { color: var(--good-color); }
+
+    &.type-hermit {
+        color: var(--good-color);
+        border-color: var(--good-color);
+        box-shadow: 0 0 4px color-mix(in srgb, var(--good-color) 40%, transparent);
+    }
 }
 
 /* ── Stranger offer panel ────────────────────────────────────────────────── */
@@ -289,4 +295,82 @@
     display: flex;
     gap: 10px;
     justify-content: flex-end;
+}
+
+.stranger-wish-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    justify-items: stretch;
+
+    text-button {
+        width: 100%;
+    }
+}
+
+.place-result-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .place-result-text {
+        font-size: 0.92rem;
+        line-height: 1.5;
+        color: var(--overlay-fg-color);
+    }
+
+    .place-result-actions {
+        display: flex;
+        gap: 8px;
+    }
+}
+
+.place-market-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .place-market-coins {
+        font-size: 0.85rem;
+        color: var(--overlay-fg-color);
+    }
+
+    .place-market-empty {
+        font-size: 0.85rem;
+        color: var(--overlay-fg-secondary, #888);
+    }
+
+    .place-market-items {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .place-market-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border: 1px solid var(--panel-border-color, #444);
+        border-radius: 4px;
+
+        .place-market-item-name {
+            flex: 1;
+            font-size: 0.88rem;
+        }
+
+        .place-market-item-stock {
+            font-size: 0.78rem;
+            color: var(--overlay-fg-secondary, #888);
+            min-width: 24px;
+            text-align: right;
+        }
+    }
+
+    .place-market-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 4px;
+        border-top: 1px solid var(--panel-border-color, #444);
+    }
 }

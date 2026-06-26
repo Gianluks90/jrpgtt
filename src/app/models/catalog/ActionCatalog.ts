@@ -25,6 +25,12 @@ export type ActionFlowHandler =
   | "altar-sacrifice"
   | "elemental-ritual"
   | "follower-eliminate-zombie"
+  | "follower-dismiss-poltergeist"
+  | "follower-dismiss-banshee"
+  | "follower-dismiss-megera"
+  | "follower-alchimista-heal"
+  | "follower-alchimista-mana"
+  | "follower-hire-mercenary"
   | "academy-spell-upgrader";
 
 export type ActionFlowTrigger = "command-panel";

@@ -467,6 +467,73 @@ export class ActionRegistryService {
       };
     }
 
+    if (actionId === "dismiss-poltergeist") {
+      const has = this.hasActiveFollowerWithAction(player, "dismiss-poltergeist");
+      return {
+        id: "dismiss-poltergeist",
+        label: this.actionCatalogService.getLabel(actionId, "Caccialo via"),
+        description: this.actionCatalogService.getDescription(actionId, "Scaccia il Poltergeist in bioma Acqua (+1 exp)."),
+        disabled: commonDisabled || !has || context.biome !== "water",
+        pending: false,
+      };
+    }
+
+    if (actionId === "dismiss-banshee") {
+      const has = this.hasActiveFollowerWithAction(player, "dismiss-banshee");
+      return {
+        id: "dismiss-banshee",
+        label: this.actionCatalogService.getLabel(actionId, "Cacciala via"),
+        description: this.actionCatalogService.getDescription(actionId, "Scaccia la Banshee nelle Rovine (+1 exp)."),
+        disabled: commonDisabled || !has || context.biome !== "ruins",
+        pending: false,
+      };
+    }
+
+    if (actionId === "dismiss-megera") {
+      const has = this.hasActiveFollowerWithAction(player, "dismiss-megera");
+      const atCity = cell.landmarkId === "city";
+      return {
+        id: "dismiss-megera",
+        label: this.actionCatalogService.getLabel(actionId, "Consulta il Mistico"),
+        description: this.actionCatalogService.getDescription(actionId, "Fai scacciare la Megera dal Mistico."),
+        disabled: commonDisabled || !has || !atCity,
+        pending: false,
+      };
+    }
+
+    if (actionId === "alchimista-heal") {
+      const entry = this.getAlchimistaEntryWithAction(player, "alchimista-heal");
+      return {
+        id: "alchimista-heal",
+        label: this.actionCatalogService.getLabel(actionId, "Pozione di Guarigione"),
+        description: this.actionCatalogService.getDescription(actionId, "L'Alchimista ti cura del 10% degli HP (una sola volta)."),
+        disabled: commonDisabled || !entry,
+        pending: false,
+      };
+    }
+
+    if (actionId === "alchimista-mana") {
+      const entry = this.getAlchimistaEntryWithAction(player, "alchimista-mana");
+      return {
+        id: "alchimista-mana",
+        label: this.actionCatalogService.getLabel(actionId, "Pozione del Mana"),
+        description: this.actionCatalogService.getDescription(actionId, "L'Alchimista ti ripristina 2 MP (una sola volta)."),
+        disabled: commonDisabled || !entry,
+        pending: false,
+      };
+    }
+
+    if (actionId === "hire-mercenary") {
+      const has = this.hasActiveFollowerWithAction(player, "hire-mercenary");
+      return {
+        id: "hire-mercenary",
+        label: this.actionCatalogService.getLabel(actionId, "Assumi Mercenario (3 monete)"),
+        description: this.actionCatalogService.getDescription(actionId, "Paga 3 monete per ottenere Forza +2 nel prossimo combattimento."),
+        disabled: commonDisabled || !has || currentMoney < 3,
+        pending: false,
+      };
+    }
+
     // fallback for unknown actions
     return null;
   }
@@ -507,13 +574,32 @@ export class ActionRegistryService {
     }).length;
   }
 
+  private hasActiveFollowerWithAction(player: Player, actionId: string): boolean {
+    return (player.followers ?? []).some((entry) => {
+      if (!entry || entry.state === "discarded") return false;
+      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
+      const def = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      return (def?.actions ?? []).includes(actionId);
+    });
+  }
+
+  private getAlchimistaEntryWithAction(player: Player, actionId: string): boolean {
+    return (player.followers ?? []).some((entry) => {
+      if (!entry || entry.state === "discarded") return false;
+      if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
+      const def = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      if (!(def?.actions ?? []).includes(actionId)) return false;
+      return !(entry.usedActions ?? []).includes(actionId);
+    });
+  }
+
   private hasActiveZombie(player: Player): boolean {
     const followers = Array.isArray(player.followers) ? player.followers : [];
     return followers.some((entry) => {
       if (!entry || typeof entry !== "object") return false;
       if (entry.state === "discarded") return false;
       if (Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) <= 0) return false;
-      return String(entry.followerId ?? "").trim() === "zombie";
+      return String(entry.followerId ?? "").trim() === "B-FO-017";
     });
   }
 

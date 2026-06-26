@@ -13,6 +13,7 @@ export interface EnemyCatalogEntry {
     baseLuck: number;
     loot?: EnemyLoot;
     effect?: string;
+    categories?: string[];
 }
 
 export interface EnemiesCatalogConfig {

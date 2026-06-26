@@ -1,8 +1,101 @@
 [
   {
     "type": "place",
-    "id": "place-abandoned-camp",
-    "name": "Abandoned Camp",
-    "description": "You stumble upon a deserted campsite with dying embers. While this card remains here you may rest to recover 2 HP (once per visit)."
+    "id": "B-PL-001",
+    "name": "Fonte Arcana",
+    "description": "Una fonte mistica che promette potere magico a chi osa bere. Si esaurisce dopo 3 utilizzi.",
+    "persistent": true,
+    "dialogType": "fountain",
+    "dialogParams": { "stat": "magic", "statAmount": 1, "initialUses": 3, "luckThreshold": 70 },
+    "nameKey": "catalogs.places.B-PL-001.name",
+    "descriptionKey": "catalogs.places.B-PL-001.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-002",
+    "name": "Fonte della Forza",
+    "description": "Una fonte antica intrisa di energia guerriera. Si esaurisce dopo 3 utilizzi.",
+    "persistent": true,
+    "dialogType": "fountain",
+    "dialogParams": { "stat": "strength", "statAmount": 1, "initialUses": 3, "luckThreshold": 70 },
+    "nameKey": "catalogs.places.B-PL-002.name",
+    "descriptionKey": "catalogs.places.B-PL-002.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-003",
+    "name": "Fonte della Vita",
+    "description": "Acque miracolose che ampliano la vitalità di chi le beve. Si esaurisce dopo 3 utilizzi.",
+    "persistent": true,
+    "dialogType": "fountain",
+    "dialogParams": { "stat": "hp", "statAmount": 0.05, "initialUses": 3, "luckThreshold": 70 },
+    "nameKey": "catalogs.places.B-PL-003.name",
+    "descriptionKey": "catalogs.places.B-PL-003.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-004",
+    "name": "Mercato",
+    "description": "Un piccolo mercato ambulante con merci varie. Chi passa può acquistare ciò che serve.",
+    "persistent": true,
+    "dialogType": "market",
+    "dialogParams": { "stockConfigUrl": "/configs/merchant-stock/place-market.stock.json" },
+    "nameKey": "catalogs.places.B-PL-004.name",
+    "descriptionKey": "catalogs.places.B-PL-004.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-005",
+    "name": "Portale Magico",
+    "description": "Un varco dimensionale instabile. Chi lo attraversa viene trasportato in un luogo speciale già scoperto.",
+    "persistent": true,
+    "dialogType": "portal",
+    "dialogParams": {},
+    "nameKey": "catalogs.places.B-PL-005.name",
+    "descriptionKey": "catalogs.places.B-PL-005.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-006",
+    "name": "Palude",
+    "description": "Acque stagnanti e miasmi tossici. Chiunque concluda il proprio turno qui subisce Veleno se non protetto.",
+    "persistent": true,
+    "dialogType": "swamp",
+    "dialogParams": {},
+    "nameKey": "catalogs.places.B-PL-006.name",
+    "descriptionKey": "catalogs.places.B-PL-006.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-007",
+    "name": "Labirinto",
+    "description": "Un dedalo di passaggi intricati. Testa la tua fortuna: potresti perderti o trovare l'uscita.",
+    "persistent": true,
+    "dialogType": "maze",
+    "dialogParams": { "luckThreshold": 50 },
+    "nameKey": "catalogs.places.B-PL-007.name",
+    "descriptionKey": "catalogs.places.B-PL-007.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-008",
+    "name": "Caverna",
+    "description": "Una grotta oscura e misteriosa. Esplorarla potrebbe portare pericolo o fortuna.",
+    "persistent": true,
+    "dialogType": "cave",
+    "dialogParams": {},
+    "nameKey": "catalogs.places.B-PL-008.name",
+    "descriptionKey": "catalogs.places.B-PL-008.description"
+  },
+  {
+    "type": "place",
+    "id": "B-PL-009",
+    "name": "Tempietto",
+    "description": "Un piccolo santuario abbandonato. Pregare qui può portare benedizioni inaspettate.",
+    "persistent": true,
+    "dialogType": "chapel",
+    "dialogParams": {},
+    "nameKey": "catalogs.places.B-PL-009.name",
+    "descriptionKey": "catalogs.places.B-PL-009.description"
   }
 ]

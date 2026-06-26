@@ -22,6 +22,12 @@ export interface FollowerDefinition {
   itemCapacityBonus?: number;
   actions: string[];
   allowedBiomes?: BiomeType[];
+  combatSkipBiomes?: BiomeType[];
+  leavesOnCombatLoss?: boolean;
+  removesOtherFollowersOnPickup?: boolean;
+  dismissLandmarkId?: string;
+  oneTimeActions?: string[];
+  damagesOnXpGain?: boolean;
   parameterModifiers?: FollowerParameterModifier[];
   statusKeysWhileActive?: string[];
 }

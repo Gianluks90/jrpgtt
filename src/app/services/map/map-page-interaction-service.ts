@@ -869,6 +869,33 @@ export class MapPageInteractionService {
     return this.cellSelectionService.openCellSelection(selectableCellIds, prompt, withCancel);
   }
 
+  public async handlePendingTeleport(input: {
+    gameId: string;
+    myPlayer: Player;
+    mapCellsById: Record<string, MapCell>;
+  }): Promise<void> {
+    const { gameId, myPlayer, mapCellsById } = input;
+
+    const selectableCellIds = new Set<string>(
+      Object.keys(mapCellsById).filter((id) => id !== `${myPlayer.location.x}_${myPlayer.location.y}`),
+    );
+
+    const prompt = this.translationService.tOrFallback(
+      "map.interaction.pendingTeleport.prompt",
+      "Scegli la casella di destinazione (Benedizione del Tempietto)",
+    );
+
+    const selected = await this.openCellSelection(selectableCellIds, prompt, false);
+    if (!selected) return;
+
+    try {
+      await this.actionExecutorService.placeChapelUseTeleport(gameId, myPlayer, selected.x, selected.y);
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error ? error.message : "Teleport error");
+    }
+  }
+
   private async executeCommandActionFlow(
     flow: ActionCatalogFlowDefinition,
     input: HandleCommandActionInput,
@@ -1029,6 +1056,18 @@ export class MapPageInteractionService {
 
       await this.runNamedAction(input.actionId, async () => {
         await this.actionExecutorService.feedHorse(input.gameId, {
+          id: player.id,
+          name: player.name,
+        });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-guide-pathfind") {
+      if (!player) return;
+
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.guidePathfind(input.gameId, {
           id: player.id,
           name: player.name,
         });
@@ -1523,6 +1562,55 @@ export class MapPageInteractionService {
           id: player.id,
           name: player.name,
         });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-dismiss-poltergeist") {
+      if (!player) return;
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.dismissFollower(input.gameId, { id: player.id, name: player.name }, "dismiss-poltergeist", "B-FO-014", 1);
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-dismiss-banshee") {
+      if (!player) return;
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.dismissFollower(input.gameId, { id: player.id, name: player.name }, "dismiss-banshee", "B-FO-015", 1);
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-dismiss-megera") {
+      if (!player) return;
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.dismissFollower(input.gameId, { id: player.id, name: player.name }, "dismiss-megera", "B-FO-016", 0);
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-alchimista-heal") {
+      if (!player) return;
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.alchimistaHeal(input.gameId, { id: player.id, name: player.name });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-alchimista-mana") {
+      if (!player) return;
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.alchimistaMana(input.gameId, { id: player.id, name: player.name });
+      }, errorMessage);
+      return;
+    }
+
+    if (handler === "follower-hire-mercenary") {
+      if (!player) return;
+      await this.runNamedAction(input.actionId, async () => {
+        await this.actionExecutorService.hireMercenary(input.gameId, { id: player.id, name: player.name });
+        this.explorationEventService.notifyMercenaryHired();
       }, errorMessage);
       return;
     }

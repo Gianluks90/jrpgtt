@@ -21,4 +21,5 @@
 **Cintura magica**: (magico) Forza +1.
 **Spada**: Forza +1.
 **Ascia**: Forza +1. Azione "chop tree" solo in foresta;
+**Borraccia**: 3 cariche. Si consuma automaticamente una carica nel deserto per non subire danni dall'ambiente ostile. Terminare il turno nel bioma Acqua ripristina 1 carica.
 **Amuleto**: (magico) Oggetto speciale che consente l'ingresso alla Regione III, essenziale per sopravvivere al suo interno.

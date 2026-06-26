@@ -629,6 +629,11 @@ export class MapPage implements OnInit, OnDestroy {
     });
   });
 
+  public hasPendingTeleport = computed<boolean>(() => {
+    const player = this.myPlayer();
+    return !!player?.pendingTeleportOnMove && this.isMyTurn() && !this.hasMovedOnCurrentTurn();
+  });
+
   public ngOnInit(): void {
     if (!this.gameId) return;
     this.mapPageInteractionService.resetUiState();
@@ -859,6 +864,23 @@ export class MapPage implements OnInit, OnDestroy {
         movableCellIds: this.movableCellIds(),
         worldState: this.worldState(),
         mapSize: this.mapSize(),
+      });
+    } finally {
+      this.isMoving.set(false);
+    }
+  }
+
+  public async onUsePendingTeleport(): Promise<void> {
+    const myPlayer = this.myPlayer();
+    if (!myPlayer || !this.hasPendingTeleport()) return;
+    if (this.isMoving() || this.isMyTravelLockActive() || this.isWorldEventFlowLockActive() || this.isRequiredActionNotificationLockActive()) return;
+
+    this.isMoving.set(true);
+    try {
+      await this.mapPageInteractionService.handlePendingTeleport({
+        gameId: this.gameId,
+        myPlayer,
+        mapCellsById: this.mapCellsById(),
       });
     } finally {
       this.isMoving.set(false);

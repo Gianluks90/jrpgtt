@@ -4,6 +4,7 @@ import {
   ItemEffectsCatalogConfig,
   ItemEffectType,
 } from "@models/catalog/ItemEffectCatalog";
+import { BiomeType } from "@models/world/MapCell";
 
 @Injectable({
   providedIn: "root",
@@ -80,71 +81,126 @@ export class ItemEffectCatalogService {
       throw new Error(`Invalid item effects catalog: effect at index ${index} is invalid`);
     }
 
-    const typed = raw as {
-      id?: unknown;
-      label?: unknown;
-      description?: unknown;
-      type?: unknown;
-      biome?: unknown;
-      conditionId?: unknown;
-      consumeCharges?: unknown;
-      rechargeCharges?: unknown;
-    };
+    const r = raw as Record<string, unknown>;
 
-    if (typeof typed.id !== "string" || !typed.id.trim()) {
+    if (typeof r["id"] !== "string" || !r["id"].trim()) {
       throw new Error(`Invalid item effects catalog: effect at index ${index} has invalid id`);
     }
+    const id = r["id"];
 
-    if (typeof typed.label !== "string" || !typed.label.trim()) {
-      throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid label`);
+    if (typeof r["label"] !== "string" || !r["label"].trim()) {
+      throw new Error(`Invalid item effects catalog: effect '${id}' has invalid label`);
+    }
+    const label = r["label"];
+
+    if (typeof r["description"] !== "undefined" && typeof r["description"] !== "string") {
+      throw new Error(`Invalid item effects catalog: effect '${id}' has invalid description`);
+    }
+    const description = typeof r["description"] === "string" ? r["description"] : undefined;
+
+    if (!this.isEffectType(r["type"])) {
+      throw new Error(`Invalid item effects catalog: effect '${id}' has invalid type '${String(r["type"])}'`);
+    }
+    const type = r["type"];
+    const base = { id, label, description };
+
+    if (type === "prevent-biome-condition-damage-by-charge") {
+      const biome = this.requireBiome(r, id);
+      const conditionId = this.requireString(r, "conditionId", id);
+      const consumeCharges = this.requirePositiveInt(r, "consumeCharges", id, 1);
+      return { ...base, type, biome, conditionId, consumeCharges };
     }
 
-    if (typeof typed.description !== "undefined" && typeof typed.description !== "string") {
-      throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid description`);
+    if (type === "recharge-charges-in-biome") {
+      const biome = this.requireBiome(r, id);
+      const rechargeCharges = this.requirePositiveInt(r, "rechargeCharges", id, 1);
+      return { ...base, type, biome, rechargeCharges };
     }
 
-    if (!this.isEffectType(typed.type)) {
-      throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid type`);
+    if (type === "prevent-biome-condition-damage-passive") {
+      const biome = this.requireBiome(r, id);
+      const conditionId = this.requireString(r, "conditionId", id);
+      return { ...base, type, biome, conditionId };
     }
 
-    if (!this.isBiomeType(typed.biome)) {
-      throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid biome`);
+    if (type === "gain-coins-range-on-pickup") {
+      const minAmount = this.requirePositiveInt(r, "minAmount", id, 1);
+      const maxAmount = this.requirePositiveInt(r, "maxAmount", id, 1);
+      return { ...base, type, minAmount, maxAmount };
     }
 
-    if (typed.type === "prevent-biome-condition-damage-by-charge") {
-      if (typeof typed.conditionId !== "string" || !typed.conditionId.trim()) {
-        throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid conditionId`);
+    if (type === "apply-status-on-pickup") {
+      const statusKey = this.requireString(r, "statusKey", id);
+      const durationTurns = this.requirePositiveInt(r, "durationTurns", id, 1);
+      return { ...base, type, statusKey, durationTurns };
+    }
+
+    if (type === "reduce-combat-damage-on-fortune-check") {
+      const luckThreshold = this.requirePositiveInt(r, "luckThreshold", id, 1);
+      const reduction = this.requirePositiveInt(r, "reduction", id, 1);
+      const rawFilter = r["combatStatFilter"];
+      const combatStatFilter =
+        rawFilter === "strength" || rawFilter === "magic" ? rawFilter : undefined;
+      return { ...base, type, luckThreshold, reduction, combatStatFilter };
+    }
+
+    if (type === "combat-stat-bonus-vs-enemy-category") {
+      const rawStat = r["combatStat"];
+      if (rawStat !== "strength" && rawStat !== "magic") {
+        throw new Error(`Invalid item effects catalog: effect '${id}' has invalid combatStat`);
       }
-
-      const consumeCharges = Math.floor(Number(typed.consumeCharges ?? 1));
-      if (!Number.isFinite(consumeCharges) || consumeCharges <= 0) {
-        throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid consumeCharges`);
-      }
-
-      return {
-        id: typed.id,
-        label: typed.label,
-        description: typeof typed.description === "string" ? typed.description : undefined,
-        type: typed.type,
-        biome: typed.biome,
-        conditionId: typed.conditionId,
-        consumeCharges,
-      };
+      const bonus = this.requirePositiveInt(r, "bonus", id, 1);
+      const categoryFilter = this.requireString(r, "categoryFilter", id);
+      return { ...base, type, combatStat: rawStat, bonus, categoryFilter };
     }
 
-    const rechargeCharges = Math.floor(Number(typed.rechargeCharges ?? 1));
-    if (!Number.isFinite(rechargeCharges) || rechargeCharges <= 0) {
-      throw new Error(`Invalid item effects catalog: effect '${typed.id}' has invalid rechargeCharges`);
+    if (type === "draw-spell-on-spellbook-empty") {
+      return { ...base, type };
     }
 
-    return {
-      id: typed.id,
-      label: typed.label,
-      description: typeof typed.description === "string" ? typed.description : undefined,
-      type: typed.type,
-      biome: typed.biome,
-      rechargeCharges,
-    };
+    if (type === "apply-status-on-lucky-roll") {
+      const statusKey = this.requireString(r, "statusKey", id);
+      const durationTurns = this.requirePositiveInt(r, "durationTurns", id, 1);
+      return { ...base, type, statusKey, durationTurns };
+    }
+
+    if (type === "passive-self-silence-and-spell-immunity") {
+      return { ...base, type };
+    }
+
+    if (type === "region-iii-access") {
+      return { ...base, type };
+    }
+
+    if (type === "skip-spirit-for-exp") {
+      const expReward = this.requirePositiveInt(r, "expReward", id, 1);
+      return { ...base, type, expReward };
+    }
+
+    // skip-exploration-card-once-per-turn
+    return { ...base, type };
+  }
+
+  private requireBiome(r: Record<string, unknown>, id: string): BiomeType {
+    if (!this.isBiomeType(r["biome"])) {
+      throw new Error(`Invalid item effects catalog: effect '${id}' has invalid biome`);
+    }
+    return r["biome"];
+  }
+
+  private requireString(r: Record<string, unknown>, field: string, id: string): string {
+    if (typeof r[field] !== "string" || !(r[field] as string).trim()) {
+      throw new Error(`Invalid item effects catalog: effect '${id}' has invalid ${field}`);
+    }
+    return r[field] as string;
+  }
+
+  private requirePositiveInt(r: Record<string, unknown>, field: string, id: string, fallback?: number): number {
+    const value = Math.floor(Number(r[field] ?? fallback));
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error(`Invalid item effects catalog: effect '${id}' has invalid ${field}`);
+    }
+    return value;
   }
 
   private toMap(effects: ItemEffectDefinition[]): Record<string, ItemEffectDefinition> {
@@ -163,10 +219,21 @@ export class ItemEffectCatalogService {
 
   private isEffectType(value: unknown): value is ItemEffectType {
     return value === "prevent-biome-condition-damage-by-charge"
-      || value === "recharge-charges-in-biome";
+      || value === "recharge-charges-in-biome"
+      || value === "prevent-biome-condition-damage-passive"
+      || value === "gain-coins-range-on-pickup"
+      || value === "apply-status-on-pickup"
+      || value === "reduce-combat-damage-on-fortune-check"
+      || value === "combat-stat-bonus-vs-enemy-category"
+      || value === "draw-spell-on-spellbook-empty"
+      || value === "apply-status-on-lucky-roll"
+      || value === "passive-self-silence-and-spell-immunity"
+      || value === "region-iii-access"
+      || value === "skip-spirit-for-exp"
+      || value === "skip-exploration-card-once-per-turn";
   }
 
-  private isBiomeType(value: unknown): value is "plains" | "forest" | "mountain" | "water" | "desert" | "ruins" {
+  private isBiomeType(value: unknown): value is BiomeType {
     return value === "plains"
       || value === "forest"
       || value === "mountain"

@@ -13,6 +13,7 @@ import {
 } from "../../components/dialogs/player-level-up-dialog/player-level-up-dialog";
 import { FirebaseService } from "@services/app/firebase-service";
 import { WorldState } from "@models/world/WorldState";
+import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
 
 @Injectable({
   providedIn: "root",
@@ -21,6 +22,7 @@ export class PlayerProgressionService {
   constructor(
     private firebaseService: FirebaseService,
     private dialog: Dialog,
+    private followerCatalogService: FollowerCatalogService,
   ) { }
 
   public async assignExperience(gameId: string, playerId: string, experienceAmount: number): Promise<Player> {
@@ -134,7 +136,32 @@ export class PlayerProgressionService {
     currentPlayer?: Player,
   ): Promise<Player> {
     const playerWithExp = await this.assignExperience(gameId, playerId, experienceAmount);
+    await this.applyBansheeXpDamage(gameId, playerId, experienceAmount, currentPlayer ?? playerWithExp);
     return this.checkLevelUpAndHandle(gameId, playerId, currentPlayer ?? playerWithExp);
+  }
+
+  private async applyBansheeXpDamage(
+    gameId: string,
+    playerId: string,
+    xpGained: number,
+    player: Player,
+  ): Promise<void> {
+    if (xpGained <= 0) return;
+    const hasBanshee = (player.followers ?? []).some((entry) => {
+      if (!entry || entry.state === "discarded") return false;
+      const def = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+      return def?.damagesOnXpGain === true;
+    });
+    if (!hasBanshee) return;
+
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", playerId);
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const snap = await transaction.get(playerRef);
+      if (!snap.exists()) return;
+      const p = snap.data() as Player;
+      const hp = Math.max(0, Math.floor(Number(p.parameters?.hp?.current ?? 0)));
+      transaction.set(playerRef, { "parameters.hp.current": Math.max(0, hp - xpGained) }, { merge: true });
+    });
   }
 
   private async getPlayer(gameId: string, playerId: string): Promise<Player> {

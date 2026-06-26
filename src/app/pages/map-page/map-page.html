@@ -89,6 +89,15 @@
                         (discardPileRequested)="openDiscardPileDialog()"
                     ></app-biomes-counter>
 
+                    @if (hasPendingTeleport() && !cellSelectionService.state()) {
+                        <div class="map-pending-teleport-hud">
+                            <span class="map-pending-teleport-label">{{ 'map.interaction.pendingTeleport.label' | t }}</span>
+                            <button class="map-pending-teleport-btn" (click)="onUsePendingTeleport()">
+                                {{ 'map.interaction.pendingTeleport.action' | t }}
+                            </button>
+                        </div>
+                    }
+
                     @if (cellSelectionService.state(); as selectionState) {
                         <app-map-cell-selection-hud
                             [prompt]="selectionState.prompt"

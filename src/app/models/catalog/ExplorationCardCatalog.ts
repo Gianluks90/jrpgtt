@@ -1,6 +1,15 @@
 import { ExplorationCardType } from "@models/exploration/ExplorationCard";
 
-export type StrangerDialogType = 'merchant' | 'healer' | 'mercenary' | (string & {});
+export type StrangerDialogType =
+  | 'merchant'
+  | 'healer'
+  | 'mercenary'
+  | 'healer-percent'
+  | 'enchantress'
+  | 'wish'
+  | 'hermit'
+  | 'spell-teacher'
+  | (string & {});
 
 export type ExplorationEventEffectType =
     | 'lose-hp'
@@ -75,8 +84,21 @@ export interface EventCardDef extends ExplorationCardDefBase {
     effect?: ExplorationEventEffect;
 }
 
+export type PlaceDialogType =
+    | 'fountain'
+    | 'market'
+    | 'portal'
+    | 'swamp'
+    | 'maze'
+    | 'cave'
+    | 'chapel'
+    | (string & {});
+
 export interface PlaceCardDef extends ExplorationCardDefBase {
     type: 'place';
+    persistent?: boolean;
+    dialogType?: PlaceDialogType;
+    dialogParams?: Record<string, unknown>;
 }
 
 export interface StrangerCardDef extends ExplorationCardDefBase {

@@ -6,6 +6,7 @@ import { TranslationService } from "@services/shared/translation-service";
 import { CombatOutcome, CombatResult, CombatState } from "@models/exploration/CombatState";
 import { ExplorationElement } from "@models/exploration/ExplorationCard";
 import { SanctuaryElement } from "@models/world/MapCell";
+import { MapPageStateService } from "@services/map/map-page-state-service";
 import { LuckCheckResult } from "@models/ui/LuckCheckResult";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 import { TextButton } from "../text-button/text-button";
@@ -59,6 +60,7 @@ export class CombatOverlay implements OnDestroy {
   private readonly explorationEventService = inject(ExplorationEventService);
   private readonly soundService = inject(SoundService);
   private readonly translationService = inject(TranslationService);
+  private readonly mapPageState = inject(MapPageStateService);
 
   private readonly uiPhase = signal<CombatUiPhase>("idle");
   private readonly combatAction = signal<CombatAction>(null);
@@ -82,6 +84,20 @@ export class CombatOverlay implements OnDestroy {
   private activeCombatId: string | null = null;
 
   public readonly combat = computed<CombatState | null>(() => this.explorationEventService.pendingCombat());
+
+  private readonly myPlayer = computed(() => {
+    const uid = this.mapPageState.currentUserId();
+    return this.mapPageState.players().find((p) => p.id === uid) ?? null;
+  });
+
+  public readonly canExorciseSpirit = computed(() => {
+    const combat = this.combat();
+    const player = this.myPlayer();
+    if (!combat || combat.phase !== "setup" || !player) return false;
+    const isSpirit = (combat.enemy.categories ?? []).includes("spirit");
+    const hasHolySymbol = (player.inventory?.items ?? []).some(e => e.itemId === "B-IT-009");
+    return isSpirit && hasHolySymbol;
+  });
   public readonly equipmentOptions = computed<PendingCombatEquipment | null>(() => this.explorationEventService.pendingEquipmentOptions());
   public readonly showEquipmentSelection = computed(() => this.equipmentSelectionVisible() && !!this.equipmentOptions());
   public readonly spellOptions = computed<CombatSpellOption[] | null>(() => this.explorationEventService.pendingSpellOptions());
@@ -387,6 +403,12 @@ export class CombatOverlay implements OnDestroy {
     this.uiPhase.set("rolling");
     this.explorationEventService.submitCombatAction("flee");
     this.scheduleRollAnimation();
+  }
+
+  public exorcise(): void {
+    this.clearAllTimers();
+    this.combatAction.set("dismissed");
+    this.explorationEventService.submitCombatAction("exorcise-spirit");
   }
 
   public continueToResults(): void {

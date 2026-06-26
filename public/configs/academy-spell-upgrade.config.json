@@ -1,4 +1,12 @@
 [
-  { "from": "mimicry", "to": "mimicry-plus", "cost": 12 },
-  { "from": "negate",  "to": "negate-plus",  "cost": 12 }
+  {
+    "from": "B-SP-034",
+    "to": "B-SP-035",
+    "cost": 12
+  },
+  {
+    "from": "B-SP-036",
+    "to": "B-SP-037",
+    "cost": 12
+  }
 ]

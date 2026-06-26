@@ -12,6 +12,7 @@ export interface ResolveFightInput {
   enemy: PlacedEnemyCard;
   timeOfDay: TimeOfDay;
   playerEquipmentBonus?: number;
+  hasCrestOfCourage?: boolean;
 }
 
 export interface ResolveFleeInput {
@@ -34,8 +35,14 @@ export class CombatResolverService {
       ? input.enemy.strength
       : input.enemy.magic;
 
-    const playerLuckRoll = this.rollCombatLuck(input.playerLuck);
+    let playerLuckRoll = this.rollCombatLuck(input.playerLuck);
     const enemyLuckRoll = this.rollCombatLuck(input.enemy.luck);
+
+    // Crest of Courage: reroll player luck once if losing the roll in strength combat
+    if (input.hasCrestOfCourage && input.enemy.combatStat === "strength" && playerLuckRoll.roll < enemyLuckRoll.roll) {
+      const reroll = this.rollCombatLuck(input.playerLuck);
+      if (reroll.roll > playerLuckRoll.roll) playerLuckRoll = reroll;
+    }
 
     const elementMods = this.computeElementModifiers(
       input.playerElement,

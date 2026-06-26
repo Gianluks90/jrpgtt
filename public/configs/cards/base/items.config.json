@@ -1,85 +1,434 @@
 {
   "items": [
     {
-      "id": "cursed-rune-sword",
-      "name": "Cursed Rune Sword",
-      "description": "A sword that feeds on dark intent.",
-      "nameKey": "catalogs.items.cursed-rune-sword.name",
-      "descriptionKey": "catalogs.items.cursed-rune-sword.description",
+      "id": "B-IT-001",
+      "name": "Sword",
+      "description": "A basic sword.",
+      "nameKey": "catalogs.items.B-IT-001.name",
+      "descriptionKey": "catalogs.items.B-IT-001.description",
       "category": "weapon",
       "occupiesSpace": true,
       "consumable": false,
       "actions": [],
-      "purchaseValue": 0,
+      "purchaseValue": 3,
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": [
+            "fight-only"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-IT-002",
+      "name": "Axe",
+      "description": "Strength +1. Unlocks Chop Wood in forests.",
+      "nameKey": "catalogs.items.B-IT-002.name",
+      "descriptionKey": "catalogs.items.B-IT-002.description",
+      "category": "weapon",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [
+        "chop-tree"
+      ],
+      "purchaseValue": 5,
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": [
+            "fight-only"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-IT-003",
+      "name": "Holy Lance",
+      "description": "Unusable by evil. Strength +1. Strength +3 against Dragon enemies.",
+      "nameKey": "catalogs.items.B-IT-003.name",
+      "descriptionKey": "catalogs.items.B-IT-003.description",
+      "category": "weapon",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 10,
       "constraints": {
         "allowedAlignments": [
-          "evil"
+          "good",
+          "neutral"
         ]
       },
       "parameterModifiers": [
         {
           "parameter": "strength",
+          "amount": 1,
+          "scopes": [
+            "fight-only"
+          ]
+        }
+      ],
+      "effects": [
+        "holy-lance-dragon-bonus"
+      ]
+    },
+    {
+      "id": "B-IT-004",
+      "name": "Golden Sword",
+      "description": "Strength +2. Breaks if you are defeated in combat while wielding it.",
+      "nameKey": "catalogs.items.B-IT-004.name",
+      "descriptionKey": "catalogs.items.B-IT-004.description",
+      "category": "weapon",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 8,
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
           "amount": 2,
-          "scope": "always"
+          "scopes": [
+            "fight-only"
+          ]
         }
+      ],
+      "effects": [
+        "golden-sword-break-on-defeat"
       ]
     },
     {
-      "id": "common-sword",
-      "name": "Sword",
-      "description": "A basic sword for beginners.",
-      "nameKey": "catalogs.items.common-sword.name",
-      "descriptionKey": "catalogs.items.common-sword.description",
+      "id": "B-IT-005",
+      "name": "Rune Sword",
+      "description": "Unusable by good. Strength +1. Recover 3% HP on combat victory.",
+      "nameKey": "catalogs.items.B-IT-005.name",
+      "descriptionKey": "catalogs.items.B-IT-005.description",
       "category": "weapon",
       "occupiesSpace": true,
       "consumable": false,
       "actions": [],
-      "purchaseValue": 0,
+      "purchaseValue": 10,
+      "constraints": {
+        "allowedAlignments": [
+          "evil",
+          "neutral"
+        ]
+      },
       "parameterModifiers": [
         {
           "parameter": "strength",
           "amount": 1,
-          "scope": "fight-only"
+          "scopes": [
+            "fight-only"
+          ]
         }
+      ],
+      "effects": [
+        "rune-sword-on-win-heal"
       ]
     },
     {
-      "id": "common-axe",
-      "name": "Axe",
-      "description": "A basic axe for beginners. Enables Chop wood in forests.",
-      "nameKey": "catalogs.items.common-axe.name",
-      "descriptionKey": "catalogs.items.common-axe.description",
-      "category": "weapon",
+      "id": "B-IT-006",
+      "name": "Helmet",
+      "description": "Fortune check 80+: reduce incoming non-magic combat damage by 1.",
+      "nameKey": "catalogs.items.B-IT-006.name",
+      "descriptionKey": "catalogs.items.B-IT-006.description",
+      "category": "armor",
       "occupiesSpace": true,
       "consumable": false,
-      "actions": ["chop-tree"],
-      "purchaseValue": 0,
+      "actions": [],
+      "purchaseValue": 4,
+      "effects": [
+        "helmet-combat-damage-reduction"
+      ]
+    },
+    {
+      "id": "B-IT-007",
+      "name": "Shield",
+      "description": "Fortune check 65+: reduce incoming non-magic combat damage by 1.",
+      "nameKey": "catalogs.items.B-IT-007.name",
+      "descriptionKey": "catalogs.items.B-IT-007.description",
+      "category": "armor",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 6,
+      "effects": [
+        "shield-combat-damage-reduction"
+      ]
+    },
+    {
+      "id": "B-IT-008",
+      "name": "Armour",
+      "description": "Fortune check 50+: reduce incoming non-magic combat damage by 1.",
+      "nameKey": "catalogs.items.B-IT-008.name",
+      "descriptionKey": "catalogs.items.B-IT-008.description",
+      "category": "armor",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 8,
+      "effects": [
+        "armour-combat-damage-reduction"
+      ]
+    },
+    {
+      "id": "B-IT-009",
+      "name": "Holy Symbol",
+      "description": "Ignore luck bonuses and maluses in blessed or cursed places. May skip a spirit enemy to destroy it and gain 1 exp.",
+      "nameKey": "catalogs.items.B-IT-009.name",
+      "descriptionKey": "catalogs.items.B-IT-009.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": ["exorcise-spirit"],
+      "purchaseValue": 8,
+      "effects": [
+        "holy-symbol-spirit-skip"
+      ]
+    },
+    {
+      "id": "B-IT-010",
+      "name": "Holy Chalice",
+      "description": "Unusable by evil. Magic +1. Immune to the hostile desert environment.",
+      "nameKey": "catalogs.items.B-IT-010.name",
+      "descriptionKey": "catalogs.items.B-IT-010.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 10,
+      "constraints": {
+        "allowedAlignments": [
+          "good",
+          "neutral"
+        ]
+      },
       "parameterModifiers": [
         {
-          "parameter": "strength",
+          "parameter": "magic",
           "amount": 1,
-          "scope": "fight-only"
+          "scopes": [
+            "always"
+          ]
+        }
+      ],
+      "effects": [
+        "holy-chalice-desert-immunity"
+      ]
+    },
+    {
+      "id": "B-IT-011",
+      "name": "Talisman",
+      "description": "Applies Silence to yourself while held. You are immune to other players' spells.",
+      "nameKey": "catalogs.items.B-IT-011.name",
+      "descriptionKey": "catalogs.items.B-IT-011.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 10,
+      "effects": [
+        "talisman-self-silence-spell-immunity"
+      ]
+    },
+    {
+      "id": "B-IT-012",
+      "name": "Crest of Courage",
+      "description": "In non-magic combat, re-roll your fortune check once if your first result was lower than your opponent's. Once per combat.",
+      "nameKey": "catalogs.items.B-IT-012.name",
+      "descriptionKey": "catalogs.items.B-IT-012.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 8,
+      "effects": [
+        "crest-of-courage-combat-reroll"
+      ]
+    },
+    {
+      "id": "B-IT-013",
+      "name": "Crystal Ball",
+      "description": "Once per turn, skip one exploration card and draw a replacement. You must still face the new card.",
+      "nameKey": "catalogs.items.B-IT-013.name",
+      "descriptionKey": "catalogs.items.B-IT-013.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": ["crystal-ball-skip"],
+      "purchaseValue": 10,
+      "effects": [
+        "crystal-ball-card-skip"
+      ]
+    },
+    {
+      "id": "B-IT-014",
+      "name": "Magic Wand",
+      "description": "When you exhaust your last spell, draw a new spell from the spell deck.",
+      "nameKey": "catalogs.items.B-IT-014.name",
+      "descriptionKey": "catalogs.items.B-IT-014.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 8,
+      "effects": [
+        "magic-wand-spell-refill"
+      ]
+    },
+    {
+      "id": "B-IT-015",
+      "name": "Fortune Pendant",
+      "description": "Each time you score a lucky roll, apply the Fortune status to yourself for 1 turn.",
+      "nameKey": "catalogs.items.B-IT-015.name",
+      "descriptionKey": "catalogs.items.B-IT-015.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 8,
+      "effects": [
+        "fortune-pendant-on-lucky-roll"
+      ]
+    },
+    {
+      "id": "B-IT-016",
+      "name": "Mage Crown",
+      "description": "Magic +2.",
+      "nameKey": "catalogs.items.B-IT-016.name",
+      "descriptionKey": "catalogs.items.B-IT-016.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 10,
+      "parameterModifiers": [
+        {
+          "parameter": "magic",
+          "amount": 2,
+          "scopes": [
+            "always"
+          ]
         }
       ]
     },
     {
-      "id": "sealed-orb",
-      "name": "Sealed Orb",
-      "description": "A mysterious relic with latent market value.",
-      "nameKey": "catalogs.items.sealed-orb.name",
-      "descriptionKey": "catalogs.items.sealed-orb.description",
-      "category": "valuable",
+      "id": "B-IT-017",
+      "name": "Ring",
+      "description": "Strength +1. Magic +1.",
+      "nameKey": "catalogs.items.B-IT-017.name",
+      "descriptionKey": "catalogs.items.B-IT-017.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 8,
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": [
+            "always"
+          ]
+        },
+        {
+          "parameter": "magic",
+          "amount": 1,
+          "scopes": [
+            "always"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-IT-018",
+      "name": "Magic Belt",
+      "description": "Strength +1.",
+      "nameKey": "catalogs.items.B-IT-018.name",
+      "descriptionKey": "catalogs.items.B-IT-018.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 6,
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": [
+            "always"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B-IT-019",
+      "name": "Amulet",
+      "description": "A magical artefact required to enter and survive Region III.",
+      "nameKey": "catalogs.items.B-IT-019.name",
+      "descriptionKey": "catalogs.items.B-IT-019.description",
+      "category": "magic",
+      "occupiesSpace": true,
+      "consumable": false,
+      "actions": [],
+      "purchaseValue": 0,
+      "effects": [
+        "amulet-region-iii-access"
+      ]
+    },
+    {
+      "id": "B-IT-020",
+      "name": "Strength Potion",
+      "description": "Increase your Strength by 2 for the current turn.",
+      "nameKey": "catalogs.items.B-IT-020.name",
+      "descriptionKey": "catalogs.items.B-IT-020.description",
+      "category": "consumable",
       "occupiesSpace": false,
-      "consumable": false,
+      "consumable": true,
       "actions": [],
-      "purchaseValue": 8
+      "purchaseValue": 3,
+      "effects": [
+        "strength-potion-pickup"
+      ]
     },
     {
-      "id": "water-bottle",
-      "name": "Water Bottle",
-      "description": "A reusable bottle that stores water charges for harsh journeys.",
-      "nameKey": "catalogs.items.water-bottle.name",
-      "descriptionKey": "catalogs.items.water-bottle.description",
+      "id": "B-IT-021",
+      "name": "Coin Bag",
+      "description": "Contains 5–10 gold coins. Collected immediately.",
+      "nameKey": "catalogs.items.B-IT-021.name",
+      "descriptionKey": "catalogs.items.B-IT-021.description",
+      "category": "consumable",
+      "occupiesSpace": false,
+      "consumable": true,
+      "actions": [],
+      "purchaseValue": 0,
+      "effects": [
+        "coin-bag-pickup"
+      ]
+    },
+    {
+      "id": "B-IT-022",
+      "name": "Large Coin Bag",
+      "description": "Contains 10–20 gold coins. Collected immediately.",
+      "nameKey": "catalogs.items.B-IT-022.name",
+      "descriptionKey": "catalogs.items.B-IT-022.description",
+      "category": "consumable",
+      "occupiesSpace": false,
+      "consumable": true,
+      "actions": [],
+      "purchaseValue": 0,
+      "effects": [
+        "large-coin-bag-pickup"
+      ]
+    },
+    {
+      "id": "B-IT-023",
+      "name": "Water Flask",
+      "description": "3 charges. Consumes 1 charge in desert to prevent environment damage. Restores 1 charge in water biome.",
+      "nameKey": "catalogs.items.B-IT-023.name",
+      "descriptionKey": "catalogs.items.B-IT-023.description",
       "category": "utility",
       "occupiesSpace": true,
       "consumable": false,

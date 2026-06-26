@@ -1,0 +1,11 @@
+{
+  "merchantId": "place-market",
+  "stock": [
+    {
+      "kind": "item",
+      "tradableId": "B-IT-001",
+      "stock": 2,
+      "purchaseValue": 5
+    }
+  ]
+}

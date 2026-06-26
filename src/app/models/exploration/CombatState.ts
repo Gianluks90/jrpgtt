@@ -52,4 +52,5 @@ export interface CombatState {
     startedAtMs: number;
     timeOfDay?: TimeOfDay;
     quadrantElement?: SanctuaryElement;
+    mercenaryHired?: boolean;
 }

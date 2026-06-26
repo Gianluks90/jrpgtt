@@ -1,49 +1,234 @@
 {
   "followers": [
     {
-      "id": "horse",
-      "name": "Horse",
-      "description": "A loyal mount. Use Feed horse before moving to gain +1 movement this turn.",
-      "nameKey": "catalogs.followers.horse.name",
-      "descriptionKey": "catalogs.followers.horse.description",
-      "category": "companion",
-      "maxHp": 3,
-      "actions": ["feed-horse"]
-    },
-    {
-      "id": "princess",
-      "name": "Princess",
-      "description": "A noble follower with arcane intuition.",
-      "nameKey": "catalogs.followers.princess.name",
-      "descriptionKey": "catalogs.followers.princess.description",
-      "category": "companion",
-      "maxHp": 2,
-      "actions": [],
-      "parameterModifiers": [
-        {
-          "parameter": "magic",
-          "amount": 1,
-          "scope": "always"
-        }
-      ]
-    },
-    {
-      "id": "mule",
-      "name": "Mule",
-      "description": "A sturdy pack animal that increases your carrying capacity by 4.",
-      "nameKey": "catalogs.followers.mule.name",
-      "descriptionKey": "catalogs.followers.mule.description",
-      "category": "companion",
+      "id": "B-FO-001",
+      "name": "Mulo",
+      "description": "Un robusto animale da soma. Aumenta la capacità di inventario di 4.",
+      "nameKey": "catalogs.followers.B-FO-001.name",
+      "descriptionKey": "catalogs.followers.B-FO-001.description",
+      "category": "animal",
       "maxHp": 4,
       "itemCapacityBonus": 4,
       "actions": []
     },
     {
-      "id": "zombie",
+      "id": "B-FO-002",
+      "name": "Cavallo",
+      "description": "Una cavalcatura fedele. Prima di muovere puoi dargli da mangiare per guadagnare +1 movimento questo turno.",
+      "nameKey": "catalogs.followers.B-FO-002.name",
+      "descriptionKey": "catalogs.followers.B-FO-002.description",
+      "category": "animal",
+      "maxHp": 5,
+      "actions": ["feed-horse"]
+    },
+    {
+      "id": "B-FO-003",
+      "name": "Principessa",
+      "description": "Una nobile con intuizione arcana. Magia +1.",
+      "nameKey": "catalogs.followers.B-FO-003.name",
+      "descriptionKey": "catalogs.followers.B-FO-003.description",
+      "category": "humanoid",
+      "maxHp": 3,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "magic",
+          "amount": 1,
+          "scopes": ["always"]
+        }
+      ]
+    },
+    {
+      "id": "B-FO-004",
+      "name": "Principe",
+      "description": "Un nobile coraggioso. Forza +1.",
+      "nameKey": "catalogs.followers.B-FO-004.name",
+      "descriptionKey": "catalogs.followers.B-FO-004.description",
+      "category": "humanoid",
+      "maxHp": 5,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": ["always"]
+        }
+      ]
+    },
+    {
+      "id": "B-FO-005",
+      "name": "Mercenario",
+      "description": "Un guerriero a pagamento. Puoi assumerlo prima di un combattimento pagando 3 monete per ottenere Forza +2 in quel combattimento.",
+      "nameKey": "catalogs.followers.B-FO-005.name",
+      "descriptionKey": "catalogs.followers.B-FO-005.description",
+      "category": "humanoid",
+      "maxHp": 7,
+      "actions": ["hire-mercenary"]
+    },
+    {
+      "id": "B-FO-006",
+      "name": "Barbaro",
+      "description": "Un guerriero temibile. Forza +1 in combattimento. Se perdi un combattimento in cui era coinvolto, se ne va.",
+      "nameKey": "catalogs.followers.B-FO-006.name",
+      "descriptionKey": "catalogs.followers.B-FO-006.description",
+      "category": "humanoid",
+      "maxHp": 8,
+      "leavesOnCombatLoss": true,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": ["fight-only"]
+        }
+      ]
+    },
+    {
+      "id": "B-FO-007",
+      "name": "Alchimista",
+      "description": "Un eccentrico mago della materia. Possiede una Pozione di Guarigione (ripristina 10% HP) e una Pozione del Mana (ripristina 2 MP), entrambe usabili una sola volta. Quando le usa tutte, se ne va.",
+      "nameKey": "catalogs.followers.B-FO-007.name",
+      "descriptionKey": "catalogs.followers.B-FO-007.description",
+      "category": "humanoid",
+      "maxHp": 3,
+      "oneTimeActions": ["alchimista-heal", "alchimista-mana"],
+      "actions": ["alchimista-heal", "alchimista-mana"]
+    },
+    {
+      "id": "B-FO-008",
+      "name": "Famiglio",
+      "description": "Una creatura magica legata al bene. Magia +2.",
+      "nameKey": "catalogs.followers.B-FO-008.name",
+      "descriptionKey": "catalogs.followers.B-FO-008.description",
+      "category": "magical",
+      "maxHp": 2,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "magic",
+          "amount": 2,
+          "scopes": ["always"]
+        }
+      ]
+    },
+    {
+      "id": "B-FO-009",
+      "name": "Donzella",
+      "description": "Una giovane dal potere arcano latente. Magia +2.",
+      "nameKey": "catalogs.followers.B-FO-009.name",
+      "descriptionKey": "catalogs.followers.B-FO-009.description",
+      "category": "humanoid",
+      "maxHp": 3,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "magic",
+          "amount": 2,
+          "scopes": ["always"]
+        }
+      ]
+    },
+    {
+      "id": "B-FO-010",
+      "name": "Folletto",
+      "description": "Una creatura magica dei boschi. Una volta per turno puoi ignorare un combattimento nella Foresta.",
+      "nameKey": "catalogs.followers.B-FO-010.name",
+      "descriptionKey": "catalogs.followers.B-FO-010.description",
+      "category": "magical",
+      "maxHp": 2,
+      "combatSkipBiomes": ["forest"],
+      "actions": []
+    },
+    {
+      "id": "B-FO-011",
+      "name": "Guida",
+      "description": "Un esperto conoscitore dei sentieri. Solo partendo da Montagna o Rovina: 'Fai strada' ti permette di muoverti di 1 casella in più questo turno.",
+      "nameKey": "catalogs.followers.B-FO-011.name",
+      "descriptionKey": "catalogs.followers.B-FO-011.description",
+      "category": "humanoid",
+      "maxHp": 4,
+      "actions": ["guide-pathfind"]
+    },
+    {
+      "id": "B-FO-012",
+      "name": "Gnomo",
+      "description": "Un piccolo essere mitologico della pianura. Una volta per turno puoi ignorare un combattimento nella Pianura.",
+      "nameKey": "catalogs.followers.B-FO-012.name",
+      "descriptionKey": "catalogs.followers.B-FO-012.description",
+      "category": "mythological",
+      "maxHp": 3,
+      "combatSkipBiomes": ["plains"],
+      "actions": []
+    },
+    {
+      "id": "B-FO-013",
+      "name": "Unicorno",
+      "description": "Un essere mitico avvolto da un'aura splendente. Forza +1 e Magia +1.",
+      "nameKey": "catalogs.followers.B-FO-013.name",
+      "descriptionKey": "catalogs.followers.B-FO-013.description",
+      "category": "mythological",
+      "maxHp": 4,
+      "actions": [],
+      "parameterModifiers": [
+        {
+          "parameter": "strength",
+          "amount": 1,
+          "scopes": ["always"]
+        },
+        {
+          "parameter": "magic",
+          "amount": 1,
+          "scopes": ["always"]
+        }
+      ]
+    },
+    {
+      "id": "B-FO-014",
+      "name": "Poltergeist",
+      "description": "Uno spirito maligno. Riduce Forza, Magia e Fortuna di 1. Puoi scacciarlo solo in un bioma Acqua (+1 exp).",
+      "nameKey": "catalogs.followers.B-FO-014.name",
+      "descriptionKey": "catalogs.followers.B-FO-014.description",
+      "category": "spirit",
+      "maxHp": 1,
+      "isNegative": true,
+      "actions": ["dismiss-poltergeist"],
+      "parameterModifiers": [
+        { "parameter": "strength", "amount": -1, "scopes": ["always"] },
+        { "parameter": "magic",    "amount": -1, "scopes": ["always"] },
+        { "parameter": "luck",     "amount": -1, "scopes": ["always"] }
+      ]
+    },
+    {
+      "id": "B-FO-015",
+      "name": "Banshee",
+      "description": "Uno spirito maligno urlante. Ogni volta che guadagni exp, subisci un uguale danno agli HP. Puoi scacciarla solo in un bioma Rovine (+1 exp).",
+      "nameKey": "catalogs.followers.B-FO-015.name",
+      "descriptionKey": "catalogs.followers.B-FO-015.description",
+      "category": "spirit",
+      "maxHp": 1,
+      "isNegative": true,
+      "damagesOnXpGain": true,
+      "actions": ["dismiss-banshee"]
+    },
+    {
+      "id": "B-FO-016",
+      "name": "Megera",
+      "description": "Uno spirito maligno geloso. Scaccia tutti gli altri seguaci quando si unisce a te. Può essere rimossa solo visitando il Mistico in Città.",
+      "nameKey": "catalogs.followers.B-FO-016.name",
+      "descriptionKey": "catalogs.followers.B-FO-016.description",
+      "category": "spirit",
+      "maxHp": 1,
+      "isNegative": true,
+      "removesOtherFollowersOnPickup": true,
+      "dismissLandmarkId": "city",
+      "actions": ["dismiss-megera"]
+    },
+    {
+      "id": "B-FO-017",
       "name": "Zombie",
-      "description": "A shambling undead follower. Grants +1 STR, consumes 1 food each turn (or you lose 1 HP), and can be dismissed with Eliminate zombie.",
-      "nameKey": "catalogs.followers.zombie.name",
-      "descriptionKey": "catalogs.followers.zombie.description",
+      "description": "Un seguace non morto. Concede +1 Forza ma consuma 1 cibo a turno (o perdi 1 HP). Può essere eliminato con l'azione Elimina Zombie.",
+      "nameKey": "catalogs.followers.B-FO-017.name",
+      "descriptionKey": "catalogs.followers.B-FO-017.description",
       "category": "undead",
       "maxHp": 2,
       "isNegative": true,
@@ -52,29 +237,7 @@
         {
           "parameter": "strength",
           "amount": 1,
-          "scope": "always"
-        }
-      ]
-    },
-    {
-      "id": "unicorn",
-      "name": "Unicorn",
-      "description": "A magical horse surrounded by a shimmering aura.",
-      "nameKey": "catalogs.followers.unicorn.name",
-      "descriptionKey": "catalogs.followers.unicorn.description",
-      "category": "companion",
-      "maxHp": 3,
-      "actions": [],
-      "parameterModifiers": [
-        {
-          "parameter": "strength",
-          "amount": 1,
-          "scope": "always"
-        },
-        {
-          "parameter": "magic",
-          "amount": 1,
-          "scope": "always"
+          "scopes": ["always"]
         }
       ]
     }

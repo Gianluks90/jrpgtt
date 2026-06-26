@@ -4,115 +4,115 @@
     "label": "Base Set",
     "cards": [
       {
-        "spellId": "teleport",
+        "spellId": "B-SP-005",
         "quantity": 2
       },
       {
-        "spellId": "empower",
+        "spellId": "B-SP-006",
         "quantity": 2
       },
       {
-        "spellId": "chaos",
+        "spellId": "B-SP-007",
         "quantity": 2
       },
       {
-        "spellId": "filch",
+        "spellId": "B-SP-008",
         "quantity": 2
       },
       {
-        "spellId": "vigor",
+        "spellId": "B-SP-009",
         "quantity": 2
       },
       {
-        "spellId": "ward",
+        "spellId": "B-SP-010",
         "quantity": 2
       },
       {
-        "spellId": "alchemy",
+        "spellId": "B-SP-011",
         "quantity": 2
       },
       {
-        "spellId": "immobilize",
+        "spellId": "B-SP-012",
         "quantity": 2
       },
       {
-        "spellId": "dispel",
+        "spellId": "B-SP-013",
         "quantity": 2
       },
       {
-        "spellId": "fortune",
+        "spellId": "B-SP-014",
         "quantity": 2
       },
       {
-        "spellId": "focus",
+        "spellId": "B-SP-015",
         "quantity": 2
       },
       {
-        "spellId": "scout",
+        "spellId": "B-SP-016",
         "quantity": 2
       },
       {
-        "spellId": "safe-passage",
+        "spellId": "B-SP-017",
         "quantity": 2
       },
       {
-        "spellId": "fate-read",
+        "spellId": "B-SP-018",
         "quantity": 2
       },
       {
-        "spellId": "transmute",
+        "spellId": "B-SP-019",
         "quantity": 2
       },
       {
-        "spellId": "foresight",
+        "spellId": "B-SP-020",
         "quantity": 2
       },
       {
-        "spellId": "wealth",
+        "spellId": "B-SP-021",
         "quantity": 1
       },
       {
-        "spellId": "invisibility",
+        "spellId": "B-SP-022",
         "quantity": 1
       },
       {
-        "spellId": "mesmerize",
+        "spellId": "B-SP-023",
         "quantity": 1
       },
       {
-        "spellId": "curse",
+        "spellId": "B-SP-024",
         "quantity": 1
       },
       {
-        "spellId": "petrify",
+        "spellId": "B-SP-025",
         "quantity": 1
       },
       {
-        "spellId": "purify",
+        "spellId": "B-SP-026",
         "quantity": 1
       },
       {
-        "spellId": "recall",
+        "spellId": "B-SP-027",
         "quantity": 1
       },
       {
-        "spellId": "minor-exile",
+        "spellId": "B-SP-028",
         "quantity": 1
       },
       {
-        "spellId": "divination",
+        "spellId": "B-SP-029",
         "quantity": 1
       },
       {
-        "spellId": "spell-break",
+        "spellId": "B-SP-030",
         "quantity": 1
       },
       {
-        "spellId": "destroy",
+        "spellId": "B-SP-031",
         "quantity": 1
       },
       {
-        "spellId": "counterspell",
+        "spellId": "B-SP-032",
         "quantity": 1
       }
     ]

@@ -10,6 +10,7 @@ import { StatusCatalogService } from "@services/catalog/status-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
 import { FollowerUpgradeService } from "@services/catalog/follower-upgrade-service";
 import { BiomeConditionCatalogService } from "@services/catalog/biome-condition-catalog-service";
+import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 
 interface PlayerStatsContext {
   player: Player;
@@ -28,6 +29,7 @@ export class PlayerStatsModifierService {
     private followerCatalogService: FollowerCatalogService,
     private followerUpgradeService: FollowerUpgradeService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
+    private itemCatalogService: ItemCatalogService,
   ) {}
 
   public computeStats(context: PlayerStatsContext): PlayerComputedStats {
@@ -64,9 +66,28 @@ export class PlayerStatsModifierService {
     this.applyBiomeConditionDeltas(context, deltas);
     this.applyStatusDeltas(context, deltas);
     this.applyFollowerDeltas(context, deltas);
+    this.applyItemDeltas(context, deltas);
     this.applyLandmarkAlignmentDelta(context, deltas);
     this.applySanctuaryQuadrantAttunementDelta(context, deltas);
     return deltas;
+  }
+
+  private applyItemDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {
+    const timeOfDay = context.worldState?.timeOfDay;
+    for (const entry of context.player.inventory?.items ?? []) {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      if (!item?.parameterModifiers?.length) continue;
+
+      for (const modifier of item.parameterModifiers) {
+        if (!this.isScopeActive(modifier.scopes, timeOfDay)) continue;
+        deltas.push({
+          characteristic: modifier.parameter,
+          amount: this.normalizeDelta(modifier.amount),
+          source: "status",
+          reason: `${item.name} (${item.id})`,
+        });
+      }
+    }
   }
 
   private applyBiomeConditionDeltas(context: PlayerStatsContext, deltas: PlayerCharacteristicDelta[]): void {

@@ -3,25 +3,25 @@
   "stock": [
     {
       "kind": "item",
-      "tradableId": "common-sword",
+      "tradableId": "B-IT-001",
       "stock": 4,
       "purchaseValue": 3
     },
     {
       "kind": "item",
-      "tradableId": "common-axe",
+      "tradableId": "B-IT-002",
       "stock": 4,
       "purchaseValue": 5
     },
     {
       "kind": "item",
-      "tradableId": "water-bottle",
+      "tradableId": "B-IT-023",
       "stock": 3,
       "purchaseValue": 4
     },
     {
       "kind": "follower",
-      "tradableId": "mule",
+      "tradableId": "B-FO-001",
       "stock": 2,
       "purchaseValue": 10
     }

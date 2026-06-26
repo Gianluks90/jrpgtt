@@ -184,6 +184,7 @@ export class ActionExecutorService {
       textParams: Record<string, unknown>;
     }> = [];
     let biomeConditionExperienceGained = 0;
+    const paludeResult = { poisoned: false };
 
     await runTransaction(this.firebaseService.database, async (transaction) => {
       const [worldStateSnap, playerSnap, gameMapSnap] = await Promise.all([
@@ -246,7 +247,26 @@ export class ActionExecutorService {
 
       const currentStatuses = this.normalizeStatuses(player.statuses);
       const statusSnapshot = this.buildStatusEffectsSnapshot(currentStatuses);
-      const nextStatuses = this.decrementNormalizedStatuses(statusSnapshot.activeStatuses);
+      const baseNextStatuses = this.decrementNormalizedStatuses(statusSnapshot.activeStatuses);
+
+      // Palude (B-PL-006): apply poison when ending the turn on a swamp place card
+      const hasPalude = (currentCell?.explorationEvents ?? []).some(
+        (e) => e.type === "place" && e.cardId === "B-PL-006",
+      );
+      let nextStatuses = baseNextStatuses;
+      if (hasPalude && !this.hasStatus(baseNextStatuses, this.poisonStatusKey)) {
+        const poisonDef = this.statusCatalogService.getCachedStatus(this.poisonStatusKey);
+        if (poisonDef) {
+          const poisonStatus: PlayerStatus = {
+            key: poisonDef.key,
+            label: poisonDef.label,
+            description: poisonDef.description,
+            durationTurns: 3,
+          };
+          nextStatuses = this.upsertStatus(baseNextStatuses, poisonStatus);
+          paludeResult.poisoned = true;
+        }
+      }
 
       const hpMax = Math.max(
         1,
@@ -447,7 +467,7 @@ export class ActionExecutorService {
       }
 
       const activeZombies = nextFollowers.filter((allyEntry) => {
-        return allyEntry.followerId === "zombie"
+        return allyEntry.followerId === "B-FO-017"
           && allyEntry.state !== "discarded"
           && Math.max(0, Math.floor(Number(allyEntry.hpCurrent ?? 0))) > 0;
       }).length;
@@ -620,6 +640,10 @@ export class ActionExecutorService {
       }, { merge: true });
     });
 
+    if (paludeResult.poisoned) {
+      await this.tryCreateLog(gameId, actor, "player.placeSwampPoison", {});
+    }
+
     for (const conditionLog of biomeConditionLogs) {
       await this.tryCreateLog(gameId, actor, conditionLog.code, conditionLog.args);
     }
@@ -728,6 +752,18 @@ export class ActionExecutorService {
         throw new Error("Resolve pending resource pickup before casting a spell");
       }
 
+      // Talisman (B-IT-011): silences the holder — cannot cast spells
+      const hasTalisman = (player.inventory?.items ?? []).some((e) => {
+        const it = this.itemCatalogService.getCachedItemById(e.itemId);
+        return (it?.effects ?? []).some((fx) => {
+          const ef = this.itemEffectCatalogService.getCachedEffect(fx);
+          return ef?.type === "passive-self-silence-and-spell-immunity";
+        });
+      });
+      if (hasTalisman) {
+        throw new Error("You are silenced by the Talisman and cannot cast spells");
+      }
+
       const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
       const spellEntry = knownSpells.find((entry) => entry.spellId === spell.id);
       if (!spellEntry) {
@@ -780,11 +816,28 @@ export class ActionExecutorService {
         const counterCheckSnap = await transaction.get(targetPlayerRef);
         if (counterCheckSnap.exists()) {
           const counterCheckPlayer = counterCheckSnap.data() as Player;
-          const counterEntry = this.normalizePlayerSpellEntries(counterCheckPlayer.spellbook?.spells).find((e) => {
-            const s = this.spellCatalogService.getSpell(e.spellId);
-            return s?.effect.type === "counter-spell-reaction"
-              && Math.max(0, Math.floor(Number(e.blockedUntilTurn ?? 0))) <= worldTurn;
+
+          // Talisman immunity: target cannot be affected by other players' spells
+          const targetHasTalisman = (counterCheckPlayer.inventory?.items ?? []).some((e) => {
+            const it = this.itemCatalogService.getCachedItemById(e.itemId);
+            return (it?.effects ?? []).some((fx) => {
+              const ef = this.itemEffectCatalogService.getCachedEffect(fx);
+              return ef?.type === "passive-self-silence-and-spell-immunity";
+            });
           });
+          if (targetHasTalisman) {
+            interceptedByCounter = true;
+            logCode = "player.castSpellBlocked";
+            logArgs = { ...logArgs, targetPlayerName: counterCheckPlayer.name, reason: "talisman" };
+          }
+
+          const counterEntry = !targetHasTalisman
+            ? this.normalizePlayerSpellEntries(counterCheckPlayer.spellbook?.spells).find((e) => {
+                const s = this.spellCatalogService.getSpell(e.spellId);
+                return s?.effect.type === "counter-spell-reaction"
+                  && Math.max(0, Math.floor(Number(e.blockedUntilTurn ?? 0))) <= worldTurn;
+              })
+            : undefined;
           if (counterEntry) {
             const nowMs = Date.now();
             nextWorldState.pendingSpellEffect = {
@@ -1514,6 +1567,30 @@ export class ActionExecutorService {
           ...spellEntry,
           ...(blockedTurn > 0 ? { blockedUntilTurn: blockedTurn } : { blockedUntilTurn: undefined }),
         });
+      }
+
+      // Magic Wand (B-IT-014): draw a spell when the spellbook becomes empty
+      if (nextSpellEntries.length === 0) {
+        const hasMagicWand = (player.inventory?.items ?? []).some((e) => {
+          const it = this.itemCatalogService.getCachedItemById(e.itemId);
+          return (it?.effects ?? []).some((fx) => {
+            const ef = this.itemEffectCatalogService.getCachedEffect(fx);
+            return ef?.type === "draw-spell-on-spellbook-empty";
+          });
+        });
+        if (hasMagicWand) {
+          const drawResult = this.spellDeckService.draw(
+            nextWorldState.spellDeck ?? [],
+            nextWorldState.spellDiscardedDeck ?? [],
+            1,
+          );
+          const drawnSpellId = drawResult.drawn[0] ?? null;
+          if (drawnSpellId) {
+            nextSpellEntries.push({ spellId: drawnSpellId, source: "item", occupiesSlot: true });
+            nextWorldState.spellDeck = drawResult.remaining;
+            nextWorldState.spellDiscardedDeck = drawResult.discard;
+          }
+        }
       }
 
       nextPlayerPatch.spellbook = {
@@ -2947,6 +3024,83 @@ export class ActionExecutorService {
     });
   }
 
+  public async guidePathfind(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [worldStateSnap, playerSnap] = await Promise.all([
+        transaction.get(worldStateRef),
+        transaction.get(playerRef),
+      ]);
+
+      if (!worldStateSnap.exists()) throw new Error("World state not found");
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const worldState = worldStateSnap.data() as WorldState;
+      if (worldState.activePlayerId && worldState.activePlayerId !== actor.id) {
+        throw new Error("It is not your turn");
+      }
+
+      const player = playerSnap.data() as Player;
+      const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+      this.ensureActionAvailable(player, "guide-pathfind", worldTurn, "You can only use the Guide once per turn.");
+
+      const movedThisTurnByPlayer = worldState.movedThisTurnByPlayer ?? {};
+      if (movedThisTurnByPlayer[actor.id] === worldTurn) {
+        throw new Error("You must use the Guide before moving");
+      }
+
+      if (!this.hasActiveFollowerWithAction(player.followers, "guide-pathfind")) {
+        throw new Error("You do not have an active Guide follower");
+      }
+
+      const cellRef = doc(
+        this.firebaseService.database,
+        "games", gameId, "mapCells",
+        `${player.location.x}_${player.location.y}`,
+      );
+      const cellSnap = await transaction.get(cellRef);
+      const cell = cellSnap.exists() ? cellSnap.data() as MapCell : null;
+      const biome = cell?.biome ?? "";
+      if (biome !== "mountain" && biome !== "ruins") {
+        throw new Error("The Guide can only pathfind from Mountain or Ruins");
+      }
+
+      const currentBonusByPlayer = worldState.followerMovementBonusByPlayer ?? {};
+      const previousBonus = currentBonusByPlayer[actor.id];
+      const previousAmount = previousBonus?.turn === worldTurn
+        ? Math.max(0, Math.floor(Number(previousBonus.amount ?? 0)))
+        : 0;
+
+      transaction.set(playerRef, {
+        actionsUsedThisTurn: this.markActionUsed(player, "guide-pathfind", worldTurn),
+      }, { merge: true });
+
+      transaction.set(worldStateRef, {
+        followerMovementBonusByPlayer: {
+          ...currentBonusByPlayer,
+          [actor.id]: { turn: worldTurn, amount: previousAmount + 1 },
+        },
+      }, { merge: true });
+
+      transaction.set(gameRef, {
+        updatedAt: Timestamp.now(),
+        lastActivityAt: Timestamp.now(),
+      }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "system.info", {
+      textKey: "logs.system.guidePathfind",
+      textParams: { playerName: actor.name },
+    });
+  }
+
   public async healAtSafePlace(
     gameId: string,
     actor: Pick<Player, "id" | "name">,
@@ -3537,7 +3691,7 @@ export class ActionExecutorService {
 
       if (reward.pendingMagicReward === true) {
         if (clampedLuckTotal === 100) {
-          learnedSpellId = "toadify";
+          learnedSpellId = "B-SP-044";
         } else if (luckResult.total > 100) {
           const drawResult = this.spellDeckService.draw(
             worldState.spellDeck ?? [],
@@ -4834,7 +4988,7 @@ export class ActionExecutorService {
 
       if (reward.summonZombie === true) {
         const hasZombie = nextFollowers.some((entry) => {
-          return entry.followerId === "zombie"
+          return entry.followerId === "B-FO-017"
             && entry.state !== "discarded"
             && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
         });
@@ -4842,10 +4996,10 @@ export class ActionExecutorService {
         if (hasZombie) {
           appliedOutcome = "summon-zombie-blocked";
         } else {
-          const zombieDefinition = this.followerCatalogService.getCachedFollowerById("zombie");
+          const zombieDefinition = this.followerCatalogService.getCachedFollowerById("B-FO-017");
           const zombieHp = Math.max(1, Math.floor(Number(zombieDefinition?.maxHp ?? 2)));
           nextFollowers.push({
-            followerId: "zombie",
+            followerId: "B-FO-017",
             hpCurrent: zombieHp,
             state: "active",
           });
@@ -5118,7 +5272,7 @@ export class ActionExecutorService {
 
       const normalizedFollowers = this.normalizeFollowers(player.followers);
       const zombieIndex = normalizedFollowers.findIndex((entry) => {
-        return entry.followerId === "zombie"
+        return entry.followerId === "B-FO-017"
           && entry.state !== "discarded"
           && Math.max(0, Math.floor(Number(entry.hpCurrent ?? 0))) > 0;
       });
@@ -5167,6 +5321,434 @@ export class ActionExecutorService {
     await this.tryCreateLog(gameId, actor, "player.eliminateZombie", {
       turnEnded: true,
     });
+  }
+
+  public async dismissFollower(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    actionId: string,
+    followerId: string,
+    xpReward: number,
+  ): Promise<void> {
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const player = playerSnap.data() as Player;
+      const worldState = worldSnap.data() as WorldState;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, actionId, worldTurn, `You can only use ${actionId} once per turn.`);
+
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const idx = normalizedFollowers.findIndex(
+        (e) => e.followerId === followerId && e.state !== "discarded" && Math.max(0, Math.floor(Number(e.hpCurrent ?? 0))) > 0,
+      );
+      if (idx < 0) throw new Error(`No active ${followerId} to dismiss`);
+
+      const nextFollowers = normalizedFollowers.map((e) => ({ ...e }));
+      nextFollowers[idx] = { ...nextFollowers[idx], state: "discarded" as const, discardReason: "released" as const, discardedAtTurn: worldTurn };
+
+      const nextStatuses = this.decrementStatuses(this.normalizeStatuses(player.statuses));
+      const nextWorldState: WorldState = { ...worldState };
+      await this.applyTurnAdvanceAndDeferredEffects(transaction, gameId, nextWorldState);
+      const nextMpCurrent = this.resolveNextMpCurrentAfterTurnAdvance(player, actor.id, nextWorldState);
+
+      transaction.set(playerRef, {
+        parameters: { ...player.parameters, mp: { ...player.parameters.mp, current: nextMpCurrent } },
+        followers: nextFollowers,
+        statuses: nextStatuses,
+        actionsUsedThisTurn: this.markActionUsed(player, actionId, worldTurn),
+      }, { merge: true });
+      transaction.set(worldStateRef, nextWorldState);
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    if (xpReward > 0) {
+      await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, actor.id, xpReward);
+    }
+
+    await this.tryCreateLog(gameId, actor, "player.followerDismissed", { followerId, turnEnded: true });
+  }
+
+  public async alchimistaHeal(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const player = playerSnap.data() as Player;
+      const worldState = worldSnap.data() as WorldState;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "alchimista-heal", worldTurn, "Already used alchimista-heal.");
+
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const idx = normalizedFollowers.findIndex((e) => {
+        const def = this.followerCatalogService.getCachedFollowerById(e.followerId);
+        return e.state !== "discarded" && (def?.oneTimeActions ?? []).includes("alchimista-heal")
+          && !(e.usedActions ?? []).includes("alchimista-heal");
+      });
+      if (idx < 0) throw new Error("No available Alchimista heal");
+
+      const hpMax = Math.max(1, Math.floor(Number(player.parameters?.hp?.max ?? player.parameters?.hp?.base ?? 1)));
+      const hpCurrent = Math.max(0, Math.floor(Number(player.parameters?.hp?.current ?? 0)));
+      const heal = Math.max(1, Math.floor(hpMax * 0.10));
+      const newHp = Math.min(hpMax, hpCurrent + heal);
+
+      const nextFollowers = normalizedFollowers.map((e, i) => i !== idx ? e : {
+        ...e,
+        usedActions: [...(e.usedActions ?? []), "alchimista-heal"],
+      });
+      const def = this.followerCatalogService.getCachedFollowerById(normalizedFollowers[idx].followerId)!;
+      const allUsed = (def.oneTimeActions ?? []).every((a) => (nextFollowers[idx].usedActions ?? []).includes(a));
+      if (allUsed) {
+        nextFollowers[idx] = { ...nextFollowers[idx], state: "discarded" as const, discardReason: "released" as const, discardedAtTurn: worldTurn };
+      }
+
+      transaction.set(playerRef, {
+        "parameters.hp.current": newHp,
+        followers: nextFollowers,
+        actionsUsedThisTurn: this.markActionUsed(player, "alchimista-heal", worldTurn),
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.alchimistaHeal", {});
+  }
+
+  public async alchimistaMana(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const player = playerSnap.data() as Player;
+      const worldState = worldSnap.data() as WorldState;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "alchimista-mana", worldTurn, "Already used alchimista-mana.");
+
+      const normalizedFollowers = this.normalizeFollowers(player.followers);
+      const idx = normalizedFollowers.findIndex((e) => {
+        const def = this.followerCatalogService.getCachedFollowerById(e.followerId);
+        return e.state !== "discarded" && (def?.oneTimeActions ?? []).includes("alchimista-mana")
+          && !(e.usedActions ?? []).includes("alchimista-mana");
+      });
+      if (idx < 0) throw new Error("No available Alchimista mana restore");
+
+      const mpMax = Math.max(0, Math.floor(Number(player.parameters?.mp?.max ?? player.parameters?.mp?.base ?? 0)));
+      const mpCurrent = Math.max(0, Math.floor(Number(player.parameters?.mp?.current ?? 0)));
+      const newMp = Math.min(mpMax, mpCurrent + 2);
+
+      const nextFollowers = normalizedFollowers.map((e, i) => i !== idx ? e : {
+        ...e,
+        usedActions: [...(e.usedActions ?? []), "alchimista-mana"],
+      });
+      const def = this.followerCatalogService.getCachedFollowerById(normalizedFollowers[idx].followerId)!;
+      const allUsed = (def.oneTimeActions ?? []).every((a) => (nextFollowers[idx].usedActions ?? []).includes(a));
+      if (allUsed) {
+        nextFollowers[idx] = { ...nextFollowers[idx], state: "discarded" as const, discardReason: "released" as const, discardedAtTurn: worldTurn };
+      }
+
+      transaction.set(playerRef, {
+        "parameters.mp.current": newMp,
+        followers: nextFollowers,
+        actionsUsedThisTurn: this.markActionUsed(player, "alchimista-mana", worldTurn),
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.alchimistaMana", {});
+  }
+
+  public async hireMercenary(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const player = playerSnap.data() as Player;
+      const worldState = worldSnap.data() as WorldState;
+      const worldTurn = worldState.currentTurn ?? 0;
+      this.ensureActionAvailable(player, "hire-mercenary", worldTurn, "Already hired mercenary this turn.");
+
+      const money = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (money < 3) throw new Error("Not enough money to hire mercenary");
+
+      const activeCombat = worldState.activeCombat;
+      if (!activeCombat || activeCombat.attackingPlayerId !== actor.id) throw new Error("No active combat to hire for");
+
+      transaction.set(playerRef, {
+        "inventory.money": money - 3,
+        actionsUsedThisTurn: this.markActionUsed(player, "hire-mercenary", worldTurn),
+      }, { merge: true });
+      transaction.set(worldStateRef, {
+        activeCombat: { ...activeCombat, mercenaryHired: true },
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.hireMercenary", {});
+  }
+
+  // ─── Stranger action methods ───────────────────────────────────────────────
+
+  public async strangerHealPercent(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    healPercent: number,
+  ): Promise<number> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    let healedHp = 0;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const snap = await transaction.get(playerRef);
+      if (!snap.exists()) throw new Error("Player not found");
+      const player = snap.data() as Player;
+      const hpMax = Math.max(1, Math.floor(Number(player.parameters?.hp?.max ?? player.parameters?.hp?.base ?? 1)));
+      const hpCurrent = Math.max(0, Math.floor(Number(player.parameters?.hp?.current ?? 0)));
+      if (hpCurrent >= hpMax) return;
+      healedHp = Math.max(1, Math.floor(hpMax * (healPercent / 100)));
+      const newHp = Math.min(hpMax, hpCurrent + healedHp);
+      transaction.set(playerRef, { parameters: { ...player.parameters, hp: { ...player.parameters.hp, current: newHp } } }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    if (healedHp > 0) {
+      await this.tryCreateLog(gameId, actor, "player.strangerHealPercent", { healedHp });
+    }
+    return healedHp;
+  }
+
+  public async strangerEnchantress(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+  ): Promise<string> {
+    await Promise.all([
+      this.statusCatalogService.loadConfig(),
+      this.enchantressRewardsConfigService.loadConfig(),
+    ]);
+
+    const rollTotal = Math.floor(Math.random() * 100) + 1;
+    const reward = await this.enchantressRewardsConfigService.resolveRewardByTotal(rollTotal);
+    const rewardLabel = this.enchantressRewardsConfigService.getLocalizedLabel(reward);
+
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    let learnedSpellId: string | null = null;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      const player = playerSnap.data() as Player;
+      const worldState = worldSnap.exists() ? worldSnap.data() as WorldState : {} as WorldState;
+
+      let nextStatuses = this.normalizeStatuses(player.statuses);
+      for (const applied of reward.statuses) {
+        const def = this.statusCatalogService.getStatus(applied.key);
+        if (!def) continue;
+        nextStatuses = this.upsertStatus(nextStatuses, {
+          key: def.key, label: def.label, description: def.description,
+          durationTurns: applied.durationTurns,
+          ...(def.effectKey ? { effectKey: def.effectKey } : {}),
+        });
+      }
+
+      const nextWorldState: WorldState = { ...worldState };
+      if (reward.pendingMagicReward === true) {
+        const drawResult = this.spellDeckService.draw(worldState.spellDeck ?? [], worldState.spellDiscardedDeck ?? [], 1);
+        learnedSpellId = drawResult.drawn[0] ?? null;
+        if (learnedSpellId) {
+          nextWorldState.spellDeck = drawResult.remaining;
+          nextWorldState.spellDiscardedDeck = drawResult.discard;
+        }
+      }
+
+      const spellPatch = learnedSpellId ? {
+        spellbook: {
+          ...(player.spellbook ?? {}),
+          spells: [...(player.spellbook?.spells ?? []), { spellId: learnedSpellId, source: "enchantress" as const, occupiesSlot: true }],
+        },
+      } : {};
+
+      transaction.set(playerRef, { statuses: nextStatuses, ...spellPatch }, { merge: true });
+      transaction.set(worldStateRef, nextWorldState);
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.strangerEnchantress", { rewardLabel });
+    return rewardLabel;
+  }
+
+  public async strangerWishCoins(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    amount: number,
+  ): Promise<void> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const snap = await transaction.get(playerRef);
+      if (!snap.exists()) throw new Error("Player not found");
+      const player = snap.data() as Player;
+      const money = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      transaction.set(playerRef, { inventory: { ...(player.inventory ?? { items: [], resources: [], money: 0 }), money: money + amount } }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.strangerWishCoins", { amount });
+  }
+
+  public async strangerWishXp(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    amount: number,
+  ): Promise<void> {
+    await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, actor.id, amount);
+    await this.tryCreateLog(gameId, actor, "player.strangerWishXp", { amount });
+  }
+
+  public async strangerWishStatPermanent(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    stat: "strength" | "magic" | "mp",
+  ): Promise<void> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const snap = await transaction.get(playerRef);
+      if (!snap.exists()) throw new Error("Player not found");
+      const player = snap.data() as Player;
+      let params = { ...player.parameters };
+
+      if (stat === "strength") {
+        params = { ...params, strength: { ...params.strength, base: params.strength.base + 1, current: params.strength.current + 1 } };
+      } else if (stat === "magic") {
+        params = { ...params, magic: { ...params.magic, base: params.magic.base + 1, current: params.magic.current + 1 } };
+      } else {
+        const mp = params.mp;
+        const newBase = (mp.base ?? 0) + 1;
+        const newMax = (typeof mp.max === "number" ? mp.max : mp.base) + 1;
+        params = { ...params, mp: { ...mp, base: newBase, current: mp.current + 1, max: newMax } };
+      }
+
+      transaction.set(playerRef, { parameters: params }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.strangerWishStat", { stat });
+  }
+
+  public async strangerWishTeleport(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    targetX: number,
+    targetY: number,
+  ): Promise<void> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      const worldState = worldSnap.exists() ? worldSnap.data() as WorldState : {} as WorldState;
+      const worldTurn = worldState.currentTurn ?? 0;
+
+      transaction.set(playerRef, { location: { x: targetX, y: targetY } }, { merge: true });
+      transaction.set(worldStateRef, {
+        movedThisTurnByPlayer: { ...(worldState.movedThisTurnByPlayer ?? {}), [actor.id]: worldTurn },
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.strangerWishTeleport", { targetX: targetX + 1, targetY: targetY + 1 });
+  }
+
+  public async strangerSpellTeacher(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    cost: number,
+    sourceName: string,
+  ): Promise<"ok" | "full" | "empty"> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+    const result = { outcome: "ok" as "ok" | "full" | "empty", spellId: null as string | null };
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      const player = playerSnap.data() as Player;
+      const worldState = worldSnap.exists() ? worldSnap.data() as WorldState : {} as WorldState;
+
+      const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+      const capacity = this.getSpellbookCapacity(player);
+      if (knownSpells.length >= capacity) { result.outcome = "full"; return; }
+
+      const drawResult = this.spellDeckService.draw(worldState.spellDeck ?? [], worldState.spellDiscardedDeck ?? [], 1);
+      result.spellId = drawResult.drawn[0] ?? null;
+      if (!result.spellId) { result.outcome = "empty"; return; }
+
+      const money = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (cost > 0 && money < cost) throw new Error("Not enough coins");
+
+      const nextSpells = [...knownSpells, { spellId: result.spellId, source: "stranger" as const, occupiesSlot: true }];
+      transaction.set(playerRef, {
+        spellbook: { ...(player.spellbook ?? {}), spells: nextSpells, capacity },
+        ...(cost > 0 ? { inventory: { ...(player.inventory ?? { items: [], resources: [], money: 0 }), money: money - cost } } : {}),
+      }, { merge: true });
+      transaction.set(worldStateRef, {
+        spellDeck: drawResult.remaining,
+        spellDiscardedDeck: drawResult.discard,
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    if (result.outcome === "ok" && result.spellId) {
+      await this.tryCreateLog(gameId, actor, "player.strangerSpellTeacher", { spellId: result.spellId, source: sourceName });
+    } else if (result.outcome === "full") {
+      await this.tryCreateLog(gameId, actor, "player.strangerSpellTeacherFull", {});
+    } else {
+      await this.tryCreateLog(gameId, actor, "player.strangerSpellTeacherEmpty", {});
+    }
+    return result.outcome;
   }
 
   private async applyCampRewardAction(
@@ -6813,7 +7395,20 @@ export class ActionExecutorService {
 
       for (const effectId of itemDefinition.effects) {
         const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
-        if (!effect || effect.biome !== biome) {
+        if (
+          !effect ||
+          effect.type === "gain-coins-range-on-pickup" ||
+          effect.type === "apply-status-on-pickup" ||
+          effect.type === "combat-stat-bonus-vs-enemy-category" ||
+          effect.type === "draw-spell-on-spellbook-empty" ||
+          effect.type === "apply-status-on-lucky-roll" ||
+          effect.type === "passive-self-silence-and-spell-immunity" ||
+          effect.type === "region-iii-access" ||
+          effect.type === "skip-spirit-for-exp" ||
+          effect.type === "skip-exploration-card-once-per-turn" ||
+          effect.type === "reduce-combat-damage-on-fortune-check" ||
+          effect.biome !== biome
+        ) {
           continue;
         }
 
@@ -6847,6 +7442,17 @@ export class ActionExecutorService {
               conditionId: effect.conditionId,
             },
           });
+          continue;
+        }
+
+        if (effect.type === "prevent-biome-condition-damage-passive") {
+          if (!preventedBiomeConditionIds.has(effect.conditionId)) {
+            preventedBiomeConditionIds.add(effect.conditionId);
+          }
+          continue;
+        }
+
+        if (effect.type !== "recharge-charges-in-biome") {
           continue;
         }
 
@@ -7090,6 +7696,428 @@ export class ActionExecutorService {
     if (isRight && !isBottom) return "Q2";
     if (!isRight && isBottom) return "Q3";
     return "Q4";
+  }
+
+  // ── Place card effects ───────────────────────────────────────────────────
+
+  public async placeFountainDrink(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    cell: { x: number; y: number },
+    instanceId: string,
+    params: { stat: "magic" | "strength" | "hp"; statAmount: number; initialUses: number; luckThreshold: number },
+    placeName: string,
+  ): Promise<{ result: "damage" | "boost"; value: number; usesLeft: number; exhausted: boolean }> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    const roll = Math.ceil(Math.random() * 100);
+    const success = roll > params.luckThreshold;
+    const outcome = { result: success ? "boost" : "damage" as "boost" | "damage", value: 0, usesLeft: 0, exhausted: false };
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, cellSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(cellRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      if (!cellSnap.exists()) throw new Error("Cell not found");
+
+      const player = playerSnap.data() as Player;
+      const cellData = cellSnap.data() as MapCell;
+      const events = cellData.explorationEvents ?? [];
+      const cardIndex = events.findIndex((e) => e.instanceId === instanceId);
+      if (cardIndex === -1) throw new Error("Place card not found on cell");
+      const placedCard = events[cardIndex] as { usesLeft?: number };
+      const currentUses = typeof placedCard.usesLeft === "number" ? placedCard.usesLeft : params.initialUses;
+      const nextUses = currentUses - 1;
+      outcome.usesLeft = nextUses;
+      outcome.exhausted = nextUses <= 0;
+
+      const hpBase = Math.max(1, Math.floor(Number(player.parameters.hp.base)));
+      const hpMax = Math.max(1, Math.floor(Number(player.parameters.hp.max ?? player.parameters.hp.base)));
+      const hpCurrent = Math.max(0, Math.floor(Number(player.parameters.hp.current)));
+
+      let params_update: Record<string, unknown> = {};
+
+      if (!success) {
+        const damage = Math.max(1, Math.floor(hpMax * 0.1));
+        outcome.value = damage;
+        params_update = {
+          parameters: {
+            ...player.parameters,
+            hp: { ...player.parameters.hp, current: Math.max(0, hpCurrent - damage) },
+          },
+        };
+      } else if (params.stat === "strength") {
+        outcome.value = params.statAmount;
+        params_update = {
+          parameters: {
+            ...player.parameters,
+            strength: { ...player.parameters.strength, base: player.parameters.strength.base + params.statAmount, current: player.parameters.strength.current + params.statAmount },
+          },
+        };
+      } else if (params.stat === "magic") {
+        outcome.value = params.statAmount;
+        params_update = {
+          parameters: {
+            ...player.parameters,
+            magic: { ...player.parameters.magic, base: player.parameters.magic.base + params.statAmount, current: player.parameters.magic.current + params.statAmount },
+          },
+        };
+      } else {
+        const newBase = Math.ceil(hpBase * (1 + params.statAmount));
+        const newMax = Math.ceil(hpMax * (1 + params.statAmount));
+        outcome.value = newMax - hpMax;
+        params_update = {
+          parameters: {
+            ...player.parameters,
+            hp: { ...player.parameters.hp, base: newBase, max: newMax },
+          },
+        };
+      }
+
+      transaction.set(playerRef, params_update, { merge: true });
+
+      let updatedEvents: MapCell["explorationEvents"];
+      if (outcome.exhausted) {
+        updatedEvents = events.filter((e) => e.instanceId !== instanceId);
+      } else {
+        updatedEvents = events.map((e) => e.instanceId === instanceId ? { ...e, usesLeft: nextUses } : e);
+      }
+      transaction.set(cellRef, { explorationEvents: updatedEvents }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    const logCode = !success
+      ? "player.placeFountainDamage"
+      : params.stat === "hp"
+        ? "player.placeFountainHpBoost"
+        : "player.placeFountainStatBoost";
+
+    await this.tryCreateLog(gameId, actor, logCode, {
+      placeName,
+      damage: !success ? outcome.value : 0,
+      amount: success ? outcome.value : 0,
+      stat: params.stat,
+      usesLeft: outcome.usesLeft,
+    });
+
+    if (outcome.exhausted) {
+      await this.tryCreateLog(gameId, actor, "player.placeFountainExhausted", { placeName });
+    }
+
+    return outcome;
+  }
+
+  public async placePortalTeleport(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+  ): Promise<{ x: number; y: number; destinationName: string } | null> {
+    const allSnap = await getDocs(collection(this.firebaseService.database, "games", gameId, "mapCells"));
+    const specialCells = allSnap.docs
+      .map((d) => d.data() as MapCell)
+      .filter((c) => c.isSpecial && (c.specialType === "landmark" || c.specialType === "sanctuary") && typeof c.revealedAtTurn === "number");
+
+    if (specialCells.length === 0) {
+      await this.tryCreateLog(gameId, actor, "player.placePortalNoDestination", {});
+      return null;
+    }
+
+    const target = specialCells[Math.floor(Math.random() * specialCells.length)];
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      const worldState = worldSnap.exists() ? worldSnap.data() as { currentTurn?: number } : {};
+      transaction.set(playerRef, {
+        location: { x: target.x, y: target.y },
+        movedThisTurnByPlayer: true,
+        actionsUsedThisTurn: { ...(playerSnap.data() as Player).actionsUsedThisTurn, "portal-move": worldState.currentTurn ?? 0 },
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    const destinationName = target.landmarkDisplayName ?? target.landmarkId ?? `${target.x + 1},${target.y + 1}`;
+    await this.tryCreateLog(gameId, actor, "player.placePortal", { destination: destinationName });
+    return { x: target.x, y: target.y, destinationName };
+  }
+
+  public async placeMazeLuck(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+  ): Promise<"lost" | "escaped"> {
+    const roll = Math.ceil(Math.random() * 100);
+    const lost = roll <= 50;
+
+    if (lost) {
+      const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+      const gameRef = doc(this.firebaseService.database, "games", gameId);
+      const sleepDef = this.statusCatalogService.getCachedStatus("sleep");
+
+      if (sleepDef) {
+        await runTransaction(this.firebaseService.database, async (transaction) => {
+          const snap = await transaction.get(playerRef);
+          if (!snap.exists()) throw new Error("Player not found");
+          const player = snap.data() as Player;
+          const statuses = this.normalizeStatuses(player.statuses);
+          const sleepStatus: PlayerStatus = {
+            key: sleepDef.key,
+            label: sleepDef.label,
+            description: sleepDef.description,
+            durationTurns: 1,
+          };
+          transaction.set(playerRef, { statuses: this.upsertStatus(statuses, sleepStatus) }, { merge: true });
+          transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+        });
+      }
+      await this.tryCreateLog(gameId, actor, "player.placeMazeLost", {});
+    } else {
+      await this.tryCreateLog(gameId, actor, "player.placeMazeEscape", {});
+    }
+
+    return lost ? "lost" : "escaped";
+  }
+
+  public async placeCaveLuck(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+  ): Promise<"damage" | "nothing" | "coins5" | "coins10" | "xp"> {
+    const roll = Math.ceil(Math.random() * 100);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    if (roll <= 20) {
+      await runTransaction(this.firebaseService.database, async (transaction) => {
+        const snap = await transaction.get(playerRef);
+        if (!snap.exists()) throw new Error("Player not found");
+        const player = snap.data() as Player;
+        const hpMax = Math.max(1, Math.floor(Number(player.parameters.hp.max ?? player.parameters.hp.base)));
+        const damage = Math.max(1, Math.floor(hpMax * 0.1));
+        const newHp = Math.max(0, Math.floor(Number(player.parameters.hp.current)) - damage);
+        transaction.set(playerRef, { parameters: { ...player.parameters, hp: { ...player.parameters.hp, current: newHp } } }, { merge: true });
+        transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+      });
+      const hpSnap = await getDoc(playerRef);
+      const hpMax = Math.max(1, Math.floor(Number((hpSnap.data() as Player).parameters.hp.max ?? (hpSnap.data() as Player).parameters.hp.base)));
+      const damage = Math.max(1, Math.floor(hpMax * 0.1));
+      await this.tryCreateLog(gameId, actor, "player.placeCaveDamage", { damage });
+      return "damage";
+    }
+
+    if (roll <= 40) {
+      await this.tryCreateLog(gameId, actor, "player.placeCaveNothing", {});
+      return "nothing";
+    }
+
+    const coins = roll <= 60 ? 5 : roll <= 80 ? 10 : 0;
+    if (coins > 0) {
+      await runTransaction(this.firebaseService.database, async (transaction) => {
+        const snap = await transaction.get(playerRef);
+        if (!snap.exists()) throw new Error("Player not found");
+        const player = snap.data() as Player;
+        const money = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0))) + coins;
+        transaction.set(playerRef, { inventory: { ...player.inventory, money } }, { merge: true });
+        transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+      });
+      await this.tryCreateLog(gameId, actor, "player.placeCaveCoins", { amount: coins });
+      return coins === 5 ? "coins5" : "coins10";
+    }
+
+    await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, actor.id, 1);
+    await this.tryCreateLog(gameId, actor, "player.placeCaveXp", {});
+    return "xp";
+  }
+
+  public async placeChapelLuck(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+  ): Promise<"nothing" | "fortune" | "coins" | "heal" | "spell" | "spellFull" | "spellEmpty" | "teleport"> {
+    const roll = Math.ceil(Math.random() * 100);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    if (roll <= 16) {
+      await this.tryCreateLog(gameId, actor, "player.placeChapelNothing", {});
+      return "nothing";
+    }
+
+    if (roll <= 32) {
+      const fortuneDef = this.statusCatalogService.getCachedStatus("fortune");
+      if (fortuneDef) {
+        await runTransaction(this.firebaseService.database, async (transaction) => {
+          const snap = await transaction.get(playerRef);
+          if (!snap.exists()) throw new Error("Player not found");
+          const player = snap.data() as Player;
+          const statuses = this.normalizeStatuses(player.statuses);
+          const fortuneStatus: PlayerStatus = { key: fortuneDef.key, label: fortuneDef.label, description: fortuneDef.description, durationTurns: 2 };
+          transaction.set(playerRef, { statuses: this.upsertStatus(statuses, fortuneStatus) }, { merge: true });
+          transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+        });
+      }
+      await this.tryCreateLog(gameId, actor, "player.placeChapelFortune", {});
+      return "fortune";
+    }
+
+    if (roll <= 48) {
+      await runTransaction(this.firebaseService.database, async (transaction) => {
+        const snap = await transaction.get(playerRef);
+        if (!snap.exists()) throw new Error("Player not found");
+        const player = snap.data() as Player;
+        const money = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0))) + 5;
+        transaction.set(playerRef, { inventory: { ...player.inventory, money } }, { merge: true });
+        transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+      });
+      await this.tryCreateLog(gameId, actor, "player.placeChapelCoins", {});
+      return "coins";
+    }
+
+    if (roll <= 64) {
+      const healResult = await runTransaction(this.firebaseService.database, async (transaction) => {
+        const snap = await transaction.get(playerRef);
+        if (!snap.exists()) throw new Error("Player not found");
+        const player = snap.data() as Player;
+        const hpMax = Math.max(1, Math.floor(Number(player.parameters.hp.max ?? player.parameters.hp.base)));
+        const healedHp = Math.max(1, Math.floor(hpMax * 0.05));
+        const newHp = Math.min(hpMax, Math.floor(Number(player.parameters.hp.current)) + healedHp);
+        transaction.set(playerRef, { parameters: { ...player.parameters, hp: { ...player.parameters.hp, current: newHp } } }, { merge: true });
+        transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+        return healedHp;
+      });
+      await this.tryCreateLog(gameId, actor, "player.placeChapelHeal", { healedHp: healResult });
+      return "heal";
+    }
+
+    if (roll <= 80) {
+      const spellResult = { outcome: "ok" as "ok" | "full" | "empty", spellId: null as string | null };
+      await runTransaction(this.firebaseService.database, async (transaction) => {
+        const [playerSnap, worldSnap] = await Promise.all([
+          transaction.get(playerRef),
+          transaction.get(worldStateRef),
+        ]);
+        if (!playerSnap.exists()) throw new Error("Player not found");
+        const player = playerSnap.data() as Player;
+        const worldState = worldSnap.exists() ? worldSnap.data() as { spellDeck?: string[]; spellDiscardedDeck?: string[] } : {};
+        const knownSpells = this.normalizePlayerSpellEntries(player.spellbook?.spells);
+        const capacity = this.getSpellbookCapacity(player);
+        if (knownSpells.length >= capacity) { spellResult.outcome = "full"; return; }
+        const drawResult = this.spellDeckService.draw(worldState.spellDeck ?? [], worldState.spellDiscardedDeck ?? [], 1);
+        spellResult.spellId = drawResult.drawn[0] ?? null;
+        if (!spellResult.spellId) { spellResult.outcome = "empty"; return; }
+        const nextSpells = [...knownSpells, { spellId: spellResult.spellId, source: "place" as const, occupiesSlot: true }];
+        transaction.set(playerRef, { spellbook: { ...(player.spellbook ?? {}), spells: nextSpells, capacity } }, { merge: true });
+        transaction.set(worldStateRef, { spellDeck: drawResult.remaining, spellDiscardedDeck: drawResult.discard }, { merge: true });
+        transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+      });
+      if (spellResult.outcome === "ok" && spellResult.spellId) {
+        const spell = this.spellCatalogService.getSpell(spellResult.spellId);
+        await this.tryCreateLog(gameId, actor, "player.placeChapelSpell", { spellName: spell ? this.spellCatalogService.getLocalizedName(spell) : spellResult.spellId });
+        return "spell";
+      }
+      const logCode = spellResult.outcome === "full" ? "player.placeChapelSpellFull" : "player.placeChapelSpellEmpty";
+      await this.tryCreateLog(gameId, actor, logCode, {});
+      return spellResult.outcome === "full" ? "spellFull" : "spellEmpty";
+    }
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      transaction.set(playerRef, { pendingTeleportOnMove: true }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+    await this.tryCreateLog(gameId, actor, "player.placeChapelTeleport", {});
+    return "teleport";
+  }
+
+  public async placeMarketBuy(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    cell: { x: number; y: number },
+    tradableId: string,
+    price: number,
+    stockKey: string,
+  ): Promise<void> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, cellSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(cellRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      if (!cellSnap.exists()) throw new Error("Cell not found");
+
+      const player = playerSnap.data() as Player;
+      const cellData = cellSnap.data() as MapCell;
+      const money = Math.max(0, Math.floor(Number(player.inventory?.money ?? 0)));
+      if (money < price) throw new Error("Not enough coins");
+
+      const stockMap = { ...(cellData.merchantStockByItemId ?? {}) };
+      const currentStock = Math.max(0, Math.floor(Number(stockMap[stockKey] ?? 0)));
+      if (currentStock <= 0) throw new Error("Item out of stock");
+      stockMap[stockKey] = currentStock - 1;
+
+      const item = this.itemCatalogService.getCachedItemById(tradableId);
+      if (!item) throw new Error("Item not found in catalog");
+
+      const items = this.normalizeInventoryItems(player.inventory?.items);
+      if (items.length >= DEFAULT_ITEM_INVENTORY_CAPACITY) throw new Error("Inventory full");
+      items.push({ itemId: tradableId });
+
+      transaction.set(playerRef, {
+        inventory: { ...player.inventory, money: money - price, items },
+      }, { merge: true });
+      transaction.set(cellRef, { merchantStockByItemId: stockMap }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    const item = this.itemCatalogService.getCachedItemById(tradableId);
+    await this.tryCreateLog(gameId, actor, "player.merchantBuy", {
+      actionId: "place-market",
+      itemName: item ? this.itemCatalogService.getLocalizedName(item) : tradableId,
+      quantity: 1,
+      spentCoins: price,
+    });
+  }
+
+  public async placeChapelUseTeleport(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    targetX: number,
+    targetY: number,
+  ): Promise<void> {
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const gameRef = doc(this.firebaseService.database, "games", gameId);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+      const worldState = worldSnap.exists() ? worldSnap.data() as WorldState : {} as WorldState;
+      const worldTurn = worldState.currentTurn ?? 0;
+
+      transaction.set(playerRef, {
+        location: { x: targetX, y: targetY },
+        pendingTeleportOnMove: false,
+      }, { merge: true });
+      transaction.set(worldStateRef, {
+        movedThisTurnByPlayer: { ...(worldState.movedThisTurnByPlayer ?? {}), [actor.id]: worldTurn },
+      }, { merge: true });
+      transaction.set(gameRef, { updatedAt: Timestamp.now(), lastActivityAt: Timestamp.now() }, { merge: true });
+    });
+
+    await this.tryCreateLog(gameId, actor, "player.placeChapelActivatedTeleport", { targetX: targetX + 1, targetY: targetY + 1 });
   }
 
   private rollWeightedChaosEffect(effects: ChaosEffectDefinition[]): ChaosEffectDefinition | null {

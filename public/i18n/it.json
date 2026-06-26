@@ -1,1790 +1,2048 @@
 {
-    "ui": {
-        "language": {
-            "label": "Lingua",
-            "switcherAriaLabel": "Selettore lingua",
-            "menuAriaLabel": "Menu lingue",
-            "italian": "Italiano",
-            "english": "English"
-        },
-        "sound": {
-            "toggleAriaLabel": "Attiva o disattiva i suoni"
-        },
-        "crt": {
-            "toggleAriaLabel": "Attiva o disattiva l'overlay CRT"
-        },
-        "rulebook": {
-            "openAriaLabel": "Apri regolamento"
-        }
+  "ui": {
+    "language": {
+      "label": "Lingua",
+      "switcherAriaLabel": "Selettore lingua",
+      "menuAriaLabel": "Menu lingue",
+      "italian": "Italiano",
+      "english": "English"
     },
-    "landing": {
-        "welcome": "Benvenuto nella pagina iniziale!",
-        "tagline": "Esplora, combatti e vinci",
-        "login": "Accedi/Registrati",
-        "googleRequired": "*Account Google richiesto, se è la prima volta che si accede verrà creato un account automaticamente"
+    "sound": {
+      "toggleAriaLabel": "Attiva o disattiva i suoni"
     },
-    "home": {
-        "title": "Home",
-        "runningGameLabel": "Partita in corso",
-        "inGameHint": "Vai alla lobby per vedere i dettagli della partita e iniziare a giocare!",
-        "inGameResumeHint": "Premi Gioca per riprendere la partita",
-        "noGame": "Al momento non sei in una partita. Entra o creane una nuova per iniziare!",
-        "actions": {
-            "menu": "Menu",
-            "newGame": "Nuova partita",
-            "joinGame": "Entra in partita",
-            "abandon": "Abbandona",
-            "disconnect": "Disconnettiti",
-            "deleteGame": "Elimina partita",
-            "leaveGame": "Lascia partita",
-            "play": "Gioca",
-            "lobby": "Lobby",
-            "logout": "Esci"
-        },
-        "errors": {
-            "loadTiles": "Errore nel caricamento della configurazione tiles",
-            "createGame": "Errore nella creazione della partita",
-            "joinGame": "Errore durante l'ingresso in partita",
-            "leaveGame": "Errore durante l'uscita dalla partita",
-            "deleteGame": "Errore durante l'eliminazione della partita"
-        }
+    "crt": {
+      "toggleAriaLabel": "Attiva o disattiva l'overlay CRT"
     },
-    "lobby": {
-        "header": {
-            "newGamePrefix": "Nuova partita"
-        },
-        "summary": {
-            "playersJoined": "Giocatori presenti",
-            "playersReady": "Giocatori pronti",
-            "joinCode": "Codice partita",
-            "status": "Stato"
-        },
-        "copyJoinCode": {
-            "copy": "Copia codice partita",
-            "copied": "Copiato"
-        },
-        "status": {
-            "waiting": "In attesa",
-            "running": "In corso",
-            "ended": "Terminata"
-        },
-        "players": {
-            "title": "Giocatori",
-            "ready": "PRONTO",
-            "pending": "IN ATTESA"
-        },
-        "setup": {
-            "title": "Setup personaggio",
-            "subtitle": "Completa il setup e spendi tutti i punti esperienza per essere pronto.",
-            "currentPlayerReady": "PRONTO",
-            "currentPlayerNotReady": "NON PRONTO",
-            "nameLabel": "Nome",
-            "namePlaceholder": "Inserisci nome personaggio",
-            "alignment": "Allineamento",
-            "alignmentAriaLabel": "Allineamento giocatore",
-            "parametersPool": "Punti pool parametri",
-            "strength": "Forza (ogni punto aumenta HP del 5%)",
-            "magic": "Magia (ogni punto aumenta MP di 1)",
-            "luck": "Fortuna",
-            "readyDone": "Pronto!",
-            "confirm": "Conferma"
-        },
-        "alignment": {
-            "good": "Buono",
-            "neutral": "Neutrale",
-            "evil": "Malvagio"
-        },
-        "actions": {
-            "home": "Home",
-            "deleteGame": "Elimina partita",
-            "settings": "Impostazioni",
-            "startGame": "Avvia partita",
-            "leaveGame": "Lascia partita"
-        },
-        "errors": {
-            "copyJoinCode": "Impossibile copiare il codice partita",
-            "leaveGame": "Errore durante l'uscita dalla partita",
-            "deleteGame": "Errore durante l'eliminazione della partita",
-            "startGame": "Errore durante l'avvio della partita",
-            "updateSettings": "Errore durante l'aggiornamento delle impostazioni partita",
-            "updatePlayerSetup": "Errore durante l'aggiornamento del setup giocatore"
-        }
+    "rulebook": {
+      "openAriaLabel": "Apri regolamento"
+    }
+  },
+  "landing": {
+    "welcome": "Benvenuto nella pagina iniziale!",
+    "tagline": "Esplora, combatti e vinci",
+    "login": "Accedi/Registrati",
+    "googleRequired": "*Account Google richiesto, se è la prima volta che si accede verrà creato un account automaticamente"
+  },
+  "home": {
+    "title": "Home",
+    "runningGameLabel": "Partita in corso",
+    "inGameHint": "Vai alla lobby per vedere i dettagli della partita e iniziare a giocare!",
+    "inGameResumeHint": "Premi Gioca per riprendere la partita",
+    "noGame": "Al momento non sei in una partita. Entra o creane una nuova per iniziare!",
+    "actions": {
+      "menu": "Menu",
+      "newGame": "Nuova partita",
+      "joinGame": "Entra in partita",
+      "abandon": "Abbandona",
+      "disconnect": "Disconnettiti",
+      "deleteGame": "Elimina partita",
+      "leaveGame": "Lascia partita",
+      "play": "Gioca",
+      "lobby": "Lobby",
+      "logout": "Esci"
     },
-    "dialogs": {
-        "spellCast": {
-            "title": "Incantesimo",
-            "cast": "Lancia incantesimo"
-        },
-        "playerSelect": {
-            "title": "Scegli un bersaglio",
-            "confirm": "Conferma"
-        },
-        "common": {
-            "cancel": "Annulla",
-            "close": "Chiudi",
-            "confirm": "Conferma",
-            "name": "Nome",
-            "maxPlayers": "Giocatori max",
-            "enterText": "Inserisci testo",
-            "enterNumber": "Inserisci numero",
-            "maxPlayersAllowed": "Giocatori massimi consentiti: {maxPlayers}"
-        },
-        "requiredActionNotification": {
-            "sanctuaryActivatedDescription": "Il {sanctuaryLabel} e stato attivato da {playerName}!",
-            "worldEventActivatedTitle": "Evento Mondiale Attivato: {eventName}",
-            "worldEventActivatedDescription": "Attivato da {playerName}. {description}",
-            "spellEffectTitle": "Magia lanciata: {spellName}",
-            "spellEffectDescription": "{casterName} ha lanciato {spellName} su di te. {summary}",
-            "actions": {
-                "ok": "Ok",
-                "playerOk": "{playerName}: Conferma",
-                "ownerContinue": "Prosegui comunque",
-                "counter": "Usa Contromagia"
-            }
-        },
-        "worldEventHelp": {
-            "title": "Dettagli Evento Mondiale",
-            "subtitle": "L'evento mondiale si è concluso con i seguenti risultati. Il bioma più diffuso sulla mappa era {target}, influenzato dall'energia di {driver}. Nell'elenco sottostante puoi vedere ogni cambiamento applicato.",
-            "waiting": "Evento mondiale non ancora innescato, in attesa che qualcuno entri nella Regione II.",
-            "noChanges": "Nessun cambiamento rilevato.",
-            "changesTitle": "Cambiamenti:",
-            "cellLabel": "Cella ({x}, {y})",
-            "change": {
-                "biomeOverride": "Bioma sovrascritto: {fromBiome} -> {toBiome}",
-                "conditions": "Condizioni applicate: {conditions}",
-                "enemyLevel": "Bonus livello nemici: +{amount}"
-            }
-        },
-        "gameNew": {
-            "title": "Nuova partita",
-            "description": "Crea una nuova partita inserendo nome e numero massimo di giocatori consentiti. Potrai sempre cambiare queste impostazioni nella lobby.",
-            "create": "Crea"
-        },
-        "gameJoin": {
-            "title": "Entra in partita",
-            "description": "Entra in una partita esistente inserendo il codice fornito dall'host. Assicurati di inserirlo correttamente.",
-            "joinCode": "Codice partita",
-            "join": "Entra"
-        },
-        "gameSettings": {
-            "title": "Impostazioni",
-            "description": "Aggiorna nome partita e numero massimo di giocatori. Puoi modificare queste impostazioni dalla lobby finche la partita e in attesa.",
-            "save": "Salva"
-        },
-        "mapSettings": {
-            "title": "Impostazioni Mappa",
-            "description": "Attiva o disattiva le opzioni di presentazione del gameplay.",
-            "soundOn": "Audio: ATTIVO",
-            "soundOff": "Audio: SPENTO",
-            "crtOn": "Overlay CRT: ATTIVO",
-            "crtOff": "Overlay CRT: SPENTO"
-        },
-        "genericDelete": {
-            "title": "Eliminare?",
-            "message": "Confermi di voler eliminare questo elemento? Questa azione non puo essere annullata.",
-            "confirm": "Elimina"
-        },
-        "genericConfirm": {
-            "title": "Conferma?",
-            "message": "Sei sicuro di voler procedere? Questa azione non puo essere annullata.",
-            "confirm": "Conferma"
-        },
-        "eventLog": {
-            "title": "Registro Eventi",
-            "empty": "Nessun evento per ora."
-        },
-        "rulebook": {
-            "title": "Regolamento",
-            "loading": "Caricamento in corso...",
-            "empty": "Nessuna pagina disponibile.",
-            "loadIndexError": "Impossibile caricare l'indice del regolamento.",
-            "loadPageError": "Impossibile caricare la pagina selezionata.",
-            "pages": {
-                "intro": "Introduzione",
-                "new-game": "Nuova partita",
-                "join-game": "Entrare in partita",
-                "player": "Il personaggio",
-                "game": "Come giocare"
-            }
-        },
-        "discardPile": {
-            "title": "Pila degli Scarti ({count})",
-            "empty": "Nessuna entita scartata per ora.",
-            "kind": {
-                "follower": "Seguace",
-                "item": "Oggetto",
-                "tile": "Tessera",
-                "event": "Evento",
-                "spell": "Magia"
-            },
-            "section": {
-                "exploration": "Esplorazione",
-                "spells": "Magie"
-            },
-            "unknownCard": "Carta sconosciuta",
-            "unknownTime": "Orario sconosciuto",
-            "systemSource": "sistema",
-            "meta": "Fonte: {source} • Turno: {turn} • {time}"
-        },
-        "fastTravel": {
-            "title": "Viaggio rapido",
-            "flavorText": "Avvicinandoti al carro noti una tabella con le indicazioni e i costi per un viaggio in totale sicurezza...",
-            "description": "Viaggiare tra un luogo sicuro ed un altro costa 1 moneta per casella ortogonale, fino a un massimo di 15. Arriverai nel turno successivo.",
-            "safePlace": "Luogo sicuro",
-            "startingFrom": "Stai partendo da {origin}.",
-            "routeCostInfo": "Il costo del tragitto e 1 moneta per ogni casella ortogonale, fino a un massimo di 15.",
-            "noDestinations": "Non ci sono ancora destinazioni di luoghi sicuri scoperte.",
-            "coordinates": "Coordinate: {x}, {y}",
-            "notEnoughCoinsRoute": "Monete insufficienti per questa tratta.",
-            "selectedRouteTooExpensive": "La tratta selezionata costa {cost} monete, ma ne possiedi solo {money}.",
-            "destination": "Destinazione: {destination}.",
-            "confirmInfo": "Confermando termini il turno e ne salterai uno aggiuntivo prima dell'arrivo.",
-            "confirmRoute": "Viaggia"
-        },
-        "spellTeleport": {
-            "title": "{spellName}: seleziona destinazione",
-            "description": "Scegli una casella esplorata entro {range} caselle ortogonali.",
-            "coordinates": "Coordinate: {x}, {y}",
-            "confirm": "Lancia",
-            "noTargets": "Nessuna destinazione valida disponibile.",
-            "fallbackSpellName": "Incantesimo"
-        },
-        "resourceExchange": {
-            "title": "Scambio risorse",
-            "description": "Scambia risorse 1:1 con l'artigiano del villaggio. Confermare questa azione termina il turno.",
-            "give": "Dai",
-            "receive": "Ricevi",
-            "amount": "Quantita",
-            "maximum": "Massimo: {max}",
-            "noResources": "Ti serve almeno 1 risorsa per effettuare uno scambio.",
-            "invalidSelection": "Selezione non valida. Assicurati che le risorse siano diverse e la quantita sia disponibile.",
-            "summary": "Scambierai {amount} {give} per {amount} {receive}.",
-            "confirm": "Conferma scambio",
-            "unknown": "Sconosciuto"
-        },
-        "followerSelect": {
-            "title": "Seleziona seguace",
-            "message": "Scegli un seguace.",
-            "possibleOutcomes": "Esiti possibili",
-            "noEligibleFollowers": "Nessun seguace idoneo disponibile."
-        },
-        "levelUp": {
-            "title": "Aumento livello",
-            "reachedLevel": "Hai raggiunto il livello {level}.",
-            "chooseOne": "Scegli un parametro da aumentare di 1.",
-            "remainingExperience": "Esperienza rimanente dopo il livello: {experience}",
-            "ariaCharacteristic": "Caratteristica da aumentare",
-            "strength": {
-                "label": "Forza",
-                "description": "Aumenta la potenza fisica e gli HP. Gli HP crescono del 5% per ogni punto assegnato."
-            },
-            "magic": {
-                "label": "Magia",
-                "description": "Migliora l'attitudine magica e gli MP. Gli MP crescono di 1 per ogni punto assegnato."
-            },
-            "luck": {
-                "label": "Fortuna",
-                "description": "Migliora gli esiti basati sulla probabilita."
-            }
-        },
-        "mystic": {
-            "title": "Mistico della Citta",
-            "flavorText": "Un anziano mistico avvolto in vesti logore ti invita a sederti accanto a lui, offrendoti di svelare i segreti nascosti nella tua mente...",
-            "offerInfo": "Lascia che il Mistico sondi la tua mente al costo di {cost} monete e scopri cosa ha da rivelarti.",
-            "result": "Risultato:",
-            "actions": {
-                "pay": "Paga",
-                "continue": "Continua"
-            },
-            "rewards": {
-                "alignmentEvil": {
-                    "label": "Cambio di allineamento: Malvagio",
-                    "preview": "Il tuo allineamento diventa Malvagio"
-                },
-                "alignmentNeutral": {
-                    "label": "Cambio di allineamento: Neutrale",
-                    "preview": "Il tuo allineamento diventa Neutrale"
-                },
-                "ignored": {
-                    "label": "Ignorato",
-                    "preview": "Il Mistico ti ignora"
-                },
-                "xp1": {
-                    "label": "Barlume di Intuizione",
-                    "preview": "Ottieni 1 XP"
-                },
-                "xp2": {
-                    "label": "Intuizione Profonda",
-                    "preview": "Ottieni 2 XP"
-                },
-                "levelUp": {
-                    "label": "Risveglio",
-                    "preview": "100 esatto: ottieni 1 aumento di livello"
-                }
-            },
-            "errors": {
-                "notEnoughCoins": "Non hai abbastanza monete per pagare il Mistico.",
-                "consult": "Errore durante la consultazione del mistico."
-            }
-        },
-        "chaos": {
-            "title": "Caos",
-            "flavorText": "L'energia del caos è imprevedibile. Nessuno sa cosa succederà...",
-            "targetInfo": "{spellName} su {targetName}. Uno degli effetti seguenti verrà applicato casualmente.",
-            "actions": {
-                "cast": "Lancia"
-            },
-            "errors": {
-                "cast": "Errore durante il lancio della magia del caos."
-            }
-        },
-        "enchantress": {
-            "title": "Incantatrice della Capitale",
-            "flavorText": "Una giovane incantatrice mescola le sue antiche e misteriose carte mentre ti dice di avvicinarti...",
-            "offerInfo": "Al costo di {cost} monete potrai scoprire il tuo destino.",
-            "learnedSpell": "Hai imparato:",
-            "actions": {
-                "pay": "Paga",
-                "continue": "Continua"
-            },
-            "rewards": {
-                "minified": {
-                    "label": "Miniaturizzato",
-                    "preview": "Miniaturizzato per 1 turno"
-                },
-                "weakened": {
-                    "label": "Indebolito",
-                    "preview": "Indebolito per 3 turni"
-                },
-                "hexed": {
-                    "label": "Maledetto",
-                    "preview": "Maledetto per 3 turni"
-                },
-                "bravery": {
-                    "label": "Coraggio",
-                    "preview": "Coraggio per 3 turni"
-                },
-                "focus": {
-                    "label": "Concentrazione",
-                    "preview": "Concentrazione per 3 turni"
-                },
-                "jackpot": {
-                    "label": "Jackpot Arcano",
-                    "preview": "Coraggio + Concentrazione per 3 turni. Su 100 esatto: Rospificazione. Su 100+: magia dal mazzo."
-                }
-            },
-            "errors": {
-                "notEnoughCoins": "Non hai abbastanza monete per pagare l'Incantatrice.",
-                "consult": "Errore durante la consultazione dell'incantatrice."
-            }
-        },
-        "academySpellUpgrader": {
-            "title": "Maestro degli Incantesimi",
-            "info": "Scegli una magia da potenziare. La versione base verrà rimossa dal tuo grimorio.",
-            "noOptions": "Non hai magie potenziabili nel tuo grimorio.",
-            "result": "{from} è stata potenziata in {to}!",
-            "actions": {
-                "confirm": "Potenzia (−{cost} monete)"
-            },
-            "errors": {
-                "notEnoughCoins": "Non hai abbastanza monete per questo potenziamento.",
-                "upgrade": "Errore durante il potenziamento della magia."
-            }
-        },
-        "merchant": {
-            "coinsValue": "Monete {value}",
-            "confirmWithDelta": "Conferma {delta}",
-            "info": {
-                "main": "Compra o vendi oggetti, poi conferma il carrello.",
-                "turnRule": "Comprare termina il turno. Vendere no."
-            },
-            "sections": {
-                "buy": "Compra",
-                "sell": "Vendi"
-            },
-            "names": {
-                "city-merchant": "Mercante della Citta",
-                "academy-merchant": "Mercante Arcano dell'Accademia"
-            },
-            "meta": {
-                "category": "Categoria",
-                "stock": "Scorte",
-                "owned": "Posseduti"
-            },
-            "categories": {
-                "spell": "Incantesimo"
-            },
-            "empty": {
-                "noStock": "Nessuna scorta disponibile.",
-                "noSellableItems": "Nessun oggetto vendibile in inventario."
-            },
-            "itemsInCart": "Elementi nel carrello: {count}",
-            "actions": {
-                "buy": "Compra",
-                "sell": "Vendi",
-                "viewCart": "Vedi carrello",
-                "hideCart": "Nascondi carrello",
-                "undo": "Annulla"
-            },
-            "keywords": {
-                "evilOnly": "solo malvagi",
-                "hpValue": "PV {value}",
-                "itemSlotsPlus": "+{value} slot oggetti"
-            },
-            "errors": {
-                "alreadyInParty": "Gia nel tuo gruppo",
-                "confirmCart": "Impossibile confermare il carrello del mercante."
-            }
-        },
-        "doctor": {
-            "title": {
-                "capitalDoctor": "Dottore della Capitale",
-                "cityHealer": "Guaritore della Citta"
-            },
-            "provider": {
-                "doctor": "Dottore",
-                "healer": "Guaritore"
-            },
-            "restoresInfo": "{provider} ripristina il 5% HP per trattamento.",
-            "costPerTreatment": "Costo per trattamento: {cost} monete",
-            "nightTariff": "(tariffa notturna)",
-            "currentHp": "HP attuali: {current}/{max}",
-            "treatments": "Trattamenti (5% ciascuno)",
-            "maximums": "Massimo per HP: {hp} | massimo per monete: {coins}",
-            "expectedHeal": "Cura prevista: +{heal} HP",
-            "errors": {
-                "hpFull": "I tuoi HP sono gia al massimo.",
-                "notEnoughCoinsSingle": "Non hai abbastanza monete per un singolo trattamento.",
-                "notEnoughCoinsSelection": "I trattamenti selezionati costano {cost} monete, ma ne possiedi solo {money}."
-            }
-        },
-        "resourceInventory": {
-            "title": {
-                "inventoryFull": "Inventario pieno",
-                "manageResources": "Gestisci risorse"
-            },
-            "subtitle": {
-                "noFreeSlot": "Nessuno slot libero per {resource}. Scarta una risorsa o annulla la raccolta.",
-                "selectDiscard": "Seleziona una pila risorsa e scarta 1 unita."
-            },
-            "noResources": "Nessuna risorsa disponibile.",
-            "discardAndCollect": "Scarta selezionata e raccogli {resource}",
-            "cancelCollect": "Annulla raccolta",
-            "discardSelected": "Scarta selezionata"
-        },
-        "graveyardResult": {
-            "title": "Resurrezione al Cimitero",
-            "selectedFollower": "Seguace selezionato",
-            "unknownOutcome": "Esito sconosciuto",
-            "attemptedFor": "Tentata resurrezione per {follower}.",
-            "result": "Risultato:",
-            "continue": "Continua",
-            "rewards": {
-                "wrongSpirit": {
-                    "label": "Spirito sbagliato",
-                    "preview": "Evochi lo spirito sbagliato, perdi il 10% PV, nessuna resurrezione"
-                },
-                "silence": {
-                    "label": "Silenzio",
-                    "preview": "Non succede nulla"
-                },
-                "zombieAwakening": {
-                    "label": "Risveglio Zombie",
-                    "preview": "Evochi uno Zombie al posto del seguace selezionato"
-                },
-                "distortedResurrection": {
-                    "label": "Resurrezione distorta",
-                    "preview": "Il seguace selezionato torna non morto con 1 PV"
-                },
-                "completeResurrection": {
-                    "label": "Resurrezione completa",
-                    "preview": "Il seguace selezionato torna con PV completi"
-                }
-            }
-        },
-        "sanctuary": {
-            "title": {
-                "activate": "Attiva santuario",
-                "donate": "Dona al santuario"
-            },
-            "actions": {
-                "activate": "Attiva",
-                "donate": "Dona"
-            },
-            "description": {
-                "activate": "Attivare il santuario garantisce 1 XP, lega il personaggio all'elemento del santuario e segna il quadrante del santuario sotto quell'influenza elementale.",
-                "donate": "Donare 5 monete a un santuario attivo sposta la tua sintonia al suo elemento se sei attualmente in sintonia con un elemento diverso."
-            },
-            "activationInfo": "Attiva il Santuario consumando 3 MP per sintonizzarti con l'elemento corrispondente e ottenere la magia associata. Maggiori info sulla sintonia nel Regolamento.",
-            "benefits": {
-                "title": "Benefici dell'attivazione",
-                "exp": "+1 exp",
-                "attunement": "Sintonia: {element}",
-                "spell": "Apprendi la magia \"{spellName}\""
-            },
-            "errors": {
-                "notEnoughCoins": "Non hai abbastanza monete per questa azione.",
-                "notEnoughMp": "Non hai abbastanza MP: ne servono {cost}."
-            }
-        }
+    "errors": {
+      "loadTiles": "Errore nel caricamento della configurazione tiles",
+      "createGame": "Errore nella creazione della partita",
+      "joinGame": "Errore durante l'ingresso in partita",
+      "leaveGame": "Errore durante l'uscita dalla partita",
+      "deleteGame": "Errore durante l'eliminazione della partita"
+    }
+  },
+  "lobby": {
+    "header": {
+      "newGamePrefix": "Nuova partita"
     },
-    "map": {
-        "worldTitle": "Mondo",
-        "worldTime": {
-            "ariaLabel": "Orario",
-            "prefix": "Orario"
-        },
-        "worldEventTitle": {
-            "default": "Evento Mondiale",
-            "none": "Nessun cambiamento",
-            "forest": {
-                "negative": "Espansione",
-                "positive": "Natura rigogliosa"
-            },
-            "desert": {
-                "negative": "Desertificazione",
-                "positive": "Venti favorevoli"
-            },
-            "water": {
-                "negative": "Inondazione",
-                "positive": "Fonte magica"
-            },
-            "plains": {
-                "negative": "Campo di tiro",
-                "positive": "Campo aperto"
-            },
-            "mountain": {
-                "negative": "Terremoto",
-                "positive": "Vena antica"
-            },
-            "ruins": {
-                "negative": "Corruzione antica",
-                "positive": "Archivio perduto"
-            }
-        },
-        "worldEventFlow": {
-            "title": "Evento mondiale",
-            "notificationIntro": "Bersaglio {targetBiome}, bioma driver {driverBiome}. Ogni cella coinvolta puo risolversi in effetto positivo, negativo o nessun cambiamento.",
-            "announcing": "{outcome}: bersaglio {targetBiome}, responsabile {driverBiome}. Preparazione in corso...",
-            "propagating": "Propagazione mutazioni {propagatedCellsCount}/{totalMutations}...",
-            "summary": "Mutazione completata: {propagatedCellsCount}/{totalMutations} celle aggiornate.",
-            "completed": "Evento mondiale completato."
-        },
-        "timeOfDay": {
-            "title": "Orario",
-            "titleWithRounds": "Orario ({rounds} turni)",
-            "day": "Giorno",
-            "night": "Notte",
-            "helpTitle": "Aiuto",
-            "helpDescription": "Ad ogni round il giorno passa alla notte e viceversa. L'ora del giorno influenza alcuni oggetti e creature: quelle attive durante uno specifico orario avranno +1 ai loro parametri."
-        },
-        "worldPanel": {
-            "turn": "Turno",
-            "round": "Round",
-            "discovered": "Esplorato",
-            "activeShrines": "Santuari",
-            "worldEvent": "Evento mondiale",
-            "worldEventSummary": "{title} | {outcome} | bersaglio {targetBiome} / responsabile {driverBiome} | mutate {cellsMutated}/{cellsAffected}",
-            "worldEventOutcome": {
-                "negative": "Negativo",
-                "positive": "Positivo",
-                "none": "Nessun cambiamento"
-            },
-            "activePlayer": "Turno di",
-            "helpTitle": "Aiuto",
-            "help": {
-                "turnRound": "Il turno e l'azione effettuata da un singolo giocatore. Quando tutti hanno effettuato un turno, allora il round avanza.",
-                "discovered": "La mappa e composta per un totale di 100 caselle esplorabili. Entrando in una cella non scoperta viene rivelato il bioma e ogni eventuale altro punto di interesse della cella.",
-                "activeShrines": "Ci sono quattro santuari legati ad altrettanti elementi: fuoco, acqua, aria e terra. Scoprire e attivare i santuari consente di entrare in sintonia con l'elemento che rappresentano, fornendo talvolta anche dei bonus. Ogni santuario attivo nella Regione I riduce l'impatto dell'Evento mondiale quando questo viene eseguito.",
-                "worldEvent": "Passare dalla Regione I alla II mette in allerta le forze del male che eseguiranno la loro contromossa, talvolta ribaltando la situazione della mappa. L'evento mondiale considera il bioma piu rivelato come bersaglio dell'evento; il bioma a seguire determina invece quali saranno i possibili effetti. Clicca per maggiori info."
-            }
-        },
-        "commands": {
-            "title": "Comandi",
-            "executing": "Esecuzione...",
-            "noDescription": "-",
-            "empty": "Nessuna azione disponibile in questa posizione.",
-            "expandAria": "Espandi comandi",
-            "none": "nessun comando"
-        },
-        "spells": {
-            "title": "Incantesimi ({count}/{capacity})",
-            "empty": "Nessun incantesimo.",
-            "expandAria": "Espandi incantesimi",
-            "none": "Nessun incantesimo",
-            "warning": {
-                "notMyTurn": "Disponibile solo durante il tuo turno.",
-                "cooldown": "Disponibile tra {turns} turni.",
-                "notEnoughMp": "MP insufficienti.",
-                "mustCastBeforeMove": "Deve essere lanciato prima di muoversi."
-            },
-            "errors": {
-                "notFound": "Incantesimo non trovato.",
-                "notKnown": "Non conosci questo incantesimo.",
-                "cooldown": "Questo incantesimo e in recupero.",
-                "notEnoughMp": "MP insufficienti per lanciare questo incantesimo.",
-                "noTeleportTargets": "Nessuna destinazione esplorata valida per questo incantesimo.",
-                "noTargets": "Nessun bersaglio valido disponibile.",
-                "noCellTargets": "Nessuna cella valida disponibile per questo incantesimo.",
-                "cast": "Errore durante il lancio dell'incantesimo."
-            }
-        },
-        "cellSelection": {
-            "label": "Seleziona cella",
-            "promptReveal": "Seleziona una cella da rivelare",
-            "promptDestroy": "Seleziona una cella per rimuovere il suo evento"
-        },
-        "locationInfo": {
-            "contextObserving": "Osservazione cella",
-            "contextActivePlayer": "Giocatore attivo in",
-            "openAria": "Apri informazioni posizione"
-        },
-        "discardPile": {
-            "title": "Scarti",
-            "openAria": "Apri pila scarti",
-            "openError": "Impossibile aprire la pila scarti"
-        },
-        "inventory": {
-            "title": "Inventario ({used}/{capacity})",
-            "noItems": "Nessun oggetto.",
-            "uses": "Utilizzi",
-            "expandAria": "Espandi inventario",
-            "none": "Nessun oggetto"
-        },
-        "followers": {
-            "title": "Seguaci ({count})",
-            "noFollowers": "Nessun seguace.",
-            "discardedCount": "Seguaci scartati: {count}",
-            "expandAria": "Espandi seguaci",
-            "none": "Nessun seguace"
-        },
-        "resources": {
-            "title": "Risorse ({current}/{max})",
-            "openAria": "Apri inventario risorse"
-        },
-        "actions": {
-            "home": "Home",
-            "settings": "Impostazioni"
-        },
-        "alignment": {
-            "title": "Allineamento"
-        },
-        "attunement": {
-            "title": "Elemento"
-        },
-        "elements": {
-            "water": "Acqua",
-            "fire": "Fuoco",
-            "wind": "Vento",
-            "earth": "Terra"
-        },
-        "money": {
-            "title": "Denaro"
-        },
-        "luck": {
-            "title": "Fortunometro",
-            "helpTitle": "Aiuto",
-            "helpDescription": "Spesso verra generato un numero casuale (esplorando, interagendo con personaggi speciali nei luoghi sicuri, ecc...) che se raggiunge o supera il 100 da luogo ad un 'Colpo di fortuna', permettendo cosi al giocatore di ricevere una ricompensa migliore. Il parametro Fortuna aumenta la possibilita che esca 100.",
-            "status": {
-                "success": "Si!",
-                "near": "Quasi",
-                "fail": "Peccato"
-            }
-        },
-        "players": {
-            "title": "Giocatori",
-            "hpLabel": "PV",
-            "levelUp": {
-                "ariaLabel": "Apri scelte di livello ({count})",
-                "label": "LIVELLO +{count}"
-            }
-        },
-        "log": {
-            "title": "Eventi",
-            "openAria": "Apri eventi"
-        },
-        "common": {
-            "noDescription": "Nessuna descrizione disponibile."
-        },
-        "cellInspector": {
-            "info": "Info",
-            "region": "Regione",
-            "coordinates": "Coordinate XY",
-            "transformation": "Trasformazione",
-            "transformedNo": "No",
-            "transformedFromTo": "Si ({from} -> {to})",
-            "conditions": "Condizioni",
-            "conditionNone": "Nessuna",
-            "environment": "Ambiente",
-            "enemiesLevel": "Livello nemici",
-            "special": "Speciale",
-            "description": "Descrizione",
-            "resources": "Risorse",
-            "actions": "Azioni",
-            "noActionsAvailable": "Nessuna azione disponibile qui.",
-            "landmarkDiscovered": "{category} scoperto",
-            "sanctuaryActive": "Santuario attivo",
-            "sanctuaryInactive": "Santuario inattivo",
-            "landmarkDescription": "Un {category}{alignment} si sovrappone a questa casella del bioma.",
-            "dormantSanctuary": "Il santuario e ancora dormiente e nascosto.",
-            "sanctuaryDescriptions": {
-                "water": {
-                    "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce azzurra rinfrescante. Il santuario e attivo.",
-                    "inactive": "Sospeso sopra una pozza d'acqua cristallina, un grande cristallo bianco fluttua al centro del santuario."
-                },
-                "fire": {
-                    "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce rossa intensa. Il santuario e attivo.",
-                    "inactive": "Sospeso sopra una vasca di lava ardente, un grande cristallo bianco fluttua al centro del santuario."
-                },
-                "wind": {
-                    "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce viola rasserenante. Il santuario e attivo.",
-                    "inactive": "Il suono dei campanelli appesi intorno al santuario accompagna la vista di un grande cristallo bianco sospeso al centro."
-                },
-                "earth": {
-                    "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce gialla rassicurante. Il santuario e attivo.",
-                    "inactive": "Incorniciato da una natura rigogliosa, un grande cristallo bianco fluttua al centro del santuario."
-                }
-            },
-            "none": "Nessuna",
-            "no": "No",
-            "yesCells": "Si ({count} caselle)",
-            "unknownBiome": "? ? ?",
-            "conditionLabel": {
-                "hostile-environment": "Ambiente ostile",
-                "regenerating-waters": "Acque rigeneranti",
-                "abundant-resources": "Risorse abbondanti",
-                "open-ground": "Terreno aperto",
-                "swift-path": "Percorso rapido",
-                "impassable": "Invalicabile",
-                "vein-of-plenty": "Vena abbondante",
-                "ancient-knowledge": "Conoscenza antica",
-                "cursed-ground": "Terreno maledetto",
-                "enemy-level-bonus-by-region-value": "Bonus livello nemici per regione"
-            },
-            "conditionDescription": {
-                "hostile-environment": "Infligge danni HP per ogni casella connessa del bioma, salvo protezioni attive.",
-                "regenerating-waters": "Rigenera HP in base alla dimensione dell'ambiente, fino a un limite massimo.",
-                "abundant-resources": "Raddoppia le risorse ottenute da esplorazione e raccolta su questa casella.",
-                "open-ground": "Permette il movimento diagonale da questa casella.",
-                "swift-path": "Migliora lo spostamento da questa casella con attraversamento avanzato.",
-                "impassable": "Impedisce l'ingresso in questa casella.",
-                "vein-of-plenty": "Raddoppia i minerali ottenuti su questa casella.",
-                "ancient-knowledge": "Concede esperienza bonus a fine turno su questa casella.",
-                "cursed-ground": "Riduce l'efficacia dei controlli fortuna su questa casella.",
-                "enemy-level-bonus-by-region-value": "Aumenta il livello dei nemici in base al valore della regione della casella."
-            },
-            "onCell": "Sulla casella",
-            "cardType": {
-                "enemy": "Nemico",
-                "event": "Evento",
-                "place": "Luogo",
-                "stranger": "Straniero",
-                "follower": "Seguace",
-                "item": "Oggetto",
-                "amulet": "Amuleto"
-            }
-        },
-        "labels": {
-            "little": "piccolo",
-            "fightOnly": "solo combattimento",
-            "dayOnly": "solo giorno",
-            "nightOnly": "solo notte"
-        },
-        "landmarks": {
-            "categories": {
-                "safe": "Luogo sicuro",
-                "mid": "Luogo intermedio",
-                "bad": "Luogo pericoloso",
-                "unknown": "Sconosciuto"
-            },
-            "names": {
-                "capital": "Capitale",
-                "city": "Citta",
-                "village": "Villaggio",
-                "camp": "Campo",
-                "graveyard": "Cimitero",
-                "temple": "Tempio",
-                "castle": "Castello",
-                "academy": "Accademia",
-                "cave": "Grotta",
-                "dungeon": "Segreta",
-                "manor": "Maniero",
-                "altar": "Altare"
-            },
-            "safeNames": {
-                "capital": {
-                    "plains": "Capitale di Frontiera",
-                    "forest": "Capitale del Bosco",
-                    "mountain": "Capitale d'Altura",
-                    "water": "Capitale Costiera",
-                    "desert": "Capitale del Deserto",
-                    "ruins": "Capitale dei Caduti"
-                },
-                "city": {
-                    "plains": "Citta di Frontiera",
-                    "forest": "Citta del Bosco",
-                    "mountain": "Citta d'Altura",
-                    "water": "Citta Costiera",
-                    "desert": "Citta del Deserto",
-                    "ruins": "Citta dei Caduti"
-                },
-                "village": {
-                    "plains": "Villaggio di Frontiera",
-                    "forest": "Villaggio del Bosco",
-                    "mountain": "Villaggio d'Altura",
-                    "water": "Villaggio Costiero",
-                    "desert": "Villaggio del Deserto",
-                    "ruins": "Villaggio dei Caduti"
-                },
-                "camp": {
-                    "plains": "Campo di Frontiera",
-                    "forest": "Campo del Bosco",
-                    "mountain": "Campo d'Altura",
-                    "water": "Campo Costiero",
-                    "desert": "Campo del Deserto",
-                    "ruins": "Campo dei Caduti"
-                }
-            },
-            "midNames": {
-                "graveyard": {
-                    "good": "Cimitero Benedetto",
-                    "neutral": "Cimitero",
-                    "evil": "Cimitero Maledetto"
-                },
-                "temple": {
-                    "good": "Tempio Benedetto",
-                    "neutral": "Tempio",
-                    "evil": "Tempio Profanato"
-                },
-                "castle": {
-                    "good": "Castello Benedetto",
-                    "neutral": "Castello",
-                    "evil": "Castello Maledetto"
-                },
-                "academy": {
-                    "good": "Accademia Benedetta",
-                    "neutral": "Accademia",
-                    "evil": "Accademia Maledetta"
-                }
-            },
-            "safeBiomeAffixes": {
-                "plains": {
-                    "prefix": "Frontiera",
-                    "suffix": "Frontiera"
-                },
-                "forest": {
-                    "prefix": "Bosco",
-                    "suffix": "del Bosco"
-                },
-                "mountain": {
-                    "prefix": "Alta",
-                    "suffix": "delle Montagne"
-                },
-                "water": {
-                    "prefix": "Costiera",
-                    "suffix": "della Costa"
-                },
-                "desert": {
-                    "prefix": "Deserto",
-                    "suffix": "del Deserto"
-                },
-                "ruins": {
-                    "prefix": "Rovina",
-                    "suffix": "dei Caduti"
-                }
-            },
-            "alignmentPrefixes": {
-                "good": "Benedetto",
-                "neutral": "",
-                "evil": "Maledetto"
-            }
-        },
-        "biomes": {
-            "plains": "Pianure",
-            "forest": "Foresta",
-            "mountain": "Montagna",
-            "water": "Acqua",
-            "desert": "Deserto",
-            "ruins": "Rovine"
-        },
-        "cells": {
-            "unknownCell": "Cella sconosciuta",
-            "unknownLandmark": "Luogo sconosciuto",
-            "sanctuary": {
-                "water": "Santuario dell'Acqua",
-                "fire": "Santuario del Fuoco",
-                "wind": "Santuario del Vento",
-                "earth": "Santuario della Terra",
-                "generic": "Santuario elementale"
-            },
-            "sanctuaryShort": {
-                "water": "Sant. dell'Acqua",
-                "fire": "Sant. del Fuoco",
-                "wind": "Sant. del Vento",
-                "earth": "Sant. della Terra",
-                "generic": "Sant. Elementale"
-            }
-        },
-        "interaction": {
-            "regionCrossing": {
-                "title": "Ingresso nella Regione II",
-                "message": "Attraversare questo confine potrebbe attivare un evento mondiale. Vuoi procedere?",
-                "confirm": "Procedi",
-                "cancel": "Resta"
-            },
-            "leaveGame": {
-                "title": "Lasciare la partita?",
-                "message": "Stai per lasciare la partita. Potrai rientrare in qualsiasi momento ma se gli altri giocatori proseguono non assisterai ai loro turni. Inoltre, possono votare per farti saltare il turno. Avvisali se ora non hai tempo.",
-                "confirm": "Esci",
-                "cancel": "Resta"
-            },
-            "graveyard": {
-                "title": "Resurrezione al Cimitero",
-                "message": "Scegli quale seguace morto vuoi richiamare dalla pila degli scarti.",
-                "confirm": "Tenta resurrezione",
-                "outcomePreviewTitle": "Esiti del tiro fortuna (1-100)"
-            },
-            "temple": {
-                "title": "Devozione al Tempio",
-                "message": "Scegli un seguace da lasciare al Tempio. Animali, spiriti e non morti non sono ammessi.",
-                "confirm": "Invia devoto"
-            },
-            "altar": {
-                "title": "Sacrificio all'Altare",
-                "message": "Scegli un seguace da sacrificare all'Altare. I non morti non possono essere sacrificati.",
-                "confirm": "Sacrifica seguace"
-            },
-            "elementalRitual": {
-                "title": "Rituale Elementale",
-                "message": "Scegli un seguace da trasformare. Otterrà +1 FRZ, +1 MAG e almeno 10 HP.",
-                "confirm": "Esegui rituale"
-            },
-            "errors": {
-                "movePlayer": "Errore durante lo spostamento del giocatore",
-                "noMerchantForLandmark": "Nessun mercante configurato per questo luogo.",
-                "noDeadFollowerForResurrection": "Nessun seguace morto disponibile per la resurrezione.",
-                "noTempleFollower": "Nessun seguace idoneo disponibile per la devozione al tempio.",
-                "noAltarFollower": "Nessun seguace idoneo disponibile per il sacrificio all'altare.",
-                "noElementalRitualFollower": "Nessun seguace disponibile per il Rituale Elementale.",
-                "levelUp": "Errore durante l'applicazione della scelta di livello",
-                "manageResources": "Errore durante la gestione delle risorse"
-            }
-        }
+    "summary": {
+      "playersJoined": "Giocatori presenti",
+      "playersReady": "Giocatori pronti",
+      "joinCode": "Codice partita",
+      "status": "Stato"
     },
-    "mapPage": {
-        "endTurn": {
-            "reason": {
-                "pendingResourcePickup": "Risolvi prima la raccolta risorse in sospeso prima di terminare il turno.",
-                "passControl": "Passa il controllo al giocatore successivo.",
-                "moveBeforeEnd": "Muoviti almeno una volta prima di terminare il turno."
-            }
-        }
+    "copyJoinCode": {
+      "copy": "Copia codice partita",
+      "copied": "Copiato"
     },
-    "playerCard": {
-        "activeStatus": "Stati attivi",
-        "moreStatuses": "Altri stati attivi",
-        "activeEffects": "Effetti attivi",
-        "noActiveEffects": "Nessun bonus o malus attivo.",
-        "effectReasons": {
-            "generic": "Modificatore",
-            "statusModifier": "Modificatore di stato",
-            "alignedLandmark": "Allineato con l'etica del luogo",
-            "opposedLandmark": "Opposto all'etica del luogo",
-            "sanctuaryQuadrantInfluence": "Influenza del santuario in sintonia nel quadrante attuale",
-            "biomeCondition": "Condizione del bioma ({condition})",
-            "followerModifier": "Modificatore di {name}",
-            "followerStatus": "Stato di {name} ({status})"
-        },
-        "stats": {
-            "strengthAbbr": "FRZ",
-            "magicAbbr": "MAG",
-            "luckAbbr": "FOR"
-        },
-        "turnLeft": {
-            "one": "1 turno rimanente",
-            "many": "{turns} turni rimanenti"
-        }
+    "status": {
+      "waiting": "In attesa",
+      "running": "In corso",
+      "ended": "Terminata"
     },
-    "catalogs": {
-        "events": {
-            "B-EV-001": {
-                "name": "Diavolo",
-                "description": "In base all'allineamento: i Malvagi guadagnano il 5% di HP massimi. I Buoni perdono il 10% degli HP. I Neutrali non subiscono effetti."
-            },
-            "B-EV-002": {
-                "name": "Sirena",
-                "description": "Ogni personaggio in questa regione deve superare un controllo fortuna (51+). In caso di fallimento, salta il prossimo turno."
-            },
-            "B-EV-003": {
-                "name": "Tempesta",
-                "description": "Tutti i personaggi in questa regione saltano il prossimo turno."
-            },
-            "B-EV-004": {
-                "name": "Corruzione",
-                "description": "Ogni personaggio in possesso di un Amuleto, ovunque si trovi, perde il 10% degli HP massimi."
-            },
-            "B-EV-005": {
-                "name": "Pestilenza",
-                "description": "Tutti i personaggi in questa regione ricevono lo stato Veleno per 3 turni."
-            },
-            "B-EV-006": {
-                "name": "Predoni",
-                "description": "Perdi tutto l'oro. Di notte fuggono col bottino. Di giorno un Predone compare nella cella del Deserto più vicina — sconfiggilo per recuperare le ricchezze."
-            },
-            "B-EV-007": {
-                "name": "Destino Avverso",
-                "description": "Perdi tutta l'esperienza accumulata."
-            },
-            "B-EV-008": {
-                "name": "Calamità",
-                "description": "In base all'allineamento: i Malvagi guadagnano +1 Magia permanente. I Buoni o i Neutrali diventano Malvagi."
-            },
-            "B-EV-009": {
-                "name": "Oscurità Malefica",
-                "description": "Tutte le Carte Esplorazione nemico negli scarti tornano nel mazzo, che viene poi rimescolato."
-            },
-            "B-EV-010": {
-                "name": "Grimorio Perduto",
-                "description": "Ottieni 2 magie."
-            },
-            "B-EV-011": {
-                "name": "Vortice Magico",
-                "description": "Tutti i personaggi in questa regione dimenticano ogni magia appresa, eccetto quelle dei santuari."
-            },
-            "B-EV-012": {
-                "name": "Inverno",
-                "description": "Tutti i personaggi in questa regione subiscono il 5% di danno agli HP all'inizio di ogni round per 3 round."
-            },
-            "B-EV-013": {
-                "name": "Angelo",
-                "description": "In base all'allineamento: i Buoni guadagnano il 5% di HP massimi. I Malvagi perdono il 10% degli HP. I Neutrali non subiscono effetti."
-            },
-            "B-EV-014": {
-                "name": "Diavoletto",
-                "description": "Ti teletrasporta in una cella casuale già esplorata."
-            },
-            "B-EV-015": {
-                "name": "Zaino Abbandonato",
-                "description": "Contiene 2 risorse casuali tra: cibo, legname, minerali, tessuto."
-            }
-        },
-        "enemies": {
-            "B-EN-001": {
-                "name": "Predone"
-            }
-        },
-        "followers": {
-            "horse": {
-                "name": "Cavallo",
-                "description": "Una cavalcatura fedele. Usa Nutri cavallo prima del movimento per ottenere +1 MOVIMENTO in questo turno."
-            },
-            "princess": {
-                "name": "Principessa",
-                "description": "Una seguace nobile dotata di intuizione arcana."
-            },
-            "mule": {
-                "name": "Mulo",
-                "description": "Un robusto animale da soma che aumenta la tua capacita di trasporto di 4."
-            },
-            "zombie": {
-                "name": "Zombie",
-                "description": "Un seguace non morto barcollante. Concede +1 FORZA, consuma 1 cibo a turno (oppure perdi 1 HP) e puo essere congedato con Elimina zombie."
-            }
-        },
-        "items": {
-            "cursed-rune-sword": {
-                "name": "Spada runica maledetta",
-                "description": "Una spada che si nutre di intenti oscuri."
-            },
-            "common-sword": {
-                "name": "Spada",
-                "description": "Una spada base per principianti."
-            },
-            "common-axe": {
-                "name": "Ascia",
-                "description": "Un'ascia base per principianti. Abilita Taglia legna nelle foreste."
-            },
-            "sealed-orb": {
-                "name": "Sfera sigillata",
-                "description": "Una reliquia misteriosa con valore commerciale latente."
-            },
-            "water-bottle": {
-                "name": "Borraccia",
-                "description": "Una borraccia riutilizzabile che conserva cariche d'acqua per viaggi difficili."
-            }
-        }
+    "players": {
+      "title": "Giocatori",
+      "ready": "PRONTO",
+      "pending": "IN ATTESA"
     },
-    "logs": {
-        "system": {
-            "info": "{text}",
-            "feedHorse": "{playerName} ha nutrito il cavallo e ottenuto +1 movimento per questo turno.",
-            "zombieConsumedFood": "Lo zombie di {playerName} ha consumato {consumedFood} cibo.",
-            "zombieUpkeepMissingFood": "{playerName} aveva mantenimento zombie senza {missingFood} cibo e ha perso {missingFood} HP.",
-            "inventoryOverflowDiscarded": "{playerName} ha scartato {discardedItemsCount} oggetto/i per overflow inventario dopo la perdita di un seguace.",
-            "itemPreventedCondition": "{playerName} ha usato {itemName} ({nextCharges}/{maxCharges}) per prevenire {conditionId}.",
-            "itemRechargedInBiome": "{playerName} ha ricaricato {itemName} ({nextCharges}/{maxCharges}) in {biomeLabel}."
-        },
-        "tokens": {
-            "alignment": "allineamento: {value}",
-            "gainXp": "XP +{value}",
-            "gainLevelUp": "+1 aumento livello",
-            "extrasWrapper": " ({value})",
-            "turn": {
-                "one": "turno",
-                "many": "turni"
-            }
-        },
-        "player": {
-            "move": "{playerName} si e spostato in {x}, {y}.",
-            "discoverBiome": "{playerName} ha scoperto {biome}.",
-            "worldEventTriggered": "{playerName} ha attivato {eventTitle}: {outcome}. Bersaglio {targetBiome}, responsabile {driverBiome}, santuari attivi in Regione I: {activeShrinesInRegionI}.",
-            "worldEventMutationSummary": "{playerName} ha completato la mutazione dell'Evento mondiale: celle mutate {cellsMutated}/{cellsAffected}.",
-            "discoverEnvironment": "{playerName} ha scoperto un nuovo ambiente di {biome}.",
-            "expandEnvironment": "{playerName} ha espanso un ambiente di {biome}.",
-            "enterSanctuary": "{playerName} e entrato in {sanctuary}.",
-            "discoverLandmark": "{playerName} ha scoperto {landmark}.",
-            "reachLandmark": "{playerName} ha raggiunto {landmark}.",
-            "gainExperience": "{playerName} ha ottenuto {amount} XP.",
-            "endTurn": "{playerName} ha terminato il turno.",
-            "activateSanctuary": "{playerName} ha attivato {sanctuaryLabel} e si e sintonizzato con il suo elemento.",
-            "donateSanctuary": "{playerName} ha donato a {sanctuaryLabel} e ha cambiato sintonia.",
-            "praySanctuary": {
-                "lucky": "{playerName} ha pregato in {sanctuary} e ha recuperato {healedHp} HP con una benedizione fortunata.",
-                "noHeal": "{playerName} ha pregato in {sanctuary}, ma non ha ricevuto guarigione.",
-                "heal": "{playerName} ha pregato in {sanctuary} e ha recuperato {healedHp} HP."
-            },
-            "cellGather": "{playerName} ha speso 1 cibo e raccolto {resource}.",
-            "chopTree": "{playerName} ha tagliato legna e ottenuto {quantity} {resource}.",
-            "consumeRation": "{playerName} ha consumato una razione e ottenuto Nutrimento.",
-            "safePlaceHeal": "{playerName} ha usato {source}, recuperato {healedHp} HP e speso {spentCoins} monete.",
-            "capitalInn": "{playerName} ha riposato presso {source}, recuperato {healedHp} HP, speso {spentCoins} monete e terminato il turno.",
-            "landmarkTraining": "{playerName} si e allenato presso {source}, ottenendo +{increasedBy} {parameter} (ora {newValue}), ha speso {spentCoins} monete, terminato il turno e saltera il prossimo.",
-            "villageCraftsmanExchange": "{playerName} ha scambiato {amount} {giveLabel} con {amount} {receiveLabel} presso {source} e ha terminato il turno.",
-            "campReward": "{playerName} ha usato {source} e ottenuto {rewards}.",
-            "safePlaceWait": "{playerName} ha atteso in {place} usando {source}, simulato il movimento sulla stessa casella e terminato il turno.",
-            "capitalEnchantress": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}.",
-            "capitalEnchantress.spell": "{playerName} ha consultato {source}, pagato {spentCoins} monete, estratto {rewardLabel} e imparato la magia: {learnedSpellName}.",
-            "academySpellUpgrade": "{playerName} ha potenziato {fromSpellName}→{toSpellName} al {source}, pagato {spentCoins} monete e terminato il turno.",
-            "cityMystic": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}{extras}.",
-            "graveyardResurrect": "{playerName} ha tentato la resurrezione al {source} per {followerId}. Esito: {appliedOutcome}.",
-            "templeSendDevotee": "{playerName} ha inviato un devoto al {source}, e diventato BUONO e ha ottenuto {gainedExperience} XP.",
-            "altarSacrifice": "{playerName} ha eseguito un sacrificio all'{source}, e diventato MALVAGIO e ha ottenuto {gainedExperience} XP.",
-            "elementalRitual": "{playerName} ha eseguito il Rituale Elementale all'{source} sul seguace {followerId}.",
-            "eliminateZombie": "{playerName} ha usato {source} ed eliminato lo zombie attivo.",
-            "merchantBuy": "{playerName} ha comprato {itemName}{quantityLabel} da {source} per {spentCoins} monete e ha terminato il turno.",
-            "merchantSell": "{playerName} ha venduto {itemName}{quantityLabel} a {source} per {gainedCoins} monete.",
-            "fastTravelBooked": "{playerName} ha prenotato {source} da {from} a {to}, speso {spentCoins} monete e saltera {skippedTurns} {turnLabel} prima dell'arrivo.",
-            "hostileEnvironmentDamage": "{playerName} ha subito {damageHp} HP dal deserto ostile (dimensione ambiente {environmentSize}).",
-            "regeneratingWatersHealing": "{playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
-            "followerHostileEnvironmentDamage": "Il seguace {followerName} di {playerName} ha subito {damageHp} HP dal deserto ostile (dimensione ambiente {environmentSize}).",
-            "followerRegeneratingWatersHealing": "Il seguace {followerName} di {playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
-            "discardResource": "{playerName} ha scartato 1 {resource}.",
-            "pendingPickupCancelled": "{playerName} ha annullato la raccolta in sospeso di {resource}.",
-            "swapResource": "{playerName} ha scartato {droppedResource} e raccolto {gainedResource}.",
-            "resolvePendingPickup": "{playerName} ha raccolto la risorsa in sospeso {resource}.",
-            "castSpell": "{playerName} ha lanciato {spellName} e speso {spentMp} MP.",
-            "castSpellHeal": "{playerName} ha lanciato {spellName}, recuperato {healedHp} HP e speso {spentMp} MP.",
-            "castSpellStatus": "{playerName} ha lanciato {spellName}, applicato {statusKey} per {durationTurns} turni e speso {spentMp} MP.",
-            "castSpellTeleport": "{playerName} ha lanciato {spellName}, teletrasportandosi in {targetX}, {targetY} e spendendo {spentMp} MP.",
-            "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP.",
-            "castSpellDiagonal": "{playerName} ha lanciato {spellName}, abilitando il movimento diagonale (−{spentMp} MP).",
-            "castSpellStatusTarget": "{playerName} ha lanciato {spellName} su {targetPlayerName}, applicato {statusKey} per {durationTurns} turni (−{spentMp} MP).",
-            "castSpellStealCoins": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {rubato {amount} monete} other {fallito}} (−{spentMp} MP).",
-            "castSpellDrainMp": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {drenato {amount} MP} other {fallito}} (−{spentMp} MP).",
-            "castSpellStealFollower": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {rubato il seguace {followerId}} other {fallito}} (−{spentMp} MP).",
-            "castSpellCopySpell": "{playerName} ha lanciato {spellName} su {targetPlayerName} e copiato {copiedSpellId} (−{spentMp} MP).",
-            "castSpellForgetSpell": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {forgottenSpellId} dimenticato (−{spentMp} MP).",
-            "castSpellAlchemy": "{playerName} ha lanciato {spellName}: oggetto {itemId} alchemizzato per {goldValue} monete (−{spentMp} MP).",
-            "castSpellReveal": "{playerName} ha lanciato {spellName} e rivelato la cella ({targetX},{targetY}) (−{spentMp} MP).",
-            "castSpellDestroy": "{playerName} ha lanciato {spellName} e rimosso un evento dalla cella ({targetX},{targetY}) (−{spentMp} MP).",
-            "castSpellBlockAllSpells": "{playerName} ha lanciato {spellName}: tutti i giocatori sono silenziati per {durationTurns} turni (−{spentMp} MP).",
-            "castSpellRecall": "{playerName} ha lanciato {spellName} e si è teletrasportato al santuario (−{spentMp} MP).",
-            "castSpellChaos": "{playerName} ha lanciato {spellName} su {targetPlayerName}: effetto caos '{effectId}' (−{spentMp} MP).",
-            "castSpellTransmute": "{playerName} ha lanciato {spellName}: {sourceLabel} trasmutato in {targetLabel} (−{spentMp} MP).",
-            "castSpellElementalBond": "{playerName} ha lanciato {spellName}: attunement temporaneo a {newElement} (−{spentMp} MP).",
-            "castSpellGainCoins": "{playerName} ha lanciato {spellName}, guadagnato {coinsGained} monete e speso {spentMp} MP.",
-            "castSpellDispel": "{playerName} ha lanciato {spellName} e rimosso lo stato {removedStatus} (−{spentMp} MP).",
-            "castSpellPurify": "{playerName} ha lanciato {spellName}, rimosso {removedCount} stati negativi e speso {spentMp} MP.",
-            "castSpellRemoveFollower": "{playerName} ha lanciato {spellName} e allontanato il seguace {removedFollowerId} (−{spentMp} MP).",
-            "castSpellCopyStatGain": "{playerName} ha lanciato {spellName}: copiato +1 {parameter} da {copiedFromPlayerName} (nuovo valore: {newValue}) (−{spentMp} MP).",
-            "castSpellCounterPending": "{playerName} ha lanciato {spellName} su {targetPlayerName} — in attesa risposta contromagia (−{spentMp} MP).",
-            "counterSpell": "{playerName} ha usato {counterSpellName} per deflettere {spellName}!",
-            "acceptPendingSpell": "{playerName} ha subito l'effetto di {spellId}.",
-            "combatResult": {
-                "win": "{playerName} ha sconfitto {enemy} (+{xp} XP).",
-                "loss": "{playerName} è stato sconfitto da {enemy} (−{damage} HP).",
-                "flee": "{playerName} è fuggito da {enemy} (−{damage} HP).",
-                "fleeLucky": "{playerName} è fuggito fortunatamente da {enemy} senza subire danni."
-            }
-        }
+    "setup": {
+      "title": "Setup personaggio",
+      "subtitle": "Completa il setup e spendi tutti i punti esperienza per essere pronto.",
+      "currentPlayerReady": "PRONTO",
+      "currentPlayerNotReady": "NON PRONTO",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Inserisci nome personaggio",
+      "alignment": "Allineamento",
+      "alignmentAriaLabel": "Allineamento giocatore",
+      "parametersPool": "Punti pool parametri",
+      "strength": "Forza (ogni punto aumenta HP del 5%)",
+      "magic": "Magia (ogni punto aumenta MP di 1)",
+      "luck": "Fortuna",
+      "readyDone": "Pronto!",
+      "confirm": "Conferma"
+    },
+    "alignment": {
+      "good": "Buono",
+      "neutral": "Neutrale",
+      "evil": "Malvagio"
     },
     "actions": {
-        "endTurn": {
-            "label": "Termina turno",
-            "description": "Passa il turno. {reason}"
-        },
-        "activateSanctuary": {
-            "label": "Attiva",
-            "description": "Infondi la tua magia nel {sanctuaryLabel} per attivarlo e sintonizzarti con esso."
-        },
-        "sanctuary": {
-            "label": "Santuario",
-            "description": "Interagisci con il {sanctuaryLabel} e scegli una delle azioni disponibili."
-        },
-        "donateSanctuary": {
-            "label": "Dona",
-            "description": "Dona 5 monete ad un Guardiano del Santuario affinche effettui il rito di sintonia con l'elemento {elementLabel}. Ottieni sintonia con {elementLabel}."
-        },
-        "praySanctuary": {
-            "label": "Prega",
-            "description": "Se la tua preghiera viene accolta recuperi il 5% degli HP, oppure il 10% con un colpo di fortuna. Il turno termina."
-        },
-        "cellGather": {
-            "label": "Raccogli",
-            "description": "Spendi 1 cibo per foraggiare questo bioma, ottieni 1 risorsa e termini il turno."
-        },
-        "chopTree": {
-            "label": "Taglia legna",
-            "description": "Usa l'ascia in una foresta per ottenere 1 legname, poi termina il turno."
-        },
-        "consumeRation": {
-            "label": "Consuma razione",
-            "description": "Spendi 1 cibo per ottenere Nutrimento fino a fine turno e ignorare i danni da deserto ostile."
-        },
-        "feedHorse": {
-            "label": "Nutri cavallo",
-            "description": "Spendi 1 cibo prima del movimento per ottenere +1 range movimento in questo turno."
-        },
-        "safePlaceWait": {
-            "label": "Attendi",
-            "description": "Luogo sicuro: simula il movimento sulla casella corrente e termina il turno senza costo."
-        },
-        "fastTravel": {
-            "label": "Viaggio rapido",
-            "description": "Luogo sicuro: viaggia verso un luogo sicuro gia scoperto. Costo 1 moneta per casella ortogonale (max 15), poi termini il turno e salti il prossimo."
-        },
-        "campGatherer": {
-            "label": "Raccoglitore",
-            "description": "Esci a raccogliere risorse con un'abitante del posto. Ottieni 1 legname e 1 minerale, poi termina il turno.",
-            "warning": {
-                "capacity": "Capienza inventario insufficiente: servono {requiredSlots} slot liberi, disponibili {availableSlots}."
-            }
-        },
-        "campHunter": {
-            "label": "Cacciatore",
-            "description": "Esci a caccia con un'abitante del posto. Ottieni 1 cibo e 1 stoffa, poi termina il turno.",
-            "warning": {
-                "capacity": "Capienza inventario insufficiente: servono {requiredSlots} slot liberi, disponibili {availableSlots}."
-            }
-        },
-        "capitalDoctor": {
-            "label": "Dottore",
-            "description": "Visita il Dottore della Capitale: ogni trattamento ripristina il 5% HP e costa {costPerUnit} monete ({timeOfDay}). Poi termina il turno."
-        },
-        "capitalEnchantress": {
-            "label": "Incantatrice",
-            "description": "Consulta l'Incantatrice della Capitale per 5 monete. Estrai il tuo destino con una prova fortuna, poi termina il turno."
-        },
-        "cityHealer": {
-            "label": "Guaritore",
-            "description": "Visita il Guaritore della Citta: ogni trattamento ripristina il 5% HP e costa {costPerUnit} monete ({timeOfDay}). Poi termina il turno."
-        },
-        "cityMystic": {
-            "label": "Mistico",
-            "description": "Consulta il Mistico della Citta per 5 monete. Estrai il tuo destino con una prova fortuna, poi termina il turno."
-        },
-        "cityMerchant": {
-            "label": "Mercante",
-            "description": "Visita il Mercante della Citta. Compra o vendi oggetti da uno stock configurabile. Acquistare termina il turno."
-        },
-        "capitalInn": {
-            "label": "Locanda",
-            "description": "Riposa alla Locanda della Capitale: ripristina il 50% HP, paga 10 monete, poi termina il turno (solo giorno)."
-        },
-        "castleRest": {
-            "label": "Riposa",
-            "description": "Riposa al Castello: ripristina il 50% HP, paga 10 monete, poi termina il turno (giorno e notte)."
-        },
-        "castleTrainer": {
-            "label": "Lezione di scherma",
-            "description": "Allena Forza al Castello. Costo {trainingCost} monete (3 x livello), ottieni +1 FOR permanente, termini il turno e salti il prossimo."
-        },
-        "academyTrainer": {
-            "label": "Lezione di magia",
-            "description": "Allena Magia all'Accademia. Costo {trainingCost} monete (3 x livello), ottieni +1 MAG permanente, termini il turno e salti il prossimo."
-        },
-        "academyMerchant": {
-            "label": "Mercante Arcano",
-            "description": "Visita il Mercante dell'Accademia. Compra stock magico e vendi solo oggetti magici. Acquistare termina il turno."
-        },
-        "academySpellUpgrader": {
-            "label": "Maestro degli Incantesimi",
-            "description": "Potenzia Mimica→Mimica+ o Annullamento→Annullamento+ per 12 monete. Termina il turno."
-        },
-        "manorCounterfeiter": {
-            "label": "Contraffattore Arcano",
-            "description": "Visita il Contraffattore Arcano nel Maniero. Compra dal suo stock discutibile. Acquistare termina il turno."
-        },
-        "villageCraftsman": {
-            "label": "Artigiano",
-            "description": "Scambia risorse 1:1 dall'Artigiano del Villaggio, poi termina il turno."
-        },
-        "graveyardResurrect": {
-            "label": "Rito di resurrezione",
-            "description": "Prova a resuscitare un seguace morto dalla pila degli scarti tramite una prova fortuna. Gli esiti possono essere pericolosi."
-        },
-        "templeSendDevotee": {
-            "label": "Invia devoto",
-            "description": "Lascia un seguace idoneo al Tempio. Il tuo allineamento diventa buono, ottieni 2 XP, poi termini il turno."
-        },
-        "altarSacrifice": {
-            "label": "Sacrifica",
-            "description": "Sacrifica un seguace idoneo all'Altare. Il tuo allineamento diventa malvagio, ottieni 2 XP, poi termini il turno."
-        },
-        "elementalRitual": {
-            "label": "Rituale Elementale",
-            "description": "Trasforma un seguace nella sua forma elementale. Richiede affinità elementale. Il seguace ottiene +1 FRZ, +1 MAG e almeno 10 HP. Utilizzabile solo se non possiedi già un seguace potenziato. Termina il turno."
-        },
-        "eliminateZombie": {
-            "label": "Elimina zombie",
-            "description": "Distruggi il tuo compagno zombie e termina il turno."
-        }
+      "home": "Home",
+      "deleteGame": "Elimina partita",
+      "settings": "Impostazioni",
+      "startGame": "Avvia partita",
+      "leaveGame": "Lascia partita"
     },
-    "followerUpgrades": {
-        "elemental-fire": {
-            "suffix": "del Fuoco"
-        },
-        "elemental-water": {
-            "suffix": "dell'Acqua"
-        },
-        "elemental-wind": {
-            "suffix": "del Vento"
-        },
-        "elemental-earth": {
-            "suffix": "della Terra"
-        }
+    "errors": {
+      "copyJoinCode": "Impossibile copiare il codice partita",
+      "leaveGame": "Errore durante l'uscita dalla partita",
+      "deleteGame": "Errore durante l'eliminazione della partita",
+      "startGame": "Errore durante l'avvio della partita",
+      "updateSettings": "Errore durante l'aggiornamento delle impostazioni partita",
+      "updatePlayerSetup": "Errore durante l'aggiornamento del setup giocatore"
+    }
+  },
+  "dialogs": {
+    "spellCast": {
+      "title": "Incantesimo",
+      "cast": "Lancia incantesimo"
     },
-    "spells": {
-        "meta": {
-            "singleUse": "uso singolo"
+    "playerSelect": {
+      "title": "Scegli un bersaglio",
+      "confirm": "Conferma"
+    },
+    "common": {
+      "cancel": "Annulla",
+      "close": "Chiudi",
+      "confirm": "Conferma",
+      "name": "Nome",
+      "maxPlayers": "Giocatori max",
+      "enterText": "Inserisci testo",
+      "enterNumber": "Inserisci numero",
+      "maxPlayersAllowed": "Giocatori massimi consentiti: {maxPlayers}"
+    },
+    "requiredActionNotification": {
+      "sanctuaryActivatedDescription": "Il {sanctuaryLabel} e stato attivato da {playerName}!",
+      "worldEventActivatedTitle": "Evento Mondiale Attivato: {eventName}",
+      "worldEventActivatedDescription": "Attivato da {playerName}. {description}",
+      "spellEffectTitle": "Magia lanciata: {spellName}",
+      "spellEffectDescription": "{casterName} ha lanciato {spellName} su di te. {summary}",
+      "actions": {
+        "ok": "Ok",
+        "playerOk": "{playerName}: Conferma",
+        "ownerContinue": "Prosegui comunque",
+        "counter": "Usa Contromagia"
+      }
+    },
+    "worldEventHelp": {
+      "title": "Dettagli Evento Mondiale",
+      "subtitle": "L'evento mondiale si è concluso con i seguenti risultati. Il bioma più diffuso sulla mappa era {target}, influenzato dall'energia di {driver}. Nell'elenco sottostante puoi vedere ogni cambiamento applicato.",
+      "waiting": "Evento mondiale non ancora innescato, in attesa che qualcuno entri nella Regione II.",
+      "noChanges": "Nessun cambiamento rilevato.",
+      "changesTitle": "Cambiamenti:",
+      "cellLabel": "Cella ({x}, {y})",
+      "change": {
+        "biomeOverride": "Bioma sovrascritto: {fromBiome} -> {toBiome}",
+        "conditions": "Condizioni applicate: {conditions}",
+        "enemyLevel": "Bonus livello nemici: +{amount}"
+      }
+    },
+    "gameNew": {
+      "title": "Nuova partita",
+      "description": "Crea una nuova partita inserendo nome e numero massimo di giocatori consentiti. Potrai sempre cambiare queste impostazioni nella lobby.",
+      "create": "Crea"
+    },
+    "gameJoin": {
+      "title": "Entra in partita",
+      "description": "Entra in una partita esistente inserendo il codice fornito dall'host. Assicurati di inserirlo correttamente.",
+      "joinCode": "Codice partita",
+      "join": "Entra"
+    },
+    "gameSettings": {
+      "title": "Impostazioni",
+      "description": "Aggiorna nome partita e numero massimo di giocatori. Puoi modificare queste impostazioni dalla lobby finche la partita e in attesa.",
+      "save": "Salva"
+    },
+    "mapSettings": {
+      "title": "Impostazioni Mappa",
+      "description": "Attiva o disattiva le opzioni di presentazione del gameplay.",
+      "soundOn": "Audio: ATTIVO",
+      "soundOff": "Audio: SPENTO",
+      "crtOn": "Overlay CRT: ATTIVO",
+      "crtOff": "Overlay CRT: SPENTO"
+    },
+    "genericDelete": {
+      "title": "Eliminare?",
+      "message": "Confermi di voler eliminare questo elemento? Questa azione non puo essere annullata.",
+      "confirm": "Elimina"
+    },
+    "genericConfirm": {
+      "title": "Conferma?",
+      "message": "Sei sicuro di voler procedere? Questa azione non puo essere annullata.",
+      "confirm": "Conferma"
+    },
+    "eventLog": {
+      "title": "Registro Eventi",
+      "empty": "Nessun evento per ora."
+    },
+    "rulebook": {
+      "title": "Regolamento",
+      "loading": "Caricamento in corso...",
+      "empty": "Nessuna pagina disponibile.",
+      "loadIndexError": "Impossibile caricare l'indice del regolamento.",
+      "loadPageError": "Impossibile caricare la pagina selezionata.",
+      "pages": {
+        "intro": "Introduzione",
+        "new-game": "Nuova partita",
+        "join-game": "Entrare in partita",
+        "player": "Il personaggio",
+        "game": "Come giocare"
+      }
+    },
+    "discardPile": {
+      "title": "Pila degli Scarti ({count})",
+      "empty": "Nessuna entita scartata per ora.",
+      "kind": {
+        "follower": "Seguace",
+        "item": "Oggetto",
+        "tile": "Tessera",
+        "event": "Evento",
+        "spell": "Magia"
+      },
+      "section": {
+        "exploration": "Esplorazione",
+        "spells": "Magie"
+      },
+      "unknownCard": "Carta sconosciuta",
+      "unknownTime": "Orario sconosciuto",
+      "systemSource": "sistema",
+      "meta": "Fonte: {source} • Turno: {turn} • {time}"
+    },
+    "fastTravel": {
+      "title": "Viaggio rapido",
+      "flavorText": "Avvicinandoti al carro noti una tabella con le indicazioni e i costi per un viaggio in totale sicurezza...",
+      "description": "Viaggiare tra un luogo sicuro ed un altro costa 1 moneta per casella ortogonale, fino a un massimo di 15. Arriverai nel turno successivo.",
+      "safePlace": "Luogo sicuro",
+      "startingFrom": "Stai partendo da {origin}.",
+      "routeCostInfo": "Il costo del tragitto e 1 moneta per ogni casella ortogonale, fino a un massimo di 15.",
+      "noDestinations": "Non ci sono ancora destinazioni di luoghi sicuri scoperte.",
+      "coordinates": "Coordinate: {x}, {y}",
+      "notEnoughCoinsRoute": "Monete insufficienti per questa tratta.",
+      "selectedRouteTooExpensive": "La tratta selezionata costa {cost} monete, ma ne possiedi solo {money}.",
+      "destination": "Destinazione: {destination}.",
+      "confirmInfo": "Confermando termini il turno e ne salterai uno aggiuntivo prima dell'arrivo.",
+      "confirmRoute": "Viaggia"
+    },
+    "spellTeleport": {
+      "title": "{spellName}: seleziona destinazione",
+      "description": "Scegli una casella esplorata entro {range} caselle ortogonali.",
+      "coordinates": "Coordinate: {x}, {y}",
+      "confirm": "Lancia",
+      "noTargets": "Nessuna destinazione valida disponibile.",
+      "fallbackSpellName": "Incantesimo"
+    },
+    "resourceExchange": {
+      "title": "Scambio risorse",
+      "description": "Scambia risorse 1:1 con l'artigiano del villaggio. Confermare questa azione termina il turno.",
+      "give": "Dai",
+      "receive": "Ricevi",
+      "amount": "Quantita",
+      "maximum": "Massimo: {max}",
+      "noResources": "Ti serve almeno 1 risorsa per effettuare uno scambio.",
+      "invalidSelection": "Selezione non valida. Assicurati che le risorse siano diverse e la quantita sia disponibile.",
+      "summary": "Scambierai {amount} {give} per {amount} {receive}.",
+      "confirm": "Conferma scambio",
+      "unknown": "Sconosciuto"
+    },
+    "followerSelect": {
+      "title": "Seleziona seguace",
+      "message": "Scegli un seguace.",
+      "possibleOutcomes": "Esiti possibili",
+      "noEligibleFollowers": "Nessun seguace idoneo disponibile."
+    },
+    "levelUp": {
+      "title": "Aumento livello",
+      "reachedLevel": "Hai raggiunto il livello {level}.",
+      "chooseOne": "Scegli un parametro da aumentare di 1.",
+      "remainingExperience": "Esperienza rimanente dopo il livello: {experience}",
+      "ariaCharacteristic": "Caratteristica da aumentare",
+      "strength": {
+        "label": "Forza",
+        "description": "Aumenta la potenza fisica e gli HP. Gli HP crescono del 5% per ogni punto assegnato."
+      },
+      "magic": {
+        "label": "Magia",
+        "description": "Migliora l'attitudine magica e gli MP. Gli MP crescono di 1 per ogni punto assegnato."
+      },
+      "luck": {
+        "label": "Fortuna",
+        "description": "Migliora gli esiti basati sulla probabilita."
+      }
+    },
+    "mystic": {
+      "title": "Mistico della Citta",
+      "flavorText": "Un anziano mistico avvolto in vesti logore ti invita a sederti accanto a lui, offrendoti di svelare i segreti nascosti nella tua mente...",
+      "offerInfo": "Lascia che il Mistico sondi la tua mente al costo di {cost} monete e scopri cosa ha da rivelarti.",
+      "result": "Risultato:",
+      "actions": {
+        "pay": "Paga",
+        "continue": "Continua"
+      },
+      "rewards": {
+        "alignmentEvil": {
+          "label": "Cambio di allineamento: Malvagio",
+          "preview": "Il tuo allineamento diventa Malvagio"
         },
-        "fly": {
-            "name": "Volare",
-            "description": "Abilita il movimento diagonale per questo turno. Deve essere lanciato prima di muoversi.",
-            "longDescription": "Il Volo abilita il movimento in 8 direzioni — puoi muoverti in diagonale oltre che nelle quattro direzioni cardinali. L'effetto deve essere attivo prima di muoversi."
+        "alignmentNeutral": {
+          "label": "Cambio di allineamento: Neutrale",
+          "preview": "Il tuo allineamento diventa Neutrale"
         },
-        "healingWaters": {
-            "name": "Acqua curativa",
-            "description": "Applica Nutrimento su di sé.",
-            "longDescription": "Il Nutrimento previene tutti i danni causati da biomi ostili o condizioni ambientali alla fine del tuo turno."
+        "ignored": {
+          "label": "Ignorato",
+          "preview": "Il Mistico ti ignora"
         },
-        "innerFire": {
-            "name": "Fuoco dentro",
-            "description": "Applica Coraggio su di sé per 1 turno.",
-            "longDescription": "Il Coraggio aumenta la tua Forza di 1 per la durata dell'effetto."
+        "xp1": {
+          "label": "Barlume di Intuizione",
+          "preview": "Ottieni 1 XP"
         },
-        "reinvigorate": {
-            "name": "Rinvigorimento",
-            "description": "Ripristina HP pari al tuo valore di Magia attuale.",
-            "longDescription": "La quantità curata è pari al tuo valore di Magia attuale, non a quello base. Più alta è la Magia, migliore è la cura."
+        "xp2": {
+          "label": "Intuizione Profonda",
+          "preview": "Ottieni 2 XP"
         },
-        "teleport": {
-            "name": "Teletrasporto",
-            "description": "Teletrasportati in qualsiasi cella esplorata entro {range} passi ortogonali. Non puoi muoverti ulteriormente in questo turno.",
-            "longDescription": "La gittata è di 3 passi ortogonali, più 1 per ogni punto di Magia. Dopo il teletrasporto non puoi muoverti ulteriormente in questo turno, ma l'uso dei luoghi, il lancio di incantesimi e il combattimento restano disponibili."
-        },
-        "empower": {
-            "name": "Potenziamento",
-            "description": "Applica Potenziamento su di sé.",
-            "longDescription": "Mentre sei Potenziato, il tuo valore di Magia viene aggiunto direttamente alla Forza in combattimento per qualsiasi scontro di questo turno. Utile quando hai alta Magia ma hai bisogno di un vantaggio fisico."
-        },
-        "chaos": {
-            "name": "Caos",
-            "description": "Scegli un bersaglio. Effettua un tiro fortuna con effetto casuale: guadagna o perde HP, monete o un effetto di stato.",
-            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-        },
-        "filch": {
-            "name": "Borseggio",
-            "description": "Ruba 10 monete al bersaglio con un tiro fortuna di 70 o superiore.",
-            "longDescription": "Con un tiro fortuna di 70 o superiore, 10 monete passano istantaneamente dal bersaglio a te. In caso di fallimento non accade nulla."
-        },
-        "vigor": {
-            "name": "Vigore",
-            "description": "Ripristina 5 HP.",
-            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-        },
-        "ward": {
-            "name": "Scudo Arcano",
-            "description": "Applica Protezione su di sé.",
-            "longDescription": "La Protezione dimezza il prossimo danno in arrivo (arrotondato per difetto). Lo stato viene consumato dopo aver bloccato un colpo."
-        },
-        "alchemy": {
-            "name": "Alchimia",
-            "description": "Converti un oggetto che possiedi nel suo valore in monete.",
-            "longDescription": "Seleziona un oggetto dal tuo inventario; viene distrutto permanentemente e il suo valore base in monete viene aggiunto al tuo portafoglio."
-        },
-        "immobilize": {
-            "name": "Immobilizzazione",
-            "description": "Applica Immobilizzato al bersaglio per 1 turno.",
-            "longDescription": "Il bersaglio non può muoversi nel suo turno. L'uso dei luoghi, il lancio di incantesimi e il combattimento possono comunque attivarsi se innescati."
-        },
-        "dispel": {
-            "name": "Dissolvi",
-            "description": "Rimuovi uno stato negativo da sé.",
-            "longDescription": "Rimuove lo stato negativo attivo più vecchio. Gli stati positivi non vengono influenzati."
-        },
-        "fortune": {
-            "name": "Fortuna",
-            "description": "Applica Fortuna su di sé per 1 turno.",
-            "longDescription": "Il tuo bonus Fortuna è raddoppiato per ogni tiro effettuato mentre questo stato è attivo, migliorando significativamente le probabilità sui tiri ad alta soglia."
-        },
-        "focus": {
-            "name": "Concentrazione",
-            "description": "Applica Concentrazione su di sé per 1 turno.",
-            "longDescription": "La Concentrazione aumenta la tua Magia di 1 mentre è attiva, migliorando anche gli incantesimi che scalano con la Magia come Rinvigorimento o la gittata del Teletrasporto."
-        },
-        "scout": {
-            "name": "Ricognizione",
-            "description": "Rivela una cella inesplorata entro {range} passi ortogonali.",
-            "longDescription": "La gittata base è di 2 passi, più 1 per ogni punto di Magia. La cella rivelata diventa visibile a tutti i giocatori."
-        },
-        "safePassage": {
-            "name": "Passaggio Sicuro",
-            "description": "Ignora il prossimo pericolo ambientale o effetto negativo di cella all'ingresso.",
-            "longDescription": "Il Passo Sicuro viene consumato la prossima volta che entri in una cella con un effetto di bioma dannoso o una condizione ostile, senza subire alcun danno."
-        },
-        "fateRead": {
-            "name": "Lettura del Destino",
-            "description": "Vedi in anteprima le prossime 2 Carte Esplorazione.",
-            "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 2 carte. L'ordine non viene modificato."
-        },
-        "transmute": {
-            "name": "Trasmutazione",
-            "description": "Trasforma 1 risorsa comune in un'altra risorsa comune diversa.",
-            "longDescription": "Scegli una risorsa comune dal tuo inventario; viene sostituita con un'altra risorsa comune a tua scelta."
-        },
-        "foresight": {
-            "name": "Preveggenza",
-            "description": "Vedi in anteprima le prossime 2 Carte Esplorazione. L'ordine non cambia.",
-            "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 2 carte. L'ordine non viene modificato."
-        },
-        "wealth": {
-            "name": "Ricchezza",
-            "description": "Guadagna 10 monete.",
-            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-        },
-        "invisibility": {
-            "name": "Invisibilità",
-            "description": "Applica Invisibilità su di sé.",
-            "longDescription": "Mentre sei invisibile non puoi essere bersaglio di attacchi o incantesimi ostili. Movimento, uso dei luoghi e raccolta di risorse funzionano normalmente."
-        },
-        "mesmerize": {
-            "name": "Magnetismo",
-            "description": "Ruba un seguace al bersaglio con un tiro fortuna di 70 o superiore.",
-            "longDescription": "Con un tiro fortuna di 70 o superiore, un seguace casuale della compagnia del bersaglio si unisce permanentemente alla tua. In caso di fallimento non accade nulla."
-        },
-        "curse": {
-            "name": "Maledizione",
-            "description": "Applica Stregato e Indebolito al bersaglio per 3 turni.",
-            "longDescription": "Stregato riduce la Magia del bersaglio di 1 e Indebolito riduce la sua Forza di 1 per 3 turni interi. Entrambi gli effetti agiscono contemporaneamente."
-        },
-        "petrify": {
-            "name": "Pietrificazione",
-            "description": "Applica Pietrificato al bersaglio per 1 turno.",
-            "longDescription": "Il turno successivo del bersaglio viene saltato completamente. Non può muoversi, agire o reagire fino alla scadenza dell'effetto."
-        },
-        "purify": {
-            "name": "Purificazione",
-            "description": "Rimuovi tutti gli stati negativi da sé.",
-            "longDescription": "Rimuove tutti gli stati negativi che ti affliggono in una sola volta, indipendentemente dalla durata residua o da quanti sono accumulati."
-        },
-        "recall": {
-            "name": "Richiamo",
-            "description": "Torna all'ultimo santuario visitato o attivato. Non puoi muoverti ulteriormente in questo turno.",
-            "longDescription": "Ti teletrasporta direttamente all'ultimo santuario sintonizzato o visitato. Non puoi muoverti ulteriormente dopo il Richiamo, ma le altre azioni restano disponibili."
-        },
-        "minorExile": {
-            "name": "Esilio Minore",
-            "description": "Rimuovi un seguace negativo dalla tua compagnia.",
-            "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-        },
-        "divination": {
-            "name": "Divinazione",
-            "description": "Vedi in anteprima le prossime 5 Carte Esplorazione. L'ordine non cambia.",
-            "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 5 carte. L'ordine non viene modificato."
-        },
-        "spellBreak": {
-            "name": "Rottura Magica",
-            "description": "Nessuno, te compreso, può lanciare incantesimi fino alla fine del prossimo round.",
-            "longDescription": "Nessun giocatore — incluso te — può lanciare incantesimi o usare abilità reattive per il resto di questo round e per l'intero round successivo."
-        },
-        "destroy": {
-            "name": "Distruzione",
-            "description": "Rimuovi la Carta Esplorazione da una cella visibile. Non è possibile rimuovere luoghi, santuari, boss o obiettivi di missione.",
-            "longDescription": "Rimuove permanentemente la Carta Esplorazione presente in una cella visibile nel raggio d'azione. Non può essere usato su elementi fissi della mappa come luoghi o santuari."
-        },
-        "counterspell": {
-            "name": "Controincantesimo",
-            "description": "Annulla un incantesimo ostile diretto a te nel momento in cui viene lanciato. Non annulla effetti già risolti.",
-            "longDescription": "Rimane in riserva passivamente dopo il lancio. Quando un incantesimo ostile ti prende di mira, compare un messaggio che ti permette di attivarlo per annullarne completamente l'effetto."
-        },
-        "timeFold": {
-            "name": "Piega Temporale",
-            "description": "Esegui fino a 2 spostamenti consecutivi prima di risolvere eventi o combattimenti. Non puoi attaccare altri, lanciare altri incantesimi o raccogliere risorse durante questi spostamenti.",
-            "longDescription": "Ogni spostamento aggiuntivo può rivelare nuove celle e innescare eventi, ma il combattimento tra giocatori, la raccolta di risorse e il lancio di altri incantesimi sono disabilitati durante la sequenza."
-        },
-        "mimicry": {
-            "name": "Mimica",
-            "description": "Copia un incantesimo casuale dal bersaglio e apprendilo.",
-            "longDescription": "L'incantesimo copiato viene aggiunto permanentemente al tuo libro degli incantesimi se è disponibile uno slot libero. Se il libro è pieno, la copia fallisce senza rimborso di PM."
-        },
-        "mimicryPlus": {
-            "name": "Mimica+",
-            "description": "Copia un incantesimo a tua scelta dal bersaglio e apprendilo.",
-            "longDescription": "Scegli quale incantesimo copiare dal libro del bersaglio. Aggiunto permanentemente al tuo se è disponibile uno slot libero."
-        },
-        "negate": {
-            "name": "Negazione",
-            "description": "Fai dimenticare un incantesimo casuale al bersaglio.",
-            "longDescription": "Un incantesimo casuale viene cancellato permanentemente dal libro degli incantesimi del bersaglio. Non può essere riappreso con mezzi normali."
-        },
-        "negatePlus": {
-            "name": "Negazione+",
-            "description": "Fai dimenticare un incantesimo a tua scelta al bersaglio.",
-            "longDescription": "Scegli quale incantesimo il bersaglio perde. Viene cancellato permanentemente dal suo libro degli incantesimi e non può essere riappreso."
-        },
-        "silence": {
-            "name": "Silenzio",
-            "description": "Applica Silenzio al bersaglio per 3 turni.",
-            "longDescription": "Mentre è Silenziato il bersaglio non può lanciare alcun incantesimo e i suoi PM non si rigenerano naturalmente a fine turno. Durata: 3 turni."
-        },
-        "manaShield": {
-            "name": "Scudo di Mana",
-            "description": "Applica Scudo di Mana su di sé.",
-            "longDescription": "Quando subisci danni, i PM rimanenti vengono spesi per primi; ogni punto di PM assorbe 1 punto di danno. Lo stato viene rimosso dopo il prossimo colpo."
-        },
-        "manaDrain": {
-            "name": "Drenaggio Mana",
-            "description": "Ruba 1 PM al bersaglio e recupera 1 PM con un tiro fortuna di 70 o superiore.",
-            "longDescription": "Con un tiro fortuna di 70 o superiore, 1 PM viene rimosso dal bersaglio e trasferito a te."
-        },
-        "seal": {
-            "name": "Sigillo",
-            "description": "Applica Sigillo su di sé.",
-            "longDescription": "Il primo incantesimo ostile lanciato contro di te viene annullato e non ha alcun effetto. Il sigillo viene poi consumato. Si accumula insieme al Controincantesimo."
-        },
-        "disciple": {
-            "name": "Discepolo",
-            "description": "Quando qualcuno guadagna Forza o Magia tramite aumento di livello o ricompensa permanente, guadagni +1 allo stesso attributo.",
-            "longDescription": "Reagisce una volta al prossimo aumento permanente di Forza o Magia di qualsiasi giocatore. Il bonus copiato è immediato e permanente."
-        },
-        "elementalBond": {
-            "name": "Legame Elementale",
-            "description": "Cambia temporaneamente la tua affinità elementale in un elemento scelto per 1 turno.",
-            "longDescription": "Per un turno interagisci con santuari, altari ed effetti dell'elemento scelto come se fosse il tuo. Torna al tuo elemento base a fine turno."
-        },
-        "toadify": {
-            "name": "Rospificazione",
-            "description": "Applica Miniaturizzato al bersaglio per 2 turni con un tiro fortuna di 70 o superiore.",
-            "longDescription": "Miniaturizzato imposta tutti gli attributi primari a 1 e disabilita il recupero di HP/PM e l'uso degli oggetti per 2 turni, con un tiro fortuna di 70 o superiore."
+        "levelUp": {
+          "label": "Risveglio",
+          "preview": "100 esatto: ottieni 1 aumento di livello"
         }
+      },
+      "errors": {
+        "notEnoughCoins": "Non hai abbastanza monete per pagare il Mistico.",
+        "consult": "Errore durante la consultazione del mistico."
+      }
     },
     "chaos": {
-        "effects": {
-            "poison": "Veleno (2 turni)",
-            "hexed": "Maledizione (2 turni)",
-            "weakened": "Indebolimento (2 turni)",
-            "sleep": "Sonno (1 turno)",
-            "minified": "Miniaturizzazione (2 turni)",
-            "silence": "Silenzio (2 turni)",
-            "stealCoins": "Furto di monete (5)",
-            "drainMp": "Prosciugamento PM (3)"
-        }
+      "title": "Caos",
+      "flavorText": "L'energia del caos è imprevedibile. Nessuno sa cosa succederà...",
+      "targetInfo": "{spellName} su {targetName}. Uno degli effetti seguenti verrà applicato casualmente.",
+      "actions": {
+        "cast": "Lancia"
+      },
+      "errors": {
+        "cast": "Errore durante il lancio della magia del caos."
+      }
     },
-    "statuses": {
-        "nutrition": {
-            "label": "Nutrimento",
-            "description": "Previene i danni da ambiente ostile in questo turno."
-        },
-        "poison": {
-            "label": "Veleno",
-            "description": "Subisci danni alla fine di ogni turno."
-        },
-        "regen": {
-            "label": "Rigenerazione",
-            "description": "Cura una piccola quantità alla fine di ogni turno."
-        },
+    "enchantress": {
+      "title": "Incantatrice della Capitale",
+      "flavorText": "Una giovane incantatrice mescola le sue antiche e misteriose carte mentre ti dice di avvicinarti...",
+      "offerInfo": "Al costo di {cost} monete potrai scoprire il tuo destino.",
+      "learnedSpell": "Hai imparato:",
+      "actions": {
+        "pay": "Paga",
+        "continue": "Continua"
+      },
+      "rewards": {
         "minified": {
-            "label": "Miniaturizzato",
-            "description": "Trasforma il bersaglio in topo. Le statistiche primarie diventano 1, recupero HP/MP disabilitato e uso oggetti bloccato."
-        },
-        "silence": {
-            "label": "Silenzio",
-            "description": "Lancio magie e rigenerazione naturale MP disabilitati."
-        },
-        "fortune": {
-            "label": "Fortuna",
-            "description": "Raddoppia il bonus fortuna applicato ai controlli di fortuna."
-        },
-        "bravery": {
-            "label": "Coraggio",
-            "description": "Aumenta Forza di 1."
+          "label": "Miniaturizzato",
+          "preview": "Miniaturizzato per 1 turno"
         },
         "weakened": {
-            "label": "Indebolito",
-            "description": "Riduce Forza di 1."
-        },
-        "focus": {
-            "label": "Concentrazione",
-            "description": "Aumenta Magia di 1."
+          "label": "Indebolito",
+          "preview": "Indebolito per 3 turni"
         },
         "hexed": {
-            "label": "Maleficio",
-            "description": "Riduce Magia di 1."
+          "label": "Maledetto",
+          "preview": "Maledetto per 3 turni"
         },
-        "sleep": {
-            "label": "Sonno",
-            "description": "Salti il prossimo turno."
+        "bravery": {
+          "label": "Coraggio",
+          "preview": "Coraggio per 3 turni"
         },
-        "protection": {
-            "label": "Protezione",
-            "description": "Riduce il prossimo danno subito."
+        "focus": {
+          "label": "Concentrazione",
+          "preview": "Concentrazione per 3 turni"
         },
-        "invisibility": {
-            "label": "Invisibilità",
-            "description": "Non puoi essere attaccato o bersagliato da incantesimi."
-        },
-        "immobilized": {
-            "label": "Immobilizzato",
-            "description": "Non puoi muoverti."
-        },
-        "flying": {
-            "label": "Volo",
-            "description": "Puoi muoverti in diagonale finché lo stato è attivo."
-        },
-        "empowered": {
-            "label": "Potenziato",
-            "description": "La Magia si aggiunge alla Forza in combattimento."
-        },
-        "safeStep": {
-            "label": "Passo sicuro",
-            "description": "Il prossimo effetto dannoso di casella o ambiente viene ignorato."
-        },
-        "manaShield": {
-            "label": "Scudo del mana",
-            "description": "Il prossimo danno subito può essere ridotto spendendo MP residui."
-        },
-        "spellWard": {
-            "label": "Sigillo",
-            "description": "Il prossimo incantesimo ostile che ti bersaglia viene annullato."
-        },
-        "petrified": {
-            "label": "Pietrificato",
-            "description": "Sei trasformato in pietra e salti il prossimo turno."
-        },
-        "anchored": {
-            "label": "Radicato",
-            "description": "Non puoi muoverti finché lo stato è attivo."
-        },
-        "fateSight": {
-            "label": "Visione del fato",
-            "description": "Puoi intravedere il prossimo risultato casuale rilevante."
-        },
-        "elementalBoundFire": {
-            "label": "Vincolo del Fuoco",
-            "description": "La sintonia temporanea al Fuoco è attiva."
-        },
-        "elementalBoundEarth": {
-            "label": "Vincolo della Terra",
-            "description": "La sintonia temporanea alla Terra è attiva."
-        },
-        "elementalBoundAir": {
-            "label": "Vincolo dell'Aria",
-            "description": "La sintonia temporanea all'Aria è attiva."
-        },
-        "elementalBoundWater": {
-            "label": "Vincolo dell'Acqua",
-            "description": "La sintonia temporanea all'Acqua è attiva."
-        },
-        "zombified": {
-            "label": "Zombie",
-            "description": "Rianimato da rituali oscuri e vincolato al tuo servizio per poco tempo."
+        "jackpot": {
+          "label": "Jackpot Arcano",
+          "preview": "Coraggio + Concentrazione per 3 turni. Su 100 esatto: Rospificazione. Su 100+: magia dal mazzo."
         }
+      },
+      "errors": {
+        "notEnoughCoins": "Non hai abbastanza monete per pagare l'Incantatrice.",
+        "consult": "Errore durante la consultazione dell'incantatrice."
+      }
+    },
+    "academySpellUpgrader": {
+      "title": "Maestro degli Incantesimi",
+      "info": "Scegli una magia da potenziare. La versione base verrà rimossa dal tuo grimorio.",
+      "noOptions": "Non hai magie potenziabili nel tuo grimorio.",
+      "result": "{from} è stata potenziata in {to}!",
+      "actions": {
+        "confirm": "Potenzia (−{cost} monete)"
+      },
+      "errors": {
+        "notEnoughCoins": "Non hai abbastanza monete per questo potenziamento.",
+        "upgrade": "Errore durante il potenziamento della magia."
+      }
+    },
+    "merchant": {
+      "coinsValue": "Monete {value}",
+      "confirmWithDelta": "Conferma {delta}",
+      "info": {
+        "main": "Compra o vendi oggetti, poi conferma il carrello.",
+        "turnRule": "Comprare termina il turno. Vendere no."
+      },
+      "sections": {
+        "buy": "Compra",
+        "sell": "Vendi"
+      },
+      "names": {
+        "city-merchant": "Mercante della Citta",
+        "academy-merchant": "Mercante Arcano dell'Accademia"
+      },
+      "meta": {
+        "category": "Categoria",
+        "stock": "Scorte",
+        "owned": "Posseduti"
+      },
+      "categories": {
+        "spell": "Incantesimo"
+      },
+      "empty": {
+        "noStock": "Nessuna scorta disponibile.",
+        "noSellableItems": "Nessun oggetto vendibile in inventario."
+      },
+      "itemsInCart": "Elementi nel carrello: {count}",
+      "actions": {
+        "buy": "Compra",
+        "sell": "Vendi",
+        "viewCart": "Vedi carrello",
+        "hideCart": "Nascondi carrello",
+        "undo": "Annulla"
+      },
+      "keywords": {
+        "evilOnly": "solo malvagi",
+        "hpValue": "PV {value}",
+        "itemSlotsPlus": "+{value} slot oggetti"
+      },
+      "errors": {
+        "alreadyInParty": "Gia nel tuo gruppo",
+        "confirmCart": "Impossibile confermare il carrello del mercante."
+      }
+    },
+    "doctor": {
+      "title": {
+        "capitalDoctor": "Dottore della Capitale",
+        "cityHealer": "Guaritore della Citta"
+      },
+      "provider": {
+        "doctor": "Dottore",
+        "healer": "Guaritore"
+      },
+      "restoresInfo": "{provider} ripristina il 5% HP per trattamento.",
+      "costPerTreatment": "Costo per trattamento: {cost} monete",
+      "nightTariff": "(tariffa notturna)",
+      "currentHp": "HP attuali: {current}/{max}",
+      "treatments": "Trattamenti (5% ciascuno)",
+      "maximums": "Massimo per HP: {hp} | massimo per monete: {coins}",
+      "expectedHeal": "Cura prevista: +{heal} HP",
+      "errors": {
+        "hpFull": "I tuoi HP sono gia al massimo.",
+        "notEnoughCoinsSingle": "Non hai abbastanza monete per un singolo trattamento.",
+        "notEnoughCoinsSelection": "I trattamenti selezionati costano {cost} monete, ma ne possiedi solo {money}."
+      }
+    },
+    "resourceInventory": {
+      "title": {
+        "inventoryFull": "Inventario pieno",
+        "manageResources": "Gestisci risorse"
+      },
+      "subtitle": {
+        "noFreeSlot": "Nessuno slot libero per {resource}. Scarta una risorsa o annulla la raccolta.",
+        "selectDiscard": "Seleziona una pila risorsa e scarta 1 unita."
+      },
+      "noResources": "Nessuna risorsa disponibile.",
+      "discardAndCollect": "Scarta selezionata e raccogli {resource}",
+      "cancelCollect": "Annulla raccolta",
+      "discardSelected": "Scarta selezionata"
+    },
+    "graveyardResult": {
+      "title": "Resurrezione al Cimitero",
+      "selectedFollower": "Seguace selezionato",
+      "unknownOutcome": "Esito sconosciuto",
+      "attemptedFor": "Tentata resurrezione per {follower}.",
+      "result": "Risultato:",
+      "continue": "Continua",
+      "rewards": {
+        "wrongSpirit": {
+          "label": "Spirito sbagliato",
+          "preview": "Evochi lo spirito sbagliato, perdi il 10% PV, nessuna resurrezione"
+        },
+        "silence": {
+          "label": "Silenzio",
+          "preview": "Non succede nulla"
+        },
+        "zombieAwakening": {
+          "label": "Risveglio Zombie",
+          "preview": "Evochi uno Zombie al posto del seguace selezionato"
+        },
+        "distortedResurrection": {
+          "label": "Resurrezione distorta",
+          "preview": "Il seguace selezionato torna non morto con 1 PV"
+        },
+        "completeResurrection": {
+          "label": "Resurrezione completa",
+          "preview": "Il seguace selezionato torna con PV completi"
+        }
+      }
+    },
+    "sanctuary": {
+      "title": {
+        "activate": "Attiva santuario",
+        "donate": "Dona al santuario"
+      },
+      "actions": {
+        "activate": "Attiva",
+        "donate": "Dona"
+      },
+      "description": {
+        "activate": "Attivare il santuario garantisce 1 XP, lega il personaggio all'elemento del santuario e segna il quadrante del santuario sotto quell'influenza elementale.",
+        "donate": "Donare 5 monete a un santuario attivo sposta la tua sintonia al suo elemento se sei attualmente in sintonia con un elemento diverso."
+      },
+      "activationInfo": "Attiva il Santuario consumando 3 MP per sintonizzarti con l'elemento corrispondente e ottenere la magia associata. Maggiori info sulla sintonia nel Regolamento.",
+      "benefits": {
+        "title": "Benefici dell'attivazione",
+        "exp": "+1 exp",
+        "attunement": "Sintonia: {element}",
+        "spell": "Apprendi la magia \"{spellName}\""
+      },
+      "errors": {
+        "notEnoughCoins": "Non hai abbastanza monete per questa azione.",
+        "notEnoughMp": "Non hai abbastanza MP: ne servono {cost}."
+      }
+    }
+  },
+  "map": {
+    "worldTitle": "Mondo",
+    "worldTime": {
+      "ariaLabel": "Orario",
+      "prefix": "Orario"
+    },
+    "worldEventTitle": {
+      "default": "Evento Mondiale",
+      "none": "Nessun cambiamento",
+      "forest": {
+        "negative": "Espansione",
+        "positive": "Natura rigogliosa"
+      },
+      "desert": {
+        "negative": "Desertificazione",
+        "positive": "Venti favorevoli"
+      },
+      "water": {
+        "negative": "Inondazione",
+        "positive": "Fonte magica"
+      },
+      "plains": {
+        "negative": "Campo di tiro",
+        "positive": "Campo aperto"
+      },
+      "mountain": {
+        "negative": "Terremoto",
+        "positive": "Vena antica"
+      },
+      "ruins": {
+        "negative": "Corruzione antica",
+        "positive": "Archivio perduto"
+      }
+    },
+    "worldEventFlow": {
+      "title": "Evento mondiale",
+      "notificationIntro": "Bersaglio {targetBiome}, bioma driver {driverBiome}. Ogni cella coinvolta puo risolversi in effetto positivo, negativo o nessun cambiamento.",
+      "announcing": "{outcome}: bersaglio {targetBiome}, responsabile {driverBiome}. Preparazione in corso...",
+      "propagating": "Propagazione mutazioni {propagatedCellsCount}/{totalMutations}...",
+      "summary": "Mutazione completata: {propagatedCellsCount}/{totalMutations} celle aggiornate.",
+      "completed": "Evento mondiale completato."
+    },
+    "timeOfDay": {
+      "title": "Orario",
+      "titleWithRounds": "Orario ({rounds} turni)",
+      "day": "Giorno",
+      "night": "Notte",
+      "helpTitle": "Aiuto",
+      "helpDescription": "Ad ogni round il giorno passa alla notte e viceversa. L'ora del giorno influenza alcuni oggetti e creature: quelle attive durante uno specifico orario avranno +1 ai loro parametri."
+    },
+    "worldPanel": {
+      "turn": "Turno",
+      "round": "Round",
+      "discovered": "Esplorato",
+      "activeShrines": "Santuari",
+      "worldEvent": "Evento mondiale",
+      "worldEventSummary": "{title} | {outcome} | bersaglio {targetBiome} / responsabile {driverBiome} | mutate {cellsMutated}/{cellsAffected}",
+      "worldEventOutcome": {
+        "negative": "Negativo",
+        "positive": "Positivo",
+        "none": "Nessun cambiamento"
+      },
+      "activePlayer": "Turno di",
+      "helpTitle": "Aiuto",
+      "help": {
+        "turnRound": "Il turno e l'azione effettuata da un singolo giocatore. Quando tutti hanno effettuato un turno, allora il round avanza.",
+        "discovered": "La mappa e composta per un totale di 100 caselle esplorabili. Entrando in una cella non scoperta viene rivelato il bioma e ogni eventuale altro punto di interesse della cella.",
+        "activeShrines": "Ci sono quattro santuari legati ad altrettanti elementi: fuoco, acqua, aria e terra. Scoprire e attivare i santuari consente di entrare in sintonia con l'elemento che rappresentano, fornendo talvolta anche dei bonus. Ogni santuario attivo nella Regione I riduce l'impatto dell'Evento mondiale quando questo viene eseguito.",
+        "worldEvent": "Passare dalla Regione I alla II mette in allerta le forze del male che eseguiranno la loro contromossa, talvolta ribaltando la situazione della mappa. L'evento mondiale considera il bioma piu rivelato come bersaglio dell'evento; il bioma a seguire determina invece quali saranno i possibili effetti. Clicca per maggiori info."
+      }
+    },
+    "commands": {
+      "title": "Comandi",
+      "executing": "Esecuzione...",
+      "noDescription": "-",
+      "empty": "Nessuna azione disponibile in questa posizione.",
+      "expandAria": "Espandi comandi",
+      "none": "nessun comando"
+    },
+    "spells": {
+      "title": "Incantesimi ({count}/{capacity})",
+      "empty": "Nessun incantesimo.",
+      "expandAria": "Espandi incantesimi",
+      "none": "Nessun incantesimo",
+      "warning": {
+        "notMyTurn": "Disponibile solo durante il tuo turno.",
+        "cooldown": "Disponibile tra {turns} turni.",
+        "notEnoughMp": "MP insufficienti.",
+        "mustCastBeforeMove": "Deve essere lanciato prima di muoversi."
+      },
+      "errors": {
+        "notFound": "Incantesimo non trovato.",
+        "notKnown": "Non conosci questo incantesimo.",
+        "cooldown": "Questo incantesimo e in recupero.",
+        "notEnoughMp": "MP insufficienti per lanciare questo incantesimo.",
+        "noTeleportTargets": "Nessuna destinazione esplorata valida per questo incantesimo.",
+        "noTargets": "Nessun bersaglio valido disponibile.",
+        "noCellTargets": "Nessuna cella valida disponibile per questo incantesimo.",
+        "cast": "Errore durante il lancio dell'incantesimo."
+      }
+    },
+    "cellSelection": {
+      "label": "Seleziona cella",
+      "promptReveal": "Seleziona una cella da rivelare",
+      "promptDestroy": "Seleziona una cella per rimuovere il suo evento"
+    },
+    "locationInfo": {
+      "contextObserving": "Osservazione cella",
+      "contextActivePlayer": "Giocatore attivo in",
+      "openAria": "Apri informazioni posizione"
+    },
+    "discardPile": {
+      "title": "Scarti",
+      "openAria": "Apri pila scarti",
+      "openError": "Impossibile aprire la pila scarti"
+    },
+    "inventory": {
+      "title": "Inventario ({used}/{capacity})",
+      "noItems": "Nessun oggetto.",
+      "uses": "Utilizzi",
+      "expandAria": "Espandi inventario",
+      "none": "Nessun oggetto"
+    },
+    "followers": {
+      "title": "Seguaci ({count})",
+      "noFollowers": "Nessun seguace.",
+      "discardedCount": "Seguaci scartati: {count}",
+      "expandAria": "Espandi seguaci",
+      "none": "Nessun seguace"
     },
     "resources": {
-        "timber": "Legname",
-        "food": "Cibo",
-        "minerals": "Minerali",
-        "cloth": "Stoffa"
+      "title": "Risorse ({current}/{max})",
+      "openAria": "Apri inventario risorse"
     },
-    "combat": {
-        "overlay": {
-            "title": "Scontro",
-            "resultsTitle": "Risultati scontro",
-            "ariaLabel": "Dialogo di combattimento"
+    "actions": {
+      "home": "Home",
+      "settings": "Impostazioni"
+    },
+    "alignment": {
+      "title": "Allineamento"
+    },
+    "attunement": {
+      "title": "Elemento"
+    },
+    "elements": {
+      "water": "Acqua",
+      "fire": "Fuoco",
+      "wind": "Vento",
+      "earth": "Terra"
+    },
+    "money": {
+      "title": "Denaro"
+    },
+    "luck": {
+      "title": "Fortunometro",
+      "helpTitle": "Aiuto",
+      "helpDescription": "Spesso verra generato un numero casuale (esplorando, interagendo con personaggi speciali nei luoghi sicuri, ecc...) che se raggiunge o supera il 100 da luogo ad un 'Colpo di fortuna', permettendo cosi al giocatore di ricevere una ricompensa migliore. Il parametro Fortuna aumenta la possibilita che esca 100.",
+      "status": {
+        "success": "Si!",
+        "near": "Quasi",
+        "fail": "Peccato"
+      }
+    },
+    "players": {
+      "title": "Giocatori",
+      "hpLabel": "PV",
+      "levelUp": {
+        "ariaLabel": "Apri scelte di livello ({count})",
+        "label": "LIVELLO +{count}"
+      }
+    },
+    "log": {
+      "title": "Eventi",
+      "openAria": "Apri eventi"
+    },
+    "common": {
+      "noDescription": "Nessuna descrizione disponibile."
+    },
+    "cellInspector": {
+      "info": "Info",
+      "region": "Regione",
+      "coordinates": "Coordinate XY",
+      "transformation": "Trasformazione",
+      "transformedNo": "No",
+      "transformedFromTo": "Si ({from} -> {to})",
+      "conditions": "Condizioni",
+      "conditionNone": "Nessuna",
+      "environment": "Ambiente",
+      "enemiesLevel": "Livello nemici",
+      "special": "Speciale",
+      "description": "Descrizione",
+      "resources": "Risorse",
+      "actions": "Azioni",
+      "noActionsAvailable": "Nessuna azione disponibile qui.",
+      "landmarkDiscovered": "{category} scoperto",
+      "sanctuaryActive": "Santuario attivo",
+      "sanctuaryInactive": "Santuario inattivo",
+      "landmarkDescription": "Un {category}{alignment} si sovrappone a questa casella del bioma.",
+      "dormantSanctuary": "Il santuario e ancora dormiente e nascosto.",
+      "sanctuaryDescriptions": {
+        "water": {
+          "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce azzurra rinfrescante. Il santuario e attivo.",
+          "inactive": "Sospeso sopra una pozza d'acqua cristallina, un grande cristallo bianco fluttua al centro del santuario."
         },
-        "column": {
-            "player": "Tu",
-            "enemy": "Nemico"
+        "fire": {
+          "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce rossa intensa. Il santuario e attivo.",
+          "inactive": "Sospeso sopra una vasca di lava ardente, un grande cristallo bianco fluttua al centro del santuario."
         },
-        "player": {
-            "hp": "PV"
+        "wind": {
+          "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce viola rasserenante. Il santuario e attivo.",
+          "inactive": "Il suono dei campanelli appesi intorno al santuario accompagna la vista di un grande cristallo bianco sospeso al centro."
         },
-        "enemy": {
-            "level": "Livello"
-        },
-        "stat": {
-            "strength": "FOR",
-            "magic": "MAG",
-            "luck": "FORT"
-        },
-        "element": {
-            "fire": "Fuoco",
-            "earth": "Terra",
-            "wind": "Vento",
-            "water": "Acqua"
-        },
-        "time": {
-            "day": "Giorno",
-            "night": "Notte"
-        },
-        "action": {
-            "fight": "Combatti",
-            "flee": "Fuggi",
-            "continue": "Continua",
-            "conclude": "Concludi"
-        },
-        "equipment": {
-            "title": "Equipaggiamento",
-            "weaponGroup": "Arma",
-            "armorGroup": "Armatura",
-            "none": "Nessuno",
-            "confirm": "Conferma"
-        },
-        "spells": {
-            "title": "Incantesimi",
-            "cast": "Lancia"
-        },
-        "outcome": {
-            "win": "Vittoria",
-            "loss": "Sconfitta",
-            "tie": "Pareggio",
-            "flee": "Fuga con danni",
-            "fleeLucky": "Fuga riuscita"
-        },
-        "result": {
-            "playerRoll": "Il tuo tiro",
-            "enemyRoll": "Tiro nemico",
-            "base": "Base",
-            "luck": "Fortuna",
-            "element": "Elemento",
-            "time": "Orario",
-            "total": "Totale",
-            "autoWin": "Dominio assoluto",
-            "criticalHit": "Colpo critico!",
-            "hpLost": "HP persi",
-            "xpGained": "EXP",
-            "goldGained": "Guadagnato"
+        "earth": {
+          "active": "Un grande cristallo ruota lentamente al centro del santuario, irradiando una luce gialla rassicurante. Il santuario e attivo.",
+          "inactive": "Incorniciato da una natura rigogliosa, un grande cristallo bianco fluttua al centro del santuario."
         }
+      },
+      "none": "Nessuna",
+      "no": "No",
+      "yesCells": "Si ({count} caselle)",
+      "unknownBiome": "? ? ?",
+      "conditionLabel": {
+        "hostile-environment": "Ambiente ostile",
+        "regenerating-waters": "Acque rigeneranti",
+        "abundant-resources": "Risorse abbondanti",
+        "open-ground": "Terreno aperto",
+        "swift-path": "Percorso rapido",
+        "impassable": "Invalicabile",
+        "vein-of-plenty": "Vena abbondante",
+        "ancient-knowledge": "Conoscenza antica",
+        "cursed-ground": "Terreno maledetto",
+        "enemy-level-bonus-by-region-value": "Bonus livello nemici per regione"
+      },
+      "conditionDescription": {
+        "hostile-environment": "Infligge danni HP per ogni casella connessa del bioma, salvo protezioni attive.",
+        "regenerating-waters": "Rigenera HP in base alla dimensione dell'ambiente, fino a un limite massimo.",
+        "abundant-resources": "Raddoppia le risorse ottenute da esplorazione e raccolta su questa casella.",
+        "open-ground": "Permette il movimento diagonale da questa casella.",
+        "swift-path": "Migliora lo spostamento da questa casella con attraversamento avanzato.",
+        "impassable": "Impedisce l'ingresso in questa casella.",
+        "vein-of-plenty": "Raddoppia i minerali ottenuti su questa casella.",
+        "ancient-knowledge": "Concede esperienza bonus a fine turno su questa casella.",
+        "cursed-ground": "Riduce l'efficacia dei controlli fortuna su questa casella.",
+        "enemy-level-bonus-by-region-value": "Aumenta il livello dei nemici in base al valore della regione della casella."
+      },
+      "onCell": "Sulla casella",
+      "cardType": {
+        "enemy": "Nemico",
+        "event": "Evento",
+        "place": "Luogo",
+        "stranger": "Straniero",
+        "follower": "Seguace",
+        "item": "Oggetto",
+        "amulet": "Amuleto"
+      }
+    },
+    "labels": {
+      "little": "piccolo",
+      "fightOnly": "solo combattimento",
+      "dayOnly": "solo giorno",
+      "nightOnly": "solo notte"
+    },
+    "landmarks": {
+      "categories": {
+        "safe": "Luogo sicuro",
+        "mid": "Luogo intermedio",
+        "bad": "Luogo pericoloso",
+        "unknown": "Sconosciuto"
+      },
+      "names": {
+        "capital": "Capitale",
+        "city": "Citta",
+        "village": "Villaggio",
+        "camp": "Campo",
+        "graveyard": "Cimitero",
+        "temple": "Tempio",
+        "castle": "Castello",
+        "academy": "Accademia",
+        "cave": "Grotta",
+        "dungeon": "Segreta",
+        "manor": "Maniero",
+        "altar": "Altare"
+      },
+      "safeNames": {
+        "capital": {
+          "plains": "Capitale di Frontiera",
+          "forest": "Capitale del Bosco",
+          "mountain": "Capitale d'Altura",
+          "water": "Capitale Costiera",
+          "desert": "Capitale del Deserto",
+          "ruins": "Capitale dei Caduti"
+        },
+        "city": {
+          "plains": "Citta di Frontiera",
+          "forest": "Citta del Bosco",
+          "mountain": "Citta d'Altura",
+          "water": "Citta Costiera",
+          "desert": "Citta del Deserto",
+          "ruins": "Citta dei Caduti"
+        },
+        "village": {
+          "plains": "Villaggio di Frontiera",
+          "forest": "Villaggio del Bosco",
+          "mountain": "Villaggio d'Altura",
+          "water": "Villaggio Costiero",
+          "desert": "Villaggio del Deserto",
+          "ruins": "Villaggio dei Caduti"
+        },
+        "camp": {
+          "plains": "Campo di Frontiera",
+          "forest": "Campo del Bosco",
+          "mountain": "Campo d'Altura",
+          "water": "Campo Costiero",
+          "desert": "Campo del Deserto",
+          "ruins": "Campo dei Caduti"
+        }
+      },
+      "midNames": {
+        "graveyard": {
+          "good": "Cimitero Benedetto",
+          "neutral": "Cimitero",
+          "evil": "Cimitero Maledetto"
+        },
+        "temple": {
+          "good": "Tempio Benedetto",
+          "neutral": "Tempio",
+          "evil": "Tempio Profanato"
+        },
+        "castle": {
+          "good": "Castello Benedetto",
+          "neutral": "Castello",
+          "evil": "Castello Maledetto"
+        },
+        "academy": {
+          "good": "Accademia Benedetta",
+          "neutral": "Accademia",
+          "evil": "Accademia Maledetta"
+        }
+      },
+      "safeBiomeAffixes": {
+        "plains": {
+          "prefix": "Frontiera",
+          "suffix": "Frontiera"
+        },
+        "forest": {
+          "prefix": "Bosco",
+          "suffix": "del Bosco"
+        },
+        "mountain": {
+          "prefix": "Alta",
+          "suffix": "delle Montagne"
+        },
+        "water": {
+          "prefix": "Costiera",
+          "suffix": "della Costa"
+        },
+        "desert": {
+          "prefix": "Deserto",
+          "suffix": "del Deserto"
+        },
+        "ruins": {
+          "prefix": "Rovina",
+          "suffix": "dei Caduti"
+        }
+      },
+      "alignmentPrefixes": {
+        "good": "Benedetto",
+        "neutral": "",
+        "evil": "Maledetto"
+      }
+    },
+    "biomes": {
+      "plains": "Pianure",
+      "forest": "Foresta",
+      "mountain": "Montagna",
+      "water": "Acqua",
+      "desert": "Deserto",
+      "ruins": "Rovine"
+    },
+    "cells": {
+      "unknownCell": "Cella sconosciuta",
+      "unknownLandmark": "Luogo sconosciuto",
+      "sanctuary": {
+        "water": "Santuario dell'Acqua",
+        "fire": "Santuario del Fuoco",
+        "wind": "Santuario del Vento",
+        "earth": "Santuario della Terra",
+        "generic": "Santuario elementale"
+      },
+      "sanctuaryShort": {
+        "water": "Sant. dell'Acqua",
+        "fire": "Sant. del Fuoco",
+        "wind": "Sant. del Vento",
+        "earth": "Sant. della Terra",
+        "generic": "Sant. Elementale"
+      }
+    },
+    "interaction": {
+      "pendingTeleport": {
+        "label": "Benedizione del Tempietto attiva",
+        "action": "Usa teletrasporto",
+        "prompt": "Scegli la casella di destinazione (Benedizione del Tempietto)"
+      },
+      "regionCrossing": {
+        "title": "Ingresso nella Regione II",
+        "message": "Attraversare questo confine potrebbe attivare un evento mondiale. Vuoi procedere?",
+        "confirm": "Procedi",
+        "cancel": "Resta"
+      },
+      "leaveGame": {
+        "title": "Lasciare la partita?",
+        "message": "Stai per lasciare la partita. Potrai rientrare in qualsiasi momento ma se gli altri giocatori proseguono non assisterai ai loro turni. Inoltre, possono votare per farti saltare il turno. Avvisali se ora non hai tempo.",
+        "confirm": "Esci",
+        "cancel": "Resta"
+      },
+      "graveyard": {
+        "title": "Resurrezione al Cimitero",
+        "message": "Scegli quale seguace morto vuoi richiamare dalla pila degli scarti.",
+        "confirm": "Tenta resurrezione",
+        "outcomePreviewTitle": "Esiti del tiro fortuna (1-100)"
+      },
+      "temple": {
+        "title": "Devozione al Tempio",
+        "message": "Scegli un seguace da lasciare al Tempio. Animali, spiriti e non morti non sono ammessi.",
+        "confirm": "Invia devoto"
+      },
+      "altar": {
+        "title": "Sacrificio all'Altare",
+        "message": "Scegli un seguace da sacrificare all'Altare. I non morti non possono essere sacrificati.",
+        "confirm": "Sacrifica seguace"
+      },
+      "elementalRitual": {
+        "title": "Rituale Elementale",
+        "message": "Scegli un seguace da trasformare. Otterrà +1 FRZ, +1 MAG e almeno 10 HP.",
+        "confirm": "Esegui rituale"
+      },
+      "errors": {
+        "movePlayer": "Errore durante lo spostamento del giocatore",
+        "noMerchantForLandmark": "Nessun mercante configurato per questo luogo.",
+        "noDeadFollowerForResurrection": "Nessun seguace morto disponibile per la resurrezione.",
+        "noTempleFollower": "Nessun seguace idoneo disponibile per la devozione al tempio.",
+        "noAltarFollower": "Nessun seguace idoneo disponibile per il sacrificio all'altare.",
+        "noElementalRitualFollower": "Nessun seguace disponibile per il Rituale Elementale.",
+        "levelUp": "Errore durante l'applicazione della scelta di livello",
+        "manageResources": "Errore durante la gestione delle risorse"
+      }
     }
+  },
+  "mapPage": {
+    "endTurn": {
+      "reason": {
+        "pendingResourcePickup": "Risolvi prima la raccolta risorse in sospeso prima di terminare il turno.",
+        "passControl": "Passa il controllo al giocatore successivo.",
+        "moveBeforeEnd": "Muoviti almeno una volta prima di terminare il turno."
+      }
+    }
+  },
+  "playerCard": {
+    "activeStatus": "Stati attivi",
+    "moreStatuses": "Altri stati attivi",
+    "activeEffects": "Effetti attivi",
+    "noActiveEffects": "Nessun bonus o malus attivo.",
+    "effectReasons": {
+      "generic": "Modificatore",
+      "statusModifier": "Modificatore di stato",
+      "alignedLandmark": "Allineato con l'etica del luogo",
+      "opposedLandmark": "Opposto all'etica del luogo",
+      "sanctuaryQuadrantInfluence": "Influenza del santuario in sintonia nel quadrante attuale",
+      "biomeCondition": "Condizione del bioma ({condition})",
+      "followerModifier": "Modificatore di {name}",
+      "followerStatus": "Stato di {name} ({status})"
+    },
+    "stats": {
+      "strengthAbbr": "FRZ",
+      "magicAbbr": "MAG",
+      "luckAbbr": "FOR"
+    },
+    "turnLeft": {
+      "one": "1 turno rimanente",
+      "many": "{turns} turni rimanenti"
+    }
+  },
+  "catalogs": {
+    "events": {
+      "B-EV-001": {
+        "name": "Diavolo",
+        "description": "In base all'allineamento: i Malvagi guadagnano il 5% di HP massimi. I Buoni perdono il 10% degli HP. I Neutrali non subiscono effetti."
+      },
+      "B-EV-002": {
+        "name": "Sirena",
+        "description": "Ogni personaggio in questa regione deve superare un controllo fortuna (51+). In caso di fallimento, salta il prossimo turno."
+      },
+      "B-EV-003": {
+        "name": "Tempesta",
+        "description": "Tutti i personaggi in questa regione saltano il prossimo turno."
+      },
+      "B-EV-004": {
+        "name": "Corruzione",
+        "description": "Ogni personaggio in possesso di un Amuleto, ovunque si trovi, perde il 10% degli HP massimi."
+      },
+      "B-EV-005": {
+        "name": "Pestilenza",
+        "description": "Tutti i personaggi in questa regione ricevono lo stato Veleno per 3 turni."
+      },
+      "B-EV-006": {
+        "name": "Predoni",
+        "description": "Perdi tutto l'oro. Di notte fuggono col bottino. Di giorno un Predone compare nella cella del Deserto più vicina — sconfiggilo per recuperare le ricchezze."
+      },
+      "B-EV-007": {
+        "name": "Destino Avverso",
+        "description": "Perdi tutta l'esperienza accumulata."
+      },
+      "B-EV-008": {
+        "name": "Calamità",
+        "description": "In base all'allineamento: i Malvagi guadagnano +1 Magia permanente. I Buoni o i Neutrali diventano Malvagi."
+      },
+      "B-EV-009": {
+        "name": "Oscurità Malefica",
+        "description": "Tutte le Carte Esplorazione nemico negli scarti tornano nel mazzo, che viene poi rimescolato."
+      },
+      "B-EV-010": {
+        "name": "Grimorio Perduto",
+        "description": "Ottieni 2 magie."
+      },
+      "B-EV-011": {
+        "name": "Vortice Magico",
+        "description": "Tutti i personaggi in questa regione dimenticano ogni magia appresa, eccetto quelle dei santuari."
+      },
+      "B-EV-012": {
+        "name": "Inverno",
+        "description": "Tutti i personaggi in questa regione subiscono il 5% di danno agli HP all'inizio di ogni round per 3 round."
+      },
+      "B-EV-013": {
+        "name": "Angelo",
+        "description": "In base all'allineamento: i Buoni guadagnano il 5% di HP massimi. I Malvagi perdono il 10% degli HP. I Neutrali non subiscono effetti."
+      },
+      "B-EV-014": {
+        "name": "Diavoletto",
+        "description": "Ti teletrasporta in una cella casuale già esplorata."
+      },
+      "B-EV-015": {
+        "name": "Zaino Abbandonato",
+        "description": "Contiene 2 risorse casuali tra: cibo, legname, minerali, tessuto."
+      }
+    },
+    "enemies": {
+      "B-EN-001": {
+        "name": "Predone"
+      }
+    },
+    "followers": {
+      "B-FO-001": {
+        "name": "Mulo",
+        "description": "Un robusto animale da soma. Aumenta la capacità di inventario di 4."
+      },
+      "B-FO-002": {
+        "name": "Cavallo",
+        "description": "Una cavalcatura fedele. Prima di muovere puoi dargli da mangiare per guadagnare +1 movimento questo turno."
+      },
+      "B-FO-003": {
+        "name": "Principessa",
+        "description": "Una nobile con intuizione arcana. Magia +1."
+      },
+      "B-FO-004": {
+        "name": "Principe",
+        "description": "Un nobile coraggioso. Forza +1."
+      },
+      "B-FO-006": {
+        "name": "Barbaro",
+        "description": "Un guerriero temibile. Forza +1 in combattimento. Se perdi un combattimento in cui era coinvolto, se ne va."
+      },
+      "B-FO-008": {
+        "name": "Famiglio",
+        "description": "Una creatura magica legata al bene. Magia +2."
+      },
+      "B-FO-009": {
+        "name": "Donzella",
+        "description": "Una giovane dal potere arcano latente. Magia +2."
+      },
+      "B-FO-010": {
+        "name": "Folletto",
+        "description": "Una creatura magica dei boschi. Una volta per turno puoi ignorare un combattimento nella Foresta."
+      },
+      "B-FO-011": {
+        "name": "Guida",
+        "description": "Un esperto conoscitore dei sentieri. Solo partendo da Montagna o Rovina: 'Fai strada' ti permette di muoverti di 1 casella in più questo turno."
+      },
+      "B-FO-012": {
+        "name": "Gnomo",
+        "description": "Un piccolo essere mitologico della pianura. Una volta per turno puoi ignorare un combattimento nella Pianura."
+      },
+      "B-FO-013": {
+        "name": "Unicorno",
+        "description": "Un essere mitico avvolto da un'aura splendente. Forza +1 e Magia +1."
+      },
+      "B-FO-017": {
+        "name": "Zombie",
+        "description": "Un seguace non morto. Concede +1 Forza ma consuma 1 cibo a turno (o perdi 1 HP). Può essere eliminato con l'azione Elimina Zombie."
+      }
+    },
+    "items": {
+      "B-IT-001": {
+        "name": "Spada",
+        "description": "Forza +1 in combattimento."
+      },
+      "B-IT-002": {
+        "name": "Ascia",
+        "description": "Forza +1 in combattimento. Sblocca l'azione Taglia Legna nelle foreste."
+      },
+      "B-IT-003": {
+        "name": "Lancia Sacra",
+        "description": "Inutilizzabile dai malvagi. Forza +1. Forza +3 contro i nemici Drago."
+      },
+      "B-IT-004": {
+        "name": "Spada d'Oro",
+        "description": "Forza +2. Si rompe se vieni sconfitto in combattimento mentre la usi."
+      },
+      "B-IT-005": {
+        "name": "Spada delle Rune",
+        "description": "Inutilizzabile dai buoni. Forza +1. Recupera il 3% degli HP massimi quando vinci un combattimento con quest'arma."
+      },
+      "B-IT-006": {
+        "name": "Elmo",
+        "description": "Controllo fortuna 80+: riduci di 1 il danno subito in combattimento non magico."
+      },
+      "B-IT-007": {
+        "name": "Scudo",
+        "description": "Controllo fortuna 65+: riduci di 1 il danno subito in combattimento non magico."
+      },
+      "B-IT-008": {
+        "name": "Armatura",
+        "description": "Controllo fortuna 50+: riduci di 1 il danno subito in combattimento non magico."
+      },
+      "B-IT-009": {
+        "name": "Simbolo Sacro",
+        "description": "Ignora bonus e malus alla fortuna in luoghi benedetti o maledetti. Puoi scegliere di non combattere un nemico spirito, distruggerlo e ottenere 1 exp."
+      },
+      "B-IT-010": {
+        "name": "Calice Santo",
+        "description": "Inutilizzabile dai malvagi. Magia +1. Immunità all'ambiente ostile del deserto."
+      },
+      "B-IT-011": {
+        "name": "Talismano",
+        "description": "Applica lo stato Silenzio su di te finché lo possiedi. Sei immune alle magie degli altri giocatori."
+      },
+      "B-IT-012": {
+        "name": "Stemma del Coraggio",
+        "description": "In combattimento non magico, effettua di nuovo il tiro fortuna se il primo risultato è inferiore a quello dell'avversario. Una volta per combattimento."
+      },
+      "B-IT-013": {
+        "name": "Sfera di Cristallo",
+        "description": "Una volta per turno puoi ignorare una carta esplorazione e pescarne una in sostituzione. Devi comunque affrontare la nuova carta."
+      },
+      "B-IT-014": {
+        "name": "Bacchetta Magica",
+        "description": "Quando esaurisci le magie ottieni una nuova magia dal mazzo magie."
+      },
+      "B-IT-015": {
+        "name": "Ciondolo della Fortuna",
+        "description": "Ogni volta che ottieni un colpo di fortuna applica su di te lo stato Fortuna per 1 turno."
+      },
+      "B-IT-016": {
+        "name": "Corona del Mago",
+        "description": "Magia +2."
+      },
+      "B-IT-017": {
+        "name": "Anello",
+        "description": "Forza +1. Magia +1."
+      },
+      "B-IT-018": {
+        "name": "Cintura Magica",
+        "description": "Forza +1."
+      },
+      "B-IT-019": {
+        "name": "Amuleto",
+        "description": "Un artefatto magico necessario per accedere e sopravvivere nella Regione III."
+      },
+      "B-IT-020": {
+        "name": "Pozione di Forza",
+        "description": "Aumenta la Forza di 2 durante il turno corrente."
+      },
+      "B-IT-021": {
+        "name": "Borsa di Monete",
+        "description": "Contiene da 5 a 10 monete d'oro. Raccolta immediatamente."
+      },
+      "B-IT-022": {
+        "name": "Grossa Borsa di Monete",
+        "description": "Contiene da 10 a 20 monete d'oro. Raccolta immediatamente."
+      },
+      "B-IT-023": {
+        "name": "Borraccia",
+        "description": "3 cariche. Consuma automaticamente 1 carica nel deserto per evitare i danni ambientali. Terminare il turno nel bioma Acqua ripristina 1 carica."
+      }
+    },
+    "spells": {
+      "B-SP-001": {
+        "name": "Volare",
+        "description": "Abilita il movimento diagonale per questo turno. Deve essere lanciato prima di muoversi.",
+        "longDescription": "Il Volo abilita il movimento in 8 direzioni — puoi muoverti in diagonale oltre che nelle quattro direzioni cardinali. L'effetto deve essere attivo prima di muoversi."
+      },
+      "B-SP-002": {
+        "name": "Acqua curativa",
+        "description": "Applica Nutrimento su di sé.",
+        "longDescription": "Il Nutrimento previene tutti i danni causati da biomi ostili o condizioni ambientali alla fine del tuo turno."
+      },
+      "B-SP-003": {
+        "name": "Fuoco dentro",
+        "description": "Applica Coraggio su di sé per 1 turno.",
+        "longDescription": "Il Coraggio aumenta la tua Forza di 1 per la durata dell'effetto."
+      },
+      "B-SP-004": {
+        "name": "Rinvigorimento",
+        "description": "Ripristina HP pari al tuo valore di Magia attuale.",
+        "longDescription": "La quantità curata è pari al tuo valore di Magia attuale, non a quello base. Più alta è la Magia, migliore è la cura."
+      },
+      "B-SP-005": {
+        "name": "Teletrasporto",
+        "description": "Teletrasportati in qualsiasi cella esplorata entro {range} passi ortogonali. Non puoi muoverti ulteriormente in questo turno.",
+        "longDescription": "La gittata è di 3 passi ortogonali, più 1 per ogni punto di Magia. Dopo il teletrasporto non puoi muoverti ulteriormente in questo turno, ma l'uso dei luoghi, il lancio di incantesimi e il combattimento restano disponibili."
+      },
+      "B-SP-006": {
+        "name": "Potenziamento",
+        "description": "Applica Potenziamento su di sé.",
+        "longDescription": "Mentre sei Potenziato, il tuo valore di Magia viene aggiunto direttamente alla Forza in combattimento per qualsiasi scontro di questo turno. Utile quando hai alta Magia ma hai bisogno di un vantaggio fisico."
+      },
+      "B-SP-007": {
+        "name": "Caos",
+        "description": "Scegli un bersaglio. Effettua un tiro fortuna con effetto casuale: guadagna o perde HP, monete o un effetto di stato.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-008": {
+        "name": "Borseggio",
+        "description": "Ruba 10 monete al bersaglio con un tiro fortuna di 70 o superiore.",
+        "longDescription": "Con un tiro fortuna di 70 o superiore, 10 monete passano istantaneamente dal bersaglio a te. In caso di fallimento non accade nulla."
+      },
+      "B-SP-009": {
+        "name": "Vigore",
+        "description": "Ripristina 5 HP.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-010": {
+        "name": "Scudo Arcano",
+        "description": "Applica Protezione su di sé.",
+        "longDescription": "La Protezione dimezza il prossimo danno in arrivo (arrotondato per difetto). Lo stato viene consumato dopo aver bloccato un colpo."
+      },
+      "B-SP-011": {
+        "name": "Alchimia",
+        "description": "Converti un oggetto che possiedi nel suo valore in monete.",
+        "longDescription": "Seleziona un oggetto dal tuo inventario; viene distrutto permanentemente e il suo valore base in monete viene aggiunto al tuo portafoglio."
+      },
+      "B-SP-012": {
+        "name": "Immobilizzazione",
+        "description": "Applica Immobilizzato al bersaglio per 1 turno.",
+        "longDescription": "Il bersaglio non può muoversi nel suo turno. L'uso dei luoghi, il lancio di incantesimi e il combattimento possono comunque attivarsi se innescati."
+      },
+      "B-SP-013": {
+        "name": "Dissolvi",
+        "description": "Rimuovi uno stato negativo da sé.",
+        "longDescription": "Rimuove lo stato negativo attivo più vecchio. Gli stati positivi non vengono influenzati."
+      },
+      "B-SP-014": {
+        "name": "Fortuna",
+        "description": "Applica Fortuna su di sé per 1 turno.",
+        "longDescription": "Il tuo bonus Fortuna è raddoppiato per ogni tiro effettuato mentre questo stato è attivo, migliorando significativamente le probabilità sui tiri ad alta soglia."
+      },
+      "B-SP-015": {
+        "name": "Concentrazione",
+        "description": "Applica Concentrazione su di sé per 1 turno.",
+        "longDescription": "La Concentrazione aumenta la tua Magia di 1 mentre è attiva, migliorando anche gli incantesimi che scalano con la Magia come Rinvigorimento o la gittata del Teletrasporto."
+      },
+      "B-SP-016": {
+        "name": "Ricognizione",
+        "description": "Rivela una cella inesplorata entro {range} passi ortogonali.",
+        "longDescription": "La gittata base è di 2 passi, più 1 per ogni punto di Magia. La cella rivelata diventa visibile a tutti i giocatori."
+      },
+      "B-SP-017": {
+        "name": "Passaggio Sicuro",
+        "description": "Ignora il prossimo pericolo ambientale o effetto negativo di cella all'ingresso.",
+        "longDescription": "Il Passo Sicuro viene consumato la prossima volta che entri in una cella con un effetto di bioma dannoso o una condizione ostile, senza subire alcun danno."
+      },
+      "B-SP-018": {
+        "name": "Lettura del Destino",
+        "description": "Vedi in anteprima le prossime 2 Carte Esplorazione.",
+        "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 2 carte. L'ordine non viene modificato."
+      },
+      "B-SP-019": {
+        "name": "Trasmutazione",
+        "description": "Trasforma 1 risorsa comune in un'altra risorsa comune diversa.",
+        "longDescription": "Scegli una risorsa comune dal tuo inventario; viene sostituita con un'altra risorsa comune a tua scelta."
+      },
+      "B-SP-020": {
+        "name": "Preveggenza",
+        "description": "Vedi in anteprima le prossime 2 Carte Esplorazione. L'ordine non cambia.",
+        "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 2 carte. L'ordine non viene modificato."
+      },
+      "B-SP-021": {
+        "name": "Ricchezza",
+        "description": "Guadagna 10 monete.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-022": {
+        "name": "Invisibilità",
+        "description": "Applica Invisibilità su di sé.",
+        "longDescription": "Mentre sei invisibile non puoi essere bersaglio di attacchi o incantesimi ostili. Movimento, uso dei luoghi e raccolta di risorse funzionano normalmente."
+      },
+      "B-SP-023": {
+        "name": "Magnetismo",
+        "description": "Ruba un seguace al bersaglio con un tiro fortuna di 70 o superiore.",
+        "longDescription": "Con un tiro fortuna di 70 o superiore, un seguace casuale della compagnia del bersaglio si unisce permanentemente alla tua. In caso di fallimento non accade nulla."
+      },
+      "B-SP-024": {
+        "name": "Maledizione",
+        "description": "Applica Stregato e Indebolito al bersaglio per 3 turni.",
+        "longDescription": "Stregato riduce la Magia del bersaglio di 1 e Indebolito riduce la sua Forza di 1 per 3 turni interi. Entrambi gli effetti agiscono contemporaneamente."
+      },
+      "B-SP-025": {
+        "name": "Pietrificazione",
+        "description": "Applica Pietrificato al bersaglio per 1 turno.",
+        "longDescription": "Il turno successivo del bersaglio viene saltato completamente. Non può muoversi, agire o reagire fino alla scadenza dell'effetto."
+      },
+      "B-SP-026": {
+        "name": "Purificazione",
+        "description": "Rimuovi tutti gli stati negativi da sé.",
+        "longDescription": "Rimuove tutti gli stati negativi che ti affliggono in una sola volta, indipendentemente dalla durata residua o da quanti sono accumulati."
+      },
+      "B-SP-027": {
+        "name": "Richiamo",
+        "description": "Torna all'ultimo santuario visitato o attivato. Non puoi muoverti ulteriormente in questo turno.",
+        "longDescription": "Ti teletrasporta direttamente all'ultimo santuario sintonizzato o visitato. Non puoi muoverti ulteriormente dopo il Richiamo, ma le altre azioni restano disponibili."
+      },
+      "B-SP-028": {
+        "name": "Esilio Minore",
+        "description": "Rimuovi un seguace negativo dalla tua compagnia.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-029": {
+        "name": "Divinazione",
+        "description": "Vedi in anteprima le prossime 5 Carte Esplorazione. L'ordine non cambia.",
+        "longDescription": "Mentre la Vista del Destino è attiva, apri l'anteprima del Mazzo Esplorazione per vedere le prossime 5 carte. L'ordine non viene modificato."
+      },
+      "B-SP-030": {
+        "name": "Rottura Magica",
+        "description": "Nessuno, te compreso, può lanciare incantesimi fino alla fine del prossimo round.",
+        "longDescription": "Nessun giocatore — incluso te — può lanciare incantesimi o usare abilità reattive per il resto di questo round e per l'intero round successivo."
+      },
+      "B-SP-031": {
+        "name": "Distruzione",
+        "description": "Rimuovi la Carta Esplorazione da una cella visibile. Non è possibile rimuovere luoghi, santuari, boss o obiettivi di missione.",
+        "longDescription": "Rimuove permanentemente la Carta Esplorazione presente in una cella visibile nel raggio d'azione. Non può essere usato su elementi fissi della mappa come luoghi o santuari."
+      },
+      "B-SP-032": {
+        "name": "Controincantesimo",
+        "description": "Annulla un incantesimo ostile diretto a te nel momento in cui viene lanciato. Non annulla effetti già risolti.",
+        "longDescription": "Rimane in riserva passivamente dopo il lancio. Quando un incantesimo ostile ti prende di mira, compare un messaggio che ti permette di attivarlo per annullarne completamente l'effetto."
+      },
+      "B-SP-033": {
+        "name": "Piega Temporale",
+        "description": "Esegui fino a 2 spostamenti consecutivi prima di risolvere eventi o combattimenti. Non puoi attaccare altri, lanciare altri incantesimi o raccogliere risorse durante questi spostamenti.",
+        "longDescription": "Ogni spostamento aggiuntivo può rivelare nuove celle e innescare eventi, ma il combattimento tra giocatori, la raccolta di risorse e il lancio di altri incantesimi sono disabilitati durante la sequenza."
+      },
+      "B-SP-034": {
+        "name": "Mimica",
+        "description": "Copia un incantesimo casuale dal bersaglio e apprendilo.",
+        "longDescription": "L'incantesimo copiato viene aggiunto permanentemente al tuo libro degli incantesimi se è disponibile uno slot libero. Se il libro è pieno, la copia fallisce senza rimborso di PM."
+      },
+      "B-SP-035": {
+        "name": "Mimica+",
+        "description": "Copia un incantesimo a tua scelta dal bersaglio e apprendilo.",
+        "longDescription": "Scegli quale incantesimo copiare dal libro del bersaglio. Aggiunto permanentemente al tuo se è disponibile uno slot libero."
+      },
+      "B-SP-036": {
+        "name": "Negazione",
+        "description": "Fai dimenticare un incantesimo casuale al bersaglio.",
+        "longDescription": "Un incantesimo casuale viene cancellato permanentemente dal libro degli incantesimi del bersaglio. Non può essere riappreso con mezzi normali."
+      },
+      "B-SP-037": {
+        "name": "Negazione+",
+        "description": "Fai dimenticare un incantesimo a tua scelta al bersaglio.",
+        "longDescription": "Scegli quale incantesimo il bersaglio perde. Viene cancellato permanentemente dal suo libro degli incantesimi e non può essere riappreso."
+      },
+      "B-SP-038": {
+        "name": "Silenzio",
+        "description": "Applica Silenzio al bersaglio per 3 turni.",
+        "longDescription": "Mentre è Silenziato il bersaglio non può lanciare alcun incantesimo e i suoi PM non si rigenerano naturalmente a fine turno. Durata: 3 turni."
+      },
+      "B-SP-039": {
+        "name": "Scudo di Mana",
+        "description": "Applica Scudo di Mana su di sé.",
+        "longDescription": "Quando subisci danni, i PM rimanenti vengono spesi per primi; ogni punto di PM assorbe 1 punto di danno. Lo stato viene rimosso dopo il prossimo colpo."
+      },
+      "B-SP-040": {
+        "name": "Drenaggio Mana",
+        "description": "Ruba 1 PM al bersaglio e recupera 1 PM con un tiro fortuna di 70 o superiore.",
+        "longDescription": "Con un tiro fortuna di 70 o superiore, 1 PM viene rimosso dal bersaglio e trasferito a te."
+      },
+      "B-SP-041": {
+        "name": "Sigillo",
+        "description": "Applica Sigillo su di sé.",
+        "longDescription": "Il primo incantesimo ostile lanciato contro di te viene annullato e non ha alcun effetto. Il sigillo viene poi consumato. Si accumula insieme al Controincantesimo."
+      },
+      "B-SP-042": {
+        "name": "Discepolo",
+        "description": "Quando qualcuno guadagna Forza o Magia tramite aumento di livello o ricompensa permanente, guadagni +1 allo stesso attributo.",
+        "longDescription": "Reagisce una volta al prossimo aumento permanente di Forza o Magia di qualsiasi giocatore. Il bonus copiato è immediato e permanente."
+      },
+      "B-SP-043": {
+        "name": "Legame Elementale",
+        "description": "Cambia temporaneamente la tua affinità elementale in un elemento scelto per 1 turno.",
+        "longDescription": "Per un turno interagisci con santuari, altari ed effetti dell'elemento scelto come se fosse il tuo. Torna al tuo elemento base a fine turno."
+      },
+      "B-SP-044": {
+        "name": "Rospificazione",
+        "description": "Applica Miniaturizzato al bersaglio per 2 turni con un tiro fortuna di 70 o superiore.",
+        "longDescription": "Miniaturizzato imposta tutti gli attributi primari a 1 e disabilita il recupero di HP/PM e l'uso degli oggetti per 2 turni, con un tiro fortuna di 70 o superiore."
+      }
+    },
+    "places": {
+      "B-PL-001": {
+        "name": "Fonte Arcana",
+        "description": "Una fonte mistica che promette potere magico a chi osa bere. Si esaurisce dopo 3 utilizzi."
+      },
+      "B-PL-002": {
+        "name": "Fonte della Forza",
+        "description": "Una fonte antica intrisa di energia guerriera. Si esaurisce dopo 3 utilizzi."
+      },
+      "B-PL-003": {
+        "name": "Fonte della Vita",
+        "description": "Acque miracolose che ampliano la vitalità di chi le beve. Si esaurisce dopo 3 utilizzi."
+      },
+      "B-PL-004": {
+        "name": "Mercato",
+        "description": "Un piccolo mercato ambulante con merci varie. Chi passa può acquistare ciò che serve."
+      },
+      "B-PL-005": {
+        "name": "Portale Magico",
+        "description": "Un varco dimensionale instabile. Chi lo attraversa viene trasportato in un luogo speciale già scoperto."
+      },
+      "B-PL-006": {
+        "name": "Palude",
+        "description": "Acque stagnanti e miasmi tossici. Chiunque concluda il proprio turno qui subisce Veleno se non protetto."
+      },
+      "B-PL-007": {
+        "name": "Labirinto",
+        "description": "Un dedalo di passaggi intricati. Testa la tua fortuna: potresti perderti o trovare l'uscita."
+      },
+      "B-PL-008": {
+        "name": "Caverna",
+        "description": "Una grotta oscura e misteriosa. Esplorarla potrebbe portare pericolo o fortuna."
+      },
+      "B-PL-009": {
+        "name": "Tempietto",
+        "description": "Un piccolo santuario abbandonato. Pregare qui può portare benedizioni inaspettate."
+      }
+    },
+    "strangers": {
+      "B-ST-002": {
+        "name": "Guaritrice",
+        "description": "Una guaritrice itinerante che cura chiunque incontri. Ti ripristina il 5% degli HP massimi."
+      },
+      "B-ST-003": {
+        "name": "Strega",
+        "description": "Una maga misteriosa che compie rituali gratuiti. Potrebbe alterare il tuo destino."
+      },
+      "B-ST-004": {
+        "name": "Fantasma",
+        "description": "Lo spirito di un guerriero caduto. Esaudisce il tuo desiderio solo se sei Malvagio. Permane finché non viene utilizzato."
+      },
+      "B-ST-005": {
+        "name": "Incantatore",
+        "description": "Un saggio mago errante. Esaudisce il tuo desiderio solo se sei Neutrale. Permane finché non viene utilizzato."
+      },
+      "B-ST-006": {
+        "name": "Fata",
+        "description": "Una creatura magica piena di luce. Esaudisce il tuo desiderio solo se sei Buono. Permane finché non viene utilizzato."
+      },
+      "B-ST-007": {
+        "name": "Eremita",
+        "description": "Un vecchio saggio solitario. Al primo incontro si teletrasporta in un luogo remoto. Trovalo di nuovo e ti donerà un Talismano."
+      },
+      "B-ST-008": {
+        "name": "Illusionista",
+        "description": "Un maestro delle illusioni. Insegna gratuitamente una magia ai personaggi Buoni."
+      },
+      "B-ST-009": {
+        "name": "Stregone",
+        "description": "Un potente mago oscuro. Conosce antichi incantesimi e li svela a chiunque lo incontri."
+      }
+    }
+  },
+  "logs": {
+    "system": {
+      "info": "{text}",
+      "feedHorse": "{playerName} ha nutrito il cavallo e ottenuto +1 movimento per questo turno.",
+      "guidePathfind": "{playerName} usa la Guida per esplorare il sentiero e ottiene +1 movimento per questo turno.",
+      "zombieConsumedFood": "Lo zombie di {playerName} ha consumato {consumedFood} cibo.",
+      "zombieUpkeepMissingFood": "{playerName} aveva mantenimento zombie senza {missingFood} cibo e ha perso {missingFood} HP.",
+      "inventoryOverflowDiscarded": "{playerName} ha scartato {discardedItemsCount} oggetto/i per overflow inventario dopo la perdita di un seguace.",
+      "itemPreventedCondition": "{playerName} ha usato {itemName} ({nextCharges}/{maxCharges}) per prevenire {conditionId}.",
+      "itemRechargedInBiome": "{playerName} ha ricaricato {itemName} ({nextCharges}/{maxCharges}) in {biomeLabel}."
+    },
+    "tokens": {
+      "alignment": "allineamento: {value}",
+      "gainXp": "XP +{value}",
+      "gainLevelUp": "+1 aumento livello",
+      "extrasWrapper": " ({value})",
+      "turn": {
+        "one": "turno",
+        "many": "turni"
+      }
+    },
+    "player": {
+      "move": "{playerName} si e spostato in {x}, {y}.",
+      "discoverBiome": "{playerName} ha scoperto {biome}.",
+      "worldEventTriggered": "{playerName} ha attivato {eventTitle}: {outcome}. Bersaglio {targetBiome}, responsabile {driverBiome}, santuari attivi in Regione I: {activeShrinesInRegionI}.",
+      "worldEventMutationSummary": "{playerName} ha completato la mutazione dell'Evento mondiale: celle mutate {cellsMutated}/{cellsAffected}.",
+      "discoverEnvironment": "{playerName} ha scoperto un nuovo ambiente di {biome}.",
+      "expandEnvironment": "{playerName} ha espanso un ambiente di {biome}.",
+      "enterSanctuary": "{playerName} e entrato in {sanctuary}.",
+      "discoverLandmark": "{playerName} ha scoperto {landmark}.",
+      "reachLandmark": "{playerName} ha raggiunto {landmark}.",
+      "gainExperience": "{playerName} ha ottenuto {amount} XP.",
+      "endTurn": "{playerName} ha terminato il turno.",
+      "activateSanctuary": "{playerName} ha attivato {sanctuaryLabel} e si e sintonizzato con il suo elemento.",
+      "donateSanctuary": "{playerName} ha donato a {sanctuaryLabel} e ha cambiato sintonia.",
+      "praySanctuary": {
+        "lucky": "{playerName} ha pregato in {sanctuary} e ha recuperato {healedHp} HP con una benedizione fortunata.",
+        "noHeal": "{playerName} ha pregato in {sanctuary}, ma non ha ricevuto guarigione.",
+        "heal": "{playerName} ha pregato in {sanctuary} e ha recuperato {healedHp} HP."
+      },
+      "cellGather": "{playerName} ha speso 1 cibo e raccolto {resource}.",
+      "chopTree": "{playerName} ha tagliato legna e ottenuto {quantity} {resource}.",
+      "consumeRation": "{playerName} ha consumato una razione e ottenuto Nutrimento.",
+      "safePlaceHeal": "{playerName} ha usato {source}, recuperato {healedHp} HP e speso {spentCoins} monete.",
+      "capitalInn": "{playerName} ha riposato presso {source}, recuperato {healedHp} HP, speso {spentCoins} monete e terminato il turno.",
+      "landmarkTraining": "{playerName} si e allenato presso {source}, ottenendo +{increasedBy} {parameter} (ora {newValue}), ha speso {spentCoins} monete, terminato il turno e saltera il prossimo.",
+      "villageCraftsmanExchange": "{playerName} ha scambiato {amount} {giveLabel} con {amount} {receiveLabel} presso {source} e ha terminato il turno.",
+      "campReward": "{playerName} ha usato {source} e ottenuto {rewards}.",
+      "safePlaceWait": "{playerName} ha atteso in {place} usando {source}, simulato il movimento sulla stessa casella e terminato il turno.",
+      "capitalEnchantress": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}.",
+      "capitalEnchantress.spell": "{playerName} ha consultato {source}, pagato {spentCoins} monete, estratto {rewardLabel} e imparato la magia: {learnedSpellName}.",
+      "academySpellUpgrade": "{playerName} ha potenziato {fromSpellName}→{toSpellName} al {source}, pagato {spentCoins} monete e terminato il turno.",
+      "cityMystic": "{playerName} ha consultato {source}, pagato {spentCoins} monete ed estratto {rewardLabel}{extras}.",
+      "graveyardResurrect": "{playerName} ha tentato la resurrezione al {source} per {followerId}. Esito: {appliedOutcome}.",
+      "templeSendDevotee": "{playerName} ha inviato un devoto al {source}, e diventato BUONO e ha ottenuto {gainedExperience} XP.",
+      "altarSacrifice": "{playerName} ha eseguito un sacrificio all'{source}, e diventato MALVAGIO e ha ottenuto {gainedExperience} XP.",
+      "elementalRitual": "{playerName} ha eseguito il Rituale Elementale all'{source} sul seguace {followerId}.",
+      "eliminateZombie": "{playerName} ha usato {source} ed eliminato lo zombie attivo.",
+      "merchantBuy": "{playerName} ha comprato {itemName}{quantityLabel} da {source} per {spentCoins} monete e ha terminato il turno.",
+      "merchantSell": "{playerName} ha venduto {itemName}{quantityLabel} a {source} per {gainedCoins} monete.",
+      "fastTravelBooked": "{playerName} ha prenotato {source} da {from} a {to}, speso {spentCoins} monete e saltera {skippedTurns} {turnLabel} prima dell'arrivo.",
+      "hostileEnvironmentDamage": "{playerName} ha subito {damageHp} HP dal deserto ostile (dimensione ambiente {environmentSize}).",
+      "regeneratingWatersHealing": "{playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
+      "followerHostileEnvironmentDamage": "Il seguace {followerName} di {playerName} ha subito {damageHp} HP dal deserto ostile (dimensione ambiente {environmentSize}).",
+      "followerRegeneratingWatersHealing": "Il seguace {followerName} di {playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
+      "discardResource": "{playerName} ha scartato 1 {resource}.",
+      "pendingPickupCancelled": "{playerName} ha annullato la raccolta in sospeso di {resource}.",
+      "swapResource": "{playerName} ha scartato {droppedResource} e raccolto {gainedResource}.",
+      "resolvePendingPickup": "{playerName} ha raccolto la risorsa in sospeso {resource}.",
+      "castSpell": "{playerName} ha lanciato {spellName} e speso {spentMp} MP.",
+      "castSpellHeal": "{playerName} ha lanciato {spellName}, recuperato {healedHp} HP e speso {spentMp} MP.",
+      "castSpellStatus": "{playerName} ha lanciato {spellName}, applicato {statusKey} per {durationTurns} turni e speso {spentMp} MP.",
+      "castSpellTeleport": "{playerName} ha lanciato {spellName}, teletrasportandosi in {targetX}, {targetY} e spendendo {spentMp} MP.",
+      "castSpellTransform": "{playerName} ha lanciato {spellName}, trasformato la casella {x}, {y} in {biome} e speso {spentMp} MP.",
+      "castSpellDiagonal": "{playerName} ha lanciato {spellName}, abilitando il movimento diagonale (−{spentMp} MP).",
+      "castSpellStatusTarget": "{playerName} ha lanciato {spellName} su {targetPlayerName}, applicato {statusKey} per {durationTurns} turni (−{spentMp} MP).",
+      "castSpellStealCoins": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {rubato {amount} monete} other {fallito}} (−{spentMp} MP).",
+      "castSpellDrainMp": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {drenato {amount} MP} other {fallito}} (−{spentMp} MP).",
+      "castSpellStealFollower": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {success, select, true {rubato il seguace {followerId}} other {fallito}} (−{spentMp} MP).",
+      "castSpellCopySpell": "{playerName} ha lanciato {spellName} su {targetPlayerName} e copiato {copiedSpellId} (−{spentMp} MP).",
+      "castSpellForgetSpell": "{playerName} ha lanciato {spellName} su {targetPlayerName}: {forgottenSpellId} dimenticato (−{spentMp} MP).",
+      "castSpellAlchemy": "{playerName} ha lanciato {spellName}: oggetto {itemId} alchemizzato per {goldValue} monete (−{spentMp} MP).",
+      "castSpellReveal": "{playerName} ha lanciato {spellName} e rivelato la cella ({targetX},{targetY}) (−{spentMp} MP).",
+      "castSpellDestroy": "{playerName} ha lanciato {spellName} e rimosso un evento dalla cella ({targetX},{targetY}) (−{spentMp} MP).",
+      "castSpellBlockAllSpells": "{playerName} ha lanciato {spellName}: tutti i giocatori sono silenziati per {durationTurns} turni (−{spentMp} MP).",
+      "castSpellRecall": "{playerName} ha lanciato {spellName} e si è teletrasportato al santuario (−{spentMp} MP).",
+      "castSpellChaos": "{playerName} ha lanciato {spellName} su {targetPlayerName}: effetto caos '{effectId}' (−{spentMp} MP).",
+      "castSpellTransmute": "{playerName} ha lanciato {spellName}: {sourceLabel} trasmutato in {targetLabel} (−{spentMp} MP).",
+      "castSpellElementalBond": "{playerName} ha lanciato {spellName}: attunement temporaneo a {newElement} (−{spentMp} MP).",
+      "castSpellGainCoins": "{playerName} ha lanciato {spellName}, guadagnato {coinsGained} monete e speso {spentMp} MP.",
+      "castSpellDispel": "{playerName} ha lanciato {spellName} e rimosso lo stato {removedStatus} (−{spentMp} MP).",
+      "castSpellPurify": "{playerName} ha lanciato {spellName}, rimosso {removedCount} stati negativi e speso {spentMp} MP.",
+      "castSpellRemoveFollower": "{playerName} ha lanciato {spellName} e allontanato il seguace {removedFollowerId} (−{spentMp} MP).",
+      "castSpellCopyStatGain": "{playerName} ha lanciato {spellName}: copiato +1 {parameter} da {copiedFromPlayerName} (nuovo valore: {newValue}) (−{spentMp} MP).",
+      "castSpellCounterPending": "{playerName} ha lanciato {spellName} su {targetPlayerName} — in attesa risposta contromagia (−{spentMp} MP).",
+      "counterSpell": "{playerName} ha usato {counterSpellName} per deflettere {spellName}!",
+      "acceptPendingSpell": "{playerName} ha subito l'effetto di {spellId}.",
+      "combatResult": {
+        "win": "{playerName} ha sconfitto {enemy} (+{xp} XP).",
+        "loss": "{playerName} è stato sconfitto da {enemy} (−{damage} HP).",
+        "flee": "{playerName} è fuggito da {enemy} (−{damage} HP).",
+        "fleeLucky": "{playerName} è fuggito fortunatamente da {enemy} senza subire danni."
+      },
+      "exorcisedSpirit": "{playerName} ha esorcizzato {enemy} con il Simbolo Sacro (+{xpGained} exp).",
+      "crystalBallSkip": "{playerName} ha usato la Sfera di Cristallo per scartare una carta esplorazione.",
+      "castSpellBlocked": "{playerName} ha tentato di lanciare un incantesimo su {targetPlayerName}, ma il Talismano lo ha bloccato.",
+      "followerSkippedCombat": "{playerName} ha ignorato un combattimento grazie a {followerName}.",
+      "followerDismissed": "{playerName} ha scacciato {followerId} e ha terminato il turno.",
+      "alchimistaHeal": "{playerName} ha usato la Pozione di Guarigione dell'Alchimista.",
+      "alchimistaMana": "{playerName} ha usato la Pozione del Mana dell'Alchimista (+2 PM).",
+      "hireMercenary": "{playerName} ha assunto il Mercenario per 3 monete (+2 FRZ questo combattimento).",
+      "strangerHealPercent": "{playerName} è stato curato dalla Guaritrice (+{healedHp} PF).",
+      "strangerEnchantress": "{playerName} è stato colpito dal rituale della Strega: {rewardLabel}.",
+      "strangerWishCoins": "{playerName} ha desiderato ricchezza e ha ottenuto {amount} monete.",
+      "strangerWishXp": "{playerName} ha desiderato esperienza e ha guadagnato {amount} XP.",
+      "strangerWishStat": "{playerName} ha desiderato potere e ha guadagnato +1 {stat} permanente.",
+      "strangerWishTeleport": "{playerName} ha desiderato viaggiare e si è teletrasportato in ({targetX},{targetY}).",
+      "strangerHermitMoved": "{playerName} ha incontrato l'Eremita, che è scomparso in un luogo remoto.",
+      "strangerHermitAmulet": "{playerName} ha ritrovato l'Eremita e ha ricevuto un Talismano!",
+      "strangerSpellTeacher": "{playerName} ha imparato l'incantesimo {spellName} da {source}.",
+      "strangerSpellTeacherFull": "{playerName} ha tentato di imparare un incantesimo ma il libro degli incantesimi è pieno.",
+      "strangerSpellTeacherEmpty": "{playerName} ha tentato di imparare un incantesimo ma il mazzo è vuoto.",
+      "placeFountainDamage": "{playerName} ha bevuto dalla {placeName} e ha subito {damage} danni. ({usesLeft} utilizzi rimasti)",
+      "placeFountainStatBoost": "{playerName} ha bevuto dalla {placeName} e ha guadagnato +{amount} {stat} permanente! ({usesLeft} utilizzi rimasti)",
+      "placeFountainHpBoost": "{playerName} ha bevuto dalla {placeName} e ha aumentato i suoi HP massimi del 5%! ({usesLeft} utilizzi rimasti)",
+      "placeFountainExhausted": "La {placeName} si è esaurita dopo 3 utilizzi ed è scomparsa.",
+      "placePortal": "{playerName} è entrato nel Portale Magico ed è stato teletrasportato in {destination}.",
+      "placePortalNoDestination": "{playerName} ha tentato di attraversare il Portale Magico ma non vi erano luoghi speciali scoperti.",
+      "placeMazeLost": "{playerName} si è perso nel Labirinto e salterà il prossimo turno.",
+      "placeMazeEscape": "{playerName} è uscito dal Labirinto. Il turno termina.",
+      "placeCaveDamage": "{playerName} ha esplorato la Caverna e ha subito {damage} danni.",
+      "placeCaveNothing": "{playerName} ha esplorato la Caverna ma non ha trovato nulla.",
+      "placeCaveCoins": "{playerName} ha esplorato la Caverna e ha trovato {amount} monete.",
+      "placeCaveXp": "{playerName} ha esplorato la Caverna e ha guadagnato 1 XP.",
+      "placeChapelNothing": "{playerName} ha pregato al Tempietto ma non è accaduto nulla.",
+      "placeChapelFortune": "{playerName} ha pregato al Tempietto e ha ricevuto la benedizione della Fortuna per 2 turni.",
+      "placeChapelCoins": "{playerName} ha pregato al Tempietto e ha ricevuto 5 monete.",
+      "placeChapelHeal": "{playerName} ha pregato al Tempietto e ha recuperato {healedHp} PF.",
+      "placeChapelSpell": "{playerName} ha pregato al Tempietto e ha appreso l'incantesimo {spellName}.",
+      "placeChapelSpellFull": "{playerName} ha pregato al Tempietto ma il libro degli incantesimi è pieno.",
+      "placeChapelSpellEmpty": "{playerName} ha pregato al Tempietto ma il mazzo degli incantesimi è vuoto.",
+      "placeChapelTeleport": "{playerName} ha pregato al Tempietto e riceverà un teletrasporto libero al prossimo movimento.",
+      "placeChapelActivatedTeleport": "{playerName} usa la benedizione del Tempietto e si teletrasporta alla casella ({targetX}, {targetY}).",
+      "placeSwampPoison": "{playerName} ha concluso il turno nella Palude ed è stato avvelenato."
+    }
+  },
+  "actions": {
+    "endTurn": {
+      "label": "Termina turno",
+      "description": "Passa il turno. {reason}"
+    },
+    "activateSanctuary": {
+      "label": "Attiva",
+      "description": "Infondi la tua magia nel {sanctuaryLabel} per attivarlo e sintonizzarti con esso."
+    },
+    "sanctuary": {
+      "label": "Santuario",
+      "description": "Interagisci con il {sanctuaryLabel} e scegli una delle azioni disponibili."
+    },
+    "donateSanctuary": {
+      "label": "Dona",
+      "description": "Dona 5 monete ad un Guardiano del Santuario affinche effettui il rito di sintonia con l'elemento {elementLabel}. Ottieni sintonia con {elementLabel}."
+    },
+    "praySanctuary": {
+      "label": "Prega",
+      "description": "Se la tua preghiera viene accolta recuperi il 5% degli HP, oppure il 10% con un colpo di fortuna. Il turno termina."
+    },
+    "cellGather": {
+      "label": "Raccogli",
+      "description": "Spendi 1 cibo per foraggiare questo bioma, ottieni 1 risorsa e termini il turno."
+    },
+    "chopTree": {
+      "label": "Taglia legna",
+      "description": "Usa l'ascia in una foresta per ottenere 1 legname, poi termina il turno."
+    },
+    "consumeRation": {
+      "label": "Consuma razione",
+      "description": "Spendi 1 cibo per ottenere Nutrimento fino a fine turno e ignorare i danni da deserto ostile."
+    },
+    "feedHorse": {
+      "label": "Nutri cavallo",
+      "description": "Spendi 1 cibo prima del movimento per ottenere +1 range movimento in questo turno."
+    },
+    "guidePathfind": {
+      "label": "Fai strada",
+      "description": "Solo partendo da Montagna o Rovina: la Guida ti permette di muoverti di 1 casella in più questo turno."
+    },
+    "safePlaceWait": {
+      "label": "Attendi",
+      "description": "Luogo sicuro: simula il movimento sulla casella corrente e termina il turno senza costo."
+    },
+    "fastTravel": {
+      "label": "Viaggio rapido",
+      "description": "Luogo sicuro: viaggia verso un luogo sicuro gia scoperto. Costo 1 moneta per casella ortogonale (max 15), poi termini il turno e salti il prossimo."
+    },
+    "campGatherer": {
+      "label": "Raccoglitore",
+      "description": "Esci a raccogliere risorse con un'abitante del posto. Ottieni 1 legname e 1 minerale, poi termina il turno.",
+      "warning": {
+        "capacity": "Capienza inventario insufficiente: servono {requiredSlots} slot liberi, disponibili {availableSlots}."
+      }
+    },
+    "campHunter": {
+      "label": "Cacciatore",
+      "description": "Esci a caccia con un'abitante del posto. Ottieni 1 cibo e 1 stoffa, poi termina il turno.",
+      "warning": {
+        "capacity": "Capienza inventario insufficiente: servono {requiredSlots} slot liberi, disponibili {availableSlots}."
+      }
+    },
+    "capitalDoctor": {
+      "label": "Dottore",
+      "description": "Visita il Dottore della Capitale: ogni trattamento ripristina il 5% HP e costa {costPerUnit} monete ({timeOfDay}). Poi termina il turno."
+    },
+    "capitalEnchantress": {
+      "label": "Incantatrice",
+      "description": "Consulta l'Incantatrice della Capitale per 5 monete. Estrai il tuo destino con una prova fortuna, poi termina il turno."
+    },
+    "cityHealer": {
+      "label": "Guaritore",
+      "description": "Visita il Guaritore della Citta: ogni trattamento ripristina il 5% HP e costa {costPerUnit} monete ({timeOfDay}). Poi termina il turno."
+    },
+    "cityMystic": {
+      "label": "Mistico",
+      "description": "Consulta il Mistico della Citta per 5 monete. Estrai il tuo destino con una prova fortuna, poi termina il turno."
+    },
+    "cityMerchant": {
+      "label": "Mercante",
+      "description": "Visita il Mercante della Citta. Compra o vendi oggetti da uno stock configurabile. Acquistare termina il turno."
+    },
+    "capitalInn": {
+      "label": "Locanda",
+      "description": "Riposa alla Locanda della Capitale: ripristina il 50% HP, paga 10 monete, poi termina il turno (solo giorno)."
+    },
+    "castleRest": {
+      "label": "Riposa",
+      "description": "Riposa al Castello: ripristina il 50% HP, paga 10 monete, poi termina il turno (giorno e notte)."
+    },
+    "castleTrainer": {
+      "label": "Lezione di scherma",
+      "description": "Allena Forza al Castello. Costo {trainingCost} monete (3 x livello), ottieni +1 FOR permanente, termini il turno e salti il prossimo."
+    },
+    "academyTrainer": {
+      "label": "Lezione di magia",
+      "description": "Allena Magia all'Accademia. Costo {trainingCost} monete (3 x livello), ottieni +1 MAG permanente, termini il turno e salti il prossimo."
+    },
+    "academyMerchant": {
+      "label": "Mercante Arcano",
+      "description": "Visita il Mercante dell'Accademia. Compra stock magico e vendi solo oggetti magici. Acquistare termina il turno."
+    },
+    "academySpellUpgrader": {
+      "label": "Maestro degli Incantesimi",
+      "description": "Potenzia Mimica→Mimica+ o Annullamento→Annullamento+ per 12 monete. Termina il turno."
+    },
+    "manorCounterfeiter": {
+      "label": "Contraffattore Arcano",
+      "description": "Visita il Contraffattore Arcano nel Maniero. Compra dal suo stock discutibile. Acquistare termina il turno."
+    },
+    "villageCraftsman": {
+      "label": "Artigiano",
+      "description": "Scambia risorse 1:1 dall'Artigiano del Villaggio, poi termina il turno."
+    },
+    "graveyardResurrect": {
+      "label": "Rito di resurrezione",
+      "description": "Prova a resuscitare un seguace morto dalla pila degli scarti tramite una prova fortuna. Gli esiti possono essere pericolosi."
+    },
+    "templeSendDevotee": {
+      "label": "Invia devoto",
+      "description": "Lascia un seguace idoneo al Tempio. Il tuo allineamento diventa buono, ottieni 2 XP, poi termini il turno."
+    },
+    "altarSacrifice": {
+      "label": "Sacrifica",
+      "description": "Sacrifica un seguace idoneo all'Altare. Il tuo allineamento diventa malvagio, ottieni 2 XP, poi termini il turno."
+    },
+    "elementalRitual": {
+      "label": "Rituale Elementale",
+      "description": "Trasforma un seguace nella sua forma elementale. Richiede affinità elementale. Il seguace ottiene +1 FRZ, +1 MAG e almeno 10 HP. Utilizzabile solo se non possiedi già un seguace potenziato. Termina il turno."
+    },
+    "eliminateZombie": {
+      "label": "Elimina zombie",
+      "description": "Distruggi il tuo compagno zombie e termina il turno."
+    },
+    "dismissPoltergeist": {
+      "label": "Scaccia Poltergeist",
+      "description": "Scaccia il Poltergeist (richiede bioma Acqua). Guadagna +1 XP. Termina turno."
+    },
+    "dismissBanshee": {
+      "label": "Scaccia Banshee",
+      "description": "Scaccia la Banshee (richiede bioma Rovine). Guadagna +1 XP. Termina turno."
+    },
+    "dismissMegera": {
+      "label": "Scaccia Megera",
+      "description": "Scaccia la Megera visitando il Mistico in Città. Termina turno."
+    },
+    "alchimistaHeal": {
+      "label": "Pozione di Guarigione",
+      "description": "Usa la Pozione di Guarigione dell'Alchimista per recuperare il 10% degli HP massimi."
+    },
+    "alchimistaMana": {
+      "label": "Pozione del Mana",
+      "description": "Usa la Pozione del Mana dell'Alchimista per recuperare 2 PM."
+    },
+    "hireMercenary": {
+      "label": "Assumi Mercenario",
+      "description": "Paga 3 monete per assumere il Mercenario. Ottieni +2 FRZ per questo combattimento."
+    }
+  },
+  "followerUpgrades": {
+    "elemental-fire": {
+      "suffix": "del Fuoco"
+    },
+    "elemental-water": {
+      "suffix": "dell'Acqua"
+    },
+    "elemental-wind": {
+      "suffix": "del Vento"
+    },
+    "elemental-earth": {
+      "suffix": "della Terra"
+    }
+  },
+  "spells": {
+    "meta": {
+      "singleUse": "uso singolo"
+    }
+  },
+  "chaos": {
+    "effects": {
+      "poison": "Veleno (2 turni)",
+      "hexed": "Maledizione (2 turni)",
+      "weakened": "Indebolimento (2 turni)",
+      "sleep": "Sonno (1 turno)",
+      "minified": "Miniaturizzazione (2 turni)",
+      "silence": "Silenzio (2 turni)",
+      "stealCoins": "Furto di monete (5)",
+      "drainMp": "Prosciugamento PM (3)"
+    }
+  },
+  "statuses": {
+    "nutrition": {
+      "label": "Nutrimento",
+      "description": "Previene i danni da ambiente ostile in questo turno."
+    },
+    "poison": {
+      "label": "Veleno",
+      "description": "Subisci danni alla fine di ogni turno."
+    },
+    "regen": {
+      "label": "Rigenerazione",
+      "description": "Cura una piccola quantità alla fine di ogni turno."
+    },
+    "minified": {
+      "label": "Miniaturizzato",
+      "description": "Trasforma il bersaglio in topo. Le statistiche primarie diventano 1, recupero HP/MP disabilitato e uso oggetti bloccato."
+    },
+    "silence": {
+      "label": "Silenzio",
+      "description": "Lancio magie e rigenerazione naturale MP disabilitati."
+    },
+    "fortune": {
+      "label": "Fortuna",
+      "description": "Raddoppia il bonus fortuna applicato ai controlli di fortuna."
+    },
+    "bravery": {
+      "label": "Coraggio",
+      "description": "Aumenta Forza di 1."
+    },
+    "weakened": {
+      "label": "Indebolito",
+      "description": "Riduce Forza di 1."
+    },
+    "focus": {
+      "label": "Concentrazione",
+      "description": "Aumenta Magia di 1."
+    },
+    "hexed": {
+      "label": "Maleficio",
+      "description": "Riduce Magia di 1."
+    },
+    "sleep": {
+      "label": "Sonno",
+      "description": "Salti il prossimo turno."
+    },
+    "protection": {
+      "label": "Protezione",
+      "description": "Riduce il prossimo danno subito."
+    },
+    "invisibility": {
+      "label": "Invisibilità",
+      "description": "Non puoi essere attaccato o bersagliato da incantesimi."
+    },
+    "immobilized": {
+      "label": "Immobilizzato",
+      "description": "Non puoi muoverti."
+    },
+    "flying": {
+      "label": "Volo",
+      "description": "Puoi muoverti in diagonale finché lo stato è attivo."
+    },
+    "empowered": {
+      "label": "Potenziato",
+      "description": "La Magia si aggiunge alla Forza in combattimento."
+    },
+    "safeStep": {
+      "label": "Passo sicuro",
+      "description": "Il prossimo effetto dannoso di casella o ambiente viene ignorato."
+    },
+    "manaShield": {
+      "label": "Scudo del mana",
+      "description": "Il prossimo danno subito può essere ridotto spendendo MP residui."
+    },
+    "spellWard": {
+      "label": "Sigillo",
+      "description": "Il prossimo incantesimo ostile che ti bersaglia viene annullato."
+    },
+    "petrified": {
+      "label": "Pietrificato",
+      "description": "Sei trasformato in pietra e salti il prossimo turno."
+    },
+    "anchored": {
+      "label": "Radicato",
+      "description": "Non puoi muoverti finché lo stato è attivo."
+    },
+    "fateSight": {
+      "label": "Visione del fato",
+      "description": "Puoi intravedere il prossimo risultato casuale rilevante."
+    },
+    "elementalBoundFire": {
+      "label": "Vincolo del Fuoco",
+      "description": "La sintonia temporanea al Fuoco è attiva."
+    },
+    "elementalBoundEarth": {
+      "label": "Vincolo della Terra",
+      "description": "La sintonia temporanea alla Terra è attiva."
+    },
+    "elementalBoundAir": {
+      "label": "Vincolo dell'Aria",
+      "description": "La sintonia temporanea all'Aria è attiva."
+    },
+    "elementalBoundWater": {
+      "label": "Vincolo dell'Acqua",
+      "description": "La sintonia temporanea all'Acqua è attiva."
+    },
+    "zombified": {
+      "label": "Zombie",
+      "description": "Rianimato da rituali oscuri e vincolato al tuo servizio per poco tempo."
+    },
+    "strengthBoost": {
+      "label": "Vigore",
+      "description": "Forza +2 per questo turno."
+    }
+  },
+  "resources": {
+    "timber": "Legname",
+    "food": "Cibo",
+    "minerals": "Minerali",
+    "cloth": "Stoffa"
+  },
+  "combat": {
+    "overlay": {
+      "title": "Scontro",
+      "resultsTitle": "Risultati scontro",
+      "ariaLabel": "Dialogo di combattimento"
+    },
+    "column": {
+      "player": "Tu",
+      "enemy": "Nemico"
+    },
+    "player": {
+      "hp": "PV"
+    },
+    "enemy": {
+      "level": "Livello"
+    },
+    "stat": {
+      "strength": "FOR",
+      "magic": "MAG",
+      "luck": "FORT"
+    },
+    "element": {
+      "fire": "Fuoco",
+      "earth": "Terra",
+      "wind": "Vento",
+      "water": "Acqua"
+    },
+    "time": {
+      "day": "Giorno",
+      "night": "Notte"
+    },
+    "action": {
+      "fight": "Combatti",
+      "flee": "Fuggi",
+      "continue": "Continua",
+      "conclude": "Concludi",
+      "exorcise": "Esorcizza Spirito (+1 exp)"
+    },
+    "equipment": {
+      "title": "Equipaggiamento",
+      "weaponGroup": "Arma",
+      "armorGroup": "Armatura",
+      "none": "Nessuno",
+      "confirm": "Conferma"
+    },
+    "spells": {
+      "title": "Incantesimi",
+      "cast": "Lancia"
+    },
+    "outcome": {
+      "win": "Vittoria",
+      "loss": "Sconfitta",
+      "tie": "Pareggio",
+      "flee": "Fuga con danni",
+      "fleeLucky": "Fuga riuscita"
+    },
+    "result": {
+      "playerRoll": "Il tuo tiro",
+      "enemyRoll": "Tiro nemico",
+      "base": "Base",
+      "luck": "Fortuna",
+      "element": "Elemento",
+      "time": "Orario",
+      "total": "Totale",
+      "autoWin": "Dominio assoluto",
+      "criticalHit": "Colpo critico!",
+      "hpLost": "HP persi",
+      "xpGained": "EXP",
+      "goldGained": "Guadagnato"
+    }
+  }
 }

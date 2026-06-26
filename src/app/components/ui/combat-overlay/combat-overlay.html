@@ -325,6 +325,16 @@
                             </text-button>
                         </div>
                     </div>
+                    @if (canExorciseSpirit()) {
+                        <div class="combat-actions" style="margin-top: 0.5rem">
+                            <text-button
+                                [fullWidth]="true"
+                                [text]="'combat.action.exorcise' | t"
+                                [disabled]="currentUiPhase() !== 'idle'"
+                                (clicked)="exorcise()">
+                            </text-button>
+                        </div>
+                    }
                 }
             }
 

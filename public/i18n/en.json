@@ -916,6 +916,11 @@
       }
     },
     "interaction": {
+      "pendingTeleport": {
+        "label": "Chapel Blessing active",
+        "action": "Use teleport",
+        "prompt": "Choose destination cell (Chapel Blessing)"
+      },
       "regionCrossing": {
         "title": "Entering Region II",
         "message": "Crossing this border may trigger a world event. Do you want to proceed?",
@@ -1064,43 +1069,441 @@
       }
     },
     "followers": {
-      "horse": {
-        "name": "Horse",
-        "description": "A loyal mount. Use Feed horse before moving to gain +1 movement this turn."
-      },
-      "princess": {
-        "name": "Princess",
-        "description": "A noble follower with arcane intuition."
-      },
-      "mule": {
+      "B-FO-001": {
         "name": "Mule",
-        "description": "A sturdy pack animal that increases your carrying capacity by 4."
+        "description": "A sturdy pack animal. Increases inventory capacity by 4."
       },
-      "zombie": {
+      "B-FO-002": {
+        "name": "Horse",
+        "description": "A loyal mount. Feed it before moving to gain +1 movement this turn."
+      },
+      "B-FO-003": {
+        "name": "Princess",
+        "description": "A noble with arcane intuition. Magic +1."
+      },
+      "B-FO-004": {
+        "name": "Prince",
+        "description": "A courageous noble. Strength +1."
+      },
+      "B-FO-006": {
+        "name": "Barbarian",
+        "description": "A fearsome warrior. Strength +1 in combat. If you lose a combat it was involved in, it leaves."
+      },
+      "B-FO-008": {
+        "name": "Familiar",
+        "description": "A magical creature bound to good. Magic +2."
+      },
+      "B-FO-009": {
+        "name": "Maiden",
+        "description": "A young woman with latent arcane power. Magic +2."
+      },
+      "B-FO-010": {
+        "name": "Sprite",
+        "description": "A magical forest creature. Once per turn you may ignore a combat in the Forest."
+      },
+      "B-FO-011": {
+        "name": "Guide",
+        "description": "An expert pathfinder. Only when starting from Mountain or Ruins: 'Pathfind' lets you move 1 extra cell this turn."
+      },
+      "B-FO-012": {
+        "name": "Gnome",
+        "description": "A small mythological plains creature. Once per turn you may ignore a combat in the Plains."
+      },
+      "B-FO-013": {
+        "name": "Unicorn",
+        "description": "A mythical being wrapped in a shimmering aura. Strength +1 and Magic +1."
+      },
+      "B-FO-017": {
         "name": "Zombie",
-        "description": "A shambling undead follower. Grants +1 STR, consumes 1 food each turn (or you lose 1 HP), and can be dismissed with Eliminate zombie."
+        "description": "An undead follower. Grants +1 Strength but consumes 1 food per turn (or lose 1 HP). Can be eliminated with the Eliminate Zombie action."
       }
     },
     "items": {
-      "cursed-rune-sword": {
-        "name": "Cursed Rune Sword",
-        "description": "A sword that feeds on dark intent."
-      },
-      "common-sword": {
+      "B-IT-001": {
         "name": "Sword",
-        "description": "A basic sword for beginners."
+        "description": "Strength +1 in combat."
       },
-      "common-axe": {
+      "B-IT-002": {
         "name": "Axe",
-        "description": "A basic axe for beginners. Enables Chop wood in forests."
+        "description": "Strength +1 in combat. Unlocks Chop Wood in forests."
       },
-      "sealed-orb": {
-        "name": "Sealed Orb",
-        "description": "A mysterious relic with latent market value."
+      "B-IT-003": {
+        "name": "Holy Lance",
+        "description": "Unusable by evil. Strength +1. Strength +3 against Dragon enemies."
       },
-      "water-bottle": {
-        "name": "Water Bottle",
-        "description": "A reusable bottle that stores water charges for harsh journeys."
+      "B-IT-004": {
+        "name": "Golden Sword",
+        "description": "Strength +2. Breaks if you are defeated in combat while wielding it."
+      },
+      "B-IT-005": {
+        "name": "Rune Sword",
+        "description": "Unusable by good. Strength +1. Recover 3% HP on combat victory."
+      },
+      "B-IT-006": {
+        "name": "Helmet",
+        "description": "Fortune check 80+: reduce incoming non-magic combat damage by 1."
+      },
+      "B-IT-007": {
+        "name": "Shield",
+        "description": "Fortune check 65+: reduce incoming non-magic combat damage by 1."
+      },
+      "B-IT-008": {
+        "name": "Armour",
+        "description": "Fortune check 50+: reduce incoming non-magic combat damage by 1."
+      },
+      "B-IT-009": {
+        "name": "Holy Symbol",
+        "description": "Ignore luck bonuses and maluses in blessed or cursed places. May skip a spirit enemy to destroy it and gain 1 exp."
+      },
+      "B-IT-010": {
+        "name": "Holy Chalice",
+        "description": "Unusable by evil. Magic +1. Immune to the hostile desert environment."
+      },
+      "B-IT-011": {
+        "name": "Talisman",
+        "description": "Applies Silence to yourself while held. You are immune to other players' spells."
+      },
+      "B-IT-012": {
+        "name": "Crest of Courage",
+        "description": "In non-magic combat, re-roll your fortune check once if your first result was lower than your opponent's. Once per combat."
+      },
+      "B-IT-013": {
+        "name": "Crystal Ball",
+        "description": "Once per turn, skip one exploration card and draw a replacement. You must still face the new card."
+      },
+      "B-IT-014": {
+        "name": "Magic Wand",
+        "description": "When you exhaust your last spell, draw a new spell from the spell deck."
+      },
+      "B-IT-015": {
+        "name": "Fortune Pendant",
+        "description": "Each time you score a lucky roll, apply the Fortune status to yourself for 1 turn."
+      },
+      "B-IT-016": {
+        "name": "Mage Crown",
+        "description": "Magic +2."
+      },
+      "B-IT-017": {
+        "name": "Ring",
+        "description": "Strength +1. Magic +1."
+      },
+      "B-IT-018": {
+        "name": "Magic Belt",
+        "description": "Strength +1."
+      },
+      "B-IT-019": {
+        "name": "Amulet",
+        "description": "A magical artefact required to enter and survive Region III."
+      },
+      "B-IT-020": {
+        "name": "Strength Potion",
+        "description": "Increase your Strength by 2 for the current turn."
+      },
+      "B-IT-021": {
+        "name": "Coin Bag",
+        "description": "Contains 5–10 gold coins. Collected immediately."
+      },
+      "B-IT-022": {
+        "name": "Large Coin Bag",
+        "description": "Contains 10–20 gold coins. Collected immediately."
+      },
+      "B-IT-023": {
+        "name": "Water Flask",
+        "description": "3 charges. Consumes 1 charge in desert to prevent environment damage. Restores 1 charge in water biome."
+      }
+    },
+    "spells": {
+      "B-SP-001": {
+        "name": "Fly",
+        "description": "Enables diagonal movement for this turn. Must be cast before moving.",
+        "longDescription": "Flying enables 8-directional movement — you may step diagonally in addition to the four cardinal directions. The effect must be active before you move."
+      },
+      "B-SP-002": {
+        "name": "Healing Waters",
+        "description": "Apply Nutrition to yourself.",
+        "longDescription": "Nutrition prevents all damage dealt by hostile biomes or environmental conditions at the end of your turn."
+      },
+      "B-SP-003": {
+        "name": "Inner Fire",
+        "description": "Apply Bravery to yourself for 1 turn.",
+        "longDescription": "Bravery increases your Strength by 1 for the duration of the effect."
+      },
+      "B-SP-004": {
+        "name": "Reinvigorate",
+        "description": "Restore HP equal to your current Magic value.",
+        "longDescription": "The amount healed equals your current Magic value, not the base. Higher Magic means better recovery."
+      },
+      "B-SP-005": {
+        "name": "Teleport",
+        "description": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn.",
+        "longDescription": "Range is 3 orthogonal steps, plus 1 per point of Magic. After teleporting you cannot move again this turn, but landmark use, spell casting, and combat remain available."
+      },
+      "B-SP-006": {
+        "name": "Empower",
+        "description": "Apply Empowered to yourself.",
+        "longDescription": "While Empowered, your Magic value is added directly to your combat Strength for any fight this turn. Useful when you have high Magic but need a physical edge."
+      },
+      "B-SP-007": {
+        "name": "Chaos",
+        "description": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-008": {
+        "name": "Filch",
+        "description": "Steal 10 coins from a target player on a luck check of 70 or more.",
+        "longDescription": "On a luck check result of 70 or more, 10 coins transfer instantly from the target to you. Nothing happens on failure."
+      },
+      "B-SP-009": {
+        "name": "Vigor",
+        "description": "Restore 5 HP.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-010": {
+        "name": "Ward",
+        "description": "Apply Protection to yourself.",
+        "longDescription": "Protection halves the next incoming damage you receive (rounded down). The status is consumed after blocking one hit."
+      },
+      "B-SP-011": {
+        "name": "Alchemy",
+        "description": "Convert an item you own into its coin value.",
+        "longDescription": "Select one item from your inventory; it is permanently destroyed and its base coin value is added to your wallet."
+      },
+      "B-SP-012": {
+        "name": "Immobilize",
+        "description": "Apply Immobilized to a target player for 1 turn.",
+        "longDescription": "The target cannot move on their turn. Landmark use, spell casting, and combat can still apply if triggered."
+      },
+      "B-SP-013": {
+        "name": "Dispel",
+        "description": "Remove one negative status from yourself.",
+        "longDescription": "Removes the oldest active negative status. Positive statuses are not affected."
+      },
+      "B-SP-014": {
+        "name": "Fortune",
+        "description": "Apply Fortune to yourself for 1 turn.",
+        "longDescription": "Your Luck bonus is doubled for every check made while this status is active, significantly improving odds on high-threshold rolls."
+      },
+      "B-SP-015": {
+        "name": "Focus",
+        "description": "Apply Focus to yourself for 1 turn.",
+        "longDescription": "Focus increases your Magic by 1 while active, also improving any spell that scales with Magic such as Reinvigorate or Teleport range."
+      },
+      "B-SP-016": {
+        "name": "Scout",
+        "description": "Reveal an unexplored cell within {range} orthogonal steps.",
+        "longDescription": "Base range is 2 steps, plus 1 per point of Magic. The revealed cell becomes visible to all players."
+      },
+      "B-SP-017": {
+        "name": "Safe Passage",
+        "description": "Ignore the next environmental hazard or negative cell effect when entering a cell.",
+        "longDescription": "Safe Step is consumed the next time you enter a cell with a harmful biome effect or condition, leaving you completely unharmed."
+      },
+      "B-SP-018": {
+        "name": "Fate Reading",
+        "description": "Preview the next 2 Exploration Cards.",
+        "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed."
+      },
+      "B-SP-019": {
+        "name": "Transmute",
+        "description": "Transform 1 common resource into a different common resource.",
+        "longDescription": "Choose one common resource from your inventory; it is replaced with a different common resource of your choice."
+      },
+      "B-SP-020": {
+        "name": "Foresight",
+        "description": "Preview the next 2 Exploration Cards. Order is not changed.",
+        "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed."
+      },
+      "B-SP-021": {
+        "name": "Wealth",
+        "description": "Gain 10 coins.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-022": {
+        "name": "Invisibility",
+        "description": "Apply Invisibility to yourself.",
+        "longDescription": "While invisible you cannot be targeted by attacks or hostile spells. Movement, landmark use, and resource collection still work normally."
+      },
+      "B-SP-023": {
+        "name": "Mesmerize",
+        "description": "Steal a follower from a target player on a luck check of 70 or more.",
+        "longDescription": "On a luck check of 70 or more, a random follower from the target's party permanently joins yours. Nothing happens on failure."
+      },
+      "B-SP-024": {
+        "name": "Curse",
+        "description": "Apply Hexed and Weakened to a target player for 3 turns.",
+        "longDescription": "Hexed reduces the target's Magic by 1 and Weakened reduces their Strength by 1 for 3 full turns. Both effects run simultaneously."
+      },
+      "B-SP-025": {
+        "name": "Petrify",
+        "description": "Apply Petrified to the target for 1 turn.",
+        "longDescription": "The target's next turn is skipped entirely. They cannot move, act, or react until the effect expires."
+      },
+      "B-SP-026": {
+        "name": "Purify",
+        "description": "Remove all negative statuses from yourself.",
+        "longDescription": "Clears every negative status affecting you at once, regardless of their remaining duration or how many are stacked."
+      },
+      "B-SP-027": {
+        "name": "Recall",
+        "description": "Return to your last visited or activated sanctuary. Cannot move further this turn.",
+        "longDescription": "Teleports you directly to your last attuned or visited sanctuary. You cannot move further after recalling, but other actions remain available."
+      },
+      "B-SP-028": {
+        "name": "Minor Exile",
+        "description": "Remove a negative follower from your party.",
+        "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+      },
+      "B-SP-029": {
+        "name": "Divination",
+        "description": "Preview the next 5 Exploration Cards. Order is not changed.",
+        "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 5 upcoming cards. The order is not changed."
+      },
+      "B-SP-030": {
+        "name": "Spell Break",
+        "description": "No player, including you, can cast spells until the end of the next round.",
+        "longDescription": "No player — including you — can cast any spell or use reactive abilities for the rest of this round and the entire next round."
+      },
+      "B-SP-031": {
+        "name": "Destroy",
+        "description": "Remove an Exploration Card from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives.",
+        "longDescription": "Permanently removes one Exploration Card from a visible cell within range. Cannot target fixed map elements such as landmarks or sanctuaries."
+      },
+      "B-SP-032": {
+        "name": "Counterspell",
+        "description": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects.",
+        "longDescription": "Held passively in reserve after casting. When a hostile spell targets you, a prompt appears letting you activate Counterspell to cancel the effect entirely."
+      },
+      "B-SP-033": {
+        "name": "Time Fold",
+        "description": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves.",
+        "longDescription": "Each extra move can reveal new cells and trigger events, but player combat, resource collection, and additional spell casting are disabled during the sequence."
+      },
+      "B-SP-034": {
+        "name": "Mimicry",
+        "description": "Copy a random spell from a target player and learn it.",
+        "longDescription": "The copied spell is permanently added to your spellbook if a free slot is available. If your spellbook is full, the copy fails without an MP refund."
+      },
+      "B-SP-035": {
+        "name": "Mimicry+",
+        "description": "Copy a spell of your choice from a target player and learn it.",
+        "longDescription": "Choose which spell to copy from the target's spellbook. Permanently added to yours if a free slot is available."
+      },
+      "B-SP-036": {
+        "name": "Negate",
+        "description": "Make a target player forget a random spell.",
+        "longDescription": "A random spell is permanently erased from the target's spellbook. It cannot be re-learned through normal means."
+      },
+      "B-SP-037": {
+        "name": "Negate+",
+        "description": "Make a target player forget a spell of your choice.",
+        "longDescription": "Choose which spell the target loses. It is permanently erased from their spellbook and cannot be re-learned."
+      },
+      "B-SP-038": {
+        "name": "Silence",
+        "description": "Apply Silence to a target player for 3 turns.",
+        "longDescription": "While Silenced the target cannot cast any spell and their MP does not regenerate naturally at turn end. Duration is 3 turns."
+      },
+      "B-SP-039": {
+        "name": "Mana Shield",
+        "description": "Apply Mana Shield to yourself.",
+        "longDescription": "When you take damage, remaining MP is spent first; each point of MP absorbs 1 point of damage. The status is removed after the next hit."
+      },
+      "B-SP-040": {
+        "name": "Mana Drain",
+        "description": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more.",
+        "longDescription": "On a luck check of 70 or more, 1 MP is removed from the target and transferred to you."
+      },
+      "B-SP-041": {
+        "name": "Seal",
+        "description": "Apply Spell Ward to yourself.",
+        "longDescription": "The first hostile spell cast at you is cancelled and has no effect. The ward is then consumed. Stacks alongside Counterspell."
+      },
+      "B-SP-042": {
+        "name": "Disciple",
+        "description": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat.",
+        "longDescription": "Reacts once to the next permanent Strength or Magic gain by any player. The copied stat boost is immediate and permanent."
+      },
+      "B-SP-043": {
+        "name": "Elemental Bond",
+        "description": "Temporarily change your elemental attunement to a chosen element for 1 turn.",
+        "longDescription": "For one turn you interact with sanctuaries, shrines, and effects of the chosen element as if it were your own. Returns to your base element at turn end."
+      },
+      "B-SP-044": {
+        "name": "Toadify",
+        "description": "Apply Minified to a target player for 2 turns on a luck check of 70 or more.",
+        "longDescription": "Minified sets all primary stats to 1 and disables HP/MP recovery and item use for 2 turns, on a luck check of 70 or more."
+      }
+    },
+    "places": {
+      "B-PL-001": {
+        "name": "Arcane Fountain",
+        "description": "A mystical fountain that promises magical power to those who dare drink. It runs dry after 3 uses."
+      },
+      "B-PL-002": {
+        "name": "Fountain of Strength",
+        "description": "An ancient fountain imbued with warrior energy. It runs dry after 3 uses."
+      },
+      "B-PL-003": {
+        "name": "Fountain of Life",
+        "description": "Miraculous waters that expand the vitality of those who drink. It runs dry after 3 uses."
+      },
+      "B-PL-004": {
+        "name": "Market",
+        "description": "A small travelling market with various wares. Passers-by may purchase what they need."
+      },
+      "B-PL-005": {
+        "name": "Magic Portal",
+        "description": "An unstable dimensional rift. Those who step through are transported to a special place already discovered."
+      },
+      "B-PL-006": {
+        "name": "Swamp",
+        "description": "Stagnant waters and toxic miasma. Anyone who ends their turn here is Poisoned unless protected."
+      },
+      "B-PL-007": {
+        "name": "Labyrinth",
+        "description": "A maze of intricate passages. Test your luck — you might get lost or find the exit."
+      },
+      "B-PL-008": {
+        "name": "Cave",
+        "description": "A dark and mysterious grotto. Exploring it could bring danger or fortune."
+      },
+      "B-PL-009": {
+        "name": "Chapel",
+        "description": "A small abandoned shrine. Praying here may bring unexpected blessings."
+      }
+    },
+    "strangers": {
+      "B-ST-002": {
+        "name": "Healer",
+        "description": "A wandering healer who tends to anyone she meets. She restores 5% of your max HP."
+      },
+      "B-ST-003": {
+        "name": "Witch",
+        "description": "A mysterious sorceress who performs free rituals. She may alter your destiny."
+      },
+      "B-ST-004": {
+        "name": "Ghost",
+        "description": "The spirit of a fallen warrior. He grants a wish only to Evil characters. Remains until used."
+      },
+      "B-ST-005": {
+        "name": "Enchanter",
+        "description": "A wandering wise mage. He grants a wish only to Neutral characters. Remains until used."
+      },
+      "B-ST-006": {
+        "name": "Fairy",
+        "description": "A magical creature of light. She grants a wish only to Good characters. Remains until used."
+      },
+      "B-ST-007": {
+        "name": "Hermit",
+        "description": "A solitary old sage. On first encounter he teleports away. Find him again and he will gift you a Talisman."
+      },
+      "B-ST-008": {
+        "name": "Illusionist",
+        "description": "A master of illusions. Teaches a spell for free to Good characters."
+      },
+      "B-ST-009": {
+        "name": "Warlock",
+        "description": "A powerful dark mage. He knows ancient spells and reveals them to anyone who crosses his path."
       }
     }
   },
@@ -1108,6 +1511,7 @@
     "system": {
       "info": "{text}",
       "feedHorse": "{playerName} fed the horse and gained +1 movement for this turn.",
+      "guidePathfind": "{playerName} uses the Guide to pathfind and gains +1 movement for this turn.",
       "zombieConsumedFood": "{playerName}'s zombie consumed {consumedFood} food.",
       "zombieUpkeepMissingFood": "{playerName} had zombie upkeep missing {missingFood} food and lost {missingFood} HP.",
       "inventoryOverflowDiscarded": "{playerName} discarded {discardedItemsCount} item(s) due to inventory overflow after follower loss.",
@@ -1199,7 +1603,48 @@
       "castSpellCopyStatGain": "{playerName} cast {spellName}: copied +1 {parameter} from {copiedFromPlayerName} (new value: {newValue}) (−{spentMp} MP).",
       "castSpellCounterPending": "{playerName} cast {spellName} on {targetPlayerName} — awaiting counter-spell response (−{spentMp} MP).",
       "counterSpell": "{playerName} used {counterSpellName} to deflect {spellName}!",
-      "acceptPendingSpell": "{playerName} accepted the effect of {spellId}."
+      "acceptPendingSpell": "{playerName} accepted the effect of {spellId}.",
+      "exorcisedSpirit": "{playerName} exorcised {enemy} using the Holy Symbol (+{xpGained} exp).",
+      "crystalBallSkip": "{playerName} used the Crystal Ball to discard an exploration card.",
+      "castSpellBlocked": "{playerName} tried to cast a spell on {targetPlayerName}, but the Talisman blocked it.",
+      "followerSkippedCombat": "{playerName} ignored a combat thanks to {followerName}.",
+      "followerDismissed": "{playerName} dismissed {followerId} and ended the turn.",
+      "alchimistaHeal": "{playerName} used the Alchemist's Healing Potion.",
+      "alchimistaMana": "{playerName} used the Alchemist's Mana Potion (+2 MP).",
+      "hireMercenary": "{playerName} hired the Mercenary for 3 coins (+2 STR this combat).",
+      "strangerHealPercent": "{playerName} was healed by the Healer (+{healedHp} HP).",
+      "strangerEnchantress": "{playerName} was affected by the Witch's ritual: {rewardLabel}.",
+      "strangerWishCoins": "{playerName} wished for coins and gained {amount} coins.",
+      "strangerWishXp": "{playerName} wished for experience and gained {amount} XP.",
+      "strangerWishStat": "{playerName} wished for power and gained +1 {stat} permanently.",
+      "strangerWishTeleport": "{playerName} wished to travel and teleported to ({targetX},{targetY}).",
+      "strangerHermitMoved": "{playerName} encountered the Hermit, who vanished to a distant place.",
+      "strangerHermitAmulet": "{playerName} found the Hermit again and received a Talisman!",
+      "strangerSpellTeacher": "{playerName} learned the spell {spellName} from {source}.",
+      "strangerSpellTeacherFull": "{playerName} tried to learn a spell but the spellbook is full.",
+      "strangerSpellTeacherEmpty": "{playerName} tried to learn a spell but the spell deck is empty.",
+      "placeFountainDamage": "{playerName} drank from the {placeName} and took {damage} damage. ({usesLeft} uses remaining)",
+      "placeFountainStatBoost": "{playerName} drank from the {placeName} and gained +{amount} {stat} permanently! ({usesLeft} uses remaining)",
+      "placeFountainHpBoost": "{playerName} drank from the {placeName} and increased their max HP by 5%! ({usesLeft} uses remaining)",
+      "placeFountainExhausted": "The {placeName} has run dry after 3 uses and vanished.",
+      "placePortal": "{playerName} stepped through the Magic Portal and was teleported to {destination}.",
+      "placePortalNoDestination": "{playerName} tried to step through the Magic Portal but no special places had been discovered.",
+      "placeMazeLost": "{playerName} got lost in the Labyrinth and will skip their next turn.",
+      "placeMazeEscape": "{playerName} escaped the Labyrinth. The turn ends.",
+      "placeCaveDamage": "{playerName} explored the Cave and took {damage} damage.",
+      "placeCaveNothing": "{playerName} explored the Cave but found nothing.",
+      "placeCaveCoins": "{playerName} explored the Cave and found {amount} coins.",
+      "placeCaveXp": "{playerName} explored the Cave and gained 1 XP.",
+      "placeChapelNothing": "{playerName} prayed at the Chapel but nothing happened.",
+      "placeChapelFortune": "{playerName} prayed at the Chapel and received the Fortune blessing for 2 turns.",
+      "placeChapelCoins": "{playerName} prayed at the Chapel and received 5 coins.",
+      "placeChapelHeal": "{playerName} prayed at the Chapel and recovered {healedHp} HP.",
+      "placeChapelSpell": "{playerName} prayed at the Chapel and learned the spell {spellName}.",
+      "placeChapelSpellFull": "{playerName} prayed at the Chapel but their spellbook is full.",
+      "placeChapelSpellEmpty": "{playerName} prayed at the Chapel but the spell deck is empty.",
+      "placeChapelTeleport": "{playerName} prayed at the Chapel and will receive a free teleport on their next move.",
+      "placeChapelActivatedTeleport": "{playerName} uses the Chapel's blessing and teleports to cell ({targetX}, {targetY}).",
+      "placeSwampPoison": "{playerName} ended their turn in the Swamp and was Poisoned."
     }
   },
   "actions": {
@@ -1238,6 +1683,10 @@
     "feedHorse": {
       "label": "Feed horse",
       "description": "Spend 1 food before moving to gain +1 movement range this turn."
+    },
+    "guidePathfind": {
+      "label": "Pathfind",
+      "description": "Only when starting from Mountain or Ruins: the Guide lets you move 1 extra cell this turn."
     },
     "safePlaceWait": {
       "label": "Wait",
@@ -1332,6 +1781,30 @@
     "eliminateZombie": {
       "label": "Eliminate zombie",
       "description": "Destroy your zombie companion and end your turn."
+    },
+    "dismissPoltergeist": {
+      "label": "Dismiss Poltergeist",
+      "description": "Banish the Poltergeist (requires Water biome). Gain +1 XP. End turn."
+    },
+    "dismissBanshee": {
+      "label": "Dismiss Banshee",
+      "description": "Banish the Banshee (requires Ruins biome). Gain +1 XP. End turn."
+    },
+    "dismissMegera": {
+      "label": "Dismiss Megera",
+      "description": "Dismiss the Megera at the City Mystic. End turn."
+    },
+    "alchimistaHeal": {
+      "label": "Healing Potion",
+      "description": "Use the Alchemist's Healing Potion to restore 10% of your max HP."
+    },
+    "alchimistaMana": {
+      "label": "Mana Potion",
+      "description": "Use the Alchemist's Mana Potion to restore 2 MP."
+    },
+    "hireMercenary": {
+      "label": "Hire Mercenary",
+      "description": "Pay 3 coins to hire the Mercenary. Gain +2 STR for this combat."
     }
   },
   "followerUpgrades": {
@@ -1351,226 +1824,6 @@
   "spells": {
     "meta": {
       "singleUse": "single use"
-    },
-    "fly": {
-      "name": "Fly",
-      "description": "Enables diagonal movement for this turn. Must be cast before moving.",
-      "longDescription": "Flying enables 8-directional movement — you may step diagonally in addition to the four cardinal directions. The effect must be active before you move."
-    },
-    "healingWaters": {
-      "name": "Healing Waters",
-      "description": "Apply Nutrition to yourself.",
-      "longDescription": "Nutrition prevents all damage dealt by hostile biomes or environmental conditions at the end of your turn."
-    },
-    "innerFire": {
-      "name": "Inner Fire",
-      "description": "Apply Bravery to yourself for 1 turn.",
-      "longDescription": "Bravery increases your Strength by 1 for the duration of the effect."
-    },
-    "reinvigorate": {
-      "name": "Reinvigorate",
-      "description": "Restore HP equal to your current Magic value.",
-      "longDescription": "The amount healed equals your current Magic value, not the base. Higher Magic means better recovery."
-    },
-    "teleport": {
-      "name": "Teleport",
-      "description": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn.",
-      "longDescription": "Range is 3 orthogonal steps, plus 1 per point of Magic. After teleporting you cannot move again this turn, but landmark use, spell casting, and combat remain available."
-    },
-    "empower": {
-      "name": "Empower",
-      "description": "Apply Empowered to yourself.",
-      "longDescription": "While Empowered, your Magic value is added directly to your combat Strength for any fight this turn. Useful when you have high Magic but need a physical edge."
-    },
-    "chaos": {
-      "name": "Chaos",
-      "description": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect.",
-      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    },
-    "filch": {
-      "name": "Filch",
-      "description": "Steal 10 coins from a target player on a luck check of 70 or more.",
-      "longDescription": "On a luck check result of 70 or more, 10 coins transfer instantly from the target to you. Nothing happens on failure."
-    },
-    "vigor": {
-      "name": "Vigor",
-      "description": "Restore 5 HP.",
-      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    },
-    "ward": {
-      "name": "Ward",
-      "description": "Apply Protection to yourself.",
-      "longDescription": "Protection halves the next incoming damage you receive (rounded down). The status is consumed after blocking one hit."
-    },
-    "alchemy": {
-      "name": "Alchemy",
-      "description": "Convert an item you own into its coin value.",
-      "longDescription": "Select one item from your inventory; it is permanently destroyed and its base coin value is added to your wallet."
-    },
-    "immobilize": {
-      "name": "Immobilize",
-      "description": "Apply Immobilized to a target player for 1 turn.",
-      "longDescription": "The target cannot move on their turn. Landmark use, spell casting, and combat can still apply if triggered."
-    },
-    "dispel": {
-      "name": "Dispel",
-      "description": "Remove one negative status from yourself.",
-      "longDescription": "Removes the oldest active negative status. Positive statuses are not affected."
-    },
-    "fortune": {
-      "name": "Fortune",
-      "description": "Apply Fortune to yourself for 1 turn.",
-      "longDescription": "Your Luck bonus is doubled for every check made while this status is active, significantly improving odds on high-threshold rolls."
-    },
-    "focus": {
-      "name": "Focus",
-      "description": "Apply Focus to yourself for 1 turn.",
-      "longDescription": "Focus increases your Magic by 1 while active, also improving any spell that scales with Magic such as Reinvigorate or Teleport range."
-    },
-    "scout": {
-      "name": "Scout",
-      "description": "Reveal an unexplored cell within {range} orthogonal steps.",
-      "longDescription": "Base range is 2 steps, plus 1 per point of Magic. The revealed cell becomes visible to all players."
-    },
-    "safePassage": {
-      "name": "Safe Passage",
-      "description": "Ignore the next environmental hazard or negative cell effect when entering a cell.",
-      "longDescription": "Safe Step is consumed the next time you enter a cell with a harmful biome effect or condition, leaving you completely unharmed."
-    },
-    "fateRead": {
-      "name": "Fate Reading",
-      "description": "Preview the next 2 Exploration Cards.",
-      "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed."
-    },
-    "transmute": {
-      "name": "Transmute",
-      "description": "Transform 1 common resource into a different common resource.",
-      "longDescription": "Choose one common resource from your inventory; it is replaced with a different common resource of your choice."
-    },
-    "foresight": {
-      "name": "Foresight",
-      "description": "Preview the next 2 Exploration Cards. Order is not changed.",
-      "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed."
-    },
-    "wealth": {
-      "name": "Wealth",
-      "description": "Gain 10 coins.",
-      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    },
-    "invisibility": {
-      "name": "Invisibility",
-      "description": "Apply Invisibility to yourself.",
-      "longDescription": "While invisible you cannot be targeted by attacks or hostile spells. Movement, landmark use, and resource collection still work normally."
-    },
-    "mesmerize": {
-      "name": "Mesmerize",
-      "description": "Steal a follower from a target player on a luck check of 70 or more.",
-      "longDescription": "On a luck check of 70 or more, a random follower from the target's party permanently joins yours. Nothing happens on failure."
-    },
-    "curse": {
-      "name": "Curse",
-      "description": "Apply Hexed and Weakened to a target player for 3 turns.",
-      "longDescription": "Hexed reduces the target's Magic by 1 and Weakened reduces their Strength by 1 for 3 full turns. Both effects run simultaneously."
-    },
-    "petrify": {
-      "name": "Petrify",
-      "description": "Apply Petrified to the target for 1 turn.",
-      "longDescription": "The target's next turn is skipped entirely. They cannot move, act, or react until the effect expires."
-    },
-    "purify": {
-      "name": "Purify",
-      "description": "Remove all negative statuses from yourself.",
-      "longDescription": "Clears every negative status affecting you at once, regardless of their remaining duration or how many are stacked."
-    },
-    "recall": {
-      "name": "Recall",
-      "description": "Return to your last visited or activated sanctuary. Cannot move further this turn.",
-      "longDescription": "Teleports you directly to your last attuned or visited sanctuary. You cannot move further after recalling, but other actions remain available."
-    },
-    "minorExile": {
-      "name": "Minor Exile",
-      "description": "Remove a negative follower from your party.",
-      "longDescription": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-    },
-    "divination": {
-      "name": "Divination",
-      "description": "Preview the next 5 Exploration Cards. Order is not changed.",
-      "longDescription": "While Fate Sight is active, open the Exploration Deck preview to see the next 5 upcoming cards. The order is not changed."
-    },
-    "spellBreak": {
-      "name": "Spell Break",
-      "description": "No player, including you, can cast spells until the end of the next round.",
-      "longDescription": "No player — including you — can cast any spell or use reactive abilities for the rest of this round and the entire next round."
-    },
-    "destroy": {
-      "name": "Destroy",
-      "description": "Remove an Exploration Card from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives.",
-      "longDescription": "Permanently removes one Exploration Card from a visible cell within range. Cannot target fixed map elements such as landmarks or sanctuaries."
-    },
-    "counterspell": {
-      "name": "Counterspell",
-      "description": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects.",
-      "longDescription": "Held passively in reserve after casting. When a hostile spell targets you, a prompt appears letting you activate Counterspell to cancel the effect entirely."
-    },
-    "timeFold": {
-      "name": "Time Fold",
-      "description": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves.",
-      "longDescription": "Each extra move can reveal new cells and trigger events, but player combat, resource collection, and additional spell casting are disabled during the sequence."
-    },
-    "mimicry": {
-      "name": "Mimicry",
-      "description": "Copy a random spell from a target player and learn it.",
-      "longDescription": "The copied spell is permanently added to your spellbook if a free slot is available. If your spellbook is full, the copy fails without an MP refund."
-    },
-    "mimicryPlus": {
-      "name": "Mimicry+",
-      "description": "Copy a spell of your choice from a target player and learn it.",
-      "longDescription": "Choose which spell to copy from the target's spellbook. Permanently added to yours if a free slot is available."
-    },
-    "negate": {
-      "name": "Negate",
-      "description": "Make a target player forget a random spell.",
-      "longDescription": "A random spell is permanently erased from the target's spellbook. It cannot be re-learned through normal means."
-    },
-    "negatePlus": {
-      "name": "Negate+",
-      "description": "Make a target player forget a spell of your choice.",
-      "longDescription": "Choose which spell the target loses. It is permanently erased from their spellbook and cannot be re-learned."
-    },
-    "silence": {
-      "name": "Silence",
-      "description": "Apply Silence to a target player for 3 turns.",
-      "longDescription": "While Silenced the target cannot cast any spell and their MP does not regenerate naturally at turn end. Duration is 3 turns."
-    },
-    "manaShield": {
-      "name": "Mana Shield",
-      "description": "Apply Mana Shield to yourself.",
-      "longDescription": "When you take damage, remaining MP is spent first; each point of MP absorbs 1 point of damage. The status is removed after the next hit."
-    },
-    "manaDrain": {
-      "name": "Mana Drain",
-      "description": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more.",
-      "longDescription": "On a luck check of 70 or more, 1 MP is removed from the target and transferred to you."
-    },
-    "seal": {
-      "name": "Seal",
-      "description": "Apply Spell Ward to yourself.",
-      "longDescription": "The first hostile spell cast at you is cancelled and has no effect. The ward is then consumed. Stacks alongside Counterspell."
-    },
-    "disciple": {
-      "name": "Disciple",
-      "description": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat.",
-      "longDescription": "Reacts once to the next permanent Strength or Magic gain by any player. The copied stat boost is immediate and permanent."
-    },
-    "elementalBond": {
-      "name": "Elemental Bond",
-      "description": "Temporarily change your elemental attunement to a chosen element for 1 turn.",
-      "longDescription": "For one turn you interact with sanctuaries, shrines, and effects of the chosen element as if it were your own. Returns to your base element at turn end."
-    },
-    "toadify": {
-      "name": "Toadify",
-      "description": "Apply Minified to a target player for 2 turns on a luck check of 70 or more.",
-      "longDescription": "Minified sets all primary stats to 1 and disables HP/MP recovery and item use for 2 turns, on a luck check of 70 or more."
     }
   },
   "chaos": {
@@ -1693,6 +1946,10 @@
     "zombified": {
       "label": "Zombified",
       "description": "Raised by dark rites and bound to your service for a short time."
+    },
+    "strengthBoost": {
+      "label": "Strength Boost",
+      "description": "Strength +2 for this turn."
     }
   },
   "resources": {

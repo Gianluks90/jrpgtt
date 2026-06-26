@@ -176,6 +176,27 @@
       }
     },
     {
+      "id": "guide-pathfind",
+      "ui": {
+        "label": "Fai strada",
+        "descriptionTemplate": "Solo da Montagna o Rovina: la Guida ti permette di muoverti di 1 casella in più questo turno.",
+        "i18n": {
+          "labelKey": "actions.guidePathfind.label",
+          "descriptionKey": "actions.guidePathfind.description"
+        }
+      },
+      "flow": {
+        "handler": "follower-guide-pathfind",
+        "errorMessage": "Error using guide pathfind",
+        "trigger": "command-panel",
+        "validators": ["my-turn", "not-busy", "action-not-used"],
+        "dialog": {
+          "type": "none"
+        },
+        "requiresMyTurn": true
+      }
+    },
+    {
       "id": "feed-horse",
       "ui": {
         "label": "Feed horse",

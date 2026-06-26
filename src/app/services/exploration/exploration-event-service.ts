@@ -2,7 +2,13 @@ import { Injectable, signal } from "@angular/core";
 import { Player } from "@models/player/Player";
 import { MapCell } from "@models/world/MapCell";
 import { WorldState } from "@models/world/WorldState";
-import { EnemyLoot, PlacedEnemyCard, PlacedExplorationCard } from "@models/exploration/ExplorationCard";
+import { EnemyLoot, PlacedExplorationCard, PlacedEnemyCard } from "@models/exploration/ExplorationCard";
+import { ActionExecutorService } from "@services/gameplay/action-executor-service";
+import { MapCellSelectionService } from "@services/map/map-cell-selection-service";
+import { FirebaseService } from "@services/app/firebase-service";
+import { MerchantStockConfigService } from "@services/catalog/merchant-stock-config-service";
+import { collection, getDocs } from "firebase/firestore";
+import { PlaceCardDef } from "@models/catalog/ExplorationCardCatalog";
 
 export interface ExplorationPhaseSession {
   cards: PlacedExplorationCard[];
@@ -16,6 +22,8 @@ import { PlayerStatsModifierService } from "@services/player/player-stats-modifi
 import { WorldZonesService } from "@services/map/world-zones-service";
 import { RegionLabel } from "@models/world/WorldZone";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
+import { ItemEffectCatalogService } from "@services/catalog/item-effect-catalog-service";
+import { CombatStatBonusVsEnemyCategoryEffectDefinition, ReduceCombatDamageOnFortuneCheckEffectDefinition } from "@models/catalog/ItemEffectCatalog";
 import { TimeOfDay } from "@models/world/WorldState";
 
 export interface CombatEquipmentOption {
@@ -41,12 +49,35 @@ export interface CombatSpellOption {
   parameter: "strength" | "magic";
 }
 
+export type StrangerWishChoice = "coins" | "xp" | "stat" | "teleport";
+
+export interface PlaceResultState {
+  resultType: string;
+  params: Record<string, unknown>;
+}
+
+export interface PlaceMarketItem {
+  tradableId: string;
+  name: string;
+  price: number;
+  stockLeft: number;
+  stockKey: string;
+}
+
+export interface PlaceMarketState {
+  items: PlaceMarketItem[];
+  playerMoney: number;
+  cell: { x: number; y: number };
+}
+
 export interface StrangerOfferState {
   dialogType: import("@models/catalog/ExplorationCardCatalog").StrangerDialogType;
   params: Record<string, unknown>;
   playerMoney: number;
   playerHp: number;
   playerMaxHp: number;
+  playerAlignment?: string;
+  exploredCells?: { x: number; y: number; cellId: string }[];
 }
 
 export interface CombatHydrationContext {
@@ -74,14 +105,20 @@ export class ExplorationEventService {
   public readonly explorationFlowActive = signal(false);
   public readonly pendingExplorationSession = signal<ExplorationPhaseSession | null>(null);
   public readonly pendingStrangerOffer = signal<StrangerOfferState | null>(null);
+  public readonly pendingPlaceResult = signal<PlaceResultState | null>(null);
+  public readonly pendingMarketState = signal<PlaceMarketState | null>(null);
 
-  private combatActionResolver: ((action: "fight" | "flee") => void) | null = null;
+  private combatActionResolver: ((action: "fight" | "flee" | "exorcise-spirit") => void) | null = null;
   private combatResultDismissResolver: (() => void) | null = null;
   private equipmentSelectionResolver: ((bonus: number) => void) | null = null;
   private currentSpellBonus = 0;
   private cardActionResolver: (() => void) | null = null;
   private explorationSessionCloseResolver: (() => void) | null = null;
   private strangerOfferResolver: ((accepted: boolean) => void) | null = null;
+  private strangerWishChoiceResolver: ((choice: StrangerWishChoice) => void) | null = null;
+  private strangerSpellTeacherResolver: ((accepted: boolean) => void) | null = null;
+  private placeResultResolver: (() => void) | null = null;
+  private marketCloseResolver: (() => void) | null = null;
   private currentSessionInput: HandleCellArrivalInput | null = null;
 
   public get sessionGameId(): string | null { return this.currentSessionInput?.gameId ?? null; }
@@ -92,7 +129,12 @@ export class ExplorationEventService {
     private playerStatsModifierService: PlayerStatsModifierService,
     private worldZonesService: WorldZonesService,
     private itemCatalogService: ItemCatalogService,
+    private itemEffectCatalogService: ItemEffectCatalogService,
     private explorationCatalogService: ExplorationCatalogService,
+    private actionExecutorService: ActionExecutorService,
+    private cellSelectionService: MapCellSelectionService,
+    private firebaseService: FirebaseService,
+    private merchantStockConfigService: MerchantStockConfigService,
   ) {}
 
   /**
@@ -123,7 +165,7 @@ export class ExplorationEventService {
   }
 
   /** Called by the combat dialog when the player chooses an action. */
-  public submitCombatAction(action: "fight" | "flee"): void {
+  public submitCombatAction(action: "fight" | "flee" | "exorcise-spirit"): void {
     this.combatActionResolver?.(action);
     this.combatActionResolver = null;
   }
@@ -149,6 +191,59 @@ export class ExplorationEventService {
   public submitCardAction(): void {
     this.cardActionResolver?.();
     this.cardActionResolver = null;
+  }
+
+  public submitStrangerWishChoice(choice: StrangerWishChoice): void {
+    this.strangerWishChoiceResolver?.(choice);
+    this.strangerWishChoiceResolver = null;
+    this.pendingStrangerOffer.set(null);
+  }
+
+  public submitStrangerSpellTeacher(accepted: boolean): void {
+    this.strangerSpellTeacherResolver?.(accepted);
+    this.strangerSpellTeacherResolver = null;
+    this.pendingStrangerOffer.set(null);
+  }
+
+  public submitPlaceResult(): void {
+    this.placeResultResolver?.();
+    this.placeResultResolver = null;
+    this.pendingPlaceResult.set(null);
+  }
+
+  public async placeMarketBuy(tradableId: string): Promise<void> {
+    const input = this.currentSessionInput;
+    const market = this.pendingMarketState();
+    if (!input || !market) return;
+
+    const item = market.items.find((i) => i.tradableId === tradableId);
+    if (!item || item.stockLeft <= 0 || market.playerMoney < item.price) return;
+
+    await this.actionExecutorService.placeMarketBuy(
+      input.gameId,
+      input.player,
+      market.cell,
+      tradableId,
+      item.price,
+      item.stockKey,
+    );
+
+    this.pendingMarketState.update((s) => s ? {
+      ...s,
+      playerMoney: s.playerMoney - item.price,
+      items: s.items.map((i) => i.tradableId === tradableId ? { ...i, stockLeft: i.stockLeft - 1 } : i),
+    } : null);
+  }
+
+  public submitMarketClose(): void {
+    this.marketCloseResolver?.();
+    this.marketCloseResolver = null;
+    this.pendingMarketState.set(null);
+  }
+
+  public notifyMercenaryHired(): void {
+    const current = this.pendingCombat();
+    if (current) this.pendingCombat.set({ ...current, mercenaryHired: true });
   }
 
   /** Called by the exploration phase overlay when the player closes the session. */
@@ -259,6 +354,7 @@ export class ExplorationEventService {
             playerForEquipment,
             activeCombat.enemy.combatStat,
             activeCombat.timeOfDay ?? "day",
+            activeCombat.enemy,
           );
           if (eligible.weapons.length > 0 || eligible.armors.length > 0) {
             this.pendingEquipmentOptions.set(eligible);
@@ -280,9 +376,32 @@ export class ExplorationEventService {
         this.currentSpellBonus = 0;
 
         const action = await this.waitForCombatAction();
-        const totalBonusH = equipmentBonus + this.currentSpellBonus;
+        const mercenaryBonus = (this.pendingCombat()?.mercenaryHired && activeCombat.enemy.combatStat === "strength") ? 2 : 0;
+        const totalBonusH = equipmentBonus + this.currentSpellBonus + mercenaryBonus;
         this.currentSpellBonus = 0;
         this.pendingSpellOptions.set(null);
+
+        // Holy Symbol (B-IT-009): exorcise spirit enemy — skip combat, gain exp
+        if (action === "exorcise-spirit") {
+          const exorcisePlayer = context.getPlayer();
+          const exorciseCell = context.getCell(activeCombat.cellId);
+          const exorciseWorldState = context.getWorldState();
+          if (exorcisePlayer && exorciseCell && exorciseWorldState) {
+            const region = this.worldZonesService.getRegionLabelByColumn(exorciseCell.x, context.mapSize);
+            const xpGained = this.xpByRegion(region);
+            await this.explorationActionService.exorciseSpiritEnemy({
+              gameId,
+              player: exorcisePlayer,
+              cell: exorciseCell,
+              enemy: activeCombat.enemy,
+              worldState: exorciseWorldState,
+              xpGained,
+            });
+          }
+          await this.explorationActionService.closeCombat(gameId);
+          this.pendingCombat.set(null);
+          return;
+        }
 
         const snapshot = activeCombat.playerSnapshot!;
         let result: CombatResult;
@@ -296,6 +415,7 @@ export class ExplorationEventService {
             enemy: activeCombat.enemy,
             timeOfDay: activeCombat.timeOfDay ?? "day",
             playerEquipmentBonus: totalBonusH,
+            hasCrestOfCourage: (playerForEquipment?.inventory?.items ?? []).some(e => e.itemId === "B-IT-012"),
           });
 
           if (result.outcome === "player-win") {
@@ -376,11 +496,13 @@ export class ExplorationEventService {
         await this.resolveEventCard(input, event);
         this.markCardResolved(event.instanceId);
       } else if (event.type === "place") {
-        // Place stays on the cell — nothing to commit, card is persistent
+        const continueSession = await this.resolvePlaceCard(input, event);
         this.markCardResolved(event.instanceId);
+        if (!continueSession) return;
       } else if (event.type === "stranger") {
-        await this.resolveStrangerCard(input, event);
+        const continueSession = await this.resolveStrangerCard(input, event);
         this.markCardResolved(event.instanceId);
+        if (!continueSession) return;
       }
     }
 
@@ -477,7 +599,7 @@ export class ExplorationEventService {
       ? stats.effective.strength
       : stats.effective.magic;
 
-    const eligible = this.computeEligibleEquipment(player, enemy.combatStat, timeOfDay);
+    const eligible = this.computeEligibleEquipment(player, enemy.combatStat, timeOfDay, enemy);
     const hasEquipment = eligible.weapons.length > 0 || eligible.armors.length > 0;
     if (hasEquipment) {
       this.pendingEquipmentOptions.set(eligible);
@@ -524,9 +646,12 @@ export class ExplorationEventService {
     }
 
     const action = await this.waitForCombatAction();
-    const totalBonus = equipmentBonus + this.currentSpellBonus;
+    const mercenaryBonus = (this.pendingCombat()?.mercenaryHired && enemy.combatStat === "strength") ? 2 : 0;
+    const totalBonus = equipmentBonus + this.currentSpellBonus + mercenaryBonus;
     this.currentSpellBonus = 0;
     this.pendingSpellOptions.set(null);
+
+    const hasCrestOfCourage = (player.inventory?.items ?? []).some(e => e.itemId === "B-IT-012");
 
     let result;
     if (action === "fight") {
@@ -538,7 +663,16 @@ export class ExplorationEventService {
         enemy,
         timeOfDay,
         playerEquipmentBonus: totalBonus,
+        hasCrestOfCourage,
       });
+
+      // Armor: fortune checks reduce damage on strength-combat loss
+      if (result.outcome === "player-loss" && result.damage > 0) {
+        const armorReduction = this.computeArmorDamageReduction(player, enemy.combatStat);
+        if (armorReduction > 0) {
+          result = { ...result, damage: Math.max(0, result.damage - armorReduction) };
+        }
+      }
     } else {
       result = this.combatResolverService.resolveFlee({
         playerLuck: stats.effective.luck,
@@ -580,67 +714,191 @@ export class ExplorationEventService {
     return !playerDefeated && !playerFled;
   }
 
+  /** Returns false if the exploration session should end immediately (e.g. teleport wish). */
   private async resolveStrangerCard(
     input: HandleCellArrivalInput,
     event: PlacedExplorationCard & { type: "stranger" },
-  ): Promise<void> {
+  ): Promise<boolean> {
     const strangerDef = this.explorationCatalogService.getStrangerDef(event.cardId);
+    const { gameId, player, cell, worldState } = input;
+    const actor = { id: player.id, name: player.name };
 
+    // ── Legacy healer (kept for B-ST-001 compatibility) ──────────────────────
     if (strangerDef?.dialogType === "healer") {
       const healAmount = Math.max(0, Math.floor(Number(strangerDef.dialogParams?.["healAmount"] ?? 0)));
       const cost = Math.max(0, Math.floor(Number(strangerDef.dialogParams?.["cost"] ?? 0)));
-      const p = input.player;
       this.pendingStrangerOffer.set({
         dialogType: "healer",
         params: strangerDef.dialogParams ?? {},
-        playerMoney: Math.floor(Number(p.inventory?.money ?? 0)),
-        playerHp: Math.floor(Number(p.parameters?.hp?.current ?? 0)),
-        playerMaxHp: Math.floor(Number(p.parameters?.hp?.max ?? p.parameters?.hp?.base ?? 1)),
+        playerMoney: Math.floor(Number(player.inventory?.money ?? 0)),
+        playerHp: Math.floor(Number(player.parameters?.hp?.current ?? 0)),
+        playerMaxHp: Math.floor(Number(player.parameters?.hp?.max ?? player.parameters?.hp?.base ?? 1)),
+      });
+      const accepted = await this.waitForStrangerOffer();
+      this.pendingStrangerOffer.set(null);
+      if (accepted) {
+        try {
+          await this.explorationActionService.applyHealerOffer({ gameId, player, cell, worldState, instanceId: event.instanceId, cardId: event.cardId, expansion: event.expansion, healAmount, cost });
+        } catch (e) { console.error("applyHealerOffer failed", e); }
+      } else if (!event.persistent) {
+        try { await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion); } catch (e) { console.error("removeStrangerCard failed", e); }
+      }
+      return true;
+    }
+
+    // ── Guaritrice: auto-heal 5% HP ──────────────────────────────────────────
+    if (strangerDef?.dialogType === "healer-percent") {
+      const healPercent = Math.max(1, Math.floor(Number(strangerDef.dialogParams?.["healPercent"] ?? 5)));
+      try {
+        await this.actionExecutorService.strangerHealPercent(gameId, actor, healPercent);
+      } catch (e) { console.error("strangerHealPercent failed", e); }
+      return true;
+    }
+
+    // ── Strega: free enchantress ──────────────────────────────────────────────
+    if (strangerDef?.dialogType === "enchantress") {
+      this.pendingStrangerOffer.set({
+        dialogType: "enchantress",
+        params: {},
+        playerMoney: Math.floor(Number(player.inventory?.money ?? 0)),
+        playerHp: Math.floor(Number(player.parameters?.hp?.current ?? 0)),
+        playerMaxHp: Math.floor(Number(player.parameters?.hp?.max ?? player.parameters?.hp?.base ?? 1)),
+      });
+      const accepted = await this.waitForStrangerOffer();
+      this.pendingStrangerOffer.set(null);
+      if (accepted) {
+        try {
+          await this.actionExecutorService.strangerEnchantress(gameId, actor);
+          await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion);
+        } catch (e) { console.error("strangerEnchantress failed", e); }
+      }
+      return true;
+    }
+
+    // ── Wish strangers (Fantasma/Incantatore/Fata) ────────────────────────────
+    if (strangerDef?.dialogType === "wish") {
+      const requiredAlignment = strangerDef.dialogParams?.["alignment"] as string | undefined;
+      const playerAlignment = player.alignment ?? "neutral";
+      if (requiredAlignment && playerAlignment !== requiredAlignment) {
+        return true; // wrong alignment — card stays, session continues
+      }
+
+      this.pendingStrangerOffer.set({
+        dialogType: "wish",
+        params: strangerDef.dialogParams ?? {},
+        playerMoney: Math.floor(Number(player.inventory?.money ?? 0)),
+        playerHp: Math.floor(Number(player.parameters?.hp?.current ?? 0)),
+        playerMaxHp: Math.floor(Number(player.parameters?.hp?.max ?? player.parameters?.hp?.base ?? 1)),
+        playerAlignment,
       });
 
-      const accepted = await this.waitForStrangerOffer();
+      const choice = await this.waitForWishChoice();
+      this.pendingStrangerOffer.set(null);
+
+      const amount = Math.max(1, Math.floor(Number(strangerDef.dialogParams?.["amount"] ?? 3)));
+      const stat = (strangerDef.dialogParams?.["wishStat"] as "strength" | "magic" | "mp") ?? "strength";
+
+      try {
+        if (choice === "coins") {
+          await this.actionExecutorService.strangerWishCoins(gameId, actor, amount);
+          await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion);
+        } else if (choice === "xp") {
+          await this.actionExecutorService.strangerWishXp(gameId, actor, amount);
+          await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion);
+        } else if (choice === "stat") {
+          await this.actionExecutorService.strangerWishStatPermanent(gameId, actor, stat);
+          await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion);
+        } else if (choice === "teleport") {
+          // Close overlay so the map is visible for cell selection
+          this.pendingExplorationSession.set(null);
+
+          const explored = await this.loadExploredCellIds(gameId);
+          const selected = await this.cellSelectionService.openCellSelection(
+            explored,
+            "Scegli una cella già esplorata per teletrasportarti",
+            false,
+          );
+          if (selected) {
+            await this.actionExecutorService.strangerWishTeleport(gameId, actor, selected.x, selected.y);
+            await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion);
+          }
+          return false; // end exploration session (remaining cards ignored)
+        }
+      } catch (e) { console.error("strangerWish failed", e); }
+      return true;
+    }
+
+    // ── Eremita ───────────────────────────────────────────────────────────────
+    if (strangerDef?.dialogType === "hermit") {
+      try {
+        if (event.hermitMoved) {
+          await this.explorationActionService.strangerHermitGiveItem(gameId, player, cell, event.instanceId, event.cardId, event.expansion);
+        } else {
+          await this.explorationActionService.strangerHermitMove(gameId, player, cell, event.instanceId, input.mapSize);
+        }
+      } catch (e) { console.error("hermit action failed", e); }
+      return true;
+    }
+
+    // ── Illusionista / Stregone ───────────────────────────────────────────────
+    if (strangerDef?.dialogType === "spell-teacher") {
+      const requiredAlignment = strangerDef.dialogParams?.["alignment"] as string | undefined;
+      const playerAlignment = player.alignment ?? "neutral";
+      if (requiredAlignment && playerAlignment !== requiredAlignment) {
+        return true; // wrong alignment — card stays
+      }
+
+      const cost = Math.max(0, Math.floor(Number(strangerDef.dialogParams?.["cost"] ?? 0)));
+      const playerMoney = Math.floor(Number(player.inventory?.money ?? 0));
+
+      this.pendingStrangerOffer.set({
+        dialogType: "spell-teacher",
+        params: { cost, sourceName: strangerDef.name ?? event.cardId },
+        playerMoney,
+        playerHp: Math.floor(Number(player.parameters?.hp?.current ?? 0)),
+        playerMaxHp: Math.floor(Number(player.parameters?.hp?.max ?? player.parameters?.hp?.base ?? 1)),
+      });
+
+      const accepted = await this.waitForSpellTeacherOffer();
       this.pendingStrangerOffer.set(null);
 
       if (accepted) {
         try {
-          await this.explorationActionService.applyHealerOffer({
-            gameId: input.gameId,
-            player: input.player,
-            cell: input.cell,
-            worldState: input.worldState,
-            instanceId: event.instanceId,
-            cardId: event.cardId,
-            expansion: event.expansion,
-            healAmount,
-            cost,
-          });
-        } catch (e) {
-          console.error("applyHealerOffer failed, continuing session", e);
-        }
-      } else if (!event.persistent) {
-        try {
-          await this.explorationActionService.removeStrangerCard(
-            input.gameId, input.player, input.cell, event.instanceId,
-            input.worldState, event.cardId, event.expansion,
-          );
-        } catch (e) {
-          console.error("removeStrangerCard (healer decline) failed, continuing session", e);
-        }
+          await this.actionExecutorService.strangerSpellTeacher(gameId, actor, cost, strangerDef.name ?? event.cardId);
+        } catch (e) { console.error("strangerSpellTeacher failed", e); }
       }
-      return;
+      return true;
     }
 
-    // Generic stranger — no interactive dialog, just remove
+    // ── Generic / unknown — just remove if not persistent ────────────────────
     if (!event.persistent) {
       try {
-        await this.explorationActionService.removeStrangerCard(
-          input.gameId, input.player, input.cell, event.instanceId,
-          input.worldState, event.cardId, event.expansion,
-        );
-      } catch (e) {
-        console.error("removeStrangerCard failed, continuing session", e);
-      }
+        await this.explorationActionService.removeStrangerCard(gameId, player, cell, event.instanceId, worldState, event.cardId, event.expansion);
+      } catch (e) { console.error("removeStrangerCard failed", e); }
     }
+    return true;
+  }
+
+  private waitForWishChoice(): Promise<StrangerWishChoice> {
+    return new Promise((resolve) => {
+      this.strangerWishChoiceResolver = resolve;
+    });
+  }
+
+  private waitForSpellTeacherOffer(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.strangerSpellTeacherResolver = resolve;
+    });
+  }
+
+  private async loadExploredCellIds(gameId: string): Promise<Set<string>> {
+    const snap = await getDocs(collection(this.firebaseService.database, "games", gameId, "mapCells"));
+    const ids = new Set<string>();
+    snap.docs.forEach((d) => {
+      const c = d.data() as MapCell;
+      if (c.biome && typeof c.revealedAtTurn === "number") ids.add(`${c.x}_${c.y}`);
+    });
+    return ids;
   }
 
   private waitForStrangerOffer(): Promise<boolean> {
@@ -649,7 +907,7 @@ export class ExplorationEventService {
     });
   }
 
-  private waitForCombatAction(): Promise<"fight" | "flee"> {
+  private waitForCombatAction(): Promise<"fight" | "flee" | "exorcise-spirit"> {
     return new Promise((resolve) => {
       this.combatActionResolver = resolve;
     });
@@ -671,6 +929,7 @@ export class ExplorationEventService {
     player: Player,
     combatStat: "strength" | "magic",
     timeOfDay: TimeOfDay,
+    enemy?: PlacedEnemyCard,
   ): PendingCombatEquipment {
     const fightScope = combatStat === "strength" ? "fight-only" : "magic-fight-only";
     const weapons: CombatEquipmentOption[] = [];
@@ -691,7 +950,21 @@ export class ExplorationEventService {
 
       if (matchingModifiers.length === 0) continue;
 
-      const bonus = matchingModifiers.reduce((sum, mod) => sum + mod.amount, 0);
+      let bonus = matchingModifiers.reduce((sum, mod) => sum + mod.amount, 0);
+
+      // Category-based bonus (e.g. Holy Lance +3 vs Dragon)
+      if (enemy) {
+        for (const effectId of item.effects ?? []) {
+          const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+          if (effect?.type !== "combat-stat-bonus-vs-enemy-category") continue;
+          const typed = effect as CombatStatBonusVsEnemyCategoryEffectDefinition;
+          if (typed.combatStat !== combatStat) continue;
+          if ((enemy.categories ?? []).includes(typed.categoryFilter)) {
+            bonus += typed.bonus;
+          }
+        }
+      }
+
       const option: CombatEquipmentOption = {
         itemId: item.id,
         name: item.name,
@@ -743,6 +1016,23 @@ export class ExplorationEventService {
     return spells;
   }
 
+  private computeArmorDamageReduction(player: Player, combatStat: "strength" | "magic"): number {
+    if (combatStat !== "strength") return 0;
+    let reduction = 0;
+    for (const entry of player.inventory?.items ?? []) {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      for (const effectId of item?.effects ?? []) {
+        const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+        if (effect?.type !== "reduce-combat-damage-on-fortune-check") continue;
+        const typed = effect as ReduceCombatDamageOnFortuneCheckEffectDefinition;
+        if (typed.combatStatFilter && typed.combatStatFilter !== combatStat) continue;
+        const roll = Math.floor(Math.random() * 100) + 1;
+        if (roll >= typed.luckThreshold) reduction += typed.reduction;
+      }
+    }
+    return reduction;
+  }
+
   private getSortedEvents(cell: MapCell): PlacedExplorationCard[] {
     return [...(cell.explorationEvents ?? [])].sort((a, b) => a.order - b.order);
   }
@@ -772,5 +1062,121 @@ export class ExplorationEventService {
     if (region === "II") return 2;
     if (region === "III") return 3;
     return 1;
+  }
+
+  private async resolvePlaceCard(
+    input: HandleCellArrivalInput,
+    event: PlacedExplorationCard & { type: "place" },
+  ): Promise<boolean> {
+    const def = this.explorationCatalogService.getCardDef(event.cardId) as PlaceCardDef | null;
+    const dialogType = def?.dialogType ?? "swamp";
+
+    if (dialogType === "swamp") {
+      // Passive — no interaction. Turn service handles poison.
+      return true;
+    }
+
+    if (dialogType === "fountain") {
+      const params = def?.dialogParams ?? {};
+      const stat = String(params["stat"] ?? "magic") as "magic" | "strength" | "hp";
+      const statAmount = Number(params["statAmount"] ?? 1);
+      const initialUses = Number(params["initialUses"] ?? 3);
+      const luckThreshold = Number(params["luckThreshold"] ?? 70);
+      const placeName = def?.name ?? "Fonte";
+
+      const outcome = await this.actionExecutorService.placeFountainDrink(
+        input.gameId, input.player,
+        { x: input.cell.x, y: input.cell.y },
+        event.instanceId,
+        { stat, statAmount, initialUses, luckThreshold },
+        placeName,
+      );
+
+      const resultType = outcome.result === "damage" ? "fountain-damage" : stat === "hp" ? "fountain-hp-boost" : "fountain-stat-boost";
+      this.pendingPlaceResult.set({ resultType, params: { ...outcome, stat, placeName } });
+      await this.waitForPlaceResult();
+      return true;
+    }
+
+    if (dialogType === "market") {
+      const stockConfigUrl = String(def?.dialogParams?.["stockConfigUrl"] ?? "");
+      if (!stockConfigUrl) return true;
+
+      const stockConfig = await this.merchantStockConfigService.loadConfig(stockConfigUrl);
+      const cellStock = (input.cell as unknown as Record<string, unknown>)["merchantStockByItemId"] as Record<string, number> | undefined ?? {};
+
+      const items: PlaceMarketItem[] = stockConfig.stock
+        .filter((e) => e.kind === "item")
+        .map((e) => {
+          const stockKey = `item:${e.tradableId}`;
+          const stockLeft = typeof cellStock[stockKey] === "number"
+            ? cellStock[stockKey]
+            : e.stock;
+          const itemDef = this.itemCatalogService.getCachedItemById(e.tradableId);
+          return {
+            tradableId: e.tradableId,
+            name: itemDef ? this.itemCatalogService.getLocalizedName(itemDef) : e.tradableId,
+            price: e.purchaseValue ?? 0,
+            stockLeft,
+            stockKey,
+          };
+        });
+
+      this.pendingMarketState.set({
+        items,
+        playerMoney: Math.max(0, Math.floor(Number(input.player.inventory?.money ?? 0))),
+        cell: { x: input.cell.x, y: input.cell.y },
+      });
+      await this.waitForMarketClose();
+      return true;
+    }
+
+    if (dialogType === "portal") {
+      const result = await this.actionExecutorService.placePortalTeleport(input.gameId, input.player);
+      if (result) {
+        this.pendingPlaceResult.set({ resultType: "portal-teleport", params: { destination: result.destinationName } });
+        await this.waitForPlaceResult();
+        this.pendingExplorationSession.set(null);
+        return false;
+      }
+      this.pendingPlaceResult.set({ resultType: "portal-no-destination", params: {} });
+      await this.waitForPlaceResult();
+      return true;
+    }
+
+    if (dialogType === "maze") {
+      const mazeResult = await this.actionExecutorService.placeMazeLuck(input.gameId, input.player);
+      this.pendingPlaceResult.set({ resultType: `maze-${mazeResult}`, params: {} });
+      await this.waitForPlaceResult();
+      return true;
+    }
+
+    if (dialogType === "cave") {
+      const caveResult = await this.actionExecutorService.placeCaveLuck(input.gameId, input.player);
+      this.pendingPlaceResult.set({ resultType: `cave-${caveResult}`, params: {} });
+      await this.waitForPlaceResult();
+      return true;
+    }
+
+    if (dialogType === "chapel") {
+      const chapelResult = await this.actionExecutorService.placeChapelLuck(input.gameId, input.player);
+      this.pendingPlaceResult.set({ resultType: `chapel-${chapelResult}`, params: {} });
+      await this.waitForPlaceResult();
+      return true;
+    }
+
+    return true;
+  }
+
+  private waitForPlaceResult(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      this.placeResultResolver = resolve;
+    });
+  }
+
+  private waitForMarketClose(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      this.marketCloseResolver = resolve;
+    });
   }
 }

@@ -14,7 +14,10 @@ import { ExplorationCatalogService } from "@services/catalog/exploration-catalog
 import { EnemyCatalogService } from "@services/catalog/enemy-catalog-service";
 import { EnemyCatalogEntry } from "@models/catalog/EnemyCatalog";
 import { StatusCatalogService } from "@services/catalog/status-catalog-service";
+import { ItemEffectCatalogService } from "@services/catalog/item-effect-catalog-service";
+import { GainCoinsRangeOnPickupEffectDefinition, ApplyStatusOnPickupEffectDefinition } from "@models/catalog/ItemEffectCatalog";
 import { WorldZonesService } from "@services/map/world-zones-service";
+import { ExplorationDeckService } from "@services/exploration/exploration-deck-service";
 import { ExplorationEventEffect, ExplorationDeckSlot } from "@models/catalog/ExplorationCardCatalog";
 import { PlayerFollowerEntry } from "@models/player/Follower";
 import { InventoryItemEntry } from "@models/player/Inventory";
@@ -57,6 +60,32 @@ export interface CommitCombatResultInput {
   mapSize: number;
 }
 
+export interface ExorciseSpiritInput {
+  gameId: string;
+  player: Player;
+  cell: MapCell;
+  enemy: PlacedEnemyCard;
+  worldState: WorldState;
+  xpGained: number;
+}
+
+export interface CrystalBallSkipInput {
+  gameId: string;
+  player: Player;
+  cell: MapCell;
+  cardInstanceId: string;
+  worldState: WorldState;
+}
+
+export interface FollowerCombatSkipInput {
+  gameId: string;
+  player: Player;
+  cell: MapCell;
+  cardInstanceId: string;
+  followerId: string;
+  worldState: WorldState;
+}
+
 @Injectable({
   providedIn: "root",
 })
@@ -70,7 +99,9 @@ export class ExplorationActionService {
     private explorationCatalogService: ExplorationCatalogService,
     private enemyCatalogService: EnemyCatalogService,
     private statusCatalogService: StatusCatalogService,
+    private itemEffectCatalogService: ItemEffectCatalogService,
     private worldZonesService: WorldZonesService,
+    private explorationDeckService: ExplorationDeckService,
   ) {}
 
   public async clearDiscardPile(gameId: string): Promise<void> {
@@ -135,7 +166,49 @@ export class ExplorationActionService {
       const damage = Math.max(0, Math.floor(Number(result.damage)));
       const newHp = isTie ? hpCurrent : Math.max(0, hpCurrent - (isVictory ? 0 : damage));
 
-      transaction.update(playerRef, { "parameters.hp.current": Math.min(newHp, hpMax) });
+      const playerItems = Array.isArray(currentPlayer.inventory?.items)
+        ? (currentPlayer.inventory.items as InventoryItemEntry[])
+        : [];
+
+      // Rune Sword (B-IT-005): recover 3% HP on victory (evil/neutral only — enforced by item availability)
+      let finalHp = newHp;
+      if (isVictory) {
+        const hasRuneSword = playerItems.some(e => e.itemId === "B-IT-005");
+        if (hasRuneSword) {
+          const heal = Math.max(1, Math.floor(hpMax * 0.03));
+          finalHp = Math.min(hpMax, finalHp + heal);
+        }
+      }
+
+      // Golden Sword (B-IT-004): breaks (removed from inventory) on player defeat
+      let updatedItems = playerItems;
+      if (!isVictory && !isFlee && result.damage > 0) {
+        const goldenSwordIndex = playerItems.findIndex(e => e.itemId === "B-IT-004");
+        if (goldenSwordIndex !== -1) {
+          updatedItems = playerItems.filter((_, i) => i !== goldenSwordIndex);
+        }
+      }
+
+      // Followers with leavesOnCombatLoss: discard on player defeat
+      const currentFollowers = Array.isArray(currentPlayer.followers) ? currentPlayer.followers : [];
+      let updatedFollowers = currentFollowers;
+      if (!isVictory && !isFlee && result.damage > 0) {
+        updatedFollowers = currentFollowers.map((entry) => {
+          if (!entry || entry.state === "discarded") return entry;
+          const def = this.followerCatalogService.getCachedFollowerById(entry.followerId);
+          if (!def?.leavesOnCombatLoss) return entry;
+          return { ...entry, state: "discarded" as const, discardedAtTurn: currentWorldState.currentTurn ?? 0 };
+        });
+      }
+
+      const combatPatch: Record<string, unknown> = { "parameters.hp.current": Math.min(finalHp, hpMax) };
+      if (updatedItems !== playerItems) {
+        combatPatch["inventory.items"] = updatedItems;
+      }
+      if (updatedFollowers !== currentFollowers) {
+        combatPatch["followers"] = updatedFollowers;
+      }
+      transaction.update(playerRef, combatPatch);
 
       if (isVictory) {
         const updatedEvents = this.removeEnemyFromCell(currentCell.explorationEvents ?? [], enemy.instanceId);
@@ -192,6 +265,143 @@ export class ExplorationActionService {
     }
   }
 
+  public async exorciseSpiritEnemy(input: ExorciseSpiritInput): Promise<void> {
+    const { gameId, player, cell, enemy, worldState, xpGained } = input;
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [cellSnap, worldSnap] = await Promise.all([
+        transaction.get(cellRef),
+        transaction.get(worldStateRef),
+      ]);
+      const currentCell = cellSnap.exists() ? (cellSnap.data() as MapCell) : cell;
+      const currentWorldState = worldSnap.exists() ? (worldSnap.data() as WorldState) : worldState;
+
+      const updatedEvents = this.removeEnemyFromCell(currentCell.explorationEvents ?? [], enemy.instanceId);
+      transaction.set(cellRef, { explorationEvents: updatedEvents }, { merge: true });
+
+      const { seq, discardRef } = this.prepareDiscardEntry(worldStateRef, currentWorldState);
+      transaction.set(discardRef, {
+        id: discardRef.id,
+        card: { kind: "exploration", cardId: enemy.cardId, name: enemy.name },
+        source: "map",
+        ownerPlayerId: player.id,
+        turn: currentWorldState.currentTurn ?? 0,
+        discardedAt: Timestamp.now(),
+        discardSeq: seq,
+      } as DiscardPileEntry);
+
+      const enemySlot: ExplorationDeckSlot = { type: 'enemy', cardId: enemy.cardId, expansion: enemy.expansion };
+      transaction.set(worldStateRef, {
+        explorationDiscardedDeck: [...(currentWorldState.explorationDiscardedDeck ?? []), enemySlot],
+        nextDiscardSeq: seq,
+      }, { merge: true });
+    });
+
+    await this.eventLogService.newLog(gameId, player, "player.exorcisedSpirit", { enemy: enemy.name, xpGained });
+
+    if (xpGained > 0) {
+      await this.playerProgressionService.assignExperienceAndCheckLevelUp(gameId, player.id, xpGained);
+    }
+  }
+
+  public async followerCombatSkip(input: FollowerCombatSkipInput): Promise<void> {
+    const { gameId, player, cell, cardInstanceId, followerId, worldState } = input;
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", player.id);
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+    const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, cellSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(cellRef),
+      ]);
+      if (!playerSnap.exists()) throw new Error("Player not found in followerCombatSkip");
+
+      const currentCell = cellSnap.exists() ? (cellSnap.data() as MapCell) : cell;
+
+      const updatedCards = (currentCell.explorationEvents ?? []).map((ev) => {
+        if (ev.instanceId !== cardInstanceId) return ev;
+        return { ...ev, resolved: true };
+      });
+      transaction.set(cellRef, { explorationEvents: updatedCards }, { merge: true });
+
+      const actionKey = `follower-combat-skip-${followerId}`;
+      transaction.update(playerRef, {
+        actionsUsedThisTurn: { ...(playerSnap.data() as Player).actionsUsedThisTurn, [actionKey]: worldTurn },
+      });
+    });
+
+    const followerDef = this.followerCatalogService.getCachedFollowerById(followerId);
+    await this.eventLogService.newLog(gameId, player, "player.followerSkippedCombat", {
+      followerName: followerDef?.name ?? followerId,
+    });
+  }
+
+  public async crystalBallSkipCard(input: CrystalBallSkipInput): Promise<void> {
+    const { gameId, player, cell, cardInstanceId, worldState } = input;
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", player.id);
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+    const worldTurn = Math.max(0, Math.floor(Number(worldState.currentTurn ?? 0)));
+
+    let drawnSlot: ExplorationDeckSlot | null = null;
+    let remainingEventsAfterSkip: PlacedExplorationCard[] = [];
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [playerSnap, cellSnap, worldSnap] = await Promise.all([
+        transaction.get(playerRef),
+        transaction.get(cellRef),
+        transaction.get(worldStateRef),
+      ]);
+
+      if (!playerSnap.exists()) throw new Error("Player not found in crystalBallSkipCard");
+      const currentPlayer = playerSnap.data() as Player;
+      const currentCell = cellSnap.exists() ? (cellSnap.data() as MapCell) : cell;
+      const currentWorldState = worldSnap.exists() ? (worldSnap.data() as WorldState) : worldState;
+
+      const actionsUsed = currentPlayer.actionsUsedThisTurn ?? {};
+      if (actionsUsed["crystal-ball-skip"] === worldTurn) {
+        throw new Error("Crystal Ball already used this turn");
+      }
+      if (!(currentCell.explorationEvents ?? []).some(e => e.instanceId === cardInstanceId)) {
+        throw new Error("Card not found on cell");
+      }
+
+      remainingEventsAfterSkip = (currentCell.explorationEvents ?? []).filter(e => e.instanceId !== cardInstanceId);
+
+      const drawResult = this.explorationDeckService.draw(
+        currentWorldState.explorationDeck ?? [],
+        currentWorldState.explorationDiscardedDeck ?? [],
+        1,
+      );
+      drawnSlot = drawResult.drawn[0] ?? null;
+
+      transaction.set(cellRef, { explorationEvents: remainingEventsAfterSkip }, { merge: true });
+      transaction.update(playerRef, {
+        actionsUsedThisTurn: { ...actionsUsed, "crystal-ball-skip": worldTurn },
+      });
+      transaction.set(worldStateRef, {
+        explorationDeck: drawResult.remaining,
+        explorationDiscardedDeck: drawResult.discard,
+      }, { merge: true });
+    });
+
+    // Phase 2: instantiate and add the replacement card (async, outside transaction)
+    if (drawnSlot) {
+      const newCard = await this.explorationCatalogService.instantiatePlacedCard(drawnSlot, cell);
+      if (newCard) {
+        const updatedCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+        await setDoc(updatedCellRef, {
+          explorationEvents: [...remainingEventsAfterSkip, newCard],
+        }, { merge: true });
+      }
+    }
+
+    await this.eventLogService.newLog(gameId, player, "player.crystalBallSkip", {});
+  }
+
   public async pickupItemCard(input: PickupItemInput): Promise<void> {
     const { gameId, player, cell, card } = input;
     const itemId = card.type === "item" ? card.itemId : card.amuletId;
@@ -213,16 +423,52 @@ export class ExplorationActionService {
         ? (currentPlayer.inventory.items as InventoryItemEntry[])
         : [];
       const item = this.itemCatalogService.getCachedItemById(itemId);
-      const newEntry: InventoryItemEntry = item?.maxCharges
-        ? { itemId, currentCharges: item.maxCharges }
-        : { itemId };
 
-      transaction.set(playerRef, {
-        inventory: {
-          ...(currentPlayer.inventory ?? { items: [], resources: [], money: 0 }),
-          items: [...currentItems, newEntry],
-        },
-      }, { merge: true });
+      const playerPatch: Record<string, unknown> = {};
+
+      if (item?.consumable) {
+        for (const effectId of item.effects ?? []) {
+          const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+          if (!effect) continue;
+
+          if (effect.type === "gain-coins-range-on-pickup") {
+            const typed = effect as GainCoinsRangeOnPickupEffectDefinition;
+            const range = typed.maxAmount - typed.minAmount;
+            const coins = typed.minAmount + Math.floor(Math.random() * (range + 1));
+            const currentMoney = Math.max(0, Math.floor(Number(currentPlayer.inventory?.money ?? 0)));
+            playerPatch["inventory.money"] = currentMoney + coins;
+          }
+
+          if (effect.type === "apply-status-on-pickup") {
+            const typed = effect as ApplyStatusOnPickupEffectDefinition;
+            const statusDef = this.statusCatalogService.getCachedStatus(typed.statusKey);
+            if (statusDef) {
+              const existing = (currentPlayer.statuses ?? []).filter(s => s.key !== statusDef.key);
+              const newStatus: PlayerStatus = {
+                key: statusDef.key,
+                label: statusDef.label,
+                description: statusDef.description,
+                durationTurns: Math.max(1, Math.floor(Number(typed.durationTurns ?? statusDef.defaultDurationTurns ?? 1))),
+                ...(statusDef.effectKey ? { effectKey: statusDef.effectKey } : {}),
+              };
+              playerPatch["statuses"] = [...existing, newStatus];
+            }
+          }
+        }
+        if (Object.keys(playerPatch).length > 0) {
+          transaction.update(playerRef, playerPatch);
+        }
+      } else {
+        const newEntry: InventoryItemEntry = item?.maxCharges
+          ? { itemId, currentCharges: item.maxCharges }
+          : { itemId };
+        transaction.set(playerRef, {
+          inventory: {
+            ...(currentPlayer.inventory ?? { items: [], resources: [], money: 0 }),
+            items: [...currentItems, newEntry],
+          },
+        }, { merge: true });
+      }
 
       const updatedEvents = this.removeCardFromCell(currentCell.explorationEvents ?? [], card.instanceId);
       transaction.set(cellRef, { explorationEvents: updatedEvents }, { merge: true });
@@ -249,9 +495,14 @@ export class ExplorationActionService {
 
       const followerDef = this.followerCatalogService.getCachedFollowerById(card.followerId);
       const maxHp = Math.max(1, Math.floor(Number(followerDef?.maxHp ?? 3)));
-      const currentFollowers: PlayerFollowerEntry[] = Array.isArray(currentPlayer.followers)
+      let currentFollowers: PlayerFollowerEntry[] = Array.isArray(currentPlayer.followers)
         ? (currentPlayer.followers as PlayerFollowerEntry[]).filter((f) => typeof (f as { followerId?: unknown }).followerId === "string")
         : [];
+      if (followerDef?.removesOtherFollowersOnPickup) {
+        currentFollowers = currentFollowers.map((f) =>
+          f.state === "discarded" ? f : { ...f, state: "discarded" as const, discardReason: "released" as const },
+        );
+      }
       const newFollower: PlayerFollowerEntry = { followerId: card.followerId, hpCurrent: maxHp, state: "active" };
 
       transaction.set(playerRef, { followers: [...currentFollowers, newFollower] }, { merge: true });
@@ -776,7 +1027,7 @@ export class ExplorationActionService {
   }
 
   private playerHasAmulet(player: Player): boolean {
-    return (player.inventory?.items ?? []).some(i => i.itemId === "talisman");
+    return (player.inventory?.items ?? []).some(i => i.itemId === "B-IT-019");
   }
 
   public async applyHealerOffer(input: {
@@ -895,6 +1146,107 @@ export class ExplorationActionService {
     });
 
     await this.eventLogService.newLog(gameId, player, "player.explorationStranger", { cardId });
+  }
+
+  public async strangerHermitMove(
+    gameId: string,
+    player: Player,
+    cell: MapCell,
+    instanceId: string,
+    mapSize: number,
+  ): Promise<void> {
+    const allCellsSnap = await getDocs(collection(this.firebaseService.database, "games", gameId, "mapCells"));
+    const allCells = allCellsSnap.docs.map((d) => d.data() as MapCell);
+
+    const regionIICols = Math.ceil((mapSize * 2) / 3);
+    const candidates = allCells.filter((c) =>
+      c.biome &&
+      typeof c.revealedAtTurn === "number" &&
+      c.x <= regionIICols &&
+      !(c.x === cell.x && c.y === cell.y),
+    );
+    if (candidates.length === 0) {
+      await this.eventLogService.newLog(gameId, player, "player.strangerHermitMoved", {});
+      return;
+    }
+
+    const target = candidates[Math.floor(Math.random() * candidates.length)];
+    const targetCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${target.x}_${target.y}`);
+    const sourceCellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [sourceSnap, targetSnap] = await Promise.all([
+        transaction.get(sourceCellRef),
+        transaction.get(targetCellRef),
+      ]);
+      const sourceCell = sourceSnap.exists() ? (sourceSnap.data() as MapCell) : cell;
+      const targetCell = targetSnap.exists() ? (targetSnap.data() as MapCell) : target;
+
+      const movedCard = (sourceCell.explorationEvents ?? []).find((e) => e.instanceId === instanceId);
+      if (!movedCard || movedCard.type !== "stranger") return;
+
+      const updatedSource = this.removeCardFromCell(sourceCell.explorationEvents ?? [], instanceId);
+      const movedHermit = { ...movedCard, hermitMoved: true };
+      const updatedTarget = [...(targetCell.explorationEvents ?? []), movedHermit];
+
+      transaction.set(sourceCellRef, { explorationEvents: updatedSource }, { merge: true });
+      transaction.set(targetCellRef, { explorationEvents: updatedTarget }, { merge: true });
+    });
+
+    await this.eventLogService.newLog(gameId, player, "player.strangerHermitMoved", {});
+  }
+
+  public async strangerHermitGiveItem(
+    gameId: string,
+    player: Player,
+    cell: MapCell,
+    instanceId: string,
+    cardId: string,
+    expansion: string,
+  ): Promise<void> {
+    const itemId = "B-IT-019";
+    const cellRef = doc(this.firebaseService.database, "games", gameId, "mapCells", `${cell.x}_${cell.y}`);
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", player.id);
+    const worldStateRef = doc(this.firebaseService.database, "games", gameId, "runtime", "worldState");
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const [cellSnap, playerSnap, worldSnap] = await Promise.all([
+        transaction.get(cellRef),
+        transaction.get(playerRef),
+        transaction.get(worldStateRef),
+      ]);
+      const currentCell = cellSnap.exists() ? (cellSnap.data() as MapCell) : cell;
+      const currentPlayer = playerSnap.exists() ? (playerSnap.data() as Player) : player;
+      const currentWorldState = worldSnap.exists() ? (worldSnap.data() as WorldState) : {} as WorldState;
+
+      const updatedEvents = this.removeCardFromCell(currentCell.explorationEvents ?? [], instanceId);
+      transaction.set(cellRef, { explorationEvents: updatedEvents }, { merge: true });
+
+      const currentItems = currentPlayer.inventory?.items ?? [];
+      transaction.set(playerRef, {
+        inventory: { ...(currentPlayer.inventory ?? { items: [], resources: [], money: 0 }), items: [...currentItems, { itemId }] },
+      }, { merge: true });
+
+      const { seq, discardRef } = this.prepareDiscardEntry(worldStateRef, currentWorldState);
+      const strangerName = this.explorationCatalogService.getStrangerDef(cardId)?.name ?? cardId;
+      transaction.set(discardRef, {
+        id: discardRef.id,
+        card: { kind: "exploration", cardId, name: strangerName },
+        source: "map",
+        ownerPlayerId: player.id,
+        turn: currentWorldState.currentTurn ?? 0,
+        discardedAt: Timestamp.now(),
+        discardSeq: seq,
+      } as DiscardPileEntry);
+
+      const strangerSlot: ExplorationDeckSlot = { type: "stranger", cardId, expansion };
+      transaction.set(worldStateRef, {
+        explorationDiscardedDeck: [...(currentWorldState.explorationDiscardedDeck ?? []), strangerSlot],
+        nextDiscardSeq: seq,
+      }, { merge: true });
+    });
+
+    await this.eventLogService.newLog(gameId, player, "player.strangerHermitAmulet", {});
   }
 
   private prepareDiscardEntry(

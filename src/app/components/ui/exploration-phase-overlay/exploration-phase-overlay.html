@@ -34,7 +34,7 @@
                             </div>
                             <div class="exploration-list-info">
                                 <span class="exploration-list-name">{{ entry.name }}</span>
-                                <span [class]="'exploration-card-type type-' + entry.placed.type">
+                                <span [class]="'exploration-card-type type-' + entry.placed.type + (isHermit(entry.placed) ? ' type-hermit' : '')">
                                     {{ entry.typeLabel }}
                                 </span>
                             </div>
@@ -72,7 +72,38 @@
                             <p class="exploration-detail-desc">{{ entry.description }}</p>
                         }
 
-                        @if (pendingStrangerOffer(); as offer) {
+                        @if (pendingPlaceResult(); as placeResult) {
+                            <div class="place-result-panel">
+                                <p class="place-result-text">{{ resolvePlaceResultText(placeResult) }}</p>
+                                <div class="place-result-actions">
+                                    <text-button text="Continua" (clicked)="onSubmitPlaceResult()"></text-button>
+                                </div>
+                            </div>
+                        } @else if (pendingMarketState(); as market) {
+                            <div class="place-market-panel">
+                                <p class="place-market-coins">Monete: <strong>{{ market.playerMoney }}</strong></p>
+                                @if (market.items.length === 0) {
+                                    <p class="place-market-empty">Il mercato è vuoto.</p>
+                                } @else {
+                                    <div class="place-market-items">
+                                        @for (item of market.items; track item.tradableId) {
+                                            <div class="place-market-item">
+                                                <span class="place-market-item-name">{{ item.name }}</span>
+                                                <span class="place-market-item-stock">x{{ item.stockLeft }}</span>
+                                                <text-button
+                                                    [text]="item.price + ' monete'"
+                                                    [disabled]="market.playerMoney < item.price || item.stockLeft <= 0"
+                                                    (clicked)="onMarketBuy(item)"
+                                                ></text-button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                <div class="place-market-footer">
+                                    <text-button text="Chiudi" (clicked)="onMarketClose()"></text-button>
+                                </div>
+                            </div>
+                        } @else if (pendingStrangerOffer(); as offer) {
                             <div class="stranger-offer-panel">
                                 @if (offer.dialogType === 'healer') {
                                     <p class="stranger-offer-text">
@@ -94,11 +125,55 @@
                                         ></text-button>
                                         <text-button text="Rifiuta" (clicked)="onStrangerOffer(false)"></text-button>
                                     </div>
+                                } @else if (offer.dialogType === 'enchantress') {
+                                    <p class="stranger-offer-text">
+                                        La strega ti propone un rituale gratuito. Lancia i dadi e scopri cosa ti riserva il destino.
+                                    </p>
+                                    <div class="stranger-offer-actions">
+                                        <text-button text="Accetta (gratis)" (clicked)="onStrangerOffer(true)"></text-button>
+                                        <text-button text="Rifiuta" (clicked)="onStrangerOffer(false)"></text-button>
+                                    </div>
+                                } @else if (offer.dialogType === 'wish') {
+                                    <p class="stranger-offer-text">
+                                        Puoi esprimere un desiderio. Scegli il tuo dono:
+                                    </p>
+                                    <div class="stranger-offer-actions stranger-wish-actions">
+                                        <text-button
+                                            text="+{{ offer.params['amount'] }} Monete"
+                                            (clicked)="onStrangerWishChoice('coins')"
+                                        ></text-button>
+                                        <text-button
+                                            text="+{{ offer.params['amount'] }} XP"
+                                            (clicked)="onStrangerWishChoice('xp')"
+                                        ></text-button>
+                                        <text-button
+                                            [text]="'+1 ' + resolveWishStatLabel(offer.params['wishStat'])"
+                                            (clicked)="onStrangerWishChoice('stat')"
+                                        ></text-button>
+                                        <text-button
+                                            text="Teletrasporto"
+                                            (clicked)="onStrangerWishChoice('teleport')"
+                                        ></text-button>
+                                    </div>
+                                } @else if (offer.dialogType === 'spell-teacher') {
+                                    <p class="stranger-offer-text">
+                                        Ti rivela una magia casuale dal mazzo.
+                                    </p>
+                                    <div class="stranger-offer-actions">
+                                        <text-button text="Impara" (clicked)="onStrangerSpellTeacher(true)"></text-button>
+                                        <text-button text="Rifiuta" (clicked)="onStrangerSpellTeacher(false)"></text-button>
+                                    </div>
                                 }
                             </div>
                         } @else {
                             <div class="exploration-detail-actions">
                                 <text-button [text]="entry.cta" (clicked)="onCardAction(entry)"></text-button>
+                                @if (canUseCrystalBall()) {
+                                    <text-button text="Sfera di Cristallo" (clicked)="onCrystalBallSkip(entry)"></text-button>
+                                }
+                                @if (followerCombatSkipEntry(); as skip) {
+                                    <text-button [text]="'Ignora (' + skip.followerName + ')'" (clicked)="onFollowerCombatSkip(entry)"></text-button>
+                                }
                             </div>
                         }
                     } @else {

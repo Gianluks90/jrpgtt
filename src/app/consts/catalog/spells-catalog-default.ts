@@ -6,7 +6,7 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
   },
   spells: [
     {
-      id: "fly",
+      id: "B-SP-001",
       mpCost: 3,
       cooldownTurns: 1,
       occupiesSlot: true,
@@ -15,8 +15,8 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
         name: "Fly",
         descriptionTemplate: "Enable diagonal movement for this turn. Must be cast before moving.",
         i18n: {
-          nameKey: "spells.fly.name",
-          descriptionKey: "spells.fly.description",
+          nameKey: "catalogs.spells.B-SP-001.name",
+          descriptionKey: "catalogs.spells.B-SP-001.description",
         },
       },
       effect: {
@@ -30,7 +30,7 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
       ],
     },
     {
-      id: "healing-waters",
+      id: "B-SP-002",
       mpCost: 3,
       cooldownTurns: 1,
       occupiesSlot: true,
@@ -39,8 +39,8 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
         name: "Healing Waters",
         descriptionTemplate: "Apply Nutrition to yourself for 1 turn.",
         i18n: {
-          nameKey: "spells.healingWaters.name",
-          descriptionKey: "spells.healingWaters.description",
+          nameKey: "catalogs.spells.B-SP-002.name",
+          descriptionKey: "catalogs.spells.B-SP-002.description",
         },
       },
       effect: {
@@ -57,7 +57,7 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
       ],
     },
     {
-      id: "inner-fire",
+      id: "B-SP-003",
       mpCost: 3,
       cooldownTurns: 1,
       occupiesSlot: true,
@@ -66,8 +66,8 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
         name: "Inner Fire",
         descriptionTemplate: "Apply Bravery to yourself for 1 turn. Increases Strength by 1.",
         i18n: {
-          nameKey: "spells.innerFire.name",
-          descriptionKey: "spells.innerFire.description",
+          nameKey: "catalogs.spells.B-SP-003.name",
+          descriptionKey: "catalogs.spells.B-SP-003.description",
         },
       },
       effect: {
@@ -84,7 +84,7 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
       ],
     },
     {
-      id: "reinvigorate",
+      id: "B-SP-004",
       mpCost: 3,
       cooldownTurns: 1,
       occupiesSlot: true,
@@ -93,8 +93,8 @@ export const DEFAULT_SPELLS_CATALOG_CONFIG: SpellsCatalogConfig = {
         name: "Reinvigorate",
         descriptionTemplate: "Restore HP equal to your current Magic value.",
         i18n: {
-          nameKey: "spells.reinvigorate.name",
-          descriptionKey: "spells.reinvigorate.description",
+          nameKey: "catalogs.spells.B-SP-004.name",
+          descriptionKey: "catalogs.spells.B-SP-004.description",
         },
       },
       effect: {

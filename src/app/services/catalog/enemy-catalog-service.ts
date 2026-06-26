@@ -95,6 +95,7 @@ export class EnemyCatalogService {
       ...(entry.element ? { element: entry.element } : {}),
       ...(entry.loot ? { loot: entry.loot } : {}),
       ...(entry.effect ? { effect: entry.effect } : {}),
+      ...(entry.categories ? { categories: entry.categories } : {}),
     };
   }
 

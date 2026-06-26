@@ -42,6 +42,7 @@ export interface PlacedEnemyCard {
     luck: number;
     loot?: EnemyLoot;
     effect?: string;
+    categories?: string[];
 }
 
 export interface PlacedEventCard {
@@ -58,6 +59,7 @@ export interface PlacedPlaceCard {
     instanceId: string;
     expansion: string;
     order: 3;
+    usesLeft?: number;
 }
 
 export interface PlacedStrangerCard {
@@ -67,6 +69,7 @@ export interface PlacedStrangerCard {
     expansion: string;
     order: 4;
     persistent: boolean;
+    hermitMoved?: boolean;
 }
 
 export interface PlacedFollowerCard {

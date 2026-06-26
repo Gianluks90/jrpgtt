@@ -1,14 +1,107 @@
 [
   {
     "type": "stranger",
-    "id": "stranger-wandering-healer",
-    "name": "Wandering Healer",
-    "description": "A robed figure offers to mend your wounds for a modest fee.",
+    "id": "B-ST-002",
+    "name": "Guaritrice",
+    "description": "Una guaritrice itinerante che cura chiunque incontri. Ti ripristina il 5% degli HP massimi.",
+    "persistent": true,
+    "dialogType": "healer-percent",
+    "dialogParams": { "healPercent": 5 },
+    "nameKey": "catalogs.strangers.B-ST-002.name",
+    "descriptionKey": "catalogs.strangers.B-ST-002.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-003",
+    "name": "Strega",
+    "description": "Una maga misteriosa che compie rituali di cambiamento. Ti offre un rito gratuito che potrebbe alterare il tuo destino.",
     "persistent": false,
-    "dialogType": "healer",
+    "dialogType": "enchantress",
+    "dialogParams": {},
+    "nameKey": "catalogs.strangers.B-ST-003.name",
+    "descriptionKey": "catalogs.strangers.B-ST-003.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-004",
+    "name": "Fantasma",
+    "description": "Lo spirito di un guerriero caduto. Esaudirà il tuo desiderio solo se sei Malvagio. Permane finché non viene utilizzato.",
+    "persistent": true,
+    "dialogType": "wish",
     "dialogParams": {
-      "healAmount": 3,
-      "cost": 2
-    }
+      "alignment": "evil",
+      "wishStat": "strength",
+      "amount": 3
+    },
+    "nameKey": "catalogs.strangers.B-ST-004.name",
+    "descriptionKey": "catalogs.strangers.B-ST-004.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-005",
+    "name": "Incantatore",
+    "description": "Un saggio mago errante. Esaudirà il tuo desiderio solo se sei Neutrale. Permane finché non viene utilizzato.",
+    "persistent": true,
+    "dialogType": "wish",
+    "dialogParams": {
+      "alignment": "neutral",
+      "wishStat": "mp",
+      "amount": 3
+    },
+    "nameKey": "catalogs.strangers.B-ST-005.name",
+    "descriptionKey": "catalogs.strangers.B-ST-005.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-006",
+    "name": "Fata",
+    "description": "Una creatura magica piena di luce. Esaudirà il tuo desiderio solo se sei Buono. Permane finché non viene utilizzato.",
+    "persistent": true,
+    "dialogType": "wish",
+    "dialogParams": {
+      "alignment": "good",
+      "wishStat": "magic",
+      "amount": 3
+    },
+    "nameKey": "catalogs.strangers.B-ST-006.name",
+    "descriptionKey": "catalogs.strangers.B-ST-006.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-007",
+    "name": "Eremita",
+    "description": "Un vecchio saggio solitario. Al primo incontro si teletrasporta in un luogo remoto. Trovalo di nuovo e ti donerà un Talismano.",
+    "persistent": true,
+    "dialogType": "hermit",
+    "dialogParams": {},
+    "nameKey": "catalogs.strangers.B-ST-007.name",
+    "descriptionKey": "catalogs.strangers.B-ST-007.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-008",
+    "name": "Illusionista",
+    "description": "Un maestro delle illusioni. Insegna gratuitamente una magia ai personaggi Buoni.",
+    "persistent": true,
+    "dialogType": "spell-teacher",
+    "dialogParams": {
+      "alignment": "good",
+      "cost": 0
+    },
+    "nameKey": "catalogs.strangers.B-ST-008.name",
+    "descriptionKey": "catalogs.strangers.B-ST-008.description"
+  },
+  {
+    "type": "stranger",
+    "id": "B-ST-009",
+    "name": "Stregone",
+    "description": "Un potente mago oscuro. Conosce antichi incantesimi e li svela a chiunque lo incontri.",
+    "persistent": true,
+    "dialogType": "spell-teacher",
+    "dialogParams": {
+      "cost": 0
+    },
+    "nameKey": "catalogs.strangers.B-ST-009.name",
+    "descriptionKey": "catalogs.strangers.B-ST-009.description"
   }
 ]

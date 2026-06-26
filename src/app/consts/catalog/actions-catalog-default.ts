@@ -725,5 +725,125 @@ export const DEFAULT_ACTIONS_CATALOG_CONFIG: ActionsCatalogConfig = {
         sourceLabel: "Zombie",
       },
     },
+    {
+      id: "dismiss-poltergeist",
+      ui: {
+        label: "Dismiss Poltergeist",
+        descriptionTemplate: "Banish the Poltergeist (requires Water biome). Gain +1 XP.",
+        i18n: {
+          labelKey: "actions.dismissPoltergeist.label",
+          descriptionKey: "actions.dismissPoltergeist.description",
+        },
+      },
+      flow: {
+        handler: "follower-dismiss-poltergeist",
+        errorMessage: "Error while dismissing Poltergeist",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: { sourceLabel: "Poltergeist" },
+    },
+    {
+      id: "dismiss-banshee",
+      ui: {
+        label: "Dismiss Banshee",
+        descriptionTemplate: "Banish the Banshee (requires Ruins biome). Gain +1 XP.",
+        i18n: {
+          labelKey: "actions.dismissBanshee.label",
+          descriptionKey: "actions.dismissBanshee.description",
+        },
+      },
+      flow: {
+        handler: "follower-dismiss-banshee",
+        errorMessage: "Error while dismissing Banshee",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: { sourceLabel: "Banshee" },
+    },
+    {
+      id: "dismiss-megera",
+      ui: {
+        label: "Dismiss Megera",
+        descriptionTemplate: "Dismiss the Megera at the City Mystic.",
+        i18n: {
+          labelKey: "actions.dismissMegera.label",
+          descriptionKey: "actions.dismissMegera.description",
+        },
+      },
+      flow: {
+        handler: "follower-dismiss-megera",
+        errorMessage: "Error while dismissing Megera",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: { sourceLabel: "Megera" },
+    },
+    {
+      id: "alchimista-heal",
+      ui: {
+        label: "Alchemist Potion (Heal)",
+        descriptionTemplate: "Use the Alchemist's Healing Potion to restore 10% HP.",
+        i18n: {
+          labelKey: "actions.alchimistaHeal.label",
+          descriptionKey: "actions.alchimistaHeal.description",
+        },
+      },
+      flow: {
+        handler: "follower-alchimista-heal",
+        errorMessage: "Error while using Alchemist heal",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: { sourceLabel: "Alchimista" },
+    },
+    {
+      id: "alchimista-mana",
+      ui: {
+        label: "Alchemist Potion (Mana)",
+        descriptionTemplate: "Use the Alchemist's Mana Potion to restore 2 MP.",
+        i18n: {
+          labelKey: "actions.alchimistaMana.label",
+          descriptionKey: "actions.alchimistaMana.description",
+        },
+      },
+      flow: {
+        handler: "follower-alchimista-mana",
+        errorMessage: "Error while using Alchemist mana",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: { sourceLabel: "Alchimista" },
+    },
+    {
+      id: "hire-mercenary",
+      ui: {
+        label: "Hire Mercenary",
+        descriptionTemplate: "Pay 3 coins to hire the Mercenary for this combat (+2 STR).",
+        i18n: {
+          labelKey: "actions.hireMercenary.label",
+          descriptionKey: "actions.hireMercenary.description",
+        },
+      },
+      flow: {
+        handler: "follower-hire-mercenary",
+        errorMessage: "Error while hiring Mercenary",
+        trigger: "command-panel",
+        validators: ["my-turn", "not-busy", "action-not-used"],
+        dialog: { type: "none" },
+        requiresMyTurn: true,
+      },
+      log: { sourceLabel: "Mercenario" },
+    },
   ],
 };

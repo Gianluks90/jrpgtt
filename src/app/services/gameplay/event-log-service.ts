@@ -7,6 +7,7 @@ import { ActionCatalogService } from "@services/catalog/action-catalog-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
 import { FirebaseService } from "@services/app/firebase-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
 import { TranslationService } from "@services/shared/translation-service";
 
 interface EventLogContext {
@@ -285,6 +286,46 @@ export class EventLogService {
             if (outcome === "flee-lucky") return `${playerName} luckily escaped from ${enemy} without taking damage.`;
             return `${playerName} fled from ${enemy} (−${damage} HP).`;
         },
+        "player.followerDismissed": ({ playerName, args }) => {
+            const follower = String(args["followerId"] ?? "follower");
+            return `${playerName} dismissed ${follower} and ended the turn.`;
+        },
+        "player.alchimistaHeal": ({ playerName }) => `${playerName} used the Alchemist's Healing Potion.`,
+        "player.alchimistaMana": ({ playerName }) => `${playerName} used the Alchemist's Mana Potion (+2 MP).`,
+        "player.hireMercenary": ({ playerName }) => `${playerName} hired the Mercenary for 3 coins (+2 STR this combat).`,
+        "player.strangerHealPercent": ({ playerName, args }) => `${playerName} was healed by the Healer (+${Number(args["healedHp"] ?? 0)} HP).`,
+        "player.strangerEnchantress": ({ playerName, args }) => `${playerName} was affected by the Witch's ritual: ${String(args["rewardLabel"] ?? "")}.`,
+        "player.strangerWishCoins": ({ playerName, args }) => `${playerName} wished for coins and gained ${Number(args["amount"] ?? 0)} coins.`,
+        "player.strangerWishXp": ({ playerName, args }) => `${playerName} wished for experience and gained ${Number(args["amount"] ?? 0)} XP.`,
+        "player.strangerWishStat": ({ playerName, args }) => `${playerName} wished for power and gained +1 ${String(args["stat"] ?? "")} permanently.`,
+        "player.strangerWishTeleport": ({ playerName, args }) => `${playerName} wished to travel and teleported to (${Number(args["targetX"] ?? 0)},${Number(args["targetY"] ?? 0)}).`,
+        "player.strangerHermitMoved": ({ playerName }) => `${playerName} encountered the Hermit, who vanished to a distant place.`,
+        "player.strangerHermitAmulet": ({ playerName }) => `${playerName} found the Hermit again and received a Talisman!`,
+        "player.strangerSpellTeacher": ({ playerName, args }) => `${playerName} learned the spell ${String(args["spellName"] ?? args["spellId"] ?? "")} from ${String(args["source"] ?? "a stranger")}.`,
+        "player.strangerSpellTeacherFull": ({ playerName }) => `${playerName} tried to learn a spell but the spellbook is full.`,
+        "player.strangerSpellTeacherEmpty": ({ playerName }) => `${playerName} tried to learn a spell but the spell deck is empty.`,
+        "player.placeFountainDamage": ({ playerName, args }) => `${playerName} drank from the fountain and took ${Number(args["damage"] ?? 0)} damage. (${Number(args["usesLeft"] ?? 0)} uses left)`,
+        "player.placeFountainStatBoost": ({ playerName, args }) => `${playerName} drank from the fountain and gained +${Number(args["amount"] ?? 0)} ${String(args["stat"] ?? "")} permanently!`,
+        "player.placeFountainHpBoost": ({ playerName }) => `${playerName} drank from the fountain and increased their max HP by 5%!`,
+        "player.placeFountainExhausted": ({ args }) => `The ${String(args["placeName"] ?? "Fountain")} has run dry after 3 uses and vanished.`,
+        "player.placePortal": ({ playerName, args }) => `${playerName} stepped through the Magic Portal and was teleported to ${String(args["destination"] ?? "")}.`,
+        "player.placePortalNoDestination": ({ playerName }) => `${playerName} tried to step through the Magic Portal but no special places had been discovered.`,
+        "player.placeMazeLost": ({ playerName }) => `${playerName} got lost in the Labyrinth and will skip their next turn.`,
+        "player.placeMazeEscape": ({ playerName }) => `${playerName} escaped the Labyrinth. The turn ends.`,
+        "player.placeCaveDamage": ({ playerName, args }) => `${playerName} explored the Cave and took ${Number(args["damage"] ?? 0)} damage.`,
+        "player.placeCaveNothing": ({ playerName }) => `${playerName} explored the Cave but found nothing.`,
+        "player.placeCaveCoins": ({ playerName, args }) => `${playerName} explored the Cave and found ${Number(args["amount"] ?? 0)} coins.`,
+        "player.placeCaveXp": ({ playerName }) => `${playerName} explored the Cave and gained 1 XP.`,
+        "player.placeChapelNothing": ({ playerName }) => `${playerName} prayed at the Chapel but nothing happened.`,
+        "player.placeChapelFortune": ({ playerName }) => `${playerName} prayed at the Chapel and received the Fortune blessing for 2 turns.`,
+        "player.placeChapelCoins": ({ playerName }) => `${playerName} prayed at the Chapel and received 5 coins.`,
+        "player.placeChapelHeal": ({ playerName, args }) => `${playerName} prayed at the Chapel and recovered ${Number(args["healedHp"] ?? 0)} HP.`,
+        "player.placeChapelSpell": ({ playerName, args }) => `${playerName} prayed at the Chapel and learned the spell ${String(args["spellName"] ?? args["spellId"] ?? "")}.`,
+        "player.placeChapelSpellFull": ({ playerName }) => `${playerName} prayed at the Chapel but the spellbook is full.`,
+        "player.placeChapelSpellEmpty": ({ playerName }) => `${playerName} prayed at the Chapel but the spell deck is empty.`,
+        "player.placeChapelTeleport": ({ playerName }) => `${playerName} prayed at the Chapel and will receive a free teleport on their next move.`,
+        "player.placeChapelActivatedTeleport": ({ playerName, args }) => `${playerName} used the Chapel blessing and teleported to (${Number(args["targetX"] ?? 0)}, ${Number(args["targetY"] ?? 0)}).`,
+        "player.placeSwampPoison": ({ playerName }) => `${playerName} ended their turn in the Swamp and was Poisoned.`,
     };
 
     constructor(
@@ -292,6 +333,7 @@ export class EventLogService {
         private actionCatalogService: ActionCatalogService,
         private itemCatalogService: ItemCatalogService,
         private followerCatalogService: FollowerCatalogService,
+        private spellCatalogService: SpellCatalogService,
         private translationService: TranslationService,
     ) { }
 
@@ -724,6 +766,142 @@ export class EventLogService {
             return this.translationService.tOrFallback(key, fallback, { ...baseParams, enemy, damage, xp });
         }
 
+        if (code === "player.followerDismissed") {
+            return this.translationService.tOrFallback("logs.player.followerDismissed", fallback, {
+                ...baseParams,
+                followerId: this.resolveFollowerName(args),
+            });
+        }
+
+        if (code === "player.alchimistaHeal" || code === "player.alchimistaMana" || code === "player.hireMercenary") {
+            const key = `logs.player.${code.split(".")[1]}`;
+            return this.translationService.tOrFallback(key, fallback, baseParams);
+        }
+
+        if (code === "player.strangerHealPercent") {
+            return this.translationService.tOrFallback("logs.player.strangerHealPercent", fallback, {
+                ...baseParams,
+                healedHp: Number(args["healedHp"] ?? 0),
+            });
+        }
+
+        if (code === "player.strangerEnchantress") {
+            return this.translationService.tOrFallback("logs.player.strangerEnchantress", fallback, {
+                ...baseParams,
+                rewardLabel: String(args["rewardLabel"] ?? ""),
+            });
+        }
+
+        if (code === "player.strangerWishCoins" || code === "player.strangerWishXp") {
+            const key = `logs.player.${code.split(".")[1]}`;
+            return this.translationService.tOrFallback(key, fallback, {
+                ...baseParams,
+                amount: Number(args["amount"] ?? 0),
+            });
+        }
+
+        if (code === "player.strangerWishStat") {
+            return this.translationService.tOrFallback("logs.player.strangerWishStat", fallback, {
+                ...baseParams,
+                stat: this.resolveStatLabel(args["stat"]),
+            });
+        }
+
+        if (code === "player.strangerWishTeleport") {
+            return this.translationService.tOrFallback("logs.player.strangerWishTeleport", fallback, {
+                ...baseParams,
+                targetX: Number(args["targetX"] ?? 0),
+                targetY: Number(args["targetY"] ?? 0),
+            });
+        }
+
+        if (code === "player.strangerHermitMoved" || code === "player.strangerHermitAmulet") {
+            const key = `logs.player.${code.split(".")[1]}`;
+            return this.translationService.tOrFallback(key, fallback, baseParams);
+        }
+
+        if (code === "player.strangerSpellTeacher") {
+            const spellName = this.resolveSpellName(args);
+            return this.translationService.tOrFallback("logs.player.strangerSpellTeacher", fallback, {
+                ...baseParams,
+                spellName,
+                source: String(args["source"] ?? ""),
+            });
+        }
+
+        if (code === "player.strangerSpellTeacherFull" || code === "player.strangerSpellTeacherEmpty") {
+            const key = `logs.player.${code.split(".")[1]}`;
+            return this.translationService.tOrFallback(key, fallback, baseParams);
+        }
+
+        if (code === "player.placeFountainDamage") {
+            return this.translationService.tOrFallback("logs.player.placeFountainDamage", fallback, {
+                ...baseParams,
+                damage: Number(args["damage"] ?? 0),
+                usesLeft: Number(args["usesLeft"] ?? 0),
+                placeName: String(args["placeName"] ?? ""),
+            });
+        }
+        if (code === "player.placeFountainStatBoost") {
+            return this.translationService.tOrFallback("logs.player.placeFountainStatBoost", fallback, {
+                ...baseParams,
+                amount: Number(args["amount"] ?? 0),
+                stat: this.resolveStatLabel(args["stat"]),
+                usesLeft: Number(args["usesLeft"] ?? 0),
+                placeName: String(args["placeName"] ?? ""),
+            });
+        }
+        if (code === "player.placeFountainHpBoost") {
+            return this.translationService.tOrFallback("logs.player.placeFountainHpBoost", fallback, {
+                ...baseParams,
+                usesLeft: Number(args["usesLeft"] ?? 0),
+                placeName: String(args["placeName"] ?? ""),
+            });
+        }
+        if (code === "player.placeFountainExhausted") {
+            return this.translationService.tOrFallback("logs.player.placeFountainExhausted", fallback, {
+                placeName: String(args["placeName"] ?? ""),
+            });
+        }
+        if (code === "player.placePortal") {
+            return this.translationService.tOrFallback("logs.player.placePortal", fallback, {
+                ...baseParams,
+                destination: String(args["destination"] ?? ""),
+            });
+        }
+        if (code === "player.placeCaveDamage") {
+            return this.translationService.tOrFallback("logs.player.placeCaveDamage", fallback, {
+                ...baseParams,
+                damage: Number(args["damage"] ?? 0),
+            });
+        }
+        if (code === "player.placeCaveCoins") {
+            return this.translationService.tOrFallback("logs.player.placeCaveCoins", fallback, {
+                ...baseParams,
+                amount: Number(args["amount"] ?? 0),
+            });
+        }
+        if (code === "player.placeChapelHeal") {
+            return this.translationService.tOrFallback("logs.player.placeChapelHeal", fallback, {
+                ...baseParams,
+                healedHp: Number(args["healedHp"] ?? 0),
+            });
+        }
+        if (code === "player.placeChapelSpell") {
+            const spellName = this.resolveSpellName(args);
+            return this.translationService.tOrFallback("logs.player.placeChapelSpell", fallback, {
+                ...baseParams,
+                spellName,
+            });
+        }
+        if (code === "player.placeChapelActivatedTeleport") {
+            return this.translationService.tOrFallback("logs.player.placeChapelActivatedTeleport", fallback, {
+                ...baseParams,
+                targetX: Number(args["targetX"] ?? 0),
+                targetY: Number(args["targetY"] ?? 0),
+            });
+        }
+
         const genericKey = `logs.${code}`;
         return this.translationService.tOrFallback(genericKey, fallback, baseParams);
     }
@@ -916,5 +1094,22 @@ export class EventLogService {
         }
 
         return String((args["followerName"] ?? followerId) || "follower");
+    }
+
+    private resolveStatLabel(value: unknown): string {
+        const stat = String(value ?? "").trim();
+        if (stat === "strength") return this.translationService.tOrFallback("stats.strengthAbbr", "STR");
+        if (stat === "magic") return this.translationService.tOrFallback("stats.magicAbbr", "MAG");
+        if (stat === "mp") return this.translationService.tOrFallback("stats.mpAbbr", "MP");
+        return stat;
+    }
+
+    private resolveSpellName(args: Record<string, unknown>): string {
+        const spellId = String(args["spellId"] ?? "").trim();
+        if (spellId) {
+            const spell = this.spellCatalogService.getSpell(spellId);
+            if (spell) return this.spellCatalogService.getLocalizedName(spell);
+        }
+        return String((args["spellName"] ?? spellId) || "spell");
     }
 }

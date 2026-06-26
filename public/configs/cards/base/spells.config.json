@@ -4,7 +4,7 @@
   },
   "spells": [
     {
-      "id": "fly",
+      "id": "B-SP-001",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -15,9 +15,9 @@
         "descriptionTemplate": "Enable diagonal movement for this turn. Must be cast before moving.",
         "longDescriptionTemplate": "Flying enables 8-directional movement — you may step diagonally in addition to the four cardinal directions. The effect must be active before you move.",
         "i18n": {
-          "nameKey": "spells.fly.name",
-          "descriptionKey": "spells.fly.description",
-          "longDescriptionKey": "spells.fly.longDescription"
+          "nameKey": "catalogs.spells.B-SP-001.name",
+          "descriptionKey": "catalogs.spells.B-SP-001.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-001.longDescription"
         }
       },
       "effect": {
@@ -27,11 +27,14 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "sanctuary", "sanctuaryElement": "wind" }
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "wind"
+        }
       ]
     },
     {
-      "id": "healing-waters",
+      "id": "B-SP-002",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -42,9 +45,9 @@
         "descriptionTemplate": "Apply Nutrition to yourself for 1 turn.",
         "longDescriptionTemplate": "Nutrition prevents all damage dealt by hostile biomes or environmental conditions at the end of your turn.",
         "i18n": {
-          "nameKey": "spells.healingWaters.name",
-          "descriptionKey": "spells.healingWaters.description",
-          "longDescriptionKey": "spells.healingWaters.longDescription"
+          "nameKey": "catalogs.spells.B-SP-002.name",
+          "descriptionKey": "catalogs.spells.B-SP-002.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-002.longDescription"
         }
       },
       "effect": {
@@ -54,11 +57,14 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "sanctuary", "sanctuaryElement": "water" }
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "water"
+        }
       ]
     },
     {
-      "id": "inner-fire",
+      "id": "B-SP-003",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -69,9 +75,9 @@
         "descriptionTemplate": "Apply Bravery to yourself for 1 turn.",
         "longDescriptionTemplate": "Bravery increases your Strength by 1 for the duration of the effect.",
         "i18n": {
-          "nameKey": "spells.innerFire.name",
-          "descriptionKey": "spells.innerFire.description",
-          "longDescriptionKey": "spells.innerFire.longDescription"
+          "nameKey": "catalogs.spells.B-SP-003.name",
+          "descriptionKey": "catalogs.spells.B-SP-003.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-003.longDescription"
         }
       },
       "effect": {
@@ -81,11 +87,14 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "sanctuary", "sanctuaryElement": "fire" }
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "fire"
+        }
       ]
     },
     {
-      "id": "reinvigorate",
+      "id": "B-SP-004",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -96,9 +105,9 @@
         "descriptionTemplate": "Restore HP equal to your current Magic value.",
         "longDescriptionTemplate": "The amount healed equals your current Magic value, not the base. Higher Magic means better recovery.",
         "i18n": {
-          "nameKey": "spells.reinvigorate.name",
-          "descriptionKey": "spells.reinvigorate.description",
-          "longDescriptionKey": "spells.reinvigorate.longDescription"
+          "nameKey": "catalogs.spells.B-SP-004.name",
+          "descriptionKey": "catalogs.spells.B-SP-004.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-004.longDescription"
         }
       },
       "effect": {
@@ -107,11 +116,14 @@
         "amountPerMagic": 1
       },
       "acquisition": [
-        { "source": "sanctuary", "sanctuaryElement": "earth" }
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "earth"
+        }
       ]
     },
     {
-      "id": "teleport",
+      "id": "B-SP-005",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -122,9 +134,9 @@
         "descriptionTemplate": "Move to any explored cell within {range} orthogonal steps. Cannot move again this turn.",
         "longDescriptionTemplate": "Range is 3 orthogonal steps, plus 1 per point of Magic. After teleporting you cannot move again this turn, but landmark use, spell casting, and combat remain available.",
         "i18n": {
-          "nameKey": "spells.teleport.name",
-          "descriptionKey": "spells.teleport.description",
-          "longDescriptionKey": "spells.teleport.longDescription"
+          "nameKey": "catalogs.spells.B-SP-005.name",
+          "descriptionKey": "catalogs.spells.B-SP-005.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-005.longDescription"
         }
       },
       "effect": {
@@ -134,7 +146,7 @@
       }
     },
     {
-      "id": "empower",
+      "id": "B-SP-006",
       "mpCost": 4,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -145,9 +157,9 @@
         "descriptionTemplate": "Add your Magic to your Strength for the duration of this combat.",
         "longDescriptionTemplate": "While Empowered, your Magic value is added directly to your combat Strength for any fight this turn. Useful when you have high Magic but need a physical edge.",
         "i18n": {
-          "nameKey": "spells.empower.name",
-          "descriptionKey": "spells.empower.description",
-          "longDescriptionKey": "spells.empower.longDescription"
+          "nameKey": "catalogs.spells.B-SP-006.name",
+          "descriptionKey": "catalogs.spells.B-SP-006.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-006.longDescription"
         }
       },
       "effect": {
@@ -158,7 +170,7 @@
       }
     },
     {
-      "id": "chaos",
+      "id": "B-SP-007",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -169,9 +181,9 @@
         "descriptionTemplate": "Choose a target player. They make a luck check with a random outcome: gain or lose HP, coins, or a status effect.",
         "longDescriptionTemplate": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "i18n": {
-          "nameKey": "spells.chaos.name",
-          "descriptionKey": "spells.chaos.description",
-          "longDescriptionKey": "spells.chaos.longDescription"
+          "nameKey": "catalogs.spells.B-SP-007.name",
+          "descriptionKey": "catalogs.spells.B-SP-007.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-007.longDescription"
         }
       },
       "effect": {
@@ -179,7 +191,7 @@
       }
     },
     {
-      "id": "filch",
+      "id": "B-SP-008",
       "mpCost": 2,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -190,9 +202,9 @@
         "descriptionTemplate": "Steal 10 coins from a target player on a luck check of 70 or more.",
         "longDescriptionTemplate": "On a luck check result of 70 or more, 10 coins transfer instantly from the target to you. Nothing happens on failure.",
         "i18n": {
-          "nameKey": "spells.filch.name",
-          "descriptionKey": "spells.filch.description",
-          "longDescriptionKey": "spells.filch.longDescription"
+          "nameKey": "catalogs.spells.B-SP-008.name",
+          "descriptionKey": "catalogs.spells.B-SP-008.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-008.longDescription"
         }
       },
       "effect": {
@@ -202,7 +214,7 @@
       }
     },
     {
-      "id": "vigor",
+      "id": "B-SP-009",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -213,9 +225,9 @@
         "descriptionTemplate": "Restore 5 HP.",
         "longDescriptionTemplate": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "i18n": {
-          "nameKey": "spells.vigor.name",
-          "descriptionKey": "spells.vigor.description",
-          "longDescriptionKey": "spells.vigor.longDescription"
+          "nameKey": "catalogs.spells.B-SP-009.name",
+          "descriptionKey": "catalogs.spells.B-SP-009.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-009.longDescription"
         }
       },
       "effect": {
@@ -225,7 +237,7 @@
       }
     },
     {
-      "id": "ward",
+      "id": "B-SP-010",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -236,9 +248,9 @@
         "descriptionTemplate": "Apply Protection to yourself.",
         "longDescriptionTemplate": "Protection halves the next incoming damage you receive (rounded down). The status is consumed after blocking one hit.",
         "i18n": {
-          "nameKey": "spells.ward.name",
-          "descriptionKey": "spells.ward.description",
-          "longDescriptionKey": "spells.ward.longDescription"
+          "nameKey": "catalogs.spells.B-SP-010.name",
+          "descriptionKey": "catalogs.spells.B-SP-010.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-010.longDescription"
         }
       },
       "effect": {
@@ -249,7 +261,7 @@
       }
     },
     {
-      "id": "alchemy",
+      "id": "B-SP-011",
       "mpCost": 1,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -260,20 +272,25 @@
         "descriptionTemplate": "Convert an item you own into its coin value.",
         "longDescriptionTemplate": "Select one item from your inventory; it is permanently destroyed and its base coin value is added to your wallet.",
         "i18n": {
-          "nameKey": "spells.alchemy.name",
-          "descriptionKey": "spells.alchemy.description",
-          "longDescriptionKey": "spells.alchemy.longDescription"
+          "nameKey": "catalogs.spells.B-SP-011.name",
+          "descriptionKey": "catalogs.spells.B-SP-011.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-011.longDescription"
         }
       },
       "effect": {
         "type": "alchemize-item"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "immobilize",
+      "id": "B-SP-012",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -284,9 +301,9 @@
         "descriptionTemplate": "Apply Immobilized to a target player for 1 turn.",
         "longDescriptionTemplate": "The target cannot move on their turn. Landmark use, spell casting, and combat can still apply if triggered.",
         "i18n": {
-          "nameKey": "spells.immobilize.name",
-          "descriptionKey": "spells.immobilize.description",
-          "longDescriptionKey": "spells.immobilize.longDescription"
+          "nameKey": "catalogs.spells.B-SP-012.name",
+          "descriptionKey": "catalogs.spells.B-SP-012.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-012.longDescription"
         }
       },
       "effect": {
@@ -297,7 +314,7 @@
       }
     },
     {
-      "id": "dispel",
+      "id": "B-SP-013",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -308,9 +325,9 @@
         "descriptionTemplate": "Remove one negative status from yourself.",
         "longDescriptionTemplate": "Removes the oldest active negative status. Positive statuses are not affected.",
         "i18n": {
-          "nameKey": "spells.dispel.name",
-          "descriptionKey": "spells.dispel.description",
-          "longDescriptionKey": "spells.dispel.longDescription"
+          "nameKey": "catalogs.spells.B-SP-013.name",
+          "descriptionKey": "catalogs.spells.B-SP-013.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-013.longDescription"
         }
       },
       "effect": {
@@ -318,7 +335,7 @@
       }
     },
     {
-      "id": "fortune",
+      "id": "B-SP-014",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -329,9 +346,9 @@
         "descriptionTemplate": "Apply Fortune to yourself for 1 turn.",
         "longDescriptionTemplate": "Your Luck bonus is doubled for every check made while this status is active, significantly improving odds on high-threshold rolls.",
         "i18n": {
-          "nameKey": "spells.fortune.name",
-          "descriptionKey": "spells.fortune.description",
-          "longDescriptionKey": "spells.fortune.longDescription"
+          "nameKey": "catalogs.spells.B-SP-014.name",
+          "descriptionKey": "catalogs.spells.B-SP-014.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-014.longDescription"
         }
       },
       "effect": {
@@ -342,7 +359,7 @@
       }
     },
     {
-      "id": "focus",
+      "id": "B-SP-015",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -353,9 +370,9 @@
         "descriptionTemplate": "Apply Focus to yourself for 1 turn.",
         "longDescriptionTemplate": "Focus increases your Magic by 1 while active, also improving any spell that scales with Magic such as Reinvigorate or Teleport range.",
         "i18n": {
-          "nameKey": "spells.focus.name",
-          "descriptionKey": "spells.focus.description",
-          "longDescriptionKey": "spells.focus.longDescription"
+          "nameKey": "catalogs.spells.B-SP-015.name",
+          "descriptionKey": "catalogs.spells.B-SP-015.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-015.longDescription"
         }
       },
       "effect": {
@@ -365,11 +382,16 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "scout",
+      "id": "B-SP-016",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -380,9 +402,9 @@
         "descriptionTemplate": "Reveal an unexplored cell within {range} orthogonal steps.",
         "longDescriptionTemplate": "Base range is 2 steps, plus 1 per point of Magic. The revealed cell becomes visible to all players.",
         "i18n": {
-          "nameKey": "spells.scout.name",
-          "descriptionKey": "spells.scout.description",
-          "longDescriptionKey": "spells.scout.longDescription"
+          "nameKey": "catalogs.spells.B-SP-016.name",
+          "descriptionKey": "catalogs.spells.B-SP-016.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-016.longDescription"
         }
       },
       "effect": {
@@ -392,7 +414,7 @@
       }
     },
     {
-      "id": "safe-passage",
+      "id": "B-SP-017",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -403,9 +425,9 @@
         "descriptionTemplate": "Ignore the next environmental hazard or negative cell effect when entering a cell.",
         "longDescriptionTemplate": "Safe Step is consumed the next time you enter a cell with a harmful biome effect or condition, leaving you completely unharmed.",
         "i18n": {
-          "nameKey": "spells.safePassage.name",
-          "descriptionKey": "spells.safePassage.description",
-          "longDescriptionKey": "spells.safePassage.longDescription"
+          "nameKey": "catalogs.spells.B-SP-017.name",
+          "descriptionKey": "catalogs.spells.B-SP-017.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-017.longDescription"
         }
       },
       "effect": {
@@ -416,7 +438,7 @@
       }
     },
     {
-      "id": "fate-read",
+      "id": "B-SP-018",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -427,9 +449,9 @@
         "descriptionTemplate": "Preview the next 2 local events that could be drawn or resolved.",
         "longDescriptionTemplate": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed.",
         "i18n": {
-          "nameKey": "spells.fateRead.name",
-          "descriptionKey": "spells.fateRead.description",
-          "longDescriptionKey": "spells.fateRead.longDescription"
+          "nameKey": "catalogs.spells.B-SP-018.name",
+          "descriptionKey": "catalogs.spells.B-SP-018.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-018.longDescription"
         }
       },
       "effect": {
@@ -440,7 +462,7 @@
       }
     },
     {
-      "id": "transmute",
+      "id": "B-SP-019",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -451,20 +473,25 @@
         "descriptionTemplate": "Transform 1 common resource into a different common resource.",
         "longDescriptionTemplate": "Choose one common resource from your inventory; it is replaced with a different common resource of your choice.",
         "i18n": {
-          "nameKey": "spells.transmute.name",
-          "descriptionKey": "spells.transmute.description",
-          "longDescriptionKey": "spells.transmute.longDescription"
+          "nameKey": "catalogs.spells.B-SP-019.name",
+          "descriptionKey": "catalogs.spells.B-SP-019.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-019.longDescription"
         }
       },
       "effect": {
         "type": "transmute-resource"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "foresight",
+      "id": "B-SP-020",
       "mpCost": 2,
       "cooldownTurns": 0,
       "consumableOnCast": false,
@@ -475,9 +502,9 @@
         "descriptionTemplate": "Preview the next 2 local events. Order is not changed.",
         "longDescriptionTemplate": "While Fate Sight is active, open the Exploration Deck preview to see the next 2 upcoming cards. The order is not changed.",
         "i18n": {
-          "nameKey": "spells.foresight.name",
-          "descriptionKey": "spells.foresight.description",
-          "longDescriptionKey": "spells.foresight.longDescription"
+          "nameKey": "catalogs.spells.B-SP-020.name",
+          "descriptionKey": "catalogs.spells.B-SP-020.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-020.longDescription"
         }
       },
       "effect": {
@@ -488,7 +515,7 @@
       }
     },
     {
-      "id": "wealth",
+      "id": "B-SP-021",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -499,9 +526,9 @@
         "descriptionTemplate": "Gain 10 coins.",
         "longDescriptionTemplate": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "i18n": {
-          "nameKey": "spells.wealth.name",
-          "descriptionKey": "spells.wealth.description",
-          "longDescriptionKey": "spells.wealth.longDescription"
+          "nameKey": "catalogs.spells.B-SP-021.name",
+          "descriptionKey": "catalogs.spells.B-SP-021.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-021.longDescription"
         }
       },
       "effect": {
@@ -510,7 +537,7 @@
       }
     },
     {
-      "id": "invisibility",
+      "id": "B-SP-022",
       "mpCost": 4,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -521,9 +548,9 @@
         "descriptionTemplate": "Apply Invisibility to yourself.",
         "longDescriptionTemplate": "While invisible you cannot be targeted by attacks or hostile spells. Movement, landmark use, and resource collection still work normally.",
         "i18n": {
-          "nameKey": "spells.invisibility.name",
-          "descriptionKey": "spells.invisibility.description",
-          "longDescriptionKey": "spells.invisibility.longDescription"
+          "nameKey": "catalogs.spells.B-SP-022.name",
+          "descriptionKey": "catalogs.spells.B-SP-022.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-022.longDescription"
         }
       },
       "effect": {
@@ -533,11 +560,16 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "mesmerize",
+      "id": "B-SP-023",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -548,9 +580,9 @@
         "descriptionTemplate": "Steal a follower from a target player on a luck check of 70 or more.",
         "longDescriptionTemplate": "On a luck check of 70 or more, a random follower from the target's party permanently joins yours. Nothing happens on failure.",
         "i18n": {
-          "nameKey": "spells.mesmerize.name",
-          "descriptionKey": "spells.mesmerize.description",
-          "longDescriptionKey": "spells.mesmerize.longDescription"
+          "nameKey": "catalogs.spells.B-SP-023.name",
+          "descriptionKey": "catalogs.spells.B-SP-023.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-023.longDescription"
         }
       },
       "effect": {
@@ -559,7 +591,7 @@
       }
     },
     {
-      "id": "curse",
+      "id": "B-SP-024",
       "mpCost": 4,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -570,21 +602,23 @@
         "descriptionTemplate": "Apply Hexed and Weakened to a target player for 3 turns.",
         "longDescriptionTemplate": "Hexed reduces the target's Magic by 1 and Weakened reduces their Strength by 1 for 3 full turns. Both effects run simultaneously.",
         "i18n": {
-          "nameKey": "spells.curse.name",
-          "descriptionKey": "spells.curse.description",
-          "longDescriptionKey": "spells.curse.longDescription"
+          "nameKey": "catalogs.spells.B-SP-024.name",
+          "descriptionKey": "catalogs.spells.B-SP-024.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-024.longDescription"
         }
       },
       "effect": {
         "type": "apply-status-target",
         "statusKey": "hexed",
-        "additionalStatusKeys": ["weakened"],
+        "additionalStatusKeys": [
+          "weakened"
+        ],
         "baseDurationTurns": 3,
         "durationPerMagic": 0
       }
     },
     {
-      "id": "petrify",
+      "id": "B-SP-025",
       "mpCost": 5,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -595,9 +629,9 @@
         "descriptionTemplate": "A target player skips their next turn.",
         "longDescriptionTemplate": "The target's next turn is skipped entirely. They cannot move, act, or react until the effect expires.",
         "i18n": {
-          "nameKey": "spells.petrify.name",
-          "descriptionKey": "spells.petrify.description",
-          "longDescriptionKey": "spells.petrify.longDescription"
+          "nameKey": "catalogs.spells.B-SP-025.name",
+          "descriptionKey": "catalogs.spells.B-SP-025.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-025.longDescription"
         }
       },
       "effect": {
@@ -608,7 +642,7 @@
       }
     },
     {
-      "id": "purify",
+      "id": "B-SP-026",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -619,20 +653,23 @@
         "descriptionTemplate": "Remove all negative statuses from yourself.",
         "longDescriptionTemplate": "Clears every negative status affecting you at once, regardless of their remaining duration or how many are stacked.",
         "i18n": {
-          "nameKey": "spells.purify.name",
-          "descriptionKey": "spells.purify.description",
-          "longDescriptionKey": "spells.purify.longDescription"
+          "nameKey": "catalogs.spells.B-SP-026.name",
+          "descriptionKey": "catalogs.spells.B-SP-026.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-026.longDescription"
         }
       },
       "effect": {
         "type": "remove-all-negative-statuses-self"
       },
       "acquisition": [
-        { "source": "sanctuary", "sanctuaryElement": "water" }
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "water"
+        }
       ]
     },
     {
-      "id": "recall",
+      "id": "B-SP-027",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -643,9 +680,9 @@
         "descriptionTemplate": "Return to your last visited or activated sanctuary. Cannot move further this turn.",
         "longDescriptionTemplate": "Teleports you directly to your last attuned or visited sanctuary. You cannot move further after recalling, but other actions remain available.",
         "i18n": {
-          "nameKey": "spells.recall.name",
-          "descriptionKey": "spells.recall.description",
-          "longDescriptionKey": "spells.recall.longDescription"
+          "nameKey": "catalogs.spells.B-SP-027.name",
+          "descriptionKey": "catalogs.spells.B-SP-027.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-027.longDescription"
         }
       },
       "effect": {
@@ -653,7 +690,7 @@
       }
     },
     {
-      "id": "minor-exile",
+      "id": "B-SP-028",
       "mpCost": 3,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -664,20 +701,25 @@
         "descriptionTemplate": "Remove a negative follower from your party.",
         "longDescriptionTemplate": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
         "i18n": {
-          "nameKey": "spells.minorExile.name",
-          "descriptionKey": "spells.minorExile.description",
-          "longDescriptionKey": "spells.minorExile.longDescription"
+          "nameKey": "catalogs.spells.B-SP-028.name",
+          "descriptionKey": "catalogs.spells.B-SP-028.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-028.longDescription"
         }
       },
       "effect": {
         "type": "remove-negative-follower-self"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "divination",
+      "id": "B-SP-029",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -688,9 +730,9 @@
         "descriptionTemplate": "Preview the next 5 local events. Order is not changed.",
         "longDescriptionTemplate": "While Fate Sight is active, open the Exploration Deck preview to see the next 5 upcoming cards. The order is not changed.",
         "i18n": {
-          "nameKey": "spells.divination.name",
-          "descriptionKey": "spells.divination.description",
-          "longDescriptionKey": "spells.divination.longDescription"
+          "nameKey": "catalogs.spells.B-SP-029.name",
+          "descriptionKey": "catalogs.spells.B-SP-029.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-029.longDescription"
         }
       },
       "effect": {
@@ -701,7 +743,7 @@
       }
     },
     {
-      "id": "spell-break",
+      "id": "B-SP-030",
       "mpCost": 5,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -712,9 +754,9 @@
         "descriptionTemplate": "No player, including you, can cast spells until the end of the next round.",
         "longDescriptionTemplate": "No player — including you — can cast any spell or use reactive abilities for the rest of this round and the entire next round.",
         "i18n": {
-          "nameKey": "spells.spellBreak.name",
-          "descriptionKey": "spells.spellBreak.description",
-          "longDescriptionKey": "spells.spellBreak.longDescription"
+          "nameKey": "catalogs.spells.B-SP-030.name",
+          "descriptionKey": "catalogs.spells.B-SP-030.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-030.longDescription"
         }
       },
       "effect": {
@@ -722,7 +764,7 @@
       }
     },
     {
-      "id": "destroy",
+      "id": "B-SP-031",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -733,9 +775,9 @@
         "descriptionTemplate": "Remove a temporary or permanent local event from a visible cell. Cannot remove landmarks, sanctuaries, bosses, or mission objectives.",
         "longDescriptionTemplate": "Permanently removes one local event from a visible cell within range. Cannot target fixed map elements such as landmarks or sanctuaries.",
         "i18n": {
-          "nameKey": "spells.destroy.name",
-          "descriptionKey": "spells.destroy.description",
-          "longDescriptionKey": "spells.destroy.longDescription"
+          "nameKey": "catalogs.spells.B-SP-031.name",
+          "descriptionKey": "catalogs.spells.B-SP-031.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-031.longDescription"
         }
       },
       "effect": {
@@ -743,7 +785,7 @@
       }
     },
     {
-      "id": "counterspell",
+      "id": "B-SP-032",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -754,20 +796,25 @@
         "descriptionTemplate": "Cancel a hostile spell targeting you at the moment it is cast. Cannot cancel already-resolved effects.",
         "longDescriptionTemplate": "Held passively in reserve after casting. When a hostile spell targets you, a prompt appears letting you activate Counterspell to cancel the effect entirely.",
         "i18n": {
-          "nameKey": "spells.counterspell.name",
-          "descriptionKey": "spells.counterspell.description",
-          "longDescriptionKey": "spells.counterspell.longDescription"
+          "nameKey": "catalogs.spells.B-SP-032.name",
+          "descriptionKey": "catalogs.spells.B-SP-032.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-032.longDescription"
         }
       },
       "effect": {
         "type": "counter-spell-reaction"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "time-fold",
+      "id": "B-SP-033",
       "mpCost": 6,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -778,9 +825,9 @@
         "descriptionTemplate": "Make up to 2 consecutive moves before resolving events or combat. You cannot attack players, cast other spells, or collect resources during these moves.",
         "longDescriptionTemplate": "Each extra move can reveal new cells and trigger events, but player combat, resource collection, and additional spell casting are disabled during the sequence.",
         "i18n": {
-          "nameKey": "spells.timeFold.name",
-          "descriptionKey": "spells.timeFold.description",
-          "longDescriptionKey": "spells.timeFold.longDescription"
+          "nameKey": "catalogs.spells.B-SP-033.name",
+          "descriptionKey": "catalogs.spells.B-SP-033.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-033.longDescription"
         }
       },
       "effect": {
@@ -788,11 +835,16 @@
         "baseAmount": 2
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "mimicry",
+      "id": "B-SP-034",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -803,20 +855,25 @@
         "descriptionTemplate": "Copy a random spell from a target player and learn it.",
         "longDescriptionTemplate": "The copied spell is permanently added to your spellbook if a free slot is available. If your spellbook is full, the copy fails without an MP refund.",
         "i18n": {
-          "nameKey": "spells.mimicry.name",
-          "descriptionKey": "spells.mimicry.description",
-          "longDescriptionKey": "spells.mimicry.longDescription"
+          "nameKey": "catalogs.spells.B-SP-034.name",
+          "descriptionKey": "catalogs.spells.B-SP-034.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-034.longDescription"
         }
       },
       "effect": {
         "type": "copy-random-spell"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "mimicry-plus",
+      "id": "B-SP-035",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -827,9 +884,9 @@
         "descriptionTemplate": "Copy a spell of your choice from a target player and learn it.",
         "longDescriptionTemplate": "Choose which spell to copy from the target's spellbook. Permanently added to yours if a free slot is available.",
         "i18n": {
-          "nameKey": "spells.mimicryPlus.name",
-          "descriptionKey": "spells.mimicryPlus.description",
-          "longDescriptionKey": "spells.mimicryPlus.longDescription"
+          "nameKey": "catalogs.spells.B-SP-035.name",
+          "descriptionKey": "catalogs.spells.B-SP-035.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-035.longDescription"
         }
       },
       "effect": {
@@ -837,7 +894,7 @@
       }
     },
     {
-      "id": "negate",
+      "id": "B-SP-036",
       "mpCost": 5,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -848,20 +905,25 @@
         "descriptionTemplate": "Make a target player forget a random spell.",
         "longDescriptionTemplate": "A random spell is permanently erased from the target's spellbook. It cannot be re-learned through normal means.",
         "i18n": {
-          "nameKey": "spells.negate.name",
-          "descriptionKey": "spells.negate.description",
-          "longDescriptionKey": "spells.negate.longDescription"
+          "nameKey": "catalogs.spells.B-SP-036.name",
+          "descriptionKey": "catalogs.spells.B-SP-036.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-036.longDescription"
         }
       },
       "effect": {
         "type": "forget-random-spell-target"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "negate-plus",
+      "id": "B-SP-037",
       "mpCost": 6,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -872,9 +934,9 @@
         "descriptionTemplate": "Make a target player forget a spell of your choice.",
         "longDescriptionTemplate": "Choose which spell the target loses. It is permanently erased from their spellbook and cannot be re-learned.",
         "i18n": {
-          "nameKey": "spells.negatePlus.name",
-          "descriptionKey": "spells.negatePlus.description",
-          "longDescriptionKey": "spells.negatePlus.longDescription"
+          "nameKey": "catalogs.spells.B-SP-037.name",
+          "descriptionKey": "catalogs.spells.B-SP-037.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-037.longDescription"
         }
       },
       "effect": {
@@ -882,7 +944,7 @@
       }
     },
     {
-      "id": "silence",
+      "id": "B-SP-038",
       "mpCost": 5,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -893,9 +955,9 @@
         "descriptionTemplate": "Apply Silence to a target player for 3 turns.",
         "longDescriptionTemplate": "While Silenced the target cannot cast any spell and their MP does not regenerate naturally at turn end. Duration is 3 turns.",
         "i18n": {
-          "nameKey": "spells.silence.name",
-          "descriptionKey": "spells.silence.description",
-          "longDescriptionKey": "spells.silence.longDescription"
+          "nameKey": "catalogs.spells.B-SP-038.name",
+          "descriptionKey": "catalogs.spells.B-SP-038.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-038.longDescription"
         }
       },
       "effect": {
@@ -905,11 +967,16 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "mana-shield",
+      "id": "B-SP-039",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -920,9 +987,9 @@
         "descriptionTemplate": "Reduce the next damage you take by consuming remaining MP.",
         "longDescriptionTemplate": "When you take damage, remaining MP is spent first; each point of MP absorbs 1 point of damage. The status is removed after the next hit.",
         "i18n": {
-          "nameKey": "spells.manaShield.name",
-          "descriptionKey": "spells.manaShield.description",
-          "longDescriptionKey": "spells.manaShield.longDescription"
+          "nameKey": "catalogs.spells.B-SP-039.name",
+          "descriptionKey": "catalogs.spells.B-SP-039.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-039.longDescription"
         }
       },
       "effect": {
@@ -932,11 +999,16 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "mana-drain",
+      "id": "B-SP-040",
       "mpCost": 2,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -947,9 +1019,9 @@
         "descriptionTemplate": "Steal 1 MP from a target player and recover 1 MP on a luck check of 70 or more.",
         "longDescriptionTemplate": "On a luck check of 70 or more, 1 MP is removed from the target and transferred to you.",
         "i18n": {
-          "nameKey": "spells.manaDrain.name",
-          "descriptionKey": "spells.manaDrain.description",
-          "longDescriptionKey": "spells.manaDrain.longDescription"
+          "nameKey": "catalogs.spells.B-SP-040.name",
+          "descriptionKey": "catalogs.spells.B-SP-040.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-040.longDescription"
         }
       },
       "effect": {
@@ -958,11 +1030,16 @@
         "luckThreshold": 70
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "seal",
+      "id": "B-SP-041",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -973,9 +1050,9 @@
         "descriptionTemplate": "The next hostile spell targeting you has no effect.",
         "longDescriptionTemplate": "The first hostile spell cast at you is cancelled and has no effect. The ward is then consumed. Stacks alongside Counterspell.",
         "i18n": {
-          "nameKey": "spells.seal.name",
-          "descriptionKey": "spells.seal.description",
-          "longDescriptionKey": "spells.seal.longDescription"
+          "nameKey": "catalogs.spells.B-SP-041.name",
+          "descriptionKey": "catalogs.spells.B-SP-041.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-041.longDescription"
         }
       },
       "effect": {
@@ -985,11 +1062,16 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "disciple",
+      "id": "B-SP-042",
       "mpCost": 4,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -1000,20 +1082,25 @@
         "descriptionTemplate": "When another player gains Strength or Magic through level-up or permanent reward, you gain +1 to the same stat.",
         "longDescriptionTemplate": "Reacts once to the next permanent Strength or Magic gain by any player. The copied stat boost is immediate and permanent.",
         "i18n": {
-          "nameKey": "spells.disciple.name",
-          "descriptionKey": "spells.disciple.description",
-          "longDescriptionKey": "spells.disciple.longDescription"
+          "nameKey": "catalogs.spells.B-SP-042.name",
+          "descriptionKey": "catalogs.spells.B-SP-042.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-042.longDescription"
         }
       },
       "effect": {
         "type": "copy-stat-gain"
       },
       "acquisition": [
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "elemental-bond",
+      "id": "B-SP-043",
       "mpCost": 3,
       "cooldownTurns": 1,
       "consumableOnCast": false,
@@ -1024,24 +1111,41 @@
         "descriptionTemplate": "Temporarily change your elemental attunement to a chosen element for 1 turn.",
         "longDescriptionTemplate": "For one turn you interact with sanctuaries, shrines, and effects of the chosen element as if it were your own. Returns to your base element at turn end.",
         "i18n": {
-          "nameKey": "spells.elementalBond.name",
-          "descriptionKey": "spells.elementalBond.description",
-          "longDescriptionKey": "spells.elementalBond.longDescription"
+          "nameKey": "catalogs.spells.B-SP-043.name",
+          "descriptionKey": "catalogs.spells.B-SP-043.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-043.longDescription"
         }
       },
       "effect": {
         "type": "change-element-temp"
       },
       "acquisition": [
-        { "source": "sanctuary", "sanctuaryElement": "fire" },
-        { "source": "sanctuary", "sanctuaryElement": "water" },
-        { "source": "sanctuary", "sanctuaryElement": "wind" },
-        { "source": "sanctuary", "sanctuaryElement": "earth" },
-        { "source": "merchant", "merchantIds": ["academy-merchant"] }
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "fire"
+        },
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "water"
+        },
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "wind"
+        },
+        {
+          "source": "sanctuary",
+          "sanctuaryElement": "earth"
+        },
+        {
+          "source": "merchant",
+          "merchantIds": [
+            "academy-merchant"
+          ]
+        }
       ]
     },
     {
-      "id": "toadify",
+      "id": "B-SP-044",
       "mpCost": 5,
       "cooldownTurns": 0,
       "consumableOnCast": true,
@@ -1052,9 +1156,9 @@
         "descriptionTemplate": "Apply Minified to a target player for 2 turns on a luck check of 70 or more.",
         "longDescriptionTemplate": "Minified sets all primary stats to 1 and disables HP/MP recovery and item use for 2 turns, on a luck check of 70 or more.",
         "i18n": {
-          "nameKey": "spells.toadify.name",
-          "descriptionKey": "spells.toadify.description",
-          "longDescriptionKey": "spells.toadify.longDescription"
+          "nameKey": "catalogs.spells.B-SP-044.name",
+          "descriptionKey": "catalogs.spells.B-SP-044.description",
+          "longDescriptionKey": "catalogs.spells.B-SP-044.longDescription"
         }
       },
       "effect": {
@@ -1064,7 +1168,9 @@
         "durationPerMagic": 0
       },
       "acquisition": [
-        { "source": "enchantress" }
+        {
+          "source": "enchantress"
+        }
       ]
     }
   ]

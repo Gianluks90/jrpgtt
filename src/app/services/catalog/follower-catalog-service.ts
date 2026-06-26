@@ -101,6 +101,12 @@ export class FollowerCatalogService {
       itemCapacityBonus?: unknown;
       actions?: unknown;
       allowedBiomes?: unknown;
+      combatSkipBiomes?: unknown;
+      leavesOnCombatLoss?: unknown;
+      removesOtherFollowersOnPickup?: unknown;
+      dismissLandmarkId?: unknown;
+      oneTimeActions?: unknown;
+      damagesOnXpGain?: unknown;
       parameterModifiers?: unknown;
       statusKeysWhileActive?: unknown;
     };
@@ -160,6 +166,13 @@ export class FollowerCatalogService {
       ...(typeof itemCapacityBonus === "number" ? { itemCapacityBonus } : {}),
       actions: typed.actions,
       allowedBiomes: this.parseAllowedBiomes(typed.allowedBiomes, typed.id),
+      combatSkipBiomes: this.parseAllowedBiomes(typed.combatSkipBiomes, typed.id),
+      ...(typed.leavesOnCombatLoss === true ? { leavesOnCombatLoss: true } : {}),
+      ...(typed.removesOtherFollowersOnPickup === true ? { removesOtherFollowersOnPickup: true } : {}),
+      ...(typeof typed.dismissLandmarkId === "string" && typed.dismissLandmarkId.trim()
+        ? { dismissLandmarkId: typed.dismissLandmarkId.trim() } : {}),
+      oneTimeActions: this.parseOneTimeActions(typed.oneTimeActions, typed.id),
+      ...(typed.damagesOnXpGain === true ? { damagesOnXpGain: true } : {}),
       parameterModifiers: this.parseParameterModifiers(typed.parameterModifiers, typed.id),
       statusKeysWhileActive: this.parseStatusKeys(typed.statusKeysWhileActive, typed.id),
     };
@@ -173,6 +186,14 @@ export class FollowerCatalogService {
     }
 
     return raw as FollowerDefinition["allowedBiomes"];
+  }
+
+  private parseOneTimeActions(raw: unknown, followerId: string): FollowerDefinition["oneTimeActions"] {
+    if (typeof raw === "undefined") return undefined;
+    if (!Array.isArray(raw) || raw.some((value) => typeof value !== "string" || !value.trim())) {
+      throw new Error(`Invalid followers configuration: follower '${followerId}' has invalid oneTimeActions`);
+    }
+    return raw.map((value) => value.trim());
   }
 
   private parseStatusKeys(raw: unknown, followerId: string): FollowerDefinition["statusKeysWhileActive"] {

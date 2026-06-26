@@ -1,367 +1,383 @@
 {
-    "statuses": [
-        {
-            "key": "nutrition",
-            "label": "Nutrition",
-            "description": "Prevents hostile environment damage for this turn.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/nutrition-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.nutrition.label",
-                "descriptionKey": "statuses.nutrition.description"
-            }
-        },
-        {
-            "key": "poison",
-            "label": "Poison",
-            "description": "Takes damage at the end of each turn.",
-            "defaultDurationTurns": 3,
-            "isNegative": true,
-            "iconUrl": "/status-icons/poison-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.poison.label",
-                "descriptionKey": "statuses.poison.description"
-            },
-            "effects": {
-                "turnEndHpPercentDelta": -0.05
-            }
-        },
-        {
-            "key": "regen",
-            "label": "Regen",
-            "description": "Heals a small amount at the end of each turn.",
-            "defaultDurationTurns": 3,
-            "iconUrl": "/status-icons/regen-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.regen.label",
-                "descriptionKey": "statuses.regen.description"
-            },
-            "effects": {
-                "turnEndHpPercentDelta": 0.05
-            }
-        },
-        {
-            "key": "minified",
-            "label": "Minified",
-            "description": "Transforms the target into a mouse. Primary stats are set to 1, HP/MP recovery is disabled, and item use is blocked.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/mouse-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.minified.label",
-                "descriptionKey": "statuses.minified.description"
-            },
-            "effects": {
-                "setPrimaryStatsTo": 1,
-                "disableHpRecovery": true,
-                "disableMpRecovery": true,
-                "disableItemUse": true
-            }
-        },
-        {
-            "key": "silence",
-            "label": "Silence",
-            "description": "Spell casting and MP natural regeneration are disabled.",
-            "defaultDurationTurns": 3,
-            "isNegative": true,
-            "iconUrl": "/status-icons/silence-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.silence.label",
-                "descriptionKey": "statuses.silence.description"
-            },
-            "effects": {
-                "disableSpellCasting": true,
-                "disableMpNaturalRegen": true
-            }
-        },
-        {
-            "key": "fortune",
-            "label": "Fortune",
-            "description": "Doubles the luck bonus applied to luck checks.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/lucky-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.fortune.label",
-                "descriptionKey": "statuses.fortune.description"
-            },
-            "effects": {
-                "luckBonusMultiplier": 2
-            }
-        },
-        {
-            "key": "bravery",
-            "label": "Bravery",
-            "description": "Increases Strength by 1.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.bravery.label",
-                "descriptionKey": "statuses.bravery.description"
-            },
-            "effects": {
-                "statModifiers": {
-                    "strength": 1
-                }
-            }
-        },
-        {
-            "key": "weakened",
-            "label": "Weakened",
-            "description": "Decreases Strength by 1.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/debuff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.weakened.label",
-                "descriptionKey": "statuses.weakened.description"
-            },
-            "effects": {
-                "statModifiers": {
-                    "strength": -1
-                }
-            }
-        },
-        {
-            "key": "focus",
-            "label": "Focus",
-            "description": "Increases Magic by 1.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.focus.label",
-                "descriptionKey": "statuses.focus.description"
-            },
-            "effects": {
-                "statModifiers": {
-                    "magic": 1
-                }
-            }
-        },
-        {
-            "key": "hexed",
-            "label": "Hexed",
-            "description": "Decreases Magic by 1.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/debuff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.hexed.label",
-                "descriptionKey": "statuses.hexed.description"
-            },
-            "effects": {
-                "statModifiers": {
-                    "magic": -1
-                }
-            }
-        },
-        {
-            "key": "sleep",
-            "label": "Sleep",
-            "description": "Puts the target to sleep and skips the next turn.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/sleep-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.sleep.label",
-                "descriptionKey": "statuses.sleep.description"
-            },
-            "effects": {
-                "skipTurns": 1
-            }
-        },
-        {
-            "key": "protection",
-            "label": "Protection",
-            "description": "Ignore next incoming damage.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/protection-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.protection.label",
-                "descriptionKey": "statuses.protection.description"
-            },
-            "effects": {
-                "incomingDamageMultiplier": 0.5
-            }
-        },
-        {
-            "key": "invisibility",
-            "label": "Invisibility",
-            "description": "The target cannot be attacked or targeted by spells.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/invisility-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.invisibility.label",
-                "descriptionKey": "statuses.invisibility.description"
-            },
-            "effects": {
-                "cannotBeAttacked": true,
-                "cannotBeTargetedBySpells": true
-            }
-        },
-        {
-            "key": "immobilized",
-            "label": "Immobilized",
-            "description": "The target cannot move.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/immobilized-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.immobilized.label",
-                "descriptionKey": "statuses.immobilized.description"
-            },
-            "effects": {
-                "cannotMove": true 
-            }
-        },
-        {
-            "key": "flying",
-            "label": "Flying",
-            "description": "Diagonal movement is enabled until the status expires.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.flying.label",
-                "descriptionKey": "statuses.flying.description"
-            },
-            "effectKey": "enable-diagonal-movement"
-        },
-        {
-            "key": "empowered",
-            "label": "Empowered",
-            "description": "Magic power is added to combat strength while the status is active.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.empowered.label",
-                "descriptionKey": "statuses.empowered.description"
-            },
-            "effectKey": "add-magic-to-strength-in-combat"
-        },
-        {
-            "key": "safe-step",
-            "label": "Safe Step",
-            "description": "The next harmful cell or environment effect is ignored.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/protection-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.safeStep.label",
-                "descriptionKey": "statuses.safeStep.description"
-            },
-            "effectKey": "ignore-next-harmful-cell-effect"
-        },
-        {
-            "key": "mana-shield",
-            "label": "Mana Shield",
-            "description": "The next incoming damage can be reduced by spending remaining MP.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/protection-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.manaShield.label",
-                "descriptionKey": "statuses.manaShield.description"
-            },
-            "effectKey": "reduce-next-damage-with-mp"
-        },
-        {
-            "key": "spell-ward",
-            "label": "Spell Ward",
-            "description": "The next hostile spell targeting this character is negated.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/protection-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.spellWard.label",
-                "descriptionKey": "statuses.spellWard.description"
-            },
-            "effectKey": "negate-next-hostile-spell"
-        },
-        {
-            "key": "petrified",
-            "label": "Petrified",
-            "description": "The target is turned to stone and skips the next turn.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/immobilized-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.petrified.label",
-                "descriptionKey": "statuses.petrified.description"
-            },
-            "effects": {
-                "skipTurns": 1
-            }
-        },
-        {
-            "key": "anchored",
-            "label": "Anchored",
-            "description": "Movement is blocked until the status expires.",
-            "defaultDurationTurns": 1,
-            "isNegative": true,
-            "iconUrl": "/status-icons/immobilized-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.anchored.label",
-                "descriptionKey": "statuses.anchored.description"
-            },
-            "effects": {
-                "cannotMove": true
-            }
-        },
-        {
-            "key": "fate-sight",
-            "label": "Fate Sight",
-            "description": "A glimpse of the next relevant random outcome is available.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/lucky-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.fateSight.label",
-                "descriptionKey": "statuses.fateSight.description"
-            },
-            "effectKey": "preview-next-random-outcome"
-        },
-        {
-            "key": "elemental-bound-fire",
-            "label": "Fire Bound",
-            "description": "Temporary fire attunement is active.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.elementalBoundFire.label",
-                "descriptionKey": "statuses.elementalBoundFire.description"
-            },
-            "effectKey": "temporary-attunement-fire"
-        },
-        {
-            "key": "elemental-bound-earth",
-            "label": "Earth Bound",
-            "description": "Temporary earth attunement is active.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.elementalBoundEarth.label",
-                "descriptionKey": "statuses.elementalBoundEarth.description"
-            },
-            "effectKey": "temporary-attunement-earth"
-        },
-        {
-            "key": "elemental-bound-air",
-            "label": "Air Bound",
-            "description": "Temporary air attunement is active.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.elementalBoundAir.label",
-                "descriptionKey": "statuses.elementalBoundAir.description"
-            },
-            "effectKey": "temporary-attunement-air"
-        },
-        {
-            "key": "elemental-bound-water",
-            "label": "Water Bound",
-            "description": "Temporary water attunement is active.",
-            "defaultDurationTurns": 1,
-            "iconUrl": "/status-icons/buff-icon.svg",
-            "i18n": {
-                "labelKey": "statuses.elementalBoundWater.label",
-                "descriptionKey": "statuses.elementalBoundWater.description"
-            },
-            "effectKey": "temporary-attunement-water"
+  "statuses": [
+    {
+      "key": "nutrition",
+      "label": "Nutrition",
+      "description": "Prevents hostile environment damage for this turn.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/nutrition-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.nutrition.label",
+        "descriptionKey": "statuses.nutrition.description"
+      }
+    },
+    {
+      "key": "poison",
+      "label": "Poison",
+      "description": "Takes damage at the end of each turn.",
+      "defaultDurationTurns": 3,
+      "isNegative": true,
+      "iconUrl": "/status-icons/poison-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.poison.label",
+        "descriptionKey": "statuses.poison.description"
+      },
+      "effects": {
+        "turnEndHpPercentDelta": -0.05
+      }
+    },
+    {
+      "key": "regen",
+      "label": "Regen",
+      "description": "Heals a small amount at the end of each turn.",
+      "defaultDurationTurns": 3,
+      "iconUrl": "/status-icons/regen-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.regen.label",
+        "descriptionKey": "statuses.regen.description"
+      },
+      "effects": {
+        "turnEndHpPercentDelta": 0.05
+      }
+    },
+    {
+      "key": "minified",
+      "label": "Minified",
+      "description": "Transforms the target into a mouse. Primary stats are set to 1, HP/MP recovery is disabled, and item use is blocked.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/mouse-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.minified.label",
+        "descriptionKey": "statuses.minified.description"
+      },
+      "effects": {
+        "setPrimaryStatsTo": 1,
+        "disableHpRecovery": true,
+        "disableMpRecovery": true,
+        "disableItemUse": true
+      }
+    },
+    {
+      "key": "silence",
+      "label": "Silence",
+      "description": "Spell casting and MP natural regeneration are disabled.",
+      "defaultDurationTurns": 3,
+      "isNegative": true,
+      "iconUrl": "/status-icons/silence-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.silence.label",
+        "descriptionKey": "statuses.silence.description"
+      },
+      "effects": {
+        "disableSpellCasting": true,
+        "disableMpNaturalRegen": true
+      }
+    },
+    {
+      "key": "fortune",
+      "label": "Fortune",
+      "description": "Doubles the luck bonus applied to luck checks.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/lucky-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.fortune.label",
+        "descriptionKey": "statuses.fortune.description"
+      },
+      "effects": {
+        "luckBonusMultiplier": 2
+      }
+    },
+    {
+      "key": "bravery",
+      "label": "Bravery",
+      "description": "Increases Strength by 1.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.bravery.label",
+        "descriptionKey": "statuses.bravery.description"
+      },
+      "effects": {
+        "statModifiers": {
+          "strength": 1
         }
-    ]
+      }
+    },
+    {
+      "key": "weakened",
+      "label": "Weakened",
+      "description": "Decreases Strength by 1.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/debuff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.weakened.label",
+        "descriptionKey": "statuses.weakened.description"
+      },
+      "effects": {
+        "statModifiers": {
+          "strength": -1
+        }
+      }
+    },
+    {
+      "key": "focus",
+      "label": "Focus",
+      "description": "Increases Magic by 1.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.focus.label",
+        "descriptionKey": "statuses.focus.description"
+      },
+      "effects": {
+        "statModifiers": {
+          "magic": 1
+        }
+      }
+    },
+    {
+      "key": "hexed",
+      "label": "Hexed",
+      "description": "Decreases Magic by 1.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/debuff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.hexed.label",
+        "descriptionKey": "statuses.hexed.description"
+      },
+      "effects": {
+        "statModifiers": {
+          "magic": -1
+        }
+      }
+    },
+    {
+      "key": "sleep",
+      "label": "Sleep",
+      "description": "Puts the target to sleep and skips the next turn.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/sleep-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.sleep.label",
+        "descriptionKey": "statuses.sleep.description"
+      },
+      "effects": {
+        "skipTurns": 1
+      }
+    },
+    {
+      "key": "protection",
+      "label": "Protection",
+      "description": "Ignore next incoming damage.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/protection-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.protection.label",
+        "descriptionKey": "statuses.protection.description"
+      },
+      "effects": {
+        "incomingDamageMultiplier": 0.5
+      }
+    },
+    {
+      "key": "invisibility",
+      "label": "Invisibility",
+      "description": "The target cannot be attacked or targeted by spells.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/invisility-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.invisibility.label",
+        "descriptionKey": "statuses.invisibility.description"
+      },
+      "effects": {
+        "cannotBeAttacked": true,
+        "cannotBeTargetedBySpells": true
+      }
+    },
+    {
+      "key": "immobilized",
+      "label": "Immobilized",
+      "description": "The target cannot move.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/immobilized-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.immobilized.label",
+        "descriptionKey": "statuses.immobilized.description"
+      },
+      "effects": {
+        "cannotMove": true
+      }
+    },
+    {
+      "key": "flying",
+      "label": "Flying",
+      "description": "Diagonal movement is enabled until the status expires.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.flying.label",
+        "descriptionKey": "statuses.flying.description"
+      },
+      "effectKey": "enable-diagonal-movement"
+    },
+    {
+      "key": "empowered",
+      "label": "Empowered",
+      "description": "Magic power is added to combat strength while the status is active.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.empowered.label",
+        "descriptionKey": "statuses.empowered.description"
+      },
+      "effectKey": "add-magic-to-strength-in-combat"
+    },
+    {
+      "key": "safe-step",
+      "label": "Safe Step",
+      "description": "The next harmful cell or environment effect is ignored.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/protection-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.safeStep.label",
+        "descriptionKey": "statuses.safeStep.description"
+      },
+      "effectKey": "ignore-next-harmful-cell-effect"
+    },
+    {
+      "key": "mana-shield",
+      "label": "Mana Shield",
+      "description": "The next incoming damage can be reduced by spending remaining MP.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/protection-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.manaShield.label",
+        "descriptionKey": "statuses.manaShield.description"
+      },
+      "effectKey": "reduce-next-damage-with-mp"
+    },
+    {
+      "key": "spell-ward",
+      "label": "Spell Ward",
+      "description": "The next hostile spell targeting this character is negated.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/protection-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.spellWard.label",
+        "descriptionKey": "statuses.spellWard.description"
+      },
+      "effectKey": "negate-next-hostile-spell"
+    },
+    {
+      "key": "petrified",
+      "label": "Petrified",
+      "description": "The target is turned to stone and skips the next turn.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/immobilized-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.petrified.label",
+        "descriptionKey": "statuses.petrified.description"
+      },
+      "effects": {
+        "skipTurns": 1
+      }
+    },
+    {
+      "key": "anchored",
+      "label": "Anchored",
+      "description": "Movement is blocked until the status expires.",
+      "defaultDurationTurns": 1,
+      "isNegative": true,
+      "iconUrl": "/status-icons/immobilized-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.anchored.label",
+        "descriptionKey": "statuses.anchored.description"
+      },
+      "effects": {
+        "cannotMove": true
+      }
+    },
+    {
+      "key": "fate-sight",
+      "label": "Fate Sight",
+      "description": "A glimpse of the next relevant random outcome is available.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/lucky-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.fateSight.label",
+        "descriptionKey": "statuses.fateSight.description"
+      },
+      "effectKey": "preview-next-random-outcome"
+    },
+    {
+      "key": "elemental-bound-fire",
+      "label": "Fire Bound",
+      "description": "Temporary fire attunement is active.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.elementalBoundFire.label",
+        "descriptionKey": "statuses.elementalBoundFire.description"
+      },
+      "effectKey": "temporary-attunement-fire"
+    },
+    {
+      "key": "elemental-bound-earth",
+      "label": "Earth Bound",
+      "description": "Temporary earth attunement is active.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.elementalBoundEarth.label",
+        "descriptionKey": "statuses.elementalBoundEarth.description"
+      },
+      "effectKey": "temporary-attunement-earth"
+    },
+    {
+      "key": "elemental-bound-air",
+      "label": "Air Bound",
+      "description": "Temporary air attunement is active.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.elementalBoundAir.label",
+        "descriptionKey": "statuses.elementalBoundAir.description"
+      },
+      "effectKey": "temporary-attunement-air"
+    },
+    {
+      "key": "elemental-bound-water",
+      "label": "Water Bound",
+      "description": "Temporary water attunement is active.",
+      "defaultDurationTurns": 1,
+      "iconUrl": "/status-icons/buff-icon.svg",
+      "i18n": {
+        "labelKey": "statuses.elementalBoundWater.label",
+        "descriptionKey": "statuses.elementalBoundWater.description"
+      },
+      "effectKey": "temporary-attunement-water"
+    },
+    {
+      "key": "strength-boost",
+      "label": "Strength Boost",
+      "description": "Strength increased by 2 for this turn.",
+      "defaultDurationTurns": 1,
+      "effects": {
+        "statModifiers": {
+          "strength": 2
+        }
+      },
+      "i18n": {
+        "labelKey": "statuses.strengthBoost.label",
+        "descriptionKey": "statuses.strengthBoost.description"
+      },
+      "iconUrl": "/status-icons/strength-boost-icon.svg"
+    }
+  ]
 }

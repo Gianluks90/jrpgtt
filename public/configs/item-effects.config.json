@@ -16,6 +16,113 @@
       "type": "recharge-charges-in-biome",
       "biome": "water",
       "rechargeCharges": 1
+    },
+    {
+      "id": "holy-chalice-desert-immunity",
+      "label": "Desert Immunity",
+      "description": "Prevents hostile environment damage in the desert while held.",
+      "type": "prevent-biome-condition-damage-passive",
+      "biome": "desert",
+      "conditionId": "hostile-environment"
+    },
+    {
+      "id": "coin-bag-pickup",
+      "label": "Coin Bag",
+      "description": "Gain 5–10 coins immediately.",
+      "type": "gain-coins-range-on-pickup",
+      "minAmount": 5,
+      "maxAmount": 10
+    },
+    {
+      "id": "large-coin-bag-pickup",
+      "label": "Large Coin Bag",
+      "description": "Gain 10–20 coins immediately.",
+      "type": "gain-coins-range-on-pickup",
+      "minAmount": 10,
+      "maxAmount": 20
+    },
+    {
+      "id": "strength-potion-pickup",
+      "label": "Strength Boost",
+      "description": "Increase your Strength by 2 for the current turn.",
+      "type": "apply-status-on-pickup",
+      "statusKey": "strength-boost",
+      "durationTurns": 1
+    },
+    {
+      "id": "helmet-combat-damage-reduction",
+      "label": "Helmet Protection",
+      "description": "Fortune check 80+: reduce incoming non-magic combat damage by 1.",
+      "type": "reduce-combat-damage-on-fortune-check",
+      "luckThreshold": 80,
+      "reduction": 1,
+      "combatStatFilter": "strength"
+    },
+    {
+      "id": "shield-combat-damage-reduction",
+      "label": "Shield Protection",
+      "description": "Fortune check 65+: reduce incoming non-magic combat damage by 1.",
+      "type": "reduce-combat-damage-on-fortune-check",
+      "luckThreshold": 65,
+      "reduction": 1,
+      "combatStatFilter": "strength"
+    },
+    {
+      "id": "armour-combat-damage-reduction",
+      "label": "Armour Protection",
+      "description": "Fortune check 50+: reduce incoming non-magic combat damage by 1.",
+      "type": "reduce-combat-damage-on-fortune-check",
+      "luckThreshold": 50,
+      "reduction": 1,
+      "combatStatFilter": "strength"
+    },
+    {
+      "id": "holy-lance-dragon-bonus",
+      "label": "Dragon Slayer",
+      "description": "Grants +3 Strength when fighting Dragon enemies.",
+      "type": "combat-stat-bonus-vs-enemy-category",
+      "combatStat": "strength",
+      "bonus": 3,
+      "categoryFilter": "dragon"
+    },
+    {
+      "id": "magic-wand-spell-refill",
+      "label": "Magic Wand Refill",
+      "description": "Draw a new spell from the spell deck when your spellbook becomes empty.",
+      "type": "draw-spell-on-spellbook-empty"
+    },
+    {
+      "id": "fortune-pendant-on-lucky-roll",
+      "label": "Fortune Pendant",
+      "description": "Apply the Fortune status for 1 turn on a successful luck check.",
+      "type": "apply-status-on-lucky-roll",
+      "statusKey": "fortune",
+      "durationTurns": 1
+    },
+    {
+      "id": "talisman-self-silence-spell-immunity",
+      "label": "Talisman Ward",
+      "description": "Silences the holder (cannot cast spells) but grants immunity to other players' spells.",
+      "type": "passive-self-silence-and-spell-immunity"
+    },
+    {
+      "id": "holy-symbol-spirit-skip",
+      "label": "Exorcise Spirit",
+      "description": "Destroy a spirit enemy without combat and gain 1 experience.",
+      "type": "skip-spirit-for-exp",
+      "expReward": 1
+    },
+    {
+      "id": "crystal-ball-card-skip",
+      "label": "Crystal Ball Skip",
+      "description": "Once per turn, discard one exploration card and draw a replacement.",
+      "type": "skip-exploration-card-once-per-turn"
+    },
+    {
+      "id": "amulet-region-iii-access",
+      "label": "Region III Access",
+      "description": "Required to enter Region III and avoid its lethal environment.",
+      "type": "region-iii-access"
     }
   ]
 }

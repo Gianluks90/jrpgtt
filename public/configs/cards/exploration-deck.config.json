@@ -149,40 +149,361 @@
       },
       {
         "type": "place",
-        "cardId": "place-abandoned-camp",
+        "cardId": "B-PL-001",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-002",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-003",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-004",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-005",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-006",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-007",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-008",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "place",
+        "cardId": "B-PL-009",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-002",
         "quantity": 1,
         "expansion": "base"
       },
       {
         "type": "stranger",
-        "cardId": "stranger-wandering-healer",
+        "cardId": "B-ST-003",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-004",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-005",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-006",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-007",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-008",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "stranger",
+        "cardId": "B-ST-009",
         "quantity": 1,
         "expansion": "base"
       },
       {
         "type": "follower",
-        "cardId": "horse",
+        "cardId": "B-FO-001",
         "quantity": 1,
         "expansion": "base",
         "forced": false
       },
       {
         "type": "follower",
-        "cardId": "unicorn",
+        "cardId": "B-FO-002",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-003",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-004",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-005",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-006",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-008",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-009",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-007",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-010",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-011",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-012",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": false
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-014",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": true
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-015",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": true
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-016",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": true
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-017",
+        "quantity": 1,
+        "expansion": "base",
+        "forced": true
+      },
+      {
+        "type": "follower",
+        "cardId": "B-FO-013",
         "quantity": 1,
         "expansion": "base",
         "forced": false
       },
       {
         "type": "item",
-        "cardId": "common-sword",
+        "cardId": "B-IT-001",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-002",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-003",
         "quantity": 1,
         "expansion": "base"
       },
       {
-        "type": "amulet",
-        "cardId": "talisman",
+        "type": "item",
+        "cardId": "B-IT-004",
         "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-005",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-006",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-007",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-008",
+        "quantity": 2,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-009",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-010",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-011",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-012",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-013",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-014",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-015",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-016",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-017",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-018",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-019",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-020",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-021",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-022",
+        "quantity": 1,
+        "expansion": "base"
+      },
+      {
+        "type": "item",
+        "cardId": "B-IT-023",
+        "quantity": 2,
         "expansion": "base"
       }
     ]

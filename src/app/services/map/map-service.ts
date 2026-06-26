@@ -835,7 +835,7 @@ export class MapService {
       }
     }
 
-    await setDoc(playerRef, {
+    const patch: Record<string, unknown> = {
       inventory: {
         ...inventory,
         resources,
@@ -844,7 +844,29 @@ export class MapService {
       },
       lastLuckCheck: luckResult,
       pendingResourcePickup,
-    }, { merge: true });
+    };
+
+    // Fortune Pendant (B-IT-015): apply Fortune status on lucky roll
+    if (luckResult.success) {
+      const hasFortunePendant = (player.inventory?.items ?? []).some((e) => e.itemId === "B-IT-015");
+      if (hasFortunePendant) {
+        const fortuneStatus = this.statusCatalogService.getCachedStatus("fortune");
+        if (fortuneStatus) {
+          const currentStatuses = (player.statuses ?? []).filter(s => s.key !== "fortune");
+          patch["statuses"] = [
+            ...currentStatuses,
+            {
+              key: fortuneStatus.key,
+              label: fortuneStatus.label,
+              description: fortuneStatus.description,
+              durationTurns: 1,
+            },
+          ];
+        }
+      }
+    }
+
+    await setDoc(playerRef, patch, { merge: true });
   }
 
   private getTotalResourceCount(resources: Player["inventory"]["resources"]): number {

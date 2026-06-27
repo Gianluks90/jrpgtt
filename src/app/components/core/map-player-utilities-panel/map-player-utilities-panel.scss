@@ -135,14 +135,6 @@ app-attunement-indicator {
   gap: 7px;
 }
 
-.inventory-item-title {
-  margin: 0;
-  font-size: 0.62rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
 .inventory-item-header {
   display: flex;
   align-items: center;
@@ -150,22 +142,12 @@ app-attunement-indicator {
   gap: 8px;
 }
 
-.inventory-item-sell-value {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 18px;
-  padding: 1px 5px;
-  border: 1px solid rgba(218, 165, 32, 0.65);
-  background: rgba(218, 165, 32, 0.12);
-  font-size: 0.5rem;
-  line-height: 1;
-  color: var(--coin-color);
-}
-
-.inventory-item-sell-icon {
-  --coin-icon-size: 11px;
+.inventory-item-title {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .inventory-item-line {
@@ -209,85 +191,3 @@ app-attunement-indicator {
   opacity: 0.82;
 }
 
-.inventory-item-keywords {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.inventory-item-keyword {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 16px;
-  padding: 2px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 0.46rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.9;
-}
-
-.inventory-item-keyword-positive {
-  border-color: color-mix(in srgb, var(--ok-color) 60%, transparent);
-  background: color-mix(in srgb, var(--ok-color) 18%, transparent);
-  color: color-mix(in srgb, var(--ok-color) 85%, white);
-}
-
-.inventory-item-keyword-negative {
-  border-color: color-mix(in srgb, var(--bad-color) 65%, transparent);
-  background: color-mix(in srgb, var(--bad-color) 18%, transparent);
-  color: color-mix(in srgb, var(--bad-color) 88%, white);
-}
-
-.inventory-item-description {
-  margin: 0;
-  font-size: 0.54rem;
-  line-height: 1.25;
-  color: rgba(255, 255, 255, 0.72);
-  opacity: 1;
-}
-
-.inventory-item-uses {
-  display: grid;
-  gap: 4px;
-}
-
-.inventory-item-uses-title {
-  margin: 0;
-  font-size: 0.48rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  opacity: 0.72;
-}
-
-.inventory-item-uses-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.inventory-item-uses-slots {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.inventory-item-uses-slot {
-  width: 10px;
-  height: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.48);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.inventory-item-uses-slot-filled {
-  border-color: color-mix(in srgb, var(--ok-color) 60%, transparent);
-  background: color-mix(in srgb, var(--ok-color) 55%, transparent);
-}
-
-.inventory-item-uses-counter {
-  font-size: 0.5rem;
-  opacity: 0.85;
-}

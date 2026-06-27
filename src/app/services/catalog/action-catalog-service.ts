@@ -395,6 +395,7 @@ export class ActionCatalogService {
       || value === "biome-chop-tree"
       || value === "biome-consume-ration"
       || value === "follower-feed-horse"
+      || value === "follower-guide-pathfind"
       || value === "landmark-rest"
       || value === "landmark-trainer"
       || value === "safe-place-doctor"

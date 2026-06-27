@@ -8,6 +8,7 @@ export type ActionFlowHandler =
   | "biome-chop-tree"
   | "biome-consume-ration"
   | "follower-feed-horse"
+  | "follower-guide-pathfind"
   | "landmark-rest"
   | "landmark-trainer"
   | "safe-place-doctor"

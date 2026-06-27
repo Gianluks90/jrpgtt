@@ -6,6 +6,9 @@ import { DialogWrapper } from "../../ui/dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../../ui/text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
+import { ItemCatalogService } from "@services/catalog/item-catalog-service";
+import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
 
 export interface DiscardPileDialogData {
   entries: DiscardPileEntry[];
@@ -25,6 +28,9 @@ export class DiscardPileDialog {
   constructor(
     private dialogRef: DialogRef<DialogResponse<never>>,
     private translationService: TranslationService,
+    private itemCatalogService: ItemCatalogService,
+    private followerCatalogService: FollowerCatalogService,
+    private spellCatalogService: SpellCatalogService,
     @Inject(DIALOG_DATA) data: DiscardPileDialogData,
   ) {
     const all = Array.isArray(data?.entries) ? data.entries : [];
@@ -60,8 +66,21 @@ export class DiscardPileDialog {
     const cardName = String(entry.card?.name ?? "").trim();
     if (cardName) return cardName;
 
+    const kind = entry.card?.kind;
     const cardId = String(entry.card?.cardId ?? "").trim();
-    if (cardId) return cardId;
+
+    if (cardId) {
+      if (kind === "item") {
+        const item = this.itemCatalogService.getCachedItemById(cardId);
+        if (item) return this.itemCatalogService.getLocalizedName(item);
+      } else if (kind === "follower") {
+        const follower = this.followerCatalogService.getCachedFollowerById(cardId);
+        if (follower) return this.followerCatalogService.getLocalizedName(follower);
+      } else if (kind === "spell") {
+        const spell = this.spellCatalogService.getSpell(cardId);
+        if (spell) return this.spellCatalogService.getLocalizedName(spell);
+      }
+    }
 
     return this.translationService.tOrFallback("dialogs.discardPile.unknownCard", "Unknown card");
   }

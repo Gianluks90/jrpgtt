@@ -458,6 +458,15 @@
         "notEnoughCoinsSelection": "I trattamenti selezionati costano {cost} monete, ma ne possiedi solo {money}."
       }
     },
+    "itemSwap": {
+      "title": "Inventario pieno",
+      "subtitle": "Non c'è spazio per {item}. Scegli un oggetto da scartare o rifiuta il nuovo.",
+      "newItem": "Nuovo oggetto raccolto",
+      "selectDiscard": "Seleziona l'oggetto da scartare",
+      "keepNew": "Tieni il nuovo, scarta selezionato",
+      "discardNew": "Rifiuta il nuovo oggetto",
+      "noItems": "Nessun oggetto nell'inventario."
+    },
     "resourceInventory": {
       "title": {
         "inventoryFull": "Inventario pieno",
@@ -1001,9 +1010,9 @@
       "followerStatus": "Stato di {name} ({status})"
     },
     "stats": {
-      "strengthAbbr": "FRZ",
-      "magicAbbr": "MAG",
-      "luckAbbr": "FOR"
+      "strengthAbbr": "Forza",
+      "magicAbbr": "Magia",
+      "luckAbbr": "Fortuna"
     },
     "turnLeft": {
       "one": "1 turno rimanente",
@@ -1582,10 +1591,13 @@
       "regeneratingWatersHealing": "{playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
       "followerHostileEnvironmentDamage": "Il seguace {followerName} di {playerName} ha subito {damageHp} HP dal deserto ostile (dimensione ambiente {environmentSize}).",
       "followerRegeneratingWatersHealing": "Il seguace {followerName} di {playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
+      "explorationPickupItem": "{playerName} ha raccolto {itemName}.",
       "discardResource": "{playerName} ha scartato 1 {resource}.",
       "pendingPickupCancelled": "{playerName} ha annullato la raccolta in sospeso di {resource}.",
       "swapResource": "{playerName} ha scartato {droppedResource} e raccolto {gainedResource}.",
       "resolvePendingPickup": "{playerName} ha raccolto la risorsa in sospeso {resource}.",
+      "itemPickupRefused": "{playerName} ha rifiutato di raccogliere {itemName}.",
+      "itemSwapped": "{playerName} ha raccolto {itemName} scartando {discardedItemName}.",
       "castSpell": "{playerName} ha lanciato {spellName} e speso {spentMp} MP.",
       "castSpellHeal": "{playerName} ha lanciato {spellName}, recuperato {healedHp} HP e speso {spentMp} MP.",
       "castSpellStatus": "{playerName} ha lanciato {spellName}, applicato {statusKey} per {durationTurns} turni e speso {spentMp} MP.",
@@ -1967,6 +1979,12 @@
       "label": "Vigore",
       "description": "Forza +2 per questo turno."
     }
+  },
+  "common": {
+    "unknownItem": "Oggetto sconosciuto",
+    "unknownFollower": "Seguace sconosciuto",
+    "unknownSpell": "Incantesimo sconosciuto",
+    "unknownCard": "Carta sconosciuta"
   },
   "resources": {
     "timber": "Legname",

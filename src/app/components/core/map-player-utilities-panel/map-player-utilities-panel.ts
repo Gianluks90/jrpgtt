@@ -14,6 +14,7 @@ import { AttunementIndicator } from "../../ui/attunement-indicator/attunement-in
 import { IconButton } from "../../ui/icon-button/icon-button";
 import { MoneyCounter } from "../../ui/money-counter/money-counter";
 import { ResourceCounter } from "../../ui/resource-counter/resource-counter";
+import { ItemCard } from "../../ui/item-card/item-card";
 
 @Component({
   selector: "app-map-player-utilities-panel",
@@ -22,6 +23,7 @@ import { ResourceCounter } from "../../ui/resource-counter/resource-counter";
     AlignmentIndicator,
     AttunementIndicator,
     IconButton,
+    ItemCard,
     MoneyCounter,
     ResourceCounter,
     TranslationPipe,

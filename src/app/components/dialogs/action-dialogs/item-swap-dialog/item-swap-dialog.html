@@ -1,0 +1,41 @@
+<dialog-wrapper [title]="title">
+    <p class="info-text">{{ subtitle }}</p>
+
+    <p class="new-item-label">{{ 'dialogs.itemSwap.newItem' | t }}</p>
+    <app-item-card
+        [name]="newItemName"
+        [description]="newItemDescription"
+        class="new-item-preview"
+    ></app-item-card>
+
+    <p class="section-label">{{ 'dialogs.itemSwap.selectDiscard' | t }}</p>
+    <div class="items-list">
+        @for (item of currentItems; track item.itemId) {
+            <button
+                type="button"
+                class="item-row"
+                [class.selected]="selectedItemId() === item.itemId"
+                (click)="onSelectItem(item.itemId)"
+            >
+                <strong class="item-row-name">{{ item.name }}</strong>
+                <span class="item-row-description">{{ item.description }}</span>
+            </button>
+        }
+        @if (currentItems.length === 0) {
+            <p class="empty-text">{{ 'dialogs.itemSwap.noItems' | t }}</p>
+        }
+    </div>
+
+    <text-button
+        dialog-action
+        [fullWidth]="true"
+        [text]="'dialogs.itemSwap.keepNew' | t"
+        [disabled]="!selectedItemId()"
+        (clicked)="keepNew()"
+    ></text-button>
+    <text-button
+        dialog-action
+        [text]="'dialogs.itemSwap.discardNew' | t"
+        (clicked)="discardNew()"
+    ></text-button>
+</dialog-wrapper>

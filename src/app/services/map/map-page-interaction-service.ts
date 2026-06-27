@@ -6,6 +6,7 @@ import {
   DOCTOR_HEAL_DIALOG_CONFIG,
   ENCHANTRESS_DIALOG_CONFIG,
   FAST_TRAVEL_DIALOG_CONFIG,
+  ITEM_SWAP_DIALOG_CONFIG,
   MERCHANT_DIALOG_CONFIG,
   RESOURCE_INVENTORY_DIALOG_CONFIG,
   RESOURCE_EXCHANGE_DIALOG_CONFIG,
@@ -117,6 +118,11 @@ import { SanctuaryTilesConfigEntry, TilesConfig } from "@models/world/TilesConfi
 import { DiscardPileDialog } from "../../components/dialogs/discard-pile-dialog/discard-pile-dialog";
 import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { TranslationService } from "@services/shared/translation-service";
+import {
+  ItemSwapDialog,
+  ItemSwapDialogData,
+  ItemSwapDialogResult,
+} from "../../components/dialogs/action-dialogs/item-swap-dialog/item-swap-dialog";
 import { ActionRegistryService } from "@services/gameplay/action-registry-service";
 import { CommandPanelAction } from "../../components/ui/commands-panel/commands-panel";
 import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
@@ -1716,6 +1722,56 @@ export class MapPageInteractionService {
     } finally {
       this.inventoryDialogOpen.set(false);
     }
+  }
+
+  public async openItemSwapDialog(input: {
+    gameId: string;
+    player: Player;
+    dialogData: ItemSwapDialogData;
+  }): Promise<void> {
+    if (this.inventoryDialogOpen()) return;
+    this.inventoryDialogOpen.set(true);
+    try {
+      const dialogRef = this.dialog.open<DialogResponse<ItemSwapDialogResult>>(ItemSwapDialog, {
+        ...ITEM_SWAP_DIALOG_CONFIG,
+        data: input.dialogData,
+      });
+
+      const response = await firstValueFrom(dialogRef.closed.pipe(take(1)));
+      const result = this.asItemSwapResult(response);
+
+      if (!result || result.type === "discard-new") {
+        await this.actionExecutorService.resolvePendingItemPickup(input.gameId, {
+          id: input.player.id,
+          name: input.player.name,
+        }, { keepNew: false });
+        return;
+      }
+
+      await this.actionExecutorService.resolvePendingItemPickup(input.gameId, {
+        id: input.player.id,
+        name: input.player.name,
+      }, { keepNew: true, discardItemId: result.discardItemId });
+    } catch (error) {
+      console.error(error);
+      window.alert(error instanceof Error
+        ? error.message
+        : this.translationService.tOrFallback("map.interaction.errors.itemSwap", "Error while resolving item pickup"));
+    } finally {
+      this.inventoryDialogOpen.set(false);
+    }
+  }
+
+  private asItemSwapResult(response: unknown): ItemSwapDialogResult | null {
+    if (typeof response !== "object" || response === null || !("data" in response)) return null;
+    const data = (response as { data: unknown }).data;
+    if (typeof data !== "object" || data === null || !("type" in data)) return null;
+    const typed = data as { type: unknown; discardItemId?: unknown };
+    if (typed.type === "discard-new") return { type: "discard-new" };
+    if (typed.type === "keep-new" && typeof typed.discardItemId === "string") {
+      return { type: "keep-new", discardItemId: typed.discardItemId };
+    }
+    return null;
   }
 
   public async confirmLeaveGameToHome(): Promise<boolean> {

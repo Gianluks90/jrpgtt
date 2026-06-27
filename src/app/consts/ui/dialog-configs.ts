@@ -6,6 +6,11 @@ export const DIALOGS_CONFIG = {
     autoFocus: false
 };
 
+export const ITEM_SWAP_DIALOG_CONFIG = {
+    ...DIALOGS_CONFIG,
+    maxWidth: '540px',
+};
+
 export const DOCTOR_HEAL_DIALOG_CONFIG = {
     ...DIALOGS_CONFIG,
     maxWidth: '500px',

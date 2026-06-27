@@ -117,6 +117,7 @@ export class MapPage implements OnInit, OnDestroy {
   private worldEventFlowClockTimer: ReturnType<typeof setInterval> | null = null;
   private worldEventFlowNowMs = signal<number>(Date.now());
   private lastPendingDialogKey = signal<string | null>(null);
+  private lastPendingItemDialogKey = signal<string | null>(null);
   private lastClearedRequiredActionNotificationId = signal<string | null>(null);
   private requiredActionNotificationSeenAtMsById = signal<Record<string, number>>({});
   public latestLogMessage = computed<string>(() => {
@@ -662,6 +663,52 @@ export class MapPage implements OnInit, OnDestroy {
         gameId: this.gameId,
         player,
         maxCapacity: this.resourceCapacity(),
+      });
+    }, { injector: this.injector });
+
+    effect(() => {
+      const player = this.myPlayer();
+      const pendingItemPickup = player?.pendingItemPickup ?? null;
+      if (!player || !pendingItemPickup) {
+        this.lastPendingItemDialogKey.set(null);
+        return;
+      }
+
+      const key = `${pendingItemPickup.itemId}:${pendingItemPickup.requestedAtTurn}`;
+      if (this.mapPageInteractionService.inventoryDialogOpen() || this.lastPendingItemDialogKey() === key) {
+        return;
+      }
+
+      this.lastPendingItemDialogKey.set(key);
+
+      const newItemDef = untracked(() => this.itemCatalogService.getCachedItemById(pendingItemPickup.itemId));
+      const newItemName = newItemDef
+        ? this.itemCatalogService.getLocalizedName(newItemDef)
+        : pendingItemPickup.itemId;
+      const newItemDescription = newItemDef
+        ? this.itemCatalogService.getLocalizedDescription(newItemDef)
+        : "";
+
+      const rawItems = player.inventory?.items ?? [];
+      const currentItems = (Array.isArray(rawItems) ? rawItems : [])
+        .filter((entry): entry is { itemId: string } => !!entry && typeof (entry as { itemId?: unknown }).itemId === "string")
+        .map((entry) => {
+          const def = untracked(() => this.itemCatalogService.getCachedItemById((entry as { itemId: string }).itemId));
+          return {
+            itemId: (entry as { itemId: string }).itemId,
+            name: def ? this.itemCatalogService.getLocalizedName(def) : (entry as { itemId: string }).itemId,
+            description: def ? this.itemCatalogService.getLocalizedDescription(def) : "",
+          };
+        })
+        .filter((item) => {
+          const def = untracked(() => this.itemCatalogService.getCachedItemById(item.itemId));
+          return def?.occupiesSpace === true;
+        });
+
+      void this.mapPageInteractionService.openItemSwapDialog({
+        gameId: this.gameId,
+        player,
+        dialogData: { newItemName, newItemDescription, currentItems },
       });
     }, { injector: this.injector });
 

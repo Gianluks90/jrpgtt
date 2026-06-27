@@ -62,14 +62,20 @@
                 <!-- Right: active card detail -->
                 <div class="exploration-detail-col">
                     @if (activeEntry(); as entry) {
-                        <span class="exploration-detail-name">{{ entry.name }}</span>
-                        <div class="exploration-detail-meta">
-                            <span [class]="'exploration-card-type type-' + entry.placed.type">
-                                {{ entry.typeLabel }}
-                            </span>
-                        </div>
-                        @if (entry.description) {
-                            <p class="exploration-detail-desc">{{ entry.description }}</p>
+                        @if (entry.itemCard; as ic) {
+                            <app-item-card
+                                [name]="ic.name"
+                                [description]="ic.description"
+                                [labels]="ic.labels"
+                                [uses]="ic.uses"
+                                [value]="ic.value"
+                                class="exploration-item-card"
+                            ></app-item-card>
+                        } @else {
+                            <span class="exploration-detail-name">{{ entry.name }}</span>
+                            @if (entry.description) {
+                                <p class="exploration-detail-desc">{{ entry.description }}</p>
+                            }
                         }
 
                         @if (pendingPlaceResult(); as placeResult) {

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Timestamp, collection, deleteField, doc, getDocs, getDoc, runTransaction, setDoc, writeBatch } from "firebase/firestore";
+import { Timestamp, collection, deleteField, doc, getDocs, runTransaction, setDoc, writeBatch } from "firebase/firestore";
 import { FirebaseService } from "@services/app/firebase-service";
 import { Player, PlayerStatus } from "@models/player/Player";
 import { MapCell } from "@models/world/MapCell";
@@ -23,6 +23,7 @@ import { PlayerFollowerEntry } from "@models/player/Follower";
 import { InventoryItemEntry } from "@models/player/Inventory";
 import { ResourceStack } from "@models/world/Resource";
 import { ResourceLabel } from "@models/world/Resource";
+import { DEFAULT_ITEM_INVENTORY_CAPACITY } from "../../consts/gameplay/inventory-config";
 import { DiscardPileEntry } from "@models/runtime/DiscardPile";
 import { PlayerSpellEntry } from "@models/player/Spellbook";
 
@@ -457,6 +458,29 @@ export class ExplorationActionService {
         }
         if (Object.keys(playerPatch).length > 0) {
           transaction.update(playerRef, playerPatch);
+        }
+      } else if (item?.occupiesSpace) {
+        const baseCapacity = typeof currentPlayer.inventory?.itemCapacity === "number"
+          ? Math.max(1, Math.floor(currentPlayer.inventory.itemCapacity))
+          : DEFAULT_ITEM_INVENTORY_CAPACITY;
+        const followersBonus = this.getFollowersItemCapacityBonus(currentPlayer.followers);
+        const effectiveCapacity = baseCapacity + followersBonus;
+        const occupiedSlots = this.getOccupiedItemSlots(currentItems);
+
+        if (occupiedSlots >= effectiveCapacity) {
+          transaction.set(playerRef, {
+            pendingItemPickup: { itemId, source: "exploration", requestedAtTurn: Date.now() },
+          }, { merge: true });
+        } else {
+          const newEntry: InventoryItemEntry = item.maxCharges
+            ? { itemId, currentCharges: item.maxCharges }
+            : { itemId };
+          transaction.set(playerRef, {
+            inventory: {
+              ...(currentPlayer.inventory ?? { items: [], resources: [], money: 0 }),
+              items: [...currentItems, newEntry],
+            },
+          }, { merge: true });
         }
       } else {
         const newEntry: InventoryItemEntry = item?.maxCharges
@@ -1247,6 +1271,28 @@ export class ExplorationActionService {
     });
 
     await this.eventLogService.newLog(gameId, player, "player.strangerHermitAmulet", {});
+  }
+
+  private getFollowersItemCapacityBonus(rawFollowers: unknown): number {
+    if (!Array.isArray(rawFollowers)) return 0;
+    return rawFollowers.reduce((total: number, entry: unknown) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return total;
+      const typed = entry as { followerId?: unknown; state?: unknown; hpCurrent?: unknown };
+      if (typeof typed.followerId !== "string" || !typed.followerId.trim()) return total;
+      if (typed.state === "discarded") return total;
+      if (Math.max(0, Math.floor(Number(typed.hpCurrent ?? 0))) <= 0) return total;
+      const follower = this.followerCatalogService.getCachedFollowerById(typed.followerId.trim());
+      if (!follower) return total;
+      const bonus = Number(follower.itemCapacityBonus ?? 0);
+      return total + (Number.isFinite(bonus) ? Math.max(0, Math.floor(bonus)) : 0);
+    }, 0);
+  }
+
+  private getOccupiedItemSlots(items: InventoryItemEntry[]): number {
+    return items.reduce((count, entry) => {
+      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
+      return count + (item?.occupiesSpace ? 1 : 0);
+    }, 0);
   }
 
   private prepareDiscardEntry(

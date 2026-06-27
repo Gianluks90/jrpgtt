@@ -458,6 +458,15 @@
         "notEnoughCoinsSelection": "Selected treatments cost {cost} coins, but you only have {money}."
       }
     },
+    "itemSwap": {
+      "title": "Inventory full",
+      "subtitle": "No room for {item}. Choose an item to discard or refuse the new one.",
+      "newItem": "New item collected",
+      "selectDiscard": "Select an item to discard",
+      "keepNew": "Keep new, discard selected",
+      "discardNew": "Refuse new item",
+      "noItems": "No items in inventory."
+    },
     "resourceInventory": {
       "title": {
         "inventoryFull": "Inventory full",
@@ -991,9 +1000,9 @@
       "followerStatus": "{name} status ({status})"
     },
     "stats": {
-      "strengthAbbr": "STR",
-      "magicAbbr": "MAG",
-      "luckAbbr": "LCK"
+      "strengthAbbr": "Strength",
+      "magicAbbr": "Magic",
+      "luckAbbr": "Luck"
     },
     "turnLeft": {
       "one": "1 turn left",
@@ -1572,10 +1581,13 @@
       "regeneratingWatersHealing": "{playerName} healed {healingHp} HP from regenerating waters (environment size {environmentSize}).",
       "followerHostileEnvironmentDamage": "{playerName}'s follower {followerName} suffered {damageHp} HP from hostile desert (environment size {environmentSize}).",
       "followerRegeneratingWatersHealing": "{playerName}'s follower {followerName} healed {healingHp} HP from regenerating waters (environment size {environmentSize}).",
+      "explorationPickupItem": "{playerName} picked up {itemName}.",
       "discardResource": "{playerName} discarded 1 {resource}.",
       "pendingPickupCancelled": "{playerName} cancelled collecting pending {resource}.",
       "swapResource": "{playerName} discarded {droppedResource} and collected {gainedResource}.",
       "resolvePendingPickup": "{playerName} collected pending {resource}.",
+      "itemPickupRefused": "{playerName} refused to pick up {itemName}.",
+      "itemSwapped": "{playerName} picked up {itemName}, discarding {discardedItemName}.",
       "castSpell": "{playerName} cast {spellName} and spent {spentMp} MP.",
       "castSpellHeal": "{playerName} cast {spellName}, healed {healedHp} HP and spent {spentMp} MP.",
       "castSpellStatus": "{playerName} cast {spellName}, applied {statusKey} for {durationTurns} turns and spent {spentMp} MP.",
@@ -1951,6 +1963,12 @@
       "label": "Strength Boost",
       "description": "Strength +2 for this turn."
     }
+  },
+  "common": {
+    "unknownItem": "Unknown item",
+    "unknownFollower": "Unknown follower",
+    "unknownSpell": "Unknown spell",
+    "unknownCard": "Unknown card"
   },
   "resources": {
     "timber": "Timber",

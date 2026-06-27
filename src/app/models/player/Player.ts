@@ -23,6 +23,12 @@ export interface PendingResourcePickup {
     requestedAtTurn: number;
 }
 
+export interface PendingItemPickup {
+    itemId: string;
+    source: "exploration";
+    requestedAtTurn: number;
+}
+
 export interface Player {
     id: string;
     name: string;
@@ -42,6 +48,7 @@ export interface Player {
     actionsUsedThisTurn?: Record<string, number>;
     statuses?: PlayerStatus[];
     pendingResourcePickup?: PendingResourcePickup | null;
+    pendingItemPickup?: PendingItemPickup | null;
     pendingTeleportOnMove?: boolean;
     spellbook?: PlayerSpellbook;
 }

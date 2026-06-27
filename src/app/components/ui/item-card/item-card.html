@@ -1,0 +1,77 @@
+<div class="item-card-header">
+    <p class="item-card-title">
+        @if (isSpell()) {
+            <span class="item-card-spell-glyph" aria-hidden="true">M</span>
+        }
+        {{ name() }}
+    </p>
+    @if (value(); as v) {
+        <span class="item-card-value-tag"
+            [class.item-card-value-tag--gain]="v.tone === 'gain'"
+            [class.item-card-value-tag--value]="v.tone === 'value'">
+            <span>{{ v.tone === 'cost' ? '-' : v.tone === 'gain' ? '+' : '' }}{{ v.amount }}</span>
+            <span class="coin-icon item-card-value-icon" aria-hidden="true"></span>
+        </span>
+    }
+</div>
+<div class="item-card-line"></div>
+
+@if (mpCost() !== undefined || consumableOnCast()) {
+    <div class="item-card-spell-tags">
+        @if (mpCost() !== undefined) {
+            <span class="item-card-spell-tag item-card-spell-tag--mp">
+                <span class="item-card-spell-tag-dot" aria-hidden="true"></span>
+                {{ mpCost() }} MP
+            </span>
+        }
+        @if (consumableOnCast()) {
+            <span class="item-card-spell-tag">{{ 'spells.meta.singleUse' | t }}</span>
+        }
+    </div>
+}
+
+@if (keywords().length > 0) {
+    <div class="item-card-tags">
+        @for (keyword of keywords(); track keyword + $index) {
+            <span class="item-card-tag">{{ keyword }}</span>
+        }
+    </div>
+}
+
+@if (labels().length > 0) {
+    <div class="item-card-tags">
+        @for (label of labels(); track label.text + $index) {
+            <span class="item-card-tag"
+                [class.item-card-tag--positive]="label.tone === 'positive'"
+                [class.item-card-tag--negative]="label.tone === 'negative'">
+                {{ label.text }}
+            </span>
+        }
+    </div>
+}
+
+<p class="item-card-description">{{ description() }}</p>
+
+@if (uses(); as u) {
+    <div class="item-card-uses">
+        <p class="item-card-uses-title">{{ 'map.inventory.uses' | t }}</p>
+        <div class="item-card-uses-row">
+            <div class="item-card-uses-slots">
+                @for (filled of u.slots; track $index) {
+                    <span class="item-card-uses-slot" [class.item-card-uses-slot--filled]="filled"></span>
+                }
+            </div>
+            <span class="item-card-uses-counter">{{ u.current }}/{{ u.max }}</span>
+        </div>
+    </div>
+}
+
+@if (metaItems().length > 0) {
+    <div class="item-card-meta">
+        @for (meta of metaItems(); track meta + $index) {
+            <span>{{ meta }}</span>
+        }
+    </div>
+}
+
+<ng-content></ng-content>

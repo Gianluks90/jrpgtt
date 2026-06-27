@@ -183,10 +183,10 @@ export class EventLogService {
         },
         "player.graveyardResurrect": ({ playerName, args }) => {
             const source = this.getActionSourceLabel("graveyard-resurrect", "Graveyard");
-            const followerId = String(args["followerId"] ?? "follower");
+            const followerName = this.resolveFollowerName(args);
             const rewardId = String(args["rewardId"] ?? "unknown");
             const appliedOutcome = String(args["appliedOutcome"] ?? rewardId);
-            return `${playerName} attempted resurrection at ${source} for ${followerId}. Outcome: ${appliedOutcome}.`;
+            return `${playerName} attempted resurrection at ${source} for ${followerName}. Outcome: ${appliedOutcome}.`;
         },
         "player.templeSendDevotee": ({ playerName, args }) => {
             const source = this.getActionSourceLabel("temple-send-devotee", "Temple");
@@ -200,8 +200,8 @@ export class EventLogService {
         },
         "player.elementalRitual": ({ playerName, args }) => {
             const source = this.getActionSourceLabel("elemental-ritual", "Altar");
-            const followerId = String(args["followerId"] ?? "follower");
-            return `${playerName} performed the Elemental Ritual at ${source} on ${followerId}.`;
+            const followerName = this.resolveFollowerName(args);
+            return `${playerName} performed the Elemental Ritual at ${source} on ${followerName}.`;
         },
         "player.eliminateZombie": ({ playerName }) => {
             const source = this.getActionSourceLabel("eliminate-zombie", "Zombie");
@@ -248,13 +248,13 @@ export class EventLogService {
             return `${playerName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
         },
         "player.followerHostileEnvironmentDamage": ({ playerName, args }) => {
-            const followerName = String(args["followerName"] ?? args["followerId"] ?? "follower");
+            const followerName = this.resolveFollowerName(args);
             const damageHp = Number(args["damageHp"] ?? 0);
             const environmentSize = Number(args["environmentSize"] ?? 1);
             return `${playerName}'s follower ${followerName} suffered ${damageHp} HP from hostile desert (environment size ${environmentSize}).`;
         },
         "player.followerRegeneratingWatersHealing": ({ playerName, args }) => {
-            const followerName = String(args["followerName"] ?? args["followerId"] ?? "follower");
+            const followerName = this.resolveFollowerName(args);
             const healingHp = Number(args["healingHp"] ?? 0);
             const environmentSize = Number(args["environmentSize"] ?? 1);
             return `${playerName}'s follower ${followerName} healed ${healingHp} HP from regenerating waters (environment size ${environmentSize}).`;
@@ -287,8 +287,8 @@ export class EventLogService {
             return `${playerName} fled from ${enemy} (−${damage} HP).`;
         },
         "player.followerDismissed": ({ playerName, args }) => {
-            const follower = String(args["followerId"] ?? "follower");
-            return `${playerName} dismissed ${follower} and ended the turn.`;
+            const followerName = this.resolveFollowerName(args);
+            return `${playerName} dismissed ${followerName} and ended the turn.`;
         },
         "player.alchimistaHeal": ({ playerName }) => `${playerName} used the Alchemist's Healing Potion.`,
         "player.alchimistaMana": ({ playerName }) => `${playerName} used the Alchemist's Mana Potion (+2 MP).`,
@@ -301,7 +301,7 @@ export class EventLogService {
         "player.strangerWishTeleport": ({ playerName, args }) => `${playerName} wished to travel and teleported to (${Number(args["targetX"] ?? 0)},${Number(args["targetY"] ?? 0)}).`,
         "player.strangerHermitMoved": ({ playerName }) => `${playerName} encountered the Hermit, who vanished to a distant place.`,
         "player.strangerHermitAmulet": ({ playerName }) => `${playerName} found the Hermit again and received a Talisman!`,
-        "player.strangerSpellTeacher": ({ playerName, args }) => `${playerName} learned the spell ${String(args["spellName"] ?? args["spellId"] ?? "")} from ${String(args["source"] ?? "a stranger")}.`,
+        "player.strangerSpellTeacher": ({ playerName, args }) => `${playerName} learned the spell ${this.resolveSpellName(args)} from ${String(args["source"] ?? "a stranger")}.`,
         "player.strangerSpellTeacherFull": ({ playerName }) => `${playerName} tried to learn a spell but the spellbook is full.`,
         "player.strangerSpellTeacherEmpty": ({ playerName }) => `${playerName} tried to learn a spell but the spell deck is empty.`,
         "player.placeFountainDamage": ({ playerName, args }) => `${playerName} drank from the fountain and took ${Number(args["damage"] ?? 0)} damage. (${Number(args["usesLeft"] ?? 0)} uses left)`,
@@ -320,7 +320,7 @@ export class EventLogService {
         "player.placeChapelFortune": ({ playerName }) => `${playerName} prayed at the Chapel and received the Fortune blessing for 2 turns.`,
         "player.placeChapelCoins": ({ playerName }) => `${playerName} prayed at the Chapel and received 5 coins.`,
         "player.placeChapelHeal": ({ playerName, args }) => `${playerName} prayed at the Chapel and recovered ${Number(args["healedHp"] ?? 0)} HP.`,
-        "player.placeChapelSpell": ({ playerName, args }) => `${playerName} prayed at the Chapel and learned the spell ${String(args["spellName"] ?? args["spellId"] ?? "")}.`,
+        "player.placeChapelSpell": ({ playerName, args }) => `${playerName} prayed at the Chapel and learned the spell ${this.resolveSpellName(args)}.`,
         "player.placeChapelSpellFull": ({ playerName }) => `${playerName} prayed at the Chapel but the spellbook is full.`,
         "player.placeChapelSpellEmpty": ({ playerName }) => `${playerName} prayed at the Chapel but the spell deck is empty.`,
         "player.placeChapelTeleport": ({ playerName }) => `${playerName} prayed at the Chapel and will receive a free teleport on their next move.`,
@@ -694,6 +694,13 @@ export class EventLogService {
             });
         }
 
+        if (code === "player.explorationPickupItem") {
+            return this.translationService.tOrFallback("logs.player.explorationPickupItem", fallback, {
+                ...baseParams,
+                itemName: this.resolveItemName(args),
+            });
+        }
+
         if (code === "player.discardResource" || code === "player.pendingPickupCancelled" || code === "player.resolvePendingPickup") {
             const key = code === "player.discardResource"
                 ? "logs.player.discardResource"
@@ -721,6 +728,26 @@ export class EventLogService {
                 ...baseParams,
                 droppedResource: this.resolveResourceLabel(args["droppedResource"]),
                 gainedResource: this.resolveResourceLabel(args["gainedResource"]),
+            });
+        }
+
+        if (code === "player.itemPickupRefused") {
+            return this.translationService.tOrFallback("logs.player.itemPickupRefused", fallback, {
+                ...baseParams,
+                itemName: this.resolveItemName(args),
+            });
+        }
+
+        if (code === "player.itemSwapped") {
+            const discardedItemId = String(args["discardedItemId"] ?? "").trim();
+            const discardedItem = discardedItemId ? this.itemCatalogService.getCachedItemById(discardedItemId) : null;
+            const discardedItemName = discardedItem
+                ? this.itemCatalogService.getLocalizedName(discardedItem)
+                : this.translationService.tOrFallback("common.unknownItem", "Unknown item");
+            return this.translationService.tOrFallback("logs.player.itemSwapped", fallback, {
+                ...baseParams,
+                itemName: this.resolveItemName(args),
+                discardedItemName,
             });
         }
 
@@ -1058,7 +1085,7 @@ export class EventLogService {
             const itemId = String(params["itemId"] ?? "").trim();
             if (itemId) {
                 const item = this.itemCatalogService.getCachedItemById(itemId);
-                next["itemName"] = item ? this.itemCatalogService.getLocalizedName(item) : itemId;
+                next["itemName"] = item ? this.itemCatalogService.getLocalizedName(item) : this.translationService.tOrFallback("common.unknownItem", "Unknown item");
             }
         }
 
@@ -1081,7 +1108,7 @@ export class EventLogService {
             }
         }
 
-        return String((args["itemName"] ?? itemId) || "item");
+        return String(args["itemName"] ?? "") || this.translationService.tOrFallback("common.unknownItem", "Unknown item");
     }
 
     private resolveFollowerName(args: Record<string, unknown>): string {
@@ -1093,7 +1120,7 @@ export class EventLogService {
             }
         }
 
-        return String((args["followerName"] ?? followerId) || "follower");
+        return String(args["followerName"] ?? "") || this.translationService.tOrFallback("common.unknownFollower", "Unknown follower");
     }
 
     private resolveStatLabel(value: unknown): string {
@@ -1110,6 +1137,6 @@ export class EventLogService {
             const spell = this.spellCatalogService.getSpell(spellId);
             if (spell) return this.spellCatalogService.getLocalizedName(spell);
         }
-        return String((args["spellName"] ?? spellId) || "spell");
+        return String(args["spellName"] ?? "") || this.translationService.tOrFallback("common.unknownSpell", "Unknown spell");
     }
 }

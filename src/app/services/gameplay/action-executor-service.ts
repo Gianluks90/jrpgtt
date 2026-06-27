@@ -2830,6 +2830,99 @@ export class ActionExecutorService {
     });
   }
 
+  public async resolvePendingItemPickup(
+    gameId: string,
+    actor: Pick<Player, "id" | "name">,
+    options: {
+      keepNew: boolean;
+      discardItemId?: string;
+    },
+  ): Promise<void> {
+    if (!gameId || !actor.id) {
+      throw new Error("Invalid action payload");
+    }
+
+    const playerRef = doc(this.firebaseService.database, "games", gameId, "players", actor.id);
+    let pickedUpItemId: string | null = null;
+
+    await runTransaction(this.firebaseService.database, async (transaction) => {
+      const playerSnap = await transaction.get(playerRef);
+      if (!playerSnap.exists()) throw new Error("Player not found");
+
+      const player = playerSnap.data() as Player;
+      const pendingPickup = player.pendingItemPickup ?? null;
+      if (!pendingPickup) throw new Error("No pending item pickup to resolve");
+
+      pickedUpItemId = pendingPickup.itemId;
+
+      if (!options.keepNew) {
+        transaction.set(playerRef, { pendingItemPickup: null }, { merge: true });
+        return;
+      }
+
+      if (!options.discardItemId) throw new Error("discardItemId required when keepNew is true");
+
+      const currentItems = this.normalizeInventoryItems(player.inventory?.items);
+      const discardIndex = currentItems.findIndex((entry) => entry.itemId === options.discardItemId);
+      if (discardIndex === -1) throw new Error("Selected item to discard not found in inventory");
+
+      const discardedEntry = currentItems[discardIndex];
+      const remainingItems = currentItems.filter((_entry, index) => index !== discardIndex);
+      const newItemDef = this.itemCatalogService.getCachedItemById(pendingPickup.itemId);
+      const newEntry: InventoryItemEntry = newItemDef?.maxCharges
+        ? { itemId: pendingPickup.itemId, currentCharges: newItemDef.maxCharges }
+        : { itemId: pendingPickup.itemId };
+
+      const discardedItemDef = this.itemCatalogService.getCachedItemById(discardedEntry.itemId);
+      const worldStateRef = doc(this.firebaseService.database, "games", gameId, "state", "world");
+      const worldStateSnap = await transaction.get(worldStateRef);
+      const worldState = worldStateSnap.exists() ? (worldStateSnap.data() as WorldState) : null;
+      const currentTurn = Math.max(0, Math.floor(Number(worldState?.currentTurn ?? 0)));
+      const seq = Math.max(0, Math.floor(Number(worldState?.nextDiscardSeq ?? 0))) + 1;
+      const discardRef = doc(collection(worldStateRef, "discardPile"));
+
+      transaction.set(playerRef, {
+        inventory: {
+          ...(player.inventory ?? { items: [], resources: [], money: 0 }),
+          items: [...remainingItems, newEntry],
+        },
+        pendingItemPickup: null,
+      }, { merge: true });
+
+      transaction.set(discardRef, {
+        id: discardRef.id,
+        discardSeq: seq,
+        discardedAt: Timestamp.now(),
+        card: {
+          kind: "item",
+          cardId: discardedEntry.itemId,
+          name: discardedItemDef?.name,
+          payload: typeof discardedEntry.currentCharges === "number"
+            ? { currentCharges: Math.max(0, Math.floor(discardedEntry.currentCharges)) }
+            : undefined,
+        },
+        source: "player",
+        ownerPlayerId: actor.id,
+        turn: currentTurn,
+        batchId: `item-swap:${actor.id}:${currentTurn}`,
+      } as DiscardPileEntry);
+
+      transaction.set(worldStateRef, { nextDiscardSeq: seq }, { merge: true });
+    });
+
+    if (!pickedUpItemId) return;
+
+    if (!options.keepNew) {
+      await this.tryCreateLog(gameId, actor, "player.itemPickupRefused", { itemId: pickedUpItemId });
+      return;
+    }
+
+    await this.tryCreateLog(gameId, actor, "player.itemSwapped", {
+      itemId: pickedUpItemId,
+      discardedItemId: options.discardItemId ?? "",
+    });
+  }
+
   public async consumeRation(gameId: string, actor: Pick<Player, "id" | "name">): Promise<void> {
     if (!gameId || !actor.id) {
       throw new Error("Invalid action payload");

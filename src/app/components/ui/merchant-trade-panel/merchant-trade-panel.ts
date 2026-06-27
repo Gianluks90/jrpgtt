@@ -5,6 +5,7 @@ import { DialogWrapper } from "../dialog-wrapper/dialog-wrapper";
 import { TextButton } from "../text-button/text-button";
 import { TranslationPipe } from "../../../pipes/translation-pipe";
 import { TranslationService } from "@services/shared/translation-service";
+import { ItemCard, ItemCardValue } from "../item-card/item-card";
 
 interface MerchantCartLine {
   operation: "buy" | "sell";
@@ -18,7 +19,7 @@ interface MerchantCartLine {
 @Component({
   selector: "app-merchant-trade-panel",
   standalone: true,
-  imports: [DialogWrapper, TextButton, TranslationPipe],
+  imports: [DialogWrapper, TextButton, TranslationPipe, ItemCard],
   templateUrl: "./merchant-trade-panel.html",
   styleUrl: "./merchant-trade-panel.scss",
 })
@@ -251,6 +252,30 @@ export class MerchantTradePanel {
     }
 
     return String(amount);
+  }
+
+  public buyItemValue(offer: MerchantDialogOfferRow): ItemCardValue {
+    return { amount: offer.purchaseValue, tone: "cost" };
+  }
+
+  public sellItemValue(offer: MerchantDialogSellRow): ItemCardValue {
+    return { amount: offer.sellValue, tone: "gain" };
+  }
+
+  public buyMetaItems(offer: MerchantDialogOfferRow): string[] {
+    const items: string[] = [];
+    if (offer.tradableKind !== "spell") {
+      items.push(`${this.translationService.tOrFallback("dialogs.merchant.meta.category", "Category")}: ${offer.category}`);
+    }
+    items.push(`${this.translationService.tOrFallback("dialogs.merchant.meta.stock", "Stock")}: ${this.getRemainingStock(offer.tradableKind, offer.tradableId)}`);
+    return items;
+  }
+
+  public sellMetaItems(offer: MerchantDialogSellRow): string[] {
+    return [
+      `${this.translationService.tOrFallback("dialogs.merchant.meta.category", "Category")}: ${offer.category}`,
+      `${this.translationService.tOrFallback("dialogs.merchant.meta.owned", "Owned")}: ${this.getRemainingOwnedQuantity(offer.itemId)}`,
+    ];
   }
 
   private buildBuyKey(kind: "item" | "follower" | "spell", tradableId: string): string {

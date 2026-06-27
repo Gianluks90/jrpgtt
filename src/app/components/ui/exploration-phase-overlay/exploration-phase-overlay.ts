@@ -3,10 +3,13 @@ import { ExplorationEventService, PlaceMarketItem, PlaceResultState, StrangerWis
 import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
 import { ExplorationActionService } from "@services/exploration/exploration-action-service";
 import { FollowerCatalogService } from "@services/catalog/follower-catalog-service";
+import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { MapPageStateService } from "@services/map/map-page-state-service";
+import { TranslationService } from "@services/shared/translation-service";
 import { PlacedExplorationCard } from "@models/exploration/ExplorationCard";
 import { ExplorationCardDef } from "@models/catalog/ExplorationCardCatalog";
 import { TextButton } from "../text-button/text-button";
+import { ItemCard, ItemCardLabel, ItemCardUses, ItemCardValue } from "../item-card/item-card";
 
 const CARD_TYPE_LABELS: Record<PlacedExplorationCard["type"], string> = {
   enemy:    "Nemico",
@@ -28,6 +31,14 @@ const CARD_TYPE_CTA: Record<PlacedExplorationCard["type"], string> = {
   amulet:   "Prendi",
 };
 
+interface ItemCardData {
+  name: string;
+  description: string;
+  labels: ItemCardLabel[];
+  uses: ItemCardUses | null;
+  value: ItemCardValue | null;
+}
+
 interface SessionCardEntry {
   placed: PlacedExplorationCard;
   def: ExplorationCardDef | null;
@@ -35,11 +46,12 @@ interface SessionCardEntry {
   description: string;
   typeLabel: string;
   cta: string;
+  itemCard: ItemCardData | null;
 }
 
 @Component({
   selector: "app-exploration-phase-overlay",
-  imports: [TextButton],
+  imports: [TextButton, ItemCard],
   templateUrl: "./exploration-phase-overlay.html",
   styleUrl: "./exploration-phase-overlay.scss",
 })
@@ -48,7 +60,9 @@ export class ExplorationPhaseOverlay {
   private readonly explorationCatalogService = inject(ExplorationCatalogService);
   private readonly explorationActionService = inject(ExplorationActionService);
   private readonly followerCatalogService = inject(FollowerCatalogService);
+  private readonly itemCatalogService = inject(ItemCatalogService);
   private readonly mapPageState = inject(MapPageStateService);
+  private readonly translationService = inject(TranslationService);
 
   private readonly session = computed(() => this.explorationEventService.pendingExplorationSession());
   private readonly combatActive = computed(() => !!this.explorationEventService.pendingCombat());
@@ -86,6 +100,7 @@ export class ExplorationPhaseOverlay {
           description: this.resolveDescription(placed, def),
           typeLabel: CARD_TYPE_LABELS[placed.type] ?? placed.type,
           cta: this.resolveCta(placed),
+          itemCard: this.resolveItemCard(placed),
         };
       });
   });
@@ -270,9 +285,70 @@ export class ExplorationPhaseOverlay {
     return String(stat ?? "");
   }
 
+  private resolveItemCard(placed: PlacedExplorationCard): ItemCardData | null {
+    const itemId = placed.type === "item" ? placed.itemId
+      : placed.type === "amulet" ? placed.amuletId
+      : null;
+    if (!itemId) return null;
+    const def = this.itemCatalogService.getCachedItemById(itemId);
+    if (!def) return null;
+
+    const labels: ItemCardLabel[] = [];
+    if (!def.occupiesSpace) {
+      labels.push({ text: this.translationService.tOrFallback("map.labels.little", "little"), tone: "neutral" });
+    }
+    const scopesSeen = new Set<string>();
+    for (const mod of def.parameterModifiers ?? []) {
+      for (const scope of mod.scopes ?? []) {
+        if (scope === "always" || scopesSeen.has(scope)) continue;
+        scopesSeen.add(scope);
+        const text = scope === "fight-only"
+          ? this.translationService.tOrFallback("map.labels.fightOnly", "fight only")
+          : scope === "day-only"
+            ? this.translationService.tOrFallback("map.labels.dayOnly", "day only")
+            : this.translationService.tOrFallback("map.labels.nightOnly", "night only");
+        labels.push({ text, tone: "neutral" });
+      }
+    }
+    for (const mod of def.parameterModifiers ?? []) {
+      const sign = mod.amount >= 0 ? "+" : "";
+      const param = mod.parameter === "strength"
+        ? this.translationService.tOrFallback("playerCard.stats.strengthAbbr", "FRZ")
+        : mod.parameter === "magic"
+          ? this.translationService.tOrFallback("playerCard.stats.magicAbbr", "MAG")
+          : this.translationService.tOrFallback("playerCard.stats.luckAbbr", "FOR");
+      labels.push({ text: `${sign}${mod.amount} ${param}`, tone: mod.amount >= 0 ? "positive" : "negative" });
+    }
+
+    const maxCharges = typeof def.maxCharges === "number" ? Math.max(1, Math.floor(def.maxCharges)) : null;
+    const uses: ItemCardUses | null = maxCharges
+      ? { current: maxCharges, max: maxCharges, slots: Array.from({ length: maxCharges }, () => true) }
+      : null;
+
+    const sellAmt = this.itemCatalogService.getSellValue(def);
+    const value: ItemCardValue | null = sellAmt > 0 ? { amount: sellAmt, tone: "value" } : null;
+
+    return {
+      name: this.itemCatalogService.getLocalizedName(def),
+      description: this.itemCatalogService.getLocalizedDescription(def).trim()
+        || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
+      labels,
+      uses,
+      value,
+    };
+  }
+
   private resolveName(placed: PlacedExplorationCard, def: ExplorationCardDef | null): string {
     if (placed.type === "enemy") return placed.name;
-    return def?.name ?? placed.cardId;
+    if (placed.type === "item") {
+      const itemDef = this.itemCatalogService.getCachedItemById(placed.itemId);
+      if (itemDef) return this.itemCatalogService.getLocalizedName(itemDef);
+    }
+    if (placed.type === "amulet") {
+      const amuletDef = this.itemCatalogService.getCachedItemById(placed.amuletId);
+      if (amuletDef) return this.itemCatalogService.getLocalizedName(amuletDef);
+    }
+    return def?.name ?? this.translationService.tOrFallback("common.unknownCard", "Unknown card");
   }
 
   private resolveDescription(placed: PlacedExplorationCard, def: ExplorationCardDef | null): string {

@@ -15,42 +15,13 @@
         <p class="inventory-empty inventory-empty-centered">{{ 'map.inventory.noItems' | t }}</p>
       } @else {
         @for (item of visibleInventoryItems(); track item.itemId + $index) {
-          <div class="inventory-item-row">
-            <div class="inventory-item-header">
-              <p class="inventory-item-title">{{ item.name }}</p>
-              @if (item.sellValue !== null) {
-                <span class="inventory-item-sell-value">
-                  <span>{{ item.sellValue }}</span>
-                  <span class="coin-icon inventory-item-sell-icon" aria-hidden="true"></span>
-                </span>
-              }
-            </div>
-            <div class="inventory-item-line"></div>
-
-            <p class="inventory-item-description">{{ item.description }}</p>
-
-            @if (item.uses) {
-              <div class="inventory-item-uses">
-                <p class="inventory-item-uses-title">{{ 'map.inventory.uses' | t }}</p>
-                <div class="inventory-item-uses-row">
-                  <div class="inventory-item-uses-slots">
-                    @for (slotFilled of item.uses.slots; track $index) {
-                      <span class="inventory-item-uses-slot" [class.inventory-item-uses-slot-filled]="slotFilled"></span>
-                    }
-                  </div>
-                  <span class="inventory-item-uses-counter">{{ item.uses.current }}/{{ item.uses.max }}</span>
-                </div>
-              </div>
-            }
-
-            @if (item.labels.length > 0) {
-              <div class="inventory-item-keywords">
-                @for (label of item.labels; track label.text + $index) {
-                  <span class="inventory-item-keyword" [class.inventory-item-keyword-positive]="label.tone === 'positive'" [class.inventory-item-keyword-negative]="label.tone === 'negative'">{{ label.text }}</span>
-                }
-              </div>
-            }
-          </div>
+          <app-item-card
+            [name]="item.name"
+            [description]="item.description"
+            [labels]="item.labels"
+            [uses]="item.uses"
+            [value]="item.sellValue !== null ? { amount: item.sellValue, tone: 'value' } : null"
+          ></app-item-card>
         }
       }
     </div>

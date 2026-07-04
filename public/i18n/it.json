@@ -1138,6 +1138,20 @@
       }
     },
     "items": {
+      "category": {
+        "weapon": "Arma",
+        "armor": "Armatura",
+        "magic": "Oggetto magico",
+        "amulet": "Oggetto magico chiave",
+        "consumable": "Consumabile",
+        "utility": "Oggetto utile",
+        "animal": "Animale",
+        "humanoid": "Umanoide",
+        "magical": "Magico",
+        "mythological": "Mitologico",
+        "spirit": "Spirito",
+        "undead": "Non morto"
+      },
       "B-IT-001": {
         "name": "Spada",
         "description": "Forza +1 in combattimento."
@@ -1592,6 +1606,7 @@
       "followerHostileEnvironmentDamage": "Il seguace {followerName} di {playerName} ha subito {damageHp} HP dal deserto ostile (dimensione ambiente {environmentSize}).",
       "followerRegeneratingWatersHealing": "Il seguace {followerName} di {playerName} ha recuperato {healingHp} HP dalle acque rigeneranti (dimensione ambiente {environmentSize}).",
       "explorationPickupItem": "{playerName} ha raccolto {itemName}.",
+      "explorationEvent": "{playerName} ha attivato la carta: {cardName}.",
       "discardResource": "{playerName} ha scartato 1 {resource}.",
       "pendingPickupCancelled": "{playerName} ha annullato la raccolta in sospeso di {resource}.",
       "swapResource": "{playerName} ha scartato {droppedResource} e raccolto {gainedResource}.",

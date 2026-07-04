@@ -1128,6 +1128,20 @@
       }
     },
     "items": {
+      "category": {
+        "weapon": "Weapon",
+        "armor": "Armor",
+        "magic": "Magic item",
+        "amulet": "Key magic item",
+        "consumable": "Consumable",
+        "utility": "Utility item",
+        "animal": "Animal",
+        "humanoid": "Humanoid",
+        "magical": "Magical",
+        "mythological": "Mythological",
+        "spirit": "Spirit",
+        "undead": "Undead"
+      },
       "B-IT-001": {
         "name": "Sword",
         "description": "Strength +1 in combat."
@@ -1582,6 +1596,7 @@
       "followerHostileEnvironmentDamage": "{playerName}'s follower {followerName} suffered {damageHp} HP from hostile desert (environment size {environmentSize}).",
       "followerRegeneratingWatersHealing": "{playerName}'s follower {followerName} healed {healingHp} HP from regenerating waters (environment size {environmentSize}).",
       "explorationPickupItem": "{playerName} picked up {itemName}.",
+      "explorationEvent": "{playerName} triggered the card: {cardName}.",
       "discardResource": "{playerName} discarded 1 {resource}.",
       "pendingPickupCancelled": "{playerName} cancelled collecting pending {resource}.",
       "swapResource": "{playerName} discarded {droppedResource} and collected {gainedResource}.",

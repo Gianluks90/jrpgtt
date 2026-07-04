@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal } from "@angular/core";
+import { computed, effect, inject, Injectable, NgZone, signal } from "@angular/core";
 import { getAuth, onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { collection, doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getBiomeResourcesMap } from "../../consts/catalog/biome-resources";
@@ -128,6 +128,7 @@ export class MapPageStateService {
     private followerCatalogService: FollowerCatalogService,
     private biomeConditionCatalogService: BiomeConditionCatalogService,
     private statusCatalogService: StatusCatalogService,
+    private ngZone: NgZone,
   ) { }
 
   private readonly localizeLogsEffect = effect(() => {
@@ -188,7 +189,7 @@ export class MapPageStateService {
       const changes = snapshot.docChanges();
       if (changes.length === 0) return;
 
-      this.players.update((previousPlayers) => {
+      this.ngZone.run(() => this.players.update((previousPlayers) => {
         const playersById = new Map(previousPlayers.map((player) => [player.id, player]));
         const currentUserId = this.currentUserId();
 
@@ -264,7 +265,7 @@ export class MapPageStateService {
         const nextPlayers = Array.from(playersById.values());
         nextPlayers.sort((a, b) => Number(b.isReady) - Number(a.isReady));
         return nextPlayers;
-      });
+      }));
     }));
 
     this.unsubscribers.push(onSnapshot(mapCellsRef, (snapshot) => {

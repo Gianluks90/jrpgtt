@@ -16,6 +16,7 @@ export interface ItemSwapDialogItem {
 export interface ItemSwapDialogData {
   newItemName: string;
   newItemDescription: string;
+  newItemSubtype: string | null;
   currentItems: ItemSwapDialogItem[];
 }
 
@@ -32,6 +33,7 @@ export type ItemSwapDialogResult =
 export class ItemSwapDialog {
   public readonly newItemName: string;
   public readonly newItemDescription: string;
+  public readonly newItemSubtype: string | null;
   public readonly currentItems: ItemSwapDialogItem[];
   public readonly selectedItemId = signal<string | null>(null);
 
@@ -42,6 +44,7 @@ export class ItemSwapDialog {
   ) {
     this.newItemName = String(data.newItemName ?? "").trim();
     this.newItemDescription = String(data.newItemDescription ?? "").trim();
+    this.newItemSubtype = data.newItemSubtype ?? null;
     this.currentItems = Array.isArray(data.currentItems) ? data.currentItems : [];
     if (this.currentItems.length > 0) {
       this.selectedItemId.set(this.currentItems[0].itemId);

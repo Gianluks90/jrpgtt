@@ -705,10 +705,11 @@ export class MapPage implements OnInit, OnDestroy {
           return def?.occupiesSpace === true;
         });
 
+      const newItemSubtype = newItemDef?.category ?? null;
       void this.mapPageInteractionService.openItemSwapDialog({
         gameId: this.gameId,
         player,
-        dialogData: { newItemName, newItemDescription, currentItems },
+        dialogData: { newItemName, newItemDescription, newItemSubtype, currentItems },
       });
     }, { injector: this.injector });
 

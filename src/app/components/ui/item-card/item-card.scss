@@ -26,6 +26,15 @@
     letter-spacing: 0.06em;
 }
 
+.item-card-subtype {
+    margin: 0;
+    font-size: 0.48rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.45);
+}
+
 .item-card-spell-glyph {
     font-family: 'Jacquard 12', serif;
     color: var(--magic-color);

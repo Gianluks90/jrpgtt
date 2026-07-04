@@ -64,6 +64,7 @@ export class MapPlayerUtilitiesPanel {
   public visibleInventoryItems = computed<Array<{
     itemId: string;
     name: string;
+    category: string | null;
     sellValue: number | null;
     description: string;
     occupiesSpace: boolean;
@@ -86,6 +87,7 @@ export class MapPlayerUtilitiesPanel {
       return {
         itemId: entry.itemId,
         name: definition ? this.itemCatalogService.getLocalizedName(definition) : entry.itemId,
+        category: definition?.category ?? null,
         sellValue: sellValue > 0 ? sellValue : null,
         description: (definition ? this.itemCatalogService.getLocalizedDescription(definition).trim() : "")
           || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
@@ -115,6 +117,7 @@ export class MapPlayerUtilitiesPanel {
   public visibleFollowers = computed<Array<{
     followerId: string;
     name: string;
+    category: string | null;
     description: string;
     hpCurrent: number;
     hpMax: number;
@@ -142,6 +145,7 @@ export class MapPlayerUtilitiesPanel {
         return {
           followerId: entry.followerId,
           name: upgradeSuffix ? `${baseName} ${upgradeSuffix}` : baseName,
+          category: definition?.category ?? null,
           description: (definition ? this.followerCatalogService.getLocalizedDescription(definition).trim() : "")
             || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
           hpCurrent,

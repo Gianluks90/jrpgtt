@@ -110,7 +110,7 @@ export class ExplorationEventService {
 
   private combatActionResolver: ((action: "fight" | "flee" | "exorcise-spirit") => void) | null = null;
   private combatResultDismissResolver: (() => void) | null = null;
-  private equipmentSelectionResolver: ((bonus: number) => void) | null = null;
+  private equipmentSelectionResolver: ((result: { bonus: number; armorId: string | null }) => void) | null = null;
   private currentSpellBonus = 0;
   private cardActionResolver: (() => void) | null = null;
   private explorationSessionCloseResolver: (() => void) | null = null;
@@ -171,8 +171,8 @@ export class ExplorationEventService {
   }
 
   /** Called by the combat dialog when the player confirms equipment selection. */
-  public submitEquipmentSelection(bonus: number): void {
-    this.equipmentSelectionResolver?.(bonus);
+  public submitEquipmentSelection(bonus: number, armorId: string | null): void {
+    this.equipmentSelectionResolver?.({ bonus, armorId });
     this.equipmentSelectionResolver = null;
   }
 
@@ -349,6 +349,7 @@ export class ExplorationEventService {
       void (async () => {
         const playerForEquipment = context.getPlayer();
         let equipmentBonus = 0;
+        let selectedArmorId: string | null = null;
         if (playerForEquipment) {
           const eligible = this.computeEligibleEquipment(
             playerForEquipment,
@@ -358,7 +359,9 @@ export class ExplorationEventService {
           );
           if (eligible.weapons.length > 0 || eligible.armors.length > 0) {
             this.pendingEquipmentOptions.set(eligible);
-            equipmentBonus = await this.waitForEquipmentSelection();
+            const sel = await this.waitForEquipmentSelection();
+            equipmentBonus = sel.bonus;
+            selectedArmorId = sel.armorId;
             this.pendingEquipmentOptions.set(null);
           }
         }
@@ -417,6 +420,13 @@ export class ExplorationEventService {
             playerEquipmentBonus: totalBonusH,
             hasCrestOfCourage: (playerForEquipment?.inventory?.items ?? []).some(e => e.itemId === "B-IT-012"),
           });
+
+          if (result.outcome === "player-loss" && result.damage > 0 && selectedArmorId && playerForEquipment) {
+            const armorReduction = this.computeArmorDamageReduction(playerForEquipment, activeCombat.enemy.combatStat, selectedArmorId);
+            if (armorReduction > 0) {
+              result = { ...result, damage: Math.max(0, result.damage - armorReduction) };
+            }
+          }
 
           if (result.outcome === "player-win") {
             const cell = context.getCell(activeCombat.cellId);
@@ -640,8 +650,11 @@ export class ExplorationEventService {
     this.pendingCombat.set(combatState);
 
     let equipmentBonus = 0;
+    let selectedArmorId: string | null = null;
     if (hasEquipment) {
-      equipmentBonus = await this.waitForEquipmentSelection();
+      const sel = await this.waitForEquipmentSelection();
+      equipmentBonus = sel.bonus;
+      selectedArmorId = sel.armorId;
       this.pendingEquipmentOptions.set(null);
     }
 
@@ -666,9 +679,9 @@ export class ExplorationEventService {
         hasCrestOfCourage,
       });
 
-      // Armor: fortune checks reduce damage on strength-combat loss
-      if (result.outcome === "player-loss" && result.damage > 0) {
-        const armorReduction = this.computeArmorDamageReduction(player, enemy.combatStat);
+      // Armor: fortune check reduces damage on strength-combat loss (only selected armor)
+      if (result.outcome === "player-loss" && result.damage > 0 && selectedArmorId) {
+        const armorReduction = this.computeArmorDamageReduction(player, enemy.combatStat, selectedArmorId);
         if (armorReduction > 0) {
           result = { ...result, damage: Math.max(0, result.damage - armorReduction) };
         }
@@ -913,7 +926,7 @@ export class ExplorationEventService {
     });
   }
 
-  private waitForEquipmentSelection(): Promise<number> {
+  private waitForEquipmentSelection(): Promise<{ bonus: number; armorId: string | null }> {
     return new Promise((resolve) => {
       this.equipmentSelectionResolver = resolve;
     });
@@ -940,41 +953,38 @@ export class ExplorationEventService {
       if (!item) continue;
       if (item.category !== "weapon" && item.category !== "armor") continue;
 
-      const matchingModifiers = (item.parameterModifiers ?? []).filter((mod) => {
-        if (!mod.scopes.includes(fightScope)) return false;
-        if (mod.parameter !== combatStat) return false;
-        if (mod.scopes.includes("day-only") && timeOfDay !== "day") return false;
-        if (mod.scopes.includes("night-only") && timeOfDay !== "night") return false;
-        return true;
-      });
+      if (item.category === "weapon") {
+        const matchingModifiers = (item.parameterModifiers ?? []).filter((mod) => {
+          if (!mod.scopes.includes(fightScope)) return false;
+          if (mod.parameter !== combatStat) return false;
+          if (mod.scopes.includes("day-only") && timeOfDay !== "day") return false;
+          if (mod.scopes.includes("night-only") && timeOfDay !== "night") return false;
+          return true;
+        });
+        if (matchingModifiers.length === 0) continue;
 
-      if (matchingModifiers.length === 0) continue;
-
-      let bonus = matchingModifiers.reduce((sum, mod) => sum + mod.amount, 0);
-
-      // Category-based bonus (e.g. Holy Lance +3 vs Dragon)
-      if (enemy) {
-        for (const effectId of item.effects ?? []) {
-          const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
-          if (effect?.type !== "combat-stat-bonus-vs-enemy-category") continue;
-          const typed = effect as CombatStatBonusVsEnemyCategoryEffectDefinition;
-          if (typed.combatStat !== combatStat) continue;
-          if ((enemy.categories ?? []).includes(typed.categoryFilter)) {
-            bonus += typed.bonus;
+        let bonus = matchingModifiers.reduce((sum, mod) => sum + mod.amount, 0);
+        if (enemy) {
+          for (const effectId of item.effects ?? []) {
+            const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+            if (effect?.type !== "combat-stat-bonus-vs-enemy-category") continue;
+            const typed = effect as CombatStatBonusVsEnemyCategoryEffectDefinition;
+            if (typed.combatStat !== combatStat) continue;
+            if ((enemy.categories ?? []).includes(typed.categoryFilter)) bonus += typed.bonus;
           }
         }
+        weapons.push({ itemId: item.id, name: item.name, nameKey: item.nameKey ?? "", bonus, parameter: combatStat });
+      } else {
+        // Armor: eligible if it has at least one damage-reduction effect matching combatStat
+        const hasDamageReduction = (item.effects ?? []).some((effectId) => {
+          const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+          if (effect?.type !== "reduce-combat-damage-on-fortune-check") return false;
+          const typed = effect as ReduceCombatDamageOnFortuneCheckEffectDefinition;
+          return !typed.combatStatFilter || typed.combatStatFilter === combatStat;
+        });
+        if (!hasDamageReduction) continue;
+        armors.push({ itemId: item.id, name: item.name, nameKey: item.nameKey ?? "", bonus: 0, parameter: combatStat });
       }
-
-      const option: CombatEquipmentOption = {
-        itemId: item.id,
-        name: item.name,
-        nameKey: item.nameKey ?? "",
-        bonus,
-        parameter: combatStat,
-      };
-
-      if (item.category === "weapon") weapons.push(option);
-      else armors.push(option);
     }
 
     return { weapons, armors };
@@ -1016,19 +1026,18 @@ export class ExplorationEventService {
     return spells;
   }
 
-  private computeArmorDamageReduction(player: Player, combatStat: "strength" | "magic"): number {
-    if (combatStat !== "strength") return 0;
+  private computeArmorDamageReduction(player: Player, combatStat: "strength" | "magic", selectedArmorId: string | null): number {
+    if (!selectedArmorId) return 0;
+    const item = this.itemCatalogService.getCachedItemById(selectedArmorId);
+    if (!item) return 0;
     let reduction = 0;
-    for (const entry of player.inventory?.items ?? []) {
-      const item = this.itemCatalogService.getCachedItemById(entry.itemId);
-      for (const effectId of item?.effects ?? []) {
-        const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
-        if (effect?.type !== "reduce-combat-damage-on-fortune-check") continue;
-        const typed = effect as ReduceCombatDamageOnFortuneCheckEffectDefinition;
-        if (typed.combatStatFilter && typed.combatStatFilter !== combatStat) continue;
-        const roll = Math.floor(Math.random() * 100) + 1;
-        if (roll >= typed.luckThreshold) reduction += typed.reduction;
-      }
+    for (const effectId of item.effects ?? []) {
+      const effect = this.itemEffectCatalogService.getCachedEffect(effectId);
+      if (effect?.type !== "reduce-combat-damage-on-fortune-check") continue;
+      const typed = effect as ReduceCombatDamageOnFortuneCheckEffectDefinition;
+      if (typed.combatStatFilter && typed.combatStatFilter !== combatStat) continue;
+      const roll = Math.floor(Math.random() * 100) + 1;
+      if (roll >= typed.luckThreshold) reduction += typed.reduction;
     }
     return reduction;
   }

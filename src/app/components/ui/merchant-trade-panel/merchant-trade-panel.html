@@ -22,6 +22,7 @@
                         <app-item-card
                             [name]="offer.name"
                             [description]="offer.description"
+                            [subtype]="offer.tradableKind === 'item' ? offer.category : null"
                             [keywords]="offer.identityKeywords"
                             [value]="buyItemValue(offer)"
                             [isSpell]="offer.tradableKind === 'spell'"
@@ -51,6 +52,7 @@
                         <app-item-card
                             [name]="offer.name"
                             [description]="offer.description"
+                            [subtype]="offer.category"
                             [keywords]="offer.identityKeywords"
                             [value]="sellItemValue(offer)"
                             [metaItems]="sellMetaItems(offer)"

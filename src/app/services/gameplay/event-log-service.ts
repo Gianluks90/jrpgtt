@@ -8,6 +8,7 @@ import { FollowerCatalogService } from "@services/catalog/follower-catalog-servi
 import { FirebaseService } from "@services/app/firebase-service";
 import { ItemCatalogService } from "@services/catalog/item-catalog-service";
 import { SpellCatalogService } from "@services/catalog/spell-catalog-service";
+import { ExplorationCatalogService } from "@services/catalog/exploration-catalog-service";
 import { TranslationService } from "@services/shared/translation-service";
 
 interface EventLogContext {
@@ -334,6 +335,7 @@ export class EventLogService {
         private itemCatalogService: ItemCatalogService,
         private followerCatalogService: FollowerCatalogService,
         private spellCatalogService: SpellCatalogService,
+        private explorationCatalogService: ExplorationCatalogService,
         private translationService: TranslationService,
     ) { }
 
@@ -698,6 +700,18 @@ export class EventLogService {
             return this.translationService.tOrFallback("logs.player.explorationPickupItem", fallback, {
                 ...baseParams,
                 itemName: this.resolveItemName(args),
+            });
+        }
+
+        if (code === "player.explorationEvent") {
+            const cardId = String(args["cardId"] ?? "");
+            const cardDef = cardId ? this.explorationCatalogService.getCardDef(cardId) : null;
+            const cardName = cardDef
+                ? (cardDef.nameKey ? this.translationService.tOrFallback(cardDef.nameKey, cardDef.name) : cardDef.name)
+                : this.translationService.tOrFallback("common.unknownCard", "Unknown card");
+            return this.translationService.tOrFallback("logs.player.explorationEvent", fallback, {
+                ...baseParams,
+                cardName,
             });
         }
 

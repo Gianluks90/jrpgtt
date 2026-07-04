@@ -538,9 +538,9 @@ export class ActionExecutorService {
                 kind: "item",
                 cardId: entry.itemId,
                 name: itemDefinition?.name,
-                payload: typeof entry.currentCharges === "number"
-                  ? { currentCharges: Math.max(0, Math.floor(entry.currentCharges)) }
-                  : undefined,
+                ...(typeof entry.currentCharges === "number"
+                  ? { payload: { currentCharges: Math.max(0, Math.floor(entry.currentCharges)) } }
+                  : {}),
               },
               source: "player",
               ownerPlayerId: actor.id,
@@ -2897,9 +2897,9 @@ export class ActionExecutorService {
           kind: "item",
           cardId: discardedEntry.itemId,
           name: discardedItemDef?.name,
-          payload: typeof discardedEntry.currentCharges === "number"
-            ? { currentCharges: Math.max(0, Math.floor(discardedEntry.currentCharges)) }
-            : undefined,
+          ...(typeof discardedEntry.currentCharges === "number"
+            ? { payload: { currentCharges: Math.max(0, Math.floor(discardedEntry.currentCharges)) } }
+            : {}),
         },
         source: "player",
         ownerPlayerId: actor.id,

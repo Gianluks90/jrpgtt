@@ -18,6 +18,7 @@
           <app-item-card
             [name]="item.name"
             [description]="item.description"
+            [subtype]="item.category"
             [labels]="item.labels"
             [uses]="item.uses"
             [value]="item.sellValue !== null ? { amount: item.sellValue, tone: 'value' } : null"
@@ -56,6 +57,9 @@
             <div class="inventory-item-header">
               <p class="inventory-item-title">{{ follower.name }}</p>
             </div>
+            @if (follower.category) {
+              <p class="item-card-subtype">{{ 'catalogs.items.category.' + follower.category | t }}</p>
+            }
             <div class="inventory-item-line"></div>
 
             <div class="follower-hp-section">
@@ -81,9 +85,6 @@
         }
       }
 
-      @if (discardedFollowersCount() > 0) {
-        <p class="inventory-empty">{{ 'map.followers.discardedCount' | t: { count: discardedFollowersCount() } }}</p>
-      }
     </div>
   } @else {
     <div class="utility-panel-collapsed-content">

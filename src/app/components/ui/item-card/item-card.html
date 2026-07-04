@@ -14,6 +14,9 @@
         </span>
     }
 </div>
+@if (subtypeLabel(); as st) {
+    <p class="item-card-subtype">{{ st }}</p>
+}
 <div class="item-card-line"></div>
 
 @if (mpCost() !== undefined || consumableOnCast()) {

@@ -34,6 +34,7 @@ const CARD_TYPE_CTA: Record<PlacedExplorationCard["type"], string> = {
 interface ItemCardData {
   name: string;
   description: string;
+  subtype: string | null;
   labels: ItemCardLabel[];
   uses: ItemCardUses | null;
   value: ItemCardValue | null;
@@ -286,6 +287,43 @@ export class ExplorationPhaseOverlay {
   }
 
   private resolveItemCard(placed: PlacedExplorationCard): ItemCardData | null {
+    if (placed.type === "follower") {
+      const def = this.followerCatalogService.getCachedFollowerById(placed.followerId);
+      if (!def) return null;
+      const labels: ItemCardLabel[] = [];
+      const scopesSeen = new Set<string>();
+      for (const mod of def.parameterModifiers ?? []) {
+        for (const scope of mod.scopes ?? []) {
+          if (scope === "always" || scopesSeen.has(scope)) continue;
+          scopesSeen.add(scope);
+          const text = scope === "fight-only"
+            ? this.translationService.tOrFallback("map.labels.fightOnly", "fight only")
+            : scope === "day-only"
+              ? this.translationService.tOrFallback("map.labels.dayOnly", "day only")
+              : this.translationService.tOrFallback("map.labels.nightOnly", "night only");
+          labels.push({ text, tone: "neutral" });
+        }
+      }
+      for (const mod of def.parameterModifiers ?? []) {
+        const sign = mod.amount >= 0 ? "+" : "";
+        const param = mod.parameter === "strength"
+          ? this.translationService.tOrFallback("playerCard.stats.strengthAbbr", "FRZ")
+          : mod.parameter === "magic"
+            ? this.translationService.tOrFallback("playerCard.stats.magicAbbr", "MAG")
+            : this.translationService.tOrFallback("playerCard.stats.luckAbbr", "FOR");
+        labels.push({ text: `${sign}${mod.amount} ${param}`, tone: mod.amount >= 0 ? "positive" : "negative" });
+      }
+      return {
+        name: this.followerCatalogService.getLocalizedName(def),
+        description: this.followerCatalogService.getLocalizedDescription(def).trim()
+          || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
+        subtype: def.category ?? null,
+        labels,
+        uses: null,
+        value: null,
+      };
+    }
+
     const itemId = placed.type === "item" ? placed.itemId
       : placed.type === "amulet" ? placed.amuletId
       : null;
@@ -328,10 +366,13 @@ export class ExplorationPhaseOverlay {
     const sellAmt = this.itemCatalogService.getSellValue(def);
     const value: ItemCardValue | null = sellAmt > 0 ? { amount: sellAmt, tone: "value" } : null;
 
+    const subtype = placed.type === "amulet" ? "amulet" : (def.category ?? null);
+
     return {
       name: this.itemCatalogService.getLocalizedName(def),
       description: this.itemCatalogService.getLocalizedDescription(def).trim()
         || this.translationService.tOrFallback("map.common.noDescription", "No description available."),
+      subtype,
       labels,
       uses,
       value,
@@ -348,12 +389,27 @@ export class ExplorationPhaseOverlay {
       const amuletDef = this.itemCatalogService.getCachedItemById(placed.amuletId);
       if (amuletDef) return this.itemCatalogService.getLocalizedName(amuletDef);
     }
-    return def?.name ?? this.translationService.tOrFallback("common.unknownCard", "Unknown card");
+    if (placed.type === "follower") {
+      const followerDef = this.followerCatalogService.getCachedFollowerById(placed.followerId);
+      if (followerDef) return this.followerCatalogService.getLocalizedName(followerDef);
+    }
+    if (def) {
+      return def.nameKey
+        ? this.translationService.tOrFallback(def.nameKey, def.name)
+        : def.name;
+    }
+    return this.translationService.tOrFallback("common.unknownCard", "Unknown card");
   }
 
   private resolveDescription(placed: PlacedExplorationCard, def: ExplorationCardDef | null): string {
+    if (placed.type === "follower") {
+      const followerDef = this.followerCatalogService.getCachedFollowerById(placed.followerId);
+      if (followerDef) return this.followerCatalogService.getLocalizedDescription(followerDef);
+    }
     if (!def) return "";
-    return def.description;
+    return def.descriptionKey
+      ? this.translationService.tOrFallback(def.descriptionKey, def.description)
+      : def.description;
   }
 
   private resolveCta(placed: PlacedExplorationCard): string {

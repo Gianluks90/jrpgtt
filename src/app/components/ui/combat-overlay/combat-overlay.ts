@@ -225,7 +225,7 @@ export class CombatOverlay implements OnDestroy {
     }
     const bonus = this.selectedEquipmentBonus();
     this.confirmedEquipmentBonus.set(bonus);
-    this.explorationEventService.submitEquipmentSelection(bonus);
+    this.explorationEventService.submitEquipmentSelection(bonus, aId);
   }
   public readonly currentUiPhase = computed(() => this.uiPhase());
   public readonly fleeMode = computed(() => this.combatAction() === "flee");

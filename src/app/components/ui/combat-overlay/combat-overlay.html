@@ -66,7 +66,9 @@
                                 <input type="radio" name="armor" [value]="opt.itemId" (change)="selectArmor(opt.itemId)" [checked]="selectedArmorId() === opt.itemId" hidden>
                                 <span class="equipment-radio"></span>
                                 <span class="equipment-option-name">{{ itemLabel(opt) }}</span>
-                                <span class="equipment-option-bonus">+{{ opt.bonus }}</span>
+                                @if (opt.bonus > 0) {
+                                    <span class="equipment-option-bonus">+{{ opt.bonus }}</span>
+                                }
                             </label>
                         }
                     </div>
